@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-9850ade</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-23149c3</span>
    </div>
   </td>
  </tr>
@@ -74,14 +74,11 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#define-members">Macros</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#define-members">Macros</a>  </div>
   <div class="headertitle"><div class="title">web_server.cpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../d9/dd1/web__server_8hpp_source.html">web/web-service/web_server.hpp</a>&quot;</code><br />
-<code>#include &lt;boost/filesystem.hpp&gt;</code><br />
-<code>#include &lt;server_http.hpp&gt;</code><br />
 <code>#include &quot;<a class="el" href="../../da/d7b/code__utils_8hpp_source.html">common/code_utils.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../d0/da9/logging_8hpp_source.html">common/logging.hpp</a>&quot;</code><br />
 </div><table class="memberdecls">
@@ -90,9 +87,6 @@ Macros</h2></td></tr>
 <tr class="memitem:abd93e762dbf58b7d5c91966ee1c3412a" id="r_abd93e762dbf58b7d5c91966ee1c3412a"><td class="memItemLeft" align="right" valign="top"><a id="abd93e762dbf58b7d5c91966ee1c3412a" name="abd93e762dbf58b7d5c91966ee1c3412a"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>OTBR_LOG_TAG</b>&#160;&#160;&#160;&quot;WEB&quot;</td></tr>
 <tr class="separator:abd93e762dbf58b7d5c91966ee1c3412a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1c13e1c5e5f8172c1cea7d5830431849" id="r_a1c13e1c5e5f8172c1cea7d5830431849"><td class="memItemLeft" align="right" valign="top"><a id="a1c13e1c5e5f8172c1cea7d5830431849" name="a1c13e1c5e5f8172c1cea7d5830431849"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>BOOST_NO_CXX11_SCOPED_ENUMS</b></td></tr>
-<tr class="separator:a1c13e1c5e5f8172c1cea7d5830431849"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22236a101f321fa873d167b665eaa46f" id="r_a22236a101f321fa873d167b665eaa46f"><td class="memItemLeft" align="right" valign="top"><a id="a22236a101f321fa873d167b665eaa46f" name="a22236a101f321fa873d167b665eaa46f"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>OT_ADD_PREFIX_PATH</b>&#160;&#160;&#160;&quot;^/add_prefix&quot;</td></tr>
 <tr class="separator:a22236a101f321fa873d167b665eaa46f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -150,12 +144,6 @@ Macros</h2></td></tr>
 <tr class="memitem:a340b82195926e30d3a706150e75e209b" id="r_a340b82195926e30d3a706150e75e209b"><td class="memItemLeft" align="right" valign="top"><a id="a340b82195926e30d3a706150e75e209b" name="a340b82195926e30d3a706150e75e209b"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>OT_BUFFER_SIZE</b>&#160;&#160;&#160;1024</td></tr>
 <tr class="separator:a340b82195926e30d3a706150e75e209b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:adaf164b13af727a01f8cf0d83794d756" id="r_adaf164b13af727a01f8cf0d83794d756"><td class="memItemLeft" align="right" valign="top"><a id="adaf164b13af727a01f8cf0d83794d756" name="adaf164b13af727a01f8cf0d83794d756"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>otbr::Web::DefaultResourceSend</b> (const <a class="el" href="../../df/d24/classSimpleWeb_1_1Server.html">HttpServer</a> &amp;aServer, const std::shared_ptr&lt; HttpServer::Response &gt; &amp;aResponse, const std::shared_ptr&lt; std::ifstream &gt; &amp;aIfStream)</td></tr>
-<tr class="separator:adaf164b13af727a01f8cf0d83794d756"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file implements the web server of border router </p>

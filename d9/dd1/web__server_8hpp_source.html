@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-9850ade</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-23149c3</span>
    </div>
   </td>
  </tr>
@@ -114,90 +114,76 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &quot;<a class="code" href="../../db/d16/config_8h.html">openthread-br/config.h</a>&quot;</span></div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;algorithm&gt;</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#include &lt;fstream&gt;</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;iostream&gt;</span></div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="preprocessor">#include &lt;string&gt;</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="preprocessor">#include &lt;net/if.h&gt;</span></div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#include &lt;syslog.h&gt;</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &lt;boost/asio/ip/tcp.hpp&gt;</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="preprocessor">#include &quot;<a class="code" href="../../dd/dca/wpan__service_8hpp.html">web/web-service/wpan_service.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">namespace </span>SimpleWeb {</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno"><a class="line" href="../../df/d24/classSimpleWeb_1_1Server.html">   53</a></span><span class="keyword">template</span> &lt;<span class="keyword">class</span> T&gt; <span class="keyword">class </span><a class="code hl_class" href="../../df/d24/classSimpleWeb_1_1Server.html">Server</a>;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">typedef</span> boost::asio::ip::tcp::socket HTTP;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>} <span class="comment">// namespace SimpleWeb</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">namespace </span>otbr {</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="keyword">namespace </span>Web {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;httplib.h&gt;</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#include &lt;net/if.h&gt;</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="preprocessor">#include &lt;syslog.h&gt;</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#include &quot;<a class="code" href="../../dd/dca/wpan__service_8hpp.html">web/web-service/wpan_service.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="keyword">namespace </span>otbr {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">namespace </span>Web {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
+<div class="foldopen" id="foldopen00052" data-start="{" data-end="};">
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno"><a class="line" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html">   52</a></span><span class="keyword">class </span><a class="code hl_class" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html">WebServer</a></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>{</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a5d985c09bb53954aa548a5e2ba410136">WebServer</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">typedef</span> <a class="code hl_class" href="../../df/d24/classSimpleWeb_1_1Server.html">SimpleWeb::Server&lt;SimpleWeb::HTTP&gt;</a> HttpServer;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
-<div class="foldopen" id="foldopen00065" data-start="{" data-end="};">
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html">   65</a></span><span class="keyword">class </span><a class="code hl_class" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html">WebServer</a></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>{</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a5d985c09bb53954aa548a5e2ba410136">WebServer</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a8a9328d2362b07f3ebfa40242a84784b">~WebServer</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#abe5b4a1397cd62cecf1147a5fdad528d">StartWebServer</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *aIfName, <span class="keyword">const</span> <span class="keywordtype">char</span> *aListenAddr, uint16_t aPort);</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#acde2416312f5b4c0102cc1c8f18d2723">StopWebServer</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="keyword">typedef</span> std::string (*HttpRequestCallback)(<span class="keyword">const</span> std::string &amp;aRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    <span class="keyword">static</span> std::string HandleJoinNetworkRequest(<span class="keyword">const</span> std::string &amp;aJoinRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    <span class="keyword">static</span> std::string HandleGetQRCodeRequest(<span class="keyword">const</span> std::string &amp;aGetQRCodeRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keyword">static</span> std::string HandleFormNetworkRequest(<span class="keyword">const</span> std::string &amp;aFormRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keyword">static</span> std::string HandleAddPrefixRequest(<span class="keyword">const</span> std::string &amp;aAddPrefixRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keyword">static</span> std::string HandleDeletePrefixRequest(<span class="keyword">const</span> std::string &amp;aDeletePrefixRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keyword">static</span> std::string HandleGetStatusRequest(<span class="keyword">const</span> std::string &amp;aGetStatusRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keyword">static</span> std::string HandleGetAvailableNetworkResponse(<span class="keyword">const</span> std::string &amp;aGetAvailableNetworkRequest,</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>                                                         <span class="keywordtype">void</span>              *aUserData);</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keyword">static</span> std::string HandleCommission(<span class="keyword">const</span> std::string &amp;aCommissionRequest, <span class="keywordtype">void</span> *aUserData);</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    std::string HandleJoinNetworkRequest(<span class="keyword">const</span> std::string &amp;aJoinRequest);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    std::string HandleGetQRCodeRequest(<span class="keyword">const</span> std::string &amp;aGetQRCodeRequest);</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    std::string HandleFormNetworkRequest(<span class="keyword">const</span> std::string &amp;aFormRequest);</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    std::string HandleAddPrefixRequest(<span class="keyword">const</span> std::string &amp;aAddPrefixRequest);</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    std::string HandleDeletePrefixRequest(<span class="keyword">const</span> std::string &amp;aDeletePrefixRequest);</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    std::string HandleGetStatusRequest(<span class="keyword">const</span> std::string &amp;aGetStatusRequest);</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    std::string HandleGetAvailableNetworkResponse(<span class="keyword">const</span> std::string &amp;aGetAvailableNetworkRequest);</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    std::string HandleCommission(<span class="keyword">const</span> std::string &amp;aCommissionRequest);</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a8a9328d2362b07f3ebfa40242a84784b">~WebServer</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#abe5b4a1397cd62cecf1147a5fdad528d">StartWebServer</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *aIfName, <span class="keyword">const</span> <span class="keywordtype">char</span> *aListenAddr, uint16_t aPort);</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#acde2416312f5b4c0102cc1c8f18d2723">StopWebServer</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    <span class="keyword">typedef</span> std::string (*HttpRequestCallback)(<span class="keyword">const</span> std::string &amp;aRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    <span class="keyword">static</span> std::string HandleJoinNetworkRequest(<span class="keyword">const</span> std::string &amp;aJoinRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="keyword">static</span> std::string HandleGetQRCodeRequest(<span class="keyword">const</span> std::string &amp;aGetQRCodeRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <span class="keyword">static</span> std::string HandleFormNetworkRequest(<span class="keyword">const</span> std::string &amp;aFormRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    <span class="keyword">static</span> std::string HandleAddPrefixRequest(<span class="keyword">const</span> std::string &amp;aAddPrefixRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    <span class="keyword">static</span> std::string HandleDeletePrefixRequest(<span class="keyword">const</span> std::string &amp;aDeletePrefixRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    <span class="keyword">static</span> std::string HandleGetStatusRequest(<span class="keyword">const</span> std::string &amp;aGetStatusRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    <span class="keyword">static</span> std::string HandleGetAvailableNetworkResponse(<span class="keyword">const</span> std::string &amp;aGetAvailableNetworkRequest,</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>                                                         <span class="keywordtype">void</span>              *aUserData);</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    <span class="keyword">static</span> std::string HandleCommission(<span class="keyword">const</span> std::string &amp;aCommissionRequest, <span class="keywordtype">void</span> *aUserData);</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    std::string HandleJoinNetworkRequest(<span class="keyword">const</span> std::string &amp;aJoinRequest);</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    std::string HandleGetQRCodeRequest(<span class="keyword">const</span> std::string &amp;aGetQRCodeRequest);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    std::string HandleFormNetworkRequest(<span class="keyword">const</span> std::string &amp;aFormRequest);</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    std::string HandleAddPrefixRequest(<span class="keyword">const</span> std::string &amp;aAddPrefixRequest);</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    std::string HandleDeletePrefixRequest(<span class="keyword">const</span> std::string &amp;aDeletePrefixRequest);</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    std::string HandleGetStatusRequest(<span class="keyword">const</span> std::string &amp;aGetStatusRequest);</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    std::string HandleGetAvailableNetworkResponse(<span class="keyword">const</span> std::string &amp;aGetAvailableNetworkRequest);</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    std::string HandleCommission(<span class="keyword">const</span> std::string &amp;aCommissionRequest);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keywordtype">void</span> HandleHttpRequest(<span class="keyword">const</span> <span class="keywordtype">char</span> *aUrl, <span class="keyword">const</span> <span class="keywordtype">char</span> *aMethod, HttpRequestCallback aCallback);</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keywordtype">void</span> ResponseGetQRCode(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keywordtype">void</span> ResponseJoinNetwork(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="keywordtype">void</span> ResponseFormNetwork(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordtype">void</span> ResponseAddOnMeshPrefix(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordtype">void</span> ResponseDeleteOnMeshPrefix(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    <span class="keywordtype">void</span> ResponseGetStatus(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keywordtype">void</span> ResponseGetAvailableNetwork(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="keywordtype">void</span> DefaultHttpResponse(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="keywordtype">void</span> ResponseCommission(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keywordtype">void</span> Init(<span class="keywordtype">void</span>);</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordtype">void</span> HandleHttpRequest(<span class="keyword">const</span> <span class="keywordtype">char</span> *aUrl, <span class="keyword">const</span> <span class="keywordtype">char</span> *aMethod, HttpRequestCallback aCallback);</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="keywordtype">void</span> ResponseGetQRCode(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    <span class="keywordtype">void</span> ResponseJoinNetwork(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    <span class="keywordtype">void</span> ResponseFormNetwork(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    <span class="keywordtype">void</span> ResponseAddOnMeshPrefix(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="keywordtype">void</span> ResponseDeleteOnMeshPrefix(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keywordtype">void</span> ResponseGetStatus(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <span class="keywordtype">void</span> ResponseGetAvailableNetwork(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    <span class="keywordtype">void</span> DefaultHttpResponse(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    <span class="keywordtype">void</span> ResponseCommission(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keywordtype">void</span> Init(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    <a class="code hl_class" href="../../df/d24/classSimpleWeb_1_1Server.html">HttpServer</a>            *mServer;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    <a class="code hl_class" href="../../d3/d46/classotbr_1_1Web_1_1WpanService.html">otbr::Web::WpanService</a> mWpanService;</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>};</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    httplib::Server        mServer;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <a class="code hl_class" href="../../d3/d46/classotbr_1_1Web_1_1WpanService.html">otbr::Web::WpanService</a> mWpanService;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>};</div>
 </div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>} <span class="comment">// namespace Web</span></div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>} <span class="comment">// namespace otbr</span></div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_WEB_WEB_SERVICE_WEB_SERVER_</span></div>
-<div class="ttc" id="aclassSimpleWeb_1_1Server_html"><div class="ttname"><a href="../../df/d24/classSimpleWeb_1_1Server.html">SimpleWeb::Server</a></div><div class="ttdef"><b>Definition</b> web_server.hpp:53</div></div>
-<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html">otbr::Web::WebServer</a></div><div class="ttdef"><b>Definition</b> web_server.hpp:66</div></div>
-<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_a5d985c09bb53954aa548a5e2ba410136"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a5d985c09bb53954aa548a5e2ba410136">otbr::Web::WebServer::WebServer</a></div><div class="ttdeci">WebServer(void)</div><div class="ttdef"><b>Definition</b> web_server.cpp:103</div></div>
-<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_a8a9328d2362b07f3ebfa40242a84784b"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a8a9328d2362b07f3ebfa40242a84784b">otbr::Web::WebServer::~WebServer</a></div><div class="ttdeci">~WebServer(void)</div><div class="ttdef"><b>Definition</b> web_server.cpp:108</div></div>
-<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_abe5b4a1397cd62cecf1147a5fdad528d"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#abe5b4a1397cd62cecf1147a5fdad528d">otbr::Web::WebServer::StartWebServer</a></div><div class="ttdeci">void StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)</div><div class="ttdef"><b>Definition</b> web_server.cpp:123</div></div>
-<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_acde2416312f5b4c0102cc1c8f18d2723"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#acde2416312f5b4c0102cc1c8f18d2723">otbr::Web::WebServer::StopWebServer</a></div><div class="ttdeci">void StopWebServer(void)</div><div class="ttdef"><b>Definition</b> web_server.cpp:152</div></div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>} <span class="comment">// namespace Web</span></div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_WEB_WEB_SERVICE_WEB_SERVER_</span></div>
+<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html">otbr::Web::WebServer</a></div><div class="ttdef"><b>Definition</b> web_server.hpp:53</div></div>
+<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_a5d985c09bb53954aa548a5e2ba410136"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a5d985c09bb53954aa548a5e2ba410136">otbr::Web::WebServer::WebServer</a></div><div class="ttdeci">WebServer(void)</div><div class="ttdef"><b>Definition</b> web_server.cpp:67</div></div>
+<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_a8a9328d2362b07f3ebfa40242a84784b"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#a8a9328d2362b07f3ebfa40242a84784b">otbr::Web::WebServer::~WebServer</a></div><div class="ttdeci">~WebServer(void)</div><div class="ttdef"><b>Definition</b> web_server.cpp:71</div></div>
+<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_abe5b4a1397cd62cecf1147a5fdad528d"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#abe5b4a1397cd62cecf1147a5fdad528d">otbr::Web::WebServer::StartWebServer</a></div><div class="ttdeci">void StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)</div><div class="ttdef"><b>Definition</b> web_server.cpp:85</div></div>
+<div class="ttc" id="aclassotbr_1_1Web_1_1WebServer_html_acde2416312f5b4c0102cc1c8f18d2723"><div class="ttname"><a href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html#acde2416312f5b4c0102cc1c8f18d2723">otbr::Web::WebServer::StopWebServer</a></div><div class="ttdeci">void StopWebServer(void)</div><div class="ttdef"><b>Definition</b> web_server.cpp:102</div></div>
 <div class="ttc" id="aclassotbr_1_1Web_1_1WpanService_html"><div class="ttname"><a href="../../d3/d46/classotbr_1_1Web_1_1WpanService.html">otbr::Web::WpanService</a></div><div class="ttdef"><b>Definition</b> wpan_service.hpp:72</div></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="../../db/d16/config_8h.html">config.h</a></div></div>
 <div class="ttc" id="awpan__service_8hpp_html"><div class="ttname"><a href="../../dd/dca/wpan__service_8hpp.html">wpan_service.hpp</a></div></div>

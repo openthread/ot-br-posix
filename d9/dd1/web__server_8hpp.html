@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-9850ade</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-23149c3</span>
    </div>
   </td>
  </tr>
@@ -74,20 +74,15 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#nested-classes">Classes</a>  </div>
   <div class="headertitle"><div class="title">web_server.hpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../db/d16/config_8h_source.html">openthread-br/config.h</a>&quot;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
-<code>#include &lt;fstream&gt;</code><br />
-<code>#include &lt;iostream&gt;</code><br />
-<code>#include &lt;string&gt;</code><br />
-<code>#include &lt;vector&gt;</code><br />
+<code>#include &lt;httplib.h&gt;</code><br />
 <code>#include &lt;net/if.h&gt;</code><br />
+<code>#include &lt;string&gt;</code><br />
 <code>#include &lt;syslog.h&gt;</code><br />
-<code>#include &lt;boost/asio/ip/tcp.hpp&gt;</code><br />
 <code>#include &quot;<a class="el" href="../../dd/dca/wpan__service_8hpp_source.html">web/web-service/wpan_service.hpp</a>&quot;</code><br />
 </div>
 <p><a href="../../d9/dd1/web__server_8hpp_source.html">Go to the source code of this file.</a></p>
@@ -96,15 +91,6 @@ $(function() {
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d83/classotbr_1_1Web_1_1WebServer.html">otbr::Web::WebServer</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="typedef-members" name="typedef-members"></a>
-Typedefs</h2></td></tr>
-<tr class="memitem:a84c22152f3a1afbf188e352a75323edf" id="r_a84c22152f3a1afbf188e352a75323edf"><td class="memItemLeft" align="right" valign="top"><a id="a84c22152f3a1afbf188e352a75323edf" name="a84c22152f3a1afbf188e352a75323edf"></a>
-typedef boost::asio::ip::tcp::socket&#160;</td><td class="memItemRight" valign="bottom"><b>SimpleWeb::HTTP</b></td></tr>
-<tr class="separator:a84c22152f3a1afbf188e352a75323edf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3a86a4cbed0f236bd68685ac72634a99" id="r_a3a86a4cbed0f236bd68685ac72634a99"><td class="memItemLeft" align="right" valign="top"><a id="a3a86a4cbed0f236bd68685ac72634a99" name="a3a86a4cbed0f236bd68685ac72634a99"></a>
-typedef <a class="el" href="../../df/d24/classSimpleWeb_1_1Server.html">SimpleWeb::Server</a>&lt; SimpleWeb::HTTP &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>otbr::Web::HttpServer</b></td></tr>
-<tr class="separator:a3a86a4cbed0f236bd68685ac72634a99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file implements the web server of border router </p>
