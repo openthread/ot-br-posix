@@ -1,0 +1,22 @@
+meta {
+  name: Get Node (json)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/node
+  body: none
+  auth: none
+}
+
+headers {
+  ~Accept: application/vnd.api+json
+  Accept: application/json
+}
+
+assert {
+  res.headers['content-type']: eq application/json
+  res.body: isJson
+  res.status: eq 200
+}
