@@ -44,14 +44,14 @@ namespace otbr {
 class CliDaemon
 {
 public:
-    CliDaemon();
+    CliDaemon(void);
 
     void Init(const std::string &aNetIfName);
 
-    std::string GetSocketFilename(const char *aSuffix) const;
-
 private:
     void CreateListenSocketOrDie(void);
+
+    std::string GetSocketFilename(const char *aSuffix) const;
 
     int mListenSocket;
     int mDaemonLock;

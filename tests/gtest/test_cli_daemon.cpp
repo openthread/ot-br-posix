@@ -53,30 +53,31 @@
 
 TEST(CliDaemon, InitSocketCreationWithFullNetIfName)
 {
-    const char *netif_name = "tun0";
+    const char *netIfName  = "tun0";
+    const char *socketFile = "/run/openthread-tun0.sock";
+    const char *lockFile   = "/run/openthread-tun0.lock";
 
     otbr::CliDaemon cliDaemon;
-    cliDaemon.Init(netif_name);
+    cliDaemon.Init(netIfName);
 
     struct stat st;
-    std::string socketFile = cliDaemon.GetSocketFilename(".sock");
-    std::string lockFile   = cliDaemon.GetSocketFilename(".lock");
 
-    EXPECT_EQ(stat(socketFile.c_str(), &st), 0);
-    EXPECT_EQ(stat(lockFile.c_str(), &st), 0);
+    EXPECT_EQ(stat(socketFile, &st), 0);
+    EXPECT_EQ(stat(lockFile, &st), 0);
 }
 
 TEST(CliDaemon, InitSocketCreationWithEmptyNetIfName)
 {
+    const char *socketFile = "/run/openthread-wpan0.sock";
+    const char *lockFile   = "/run/openthread-wpan0.lock";
+
     otbr::CliDaemon cliDaemon;
     cliDaemon.Init("");
 
     struct stat st;
-    std::string socketFile = cliDaemon.GetSocketFilename(".sock");
-    std::string lockFile   = cliDaemon.GetSocketFilename(".lock");
 
-    EXPECT_EQ(stat(socketFile.c_str(), &st), 0);
-    EXPECT_EQ(stat(lockFile.c_str(), &st), 0);
+    EXPECT_EQ(stat(socketFile, &st), 0);
+    EXPECT_EQ(stat(lockFile, &st), 0);
 }
 
 #endif // __linux__
