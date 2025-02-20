@@ -26,7 +26,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define OTBR_LOG_TAG "CLIDAEMON"
+#define OTBR_LOG_TAG "CLI_DAEMON"
 
 #include "cli_daemon.hpp"
 
@@ -60,88 +60,40 @@ std::string CliDaemon::GetSocketFilename(const char *aSuffix) const
     std::string netIfName = mNetifName.empty() ? kDefaultNetIfName : mNetifName;
 
     fileName = kSocketBaseName + netIfName + aSuffix;
-    if (fileName.size() > kMaxSocketFilenameLength)
-    {
-        DieNow(otbrErrorString(OTBR_ERROR_INVALID_ARGS));
-    }
+    VerifyOrDie(fileName.size() <= kMaxSocketFilenameLength, otbrErrorString(OTBR_ERROR_INVALID_ARGS));
 
     return fileName;
 }
 
-CliDaemon::CliDaemon()
+CliDaemon::CliDaemon(void)
     : mListenSocket(-1)
     , mDaemonLock(-1)
 {
 }
 
-void CliDaemon::createListenSocketOrDie(void)
+void CliDaemon::CreateListenSocketOrDie(void)
 {
     struct sockaddr_un sockname;
-
-    class AllowAllGuard
-    {
-    public:
-        AllowAllGuard(void)
-        {
-            const char *allowAll = getenv("OT_DAEMON_ALLOW_ALL");
-            mAllowAll            = (allowAll != nullptr && strcmp("1", allowAll) == 0);
-
-            if (mAllowAll)
-            {
-                mMode = umask(0);
-            }
-        }
-        ~AllowAllGuard(void)
-        {
-            if (mAllowAll)
-            {
-                umask(mMode);
-            }
-        }
-
-    private:
-        bool   mAllowAll = false;
-        mode_t mMode     = 0;
-    };
 
     mListenSocket = SocketWithCloseExec(AF_UNIX, SOCK_STREAM, 0, kSocketNonBlock);
     VerifyOrDie(mListenSocket != -1, strerror(errno));
 
-    {
-        std::string lockfile = GetSocketFilename(kSocketLockSuffix);
+    std::string lockfile = GetSocketFilename(kSocketLockSuffix);
+    mDaemonLock          = open(lockfile.c_str(), O_CREAT | O_RDONLY | O_CLOEXEC, 0600);
+    VerifyOrDie(mDaemonLock != -1, strerror(errno));
 
-        mDaemonLock = open(lockfile.c_str(), O_CREAT | O_RDONLY | O_CLOEXEC, 0600);
-    }
-
-    if (mDaemonLock == -1)
-    {
-        otbrLogCrit("open");
-        DieNow(otbrErrorString(OTBR_ERROR_ERRNO));
-    }
-
-    if (flock(mDaemonLock, LOCK_EX | LOCK_NB) == -1)
-    {
-        otbrLogCrit("flock");
-        DieNow(otbrErrorString(OTBR_ERROR_ERRNO));
-    }
+    VerifyOrDie(flock(mDaemonLock, LOCK_EX | LOCK_NB) != -1, strerror(errno));
 
     std::string socketfile = GetSocketFilename(kSocketSuffix);
-
     memset(&sockname, 0, sizeof(struct sockaddr_un));
 
     sockname.sun_family = AF_UNIX;
     strncpy(sockname.sun_path, socketfile.c_str(), sizeof(sockname.sun_path) - 1);
     (void)unlink(sockname.sun_path);
 
-    {
-        AllowAllGuard allowAllGuard;
-
-        if (bind(mListenSocket, reinterpret_cast<const struct sockaddr *>(&sockname), sizeof(struct sockaddr_un)) == -1)
-        {
-            otbrLogCrit("bind");
-            DieNow(otbrErrorString(OTBR_ERROR_ERRNO));
-        }
-    }
+    VerifyOrDie(bind(mListenSocket, reinterpret_cast<const struct sockaddr *>(&sockname), sizeof(struct sockaddr_un)) !=
+                    -1,
+                strerror(errno));
 }
 
 void CliDaemon::Init(const std::string &aNetIfName)
@@ -150,16 +102,12 @@ void CliDaemon::Init(const std::string &aNetIfName)
     VerifyOrExit(mListenSocket == -1);
 
     mNetifName = aNetIfName;
-    createListenSocketOrDie();
+    CreateListenSocketOrDie();
 
     //
     // only accept 1 connection.
     //
-    if (listen(mListenSocket, 1) == -1)
-    {
-        otbrLogCrit("listen");
-        DieNow(otbrErrorString(OTBR_ERROR_ERRNO));
-    }
+    VerifyOrDie(listen(mListenSocket, 1) != -1, strerror(errno));
 
 exit:
     return;

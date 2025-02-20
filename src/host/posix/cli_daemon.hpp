@@ -51,7 +51,7 @@ public:
     std::string GetSocketFilename(const char *aSuffix) const;
 
 private:
-    void createListenSocketOrDie(void);
+    void CreateListenSocketOrDie(void);
 
     int mListenSocket;
     int mDaemonLock;
