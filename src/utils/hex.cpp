@@ -111,12 +111,13 @@ size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
 
 std::string Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength)
 {
-    char        hex[2 * aBytesLength + 1];
+    char       *hex = new char[2 * aBytesLength + 1];
     std::string s;
     size_t      len;
 
     len = Bytes2Hex(aBytes, aBytesLength, hex);
     s   = std::string(hex, len);
+    delete[] hex;
 
     return s;
 }

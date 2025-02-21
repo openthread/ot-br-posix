@@ -36,28 +36,15 @@
 
 #include "openthread-br/config.h"
 
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <vector>
-
+#include <httplib.h>
 #include <net/if.h>
+#include <string>
 #include <syslog.h>
-
-#include <boost/asio/ip/tcp.hpp>
 
 #include "web/web-service/wpan_service.hpp"
 
-namespace SimpleWeb {
-template <class T> class Server;
-typedef boost::asio::ip::tcp::socket HTTP;
-} // namespace SimpleWeb
-
 namespace otbr {
 namespace Web {
-
-typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 
 /**
  * This class implements the http server.
@@ -123,7 +110,7 @@ private:
 
     void Init(void);
 
-    HttpServer            *mServer;
+    httplib::Server        mServer;
     otbr::Web::WpanService mWpanService;
 };
 
