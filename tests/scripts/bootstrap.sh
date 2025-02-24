@@ -65,8 +65,9 @@ install_common_dependencies()
         coreutils \
         git \
         libprotobuf-dev \
-        protobuf-compiler \
-        socat
+        protobuf-compiler
+
+    sudo bash tests/scripts/install_socat
 }
 
 install_openthread_binraries()
@@ -79,8 +80,6 @@ install_openthread_binraries()
     cmake .. -GNinja -DOT_PLATFORM=simulation -DOT_FULL_LOGS=1 -DOT_COMMISSIONER=ON -DOT_JOINER=ON
     ninja
     sudo ninja install
-
-    sudo apt-get install --no-install-recommends -y socat
 }
 
 configure_network()
