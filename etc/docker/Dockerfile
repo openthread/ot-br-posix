@@ -74,11 +74,17 @@ ENV OTBR_DOCKER_DEPS git ca-certificates
 # Required and installed during build (script/bootstrap), could be removed
 ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-certificates \
   libreadline-dev libncurses-dev libdbus-1-dev libavahi-common-dev \
-  libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev \
+  libavahi-client-dev \
   libnetfilter-queue-dev
 
 # Required for OpenThread Backbone CI
 ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential python3-dbus python3-zeroconf socat
+
+# Resolves issue with installing libc-bin
+RUN rm /var/lib/dpkg/info/libc-bin.* \
+  && apt-get clean -y \
+  && apt-get update -y \
+  && apt-get install --no-install-recommends -y libc-bin
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \

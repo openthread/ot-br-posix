@@ -50,7 +50,7 @@ jobs:
     - name: Bootstrap
       run: |
         brew update
-        brew reinstall boost jsoncpp ninja protobuf@21
+        brew reinstall jsoncpp ninja protobuf@21
     - name: Build
       run: |
         OTBR_OPTIONS="-DOTBR_BORDER_AGENT=OFF \

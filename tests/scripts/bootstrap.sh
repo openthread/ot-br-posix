@@ -57,9 +57,6 @@ install_common_dependencies()
         doxygen \
         expect \
         net-tools \
-        libboost-dev \
-        libboost-filesystem-dev \
-        libboost-system-dev \
         libavahi-common-dev \
         libavahi-client-dev \
         libreadline-dev \
@@ -102,13 +99,6 @@ case "$(uname)" in
         if [ "$BUILD_TARGET" == script-check ] || [ "$BUILD_TARGET" == docker-check ]; then
             install_openthread_binraries
             configure_network
-            exit 0
-        fi
-
-        if [ "$BUILD_TARGET" == otbr-dbus-check ]; then
-            install_openthread_binraries
-            configure_network
-            install_common_dependencies
             exit 0
         fi
 
