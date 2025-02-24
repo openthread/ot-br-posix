@@ -63,7 +63,7 @@ interface ${WPAN_INTERFACE}
 EOF
 
     if "$old_prefix_delegated"; then
-    logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
+        logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
 sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
     prefix ${old_prefix}/${old_prefix_len}
     {
@@ -77,7 +77,7 @@ EOF
     fi
 
     if $new_prefix_published; then
-    logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
+        logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
 sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
     prefix ${new_prefix}/${new_prefix_len}
     {
