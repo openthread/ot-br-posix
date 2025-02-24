@@ -176,6 +176,15 @@ std::string String2JsonString(const std::string &aString);
 bool JsonString2String(const std::string &aJsonString, std::string &aString);
 
 /**
+ * This method formats a vector of diagnostic objects to a Json array and serialize it to a string.
+ *
+ * @param[in] aDiagSet  A vector of diagnostic objects.
+ *
+ * @returns A string of serialized Json array.
+ */
+std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet);
+
+/**
  * This method formats a Node object to a Json object and serialize it to a string.
  *
  * @param[in] aNode  A Node object.
