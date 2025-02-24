@@ -24,87 +24,6 @@ A consumer may extract the data from the API and visualize it elsewhere.
 
 ## New REST JSON:API resources
 
-### `/api/devices`
-
-The list of Thread network devices is provided as JSON:API collection on the devices resource `/api/devices`. The collection provides collection items of type `threadDevice`, one per active Thread device found during discovery. The `threadDevice` items shall serve as an inventory of devices and provide primarily static information, in particular a static `deviceId` for each device with some key attributes allowing to identify the device. The collection may contain devices that became inactive. It is discovered, updated or deleted on-demand.
-
-The Thread Border Router learns the list of network devices from the active network and returns the full collection or individual items in response to GET requests. The collection may be updated or deleted by a client on request. A POST request will populated the devices collection. Another POST request triggers re-discovery of existing or new Thread network devices and updates the collection accordingly. A DELETE request to `/api/devices` removes the cached collection.
-
-#### Device identification
-
-The device collection provides attributes for identifying and selecting a device. Diagnostics are accessible only via mesh local addresses (ML-EID or RLOC16) for on-mesh clients. However, none of them is known to a non-Thread client. Therefore you may use the `deviceId` in further diagnostic actions for querying diagnostic attributes from a specific device.
-
-Background: The MAC extended address serves as a stable identifier within the Thread network. In addition, the ML-EID IID (interface identifier) acts as a stable on-mesh identifier, while RLOC16 may change due to mesh network reorganization. Both ML-EID IID and the MAC extended address can be used as the stable identifier for collection items of type `threadDevice`. Since ML-EID IID is challenging to extract, we chose the MAC extended address as value for the device item `deviceId` and provide the ML-EID IID as an attribute of `threadDevice` items. OTBR REST JSON:API uses the ML-EID IID and the on-mesh prefix from the Thread network dataset to construct a mesh-local IPv6 unicast address for gathering on-mesh diagnostics TLVs from the corresponding device.
-
-This proposed id scheme and the limited number of static attributes minimize resource consumption on the OTBR, while still allowing a client to correlate a `deviceId` to device information provided elsewhere e.g. via a `hostname` also provided by SRP. A very constraint OTBR may chose to further reduce resource consumption for the device collection and only provide the stable `deviceId` and the learned ML-EID IID but no further details. A client would then have to refer to the diagnostics for gathering additional information.
-
-A timestamp attribute `created` should be used when the documents are persisted. After modifications to the document the timestamp attribute `updated` is added.
-
-#### Example collection comprising documents of type `threadDevice`
-
-An example response to `curl -G http://otbr.local/api/devices -H 'Accept: application/vnd.api+json'` for a network comprising two Thread devices may look similar to
-
-```
-{
-  "data": [
-    {
-      "id": "de62e016db392476",
-      "type": "threadDevice",
-      "attributes": {
-        "extAddress": "de62e016db392476",
-        "mlEidIid": "1d934f57e21e35",
-        "omrIpv6Address": <Ipv6Address>,
-        "hostname": "<hostname defined by SRP>",
-        "role": "router",
-        "mode": {
-          "deviceTypeFTD": true,
-          "rxOnWhenIdle": true,
-          "fullNetworkData": true
-        },
-        "created": <ISO 8601 timestamp>,
-        "updated": <ISO 8601 timestamp>
-      }
-    },
-    {
-      "id": "de62e016db392477",
-      "type": "threadDevice",
-      "attributes": {
-        "extAddress": "de62e016db392477",
-        "mlEidIid": "2ea45067f32f46",
-        "omrIpv6Address": <Ipv6Address>,
-        "eui64": "<eui64>",
-        "hostname": "<hostname defined by SRP>",
-        "role": "router",
-        "mode": {
-          "deviceTypeFTD": true,
-          "rxOnWhenIdle": true,
-          "fullNetworkData": true
-        },
-        "created": <ISO 8601 timestamp>,
-        "updated": <ISO 8601 timestamp>
-      }
-    },
-  ],
-  "meta": {
-    "collection": {
-      "offset": 0,
-      "limit": 200,
-      "total": 2
-    }
-  },
-}
-```
-
-Notes: The `threadDevice` document does only contain attributes which barely change. For now, `hostname` attribute values can only be provided if both, SRP-server and REST API, are hosted on the same OTBR.
-
-### `/api/diagnostics`
-
-The diagnostics resource serves a collection of diagnostic items. This PR comprises implementation for items of type `networkDiagnostics` corresponding to _Specification Chapter 10.11_ and the TLVs listed in _Table [Diagnostic Core Attributes](#diagnostic-core-attributes)_. In addition it serves items of type `energyScanReport`.
-
-The value of the `id` field of the collection items is a `UUID`.
-
-The TLVs are collected and the items appended to the collection based on requests to the `/api/actions` resource.
-
 ### `/api/actions`
 
 A http client may send requests to the actions resource that trigger diagnostic requests into the Thread network or requests to a (on-mesh) commissioner for onboarding new devices onto the Thread network. Such requests typically may have a longer response time and results be obtained indirectly after some processing time.
@@ -113,85 +32,9 @@ This PR supports following action requests to `/api/actions`:
 
 - POST
   - `addThreadDeviceTask` - starts the on-mesh commissioner and adds the joiner candidate into the joiner table
-  - `getNetworkDiagnosticTask` - sends diagnostic requests and diagnostic queries to the destination
-  - `resetNetworkDiagCounterTask` - resets the network diagnostic mle and/or mac counter
-  - `getEnergyScanTask` - starts the commissioner and sends energy scan requests to the destination
 - GET | DELETE the full `actions` collection
 
-Currently, `getNetworkDiagnosticTask` and `getEnergyScanTask` must contain a `destination` attribute which should equal a `deviceId` contained in the `api/devices` collection. If the `deviceId` does not exists, we currently we check wheter destination might be a valid `mlEidIid` or `rloc16`.
-
 A `DELETE` request on `api/actions` cancels a ongoing action and deletes all collection items.
-
-#### Requests & Responses
-
-After receiving the request, `ApiActionPostHandler()` parses the request body using the `Request` class of the `rest` module. We validate the received data before we attempt to perform processing. Once `JSON` data is extracted it is added into a newly created instance `task_node` of `struct type task_node_t` for further processing. (`task_node` contains all the information about the task like its `status, uuid, task type, creation time, timeout`) The response is sent back using the `Response` class of the `rest` module. The reception of a accepted request is confirmed with a response status `ok` and the requests body including a new `id` for the new request to allow tracking of progress.
-
-#### Processing of request
-
-A `request` is processed by `rest_task_queue_task`. When the `task_node` is created, it is marked as `ACTIONS_TASK_STATUS_PENDING` which is then processed by thread function `rest_task_queue_task`. After processing the requests is completed the next queued request is processed.
-
-#### Request results
-
-A `request` status attribute turns `completed` after successful processing, and a reference to the request result is provided as a `relationship` attribute. Status attribute is set to `stopped` after timeout, or otherwise `failed`.
-
-In this PR, the actual request result must be collected in a separate request to the resource given in the `relationship` object.
-
-An example response to `curl -G http://otbr.local/api/actions -H 'Accept: application/vnd.api+json'` after a previous POST of `getNetworkDiagnosticTask` has completed may look similar to
-
-```
-{
-  "data": [
-    {
-      "type": "getNetworkDiagnosticTask",
-      "attributes": {
-        "destination": "32ba6e34fd4c0299",
-        "types": [
-          "extAddress",
-          "rloc16",
-          "leaderData",
-          "ipv6Addresses",
-          "macCounters",
-          "batteryLevel",
-          "supplyVoltage",
-          "channelPages",
-          "maxChildTimeout",
-          "lDevIdSubject",
-          "iDevIdCert",
-          "eui64",
-          "version",
-          "vendorName",
-          "vendorModel",
-          "vendorSwVersion",
-          "threadStackVersion",
-          "children",
-          "childIpv6Addresses",
-          "routerNeighbor",
-          "mleCounters"
-        ],
-        "timeout": 60,
-        "status": "completed"
-      },
-      "id": "54dc649d-c257-4f91-9071-a35a678b6249",
-      "relationships": {
-        "result": {
-          "data": {
-            "type": "diagnostics",
-            "id": "0a97ef16-1997-43dd-91c4-7fbcb1ec6713"
-          }
-        }
-      }
-    }
-  ],
-  "meta": {
-    "collection": {
-      "offset": 0,
-      "limit": 100,
-      "total": 1,
-      "pending": 0
-    }
-  }
-}
-```
 
 ### Examples of general resource features
 
@@ -231,31 +74,23 @@ curl -G http://<otbr-address>/api/<collectionName>?fields[<type>]=attribute1,att
 
 Detailed request examples are provided in the test folder as a "Bruno Request Collection". Use the free opensource API client [Bruno](https://www.usebruno.com/).
 
-## Files Description
+## Key File Description
 
-- `commissioner_allow_list.cpp`,`commissioner_allow_list.hpp`
+- `actions_list.cpp`, `actions_list.hpp`
 
-  Implements functionality related to commisioner APIs.
+  Implements the action collection, derived from `BasicCollection`
 
-- `rest_server_common.cpp`,`rest_server_common.hpp`
+- `add_thread_device.cpp`, `add_thread_device.hpp`
 
-  Implements APIs used for conversions of data from one form to another.
+  Implements the action item stored in action collection. The action item is derived from `BasicActions` class, which is derived from `BasicCollectionItem`.
 
-- `rest_task_add_thread_device.cpp`, `rest_task_add_thread_device.hpp`
+- `rest_generic_collection.cpp`, `rest_generic_collection.hpp`
 
-  Implements the APIs that validate, process, evaluate, jsonify and clean the task.
-
-- `rest_task_handler.cpp`, `rest_task_handler.hpp`
-
-  Implements additional functionailty like `task_node` creation, update task status and conversion `task_node` to `JSON` format.
-
-- `rest_task_queue.cpp`,`rest_task_queue.hpp`
-
-  Implements APIs related to thread creation and task handling.
+  Implements the `BasicCollectionItem` and `BasicCollection` classes.
 
 - `uuid.cpp`,`uuid.hpp`
 
-  Implements functionality to handle UUID (generation,parse,unparse) used for `task_node` and collection items.
+  Implements functionality to handle UUID (generation,parse,unparse) used for collection items.
 
 - `tests/restjsonapi/*`
 

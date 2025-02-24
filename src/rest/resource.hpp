@@ -168,6 +168,15 @@ private:
     void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
     void GetCoprocessorVersion(Response &aResponse) const;
 
+    void DeleteOutDatedDiagnostic(void);
+    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
+
+    static void DiagnosticResponseHandler(otError              aError,
+                                          otMessage           *aMessage,
+                                          const otMessageInfo *aMessageInfo,
+                                          void                *aContext);
+    void        DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
+
     /**
      * Redirects requests from '/api/{collection}/{collectionItem}' to the corresponding collection.
      *
@@ -175,13 +184,6 @@ private:
      * @returns       A string containing the redirected url.
      */
     std::string redirectToCollection(Request &aRequest);
-
-    /**
-     * Rewrites the URL in the request to redirect to the corresponding deviceItem.
-     *
-     * @param[in,out] aRequest  A request instance containing the URL to be rewritten.
-     */
-    void redirectNodeToDeviceItem(Request &aRequest);
 
     /**
      * Handles all requests received on 'api/action'. [POST|GET|DELETE]
@@ -230,6 +232,8 @@ private:
 
     std::unordered_map<std::string, ResourceHandler>         mResourceMap;
     std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
+
+    std::unordered_map<std::string, DiagInfo> mDiagSet;
 
     Services mServices;
 };
