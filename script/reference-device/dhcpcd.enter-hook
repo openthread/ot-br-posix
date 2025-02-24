@@ -45,52 +45,55 @@ config_ra()
 
     local old_prefix_delegated=false
     if [ -n "$old_prefix" ] && [ "$old_prefix/$old_prefix_len" != "$new_prefix/$new_prefix_len" ]; then
-        logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
-        old_prefix_changed=true
+        old_prefix_delegated=true
     fi
 
     local new_prefix_published=false
     if [ -n "$new_prefix" ] && [ -n "$new_prefix_len" ] && [ -n "$new_pltime" ] && [ -n "$new_vltime" ]; then
-        logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
         new_prefix_published=true
     fi
 
     logger "$LOG_TAG $reason start config radvd"
 
-    radvd_config=$(cat <<EOF
+sudo tee "${RADVD_CONF}" > /dev/null <<EOF
 interface ${WPAN_INTERFACE}
 {
     IgnoreIfMissing on;
     AdvSendAdvert on;
-$(
-    if "$old_prefix_changed"; then
-        echo "    prefix ${old_prefix}/${old_prefix_len}"
-        echo "    {"
-        echo "        AdvOnLink on;"
-        echo "        AdvAutonomous on;"
-        echo "        AdvRouterAddr off;"
-        echo "        AdvPreferredLifetime 0;"
-        echo "        AdvValidLifetime 0;"
-        echo "    };"
+EOF
+
+    if "$old_prefix_delegated"; then
+    logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
+    prefix ${old_prefix}/${old_prefix_len}
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+        AdvPreferredLifetime 0;
+        AdvValidLifetime 0;
+    };
+EOF
     fi
+
     if $new_prefix_published; then
-        echo "    prefix ${new_prefix}/${new_prefix_len}"
-        echo "    {"
-        echo "        AdvOnLink on;"
-        echo "        AdvAutonomous on;"
-        echo "        AdvRouterAddr off;"
-        echo "        AdvPreferredLifetime ${new_pltime};"
-        echo "        AdvValidLifetime ${new_vltime};"
-        echo "    };"
+    logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
+    prefix ${new_prefix}/${new_prefix_len}
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+        AdvPreferredLifetime ${new_pltime};
+        AdvValidLifetime ${new_vltime};
+    };
+EOF
     fi
-)
+
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
 };
 EOF
-    )
 
-    sudo tee "${RADVD_CONF}" > /dev/null << EOF
-$radvd_config
-EOF
 }
 
 
