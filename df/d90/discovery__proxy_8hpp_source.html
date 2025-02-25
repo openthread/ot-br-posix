@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-277c9e0</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-be83abe</span>
    </div>
   </td>
  </tr>
@@ -147,38 +147,42 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    }</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    enum : uint32_t</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    {</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>        kServiceTtlCapLimit = 10, <span class="comment">// TTL cap limit for Discovery Proxy (in seconds).</span></div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    };</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keyword">static</span> <span class="keywordtype">void</span>        OnDiscoveryProxySubscribe(<span class="keywordtype">void</span> *aContext, <span class="keyword">const</span> <span class="keywordtype">char</span> *aFullName);</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keywordtype">void</span>               OnDiscoveryProxySubscribe(<span class="keyword">const</span> <span class="keywordtype">char</span> *aSubscription);</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keyword">static</span> <span class="keywordtype">void</span>        OnDiscoveryProxyUnsubscribe(<span class="keywordtype">void</span> *aContext, <span class="keyword">const</span> <span class="keywordtype">char</span> *aFullName);</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keywordtype">void</span>               OnDiscoveryProxyUnsubscribe(<span class="keyword">const</span> <span class="keywordtype">char</span> *aSubscription);</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keywordtype">int</span>                GetServiceSubscriptionCount(<span class="keyword">const</span> <a class="code hl_struct" href="../../d1/de1/structDnsNameInfo.html">DnsNameInfo</a> &amp;aNameInfo) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keyword">static</span> std::string TranslateDomain(<span class="keyword">const</span> std::string &amp;aName, <span class="keyword">const</span> std::string &amp;aTargetDomain);</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keywordtype">void</span>               OnServiceDiscovered(<span class="keyword">const</span> std::string                             &amp;aSubscription,</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                                           <span class="keyword">const</span> Mdns::Publisher::DiscoveredInstanceInfo &amp;aInstanceInfo);</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordtype">void</span> OnHostDiscovered(<span class="keyword">const</span> std::string &amp;aHostName, <span class="keyword">const</span> Mdns::Publisher::DiscoveredHostInfo &amp;aHostInfo);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keyword">static</span> uint32_t CapTtl(uint32_t aTtl);</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keywordtype">void</span> Start(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="keywordtype">void</span> Stop(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="keywordtype">bool</span> IsEnabled(<span class="keywordtype">void</span>)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> mIsEnabled; }</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    <span class="keyword">using </span>AddressList = Mdns::Publisher::AddressList;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    enum : uint32_t</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    {</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>        kServiceTtlCapLimit = 10, <span class="comment">// TTL cap limit for Discovery Proxy (in seconds).</span></div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    };</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keyword">static</span> <span class="keywordtype">void</span>        OnDiscoveryProxySubscribe(<span class="keywordtype">void</span> *aContext, <span class="keyword">const</span> <span class="keywordtype">char</span> *aFullName);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keywordtype">void</span>               OnDiscoveryProxySubscribe(<span class="keyword">const</span> <span class="keywordtype">char</span> *aSubscription);</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keyword">static</span> <span class="keywordtype">void</span>        OnDiscoveryProxyUnsubscribe(<span class="keywordtype">void</span> *aContext, <span class="keyword">const</span> <span class="keywordtype">char</span> *aFullName);</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keywordtype">void</span>               OnDiscoveryProxyUnsubscribe(<span class="keyword">const</span> <span class="keywordtype">char</span> *aSubscription);</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keywordtype">int</span>                GetServiceSubscriptionCount(<span class="keyword">const</span> <a class="code hl_struct" href="../../d1/de1/structDnsNameInfo.html">DnsNameInfo</a> &amp;aNameInfo) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="keyword">static</span> std::string TranslateDomain(<span class="keyword">const</span> std::string &amp;aName, <span class="keyword">const</span> std::string &amp;aTargetDomain);</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordtype">void</span>               OnServiceDiscovered(<span class="keyword">const</span> std::string                             &amp;aSubscription,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                                           <span class="keyword">const</span> Mdns::Publisher::DiscoveredInstanceInfo &amp;aInstanceInfo);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    <span class="keywordtype">void</span> OnHostDiscovered(<span class="keyword">const</span> std::string &amp;aHostName, <span class="keyword">const</span> Mdns::Publisher::DiscoveredHostInfo &amp;aHostInfo);</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keyword">static</span> uint32_t CapTtl(uint32_t aTtl);</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> FilterLinkLocalAddresses(<span class="keyword">const</span> AddressList &amp;aAddrList, AddressList &amp;aFilteredList);</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    Host::RcpHost   &amp;mHost;</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    Mdns::Publisher &amp;mMdnsPublisher;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordtype">bool</span>             mIsEnabled;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    uint64_t         mSubscriberId = 0;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>};</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>} <span class="comment">// namespace Dnssd</span></div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>} <span class="comment">// namespace otbr</span></div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_ENABLE_DNSSD_DISCOVERY_PROXY</span></div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_DISCOVERY_PROXY_HPP_</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keywordtype">void</span> Start(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="keywordtype">void</span> Stop(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="keywordtype">bool</span> IsEnabled(<span class="keywordtype">void</span>)<span class="keyword"> const </span>{ <span class="keywordflow">return</span> mIsEnabled; }</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    Host::RcpHost   &amp;mHost;</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    Mdns::Publisher &amp;mMdnsPublisher;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    <span class="keywordtype">bool</span>             mIsEnabled;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    uint64_t         mSubscriberId = 0;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>};</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>} <span class="comment">// namespace Dnssd</span></div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_ENABLE_DNSSD_DISCOVERY_PROXY</span></div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_DISCOVERY_PROXY_HPP_</span></div>
 <div class="ttc" id="aclassNonCopyable_html"><div class="ttname"><a href="../../dc/d3c/classNonCopyable.html">NonCopyable</a></div><div class="ttdef"><b>Definition</b> code_utils.hpp:190</div></div>
 <div class="ttc" id="acode__utils_8hpp_html_a42e32454ca5e456d5ce5a260c735abed"><div class="ttname"><a href="../../da/d7b/code__utils_8hpp.html#a42e32454ca5e456d5ce5a260c735abed">VerifyOrExit</a></div><div class="ttdeci">#define VerifyOrExit(aCondition,...)</div><div class="ttdef"><b>Definition</b> code_utils.hpp:113</div></div>
 <div class="ttc" id="acommon_2dns__utils_8hpp_html"><div class="ttname"><a href="../../d9/da9/common_2dns__utils_8hpp.html">dns_utils.hpp</a></div></div>
