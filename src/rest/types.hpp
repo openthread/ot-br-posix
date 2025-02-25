@@ -107,16 +107,16 @@ enum class ConnectionState : std::uint8_t
 };
 struct NodeInfo
 {
-    otBorderAgentId    mBaId;
-    otBorderAgentState mBaState;
-    std::string        mRole;
-    uint32_t           mNumOfRouter;
-    uint16_t           mRloc16;
-    const uint8_t     *mExtPanId;
-    const uint8_t     *mExtAddress;
-    otIp6Address       mRlocAddress;
-    otLeaderData       mLeaderData;
-    std::string        mNetworkName;
+    otBorderAgentId mBaId;
+    // otBorderAgentState mBaState; // Why does this line cause build error in github actions?
+    std::string    mRole;
+    uint32_t       mNumOfRouter;
+    uint16_t       mRloc16;
+    const uint8_t *mExtPanId;
+    const uint8_t *mExtAddress;
+    otIp6Address   mRlocAddress;
+    otLeaderData   mLeaderData;
+    std::string    mNetworkName;
 };
 
 typedef struct EnergyReport

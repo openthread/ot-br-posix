@@ -1138,10 +1138,10 @@ void NetworkDiagHandler::UpdateNodeItem(ThisThreadDevice *thisItem)
     otDeviceRole role;
 
     error = otBorderAgentGetId(mInstance, &thisItem->mNodeInfo.mBaId);
-    if (error == OT_ERROR_NONE)
-    {
-        thisItem->mNodeInfo.mBaState = otBorderAgentGetState(mInstance);
-    }
+    // if (error == OT_ERROR_NONE)
+    // {
+    //     thisItem->mNodeInfo.mBaState = otBorderAgentGetState(mInstance);
+    // }
     error = otThreadGetLeaderData(mInstance, &thisItem->mNodeInfo.mLeaderData);
     if (error != OT_ERROR_NONE)
     {

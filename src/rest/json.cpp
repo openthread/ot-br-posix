@@ -502,10 +502,10 @@ cJSON *Node2Json(const NodeInfo &aNode, std::set<std::string> aFieldset)
     {
         cJSON_AddItemToObject(node, KEY_BORDERAGENTID, Bytes2HexJson(aNode.mBaId.mId, sizeof(aNode.mBaId)));
     }
-    if (hasKey(aFieldset, KEY_BORDERAGENTSTATE))
-    {
-        cJSON_AddItemToObject(node, KEY_BORDERAGENTSTATE, cJSON_CreateNumber(aNode.mBaState));
-    }
+    // if (hasKey(aFieldset, KEY_BORDERAGENTSTATE))
+    // {
+    //     cJSON_AddItemToObject(node, KEY_BORDERAGENTSTATE, cJSON_CreateNumber(aNode.mBaState));
+    // }
     if (hasKey(aFieldset, KEY_STATE))
     {
         cJSON_AddItemToObject(node, KEY_STATE, cJSON_CreateString(aNode.mRole.c_str()));
