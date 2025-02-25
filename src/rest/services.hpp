@@ -37,6 +37,9 @@ namespace rest {
 
 class ActionsList;
 class CommissionerManager;
+class DevicesCollection;
+class DiagnosticsCollection;
+class NetworkDiagHandler;
 
 struct ServiceList;
 
@@ -79,6 +82,12 @@ public:
     ActionsList &GetActionsList(void);
 
     CommissionerManager &GetCommissionerManager(void);
+
+    DevicesCollection &GetDevicesCollection(void);
+
+    DiagnosticsCollection &GetDiagnosticsCollection(void);
+
+    NetworkDiagHandler &GetNetworkDiagHandler(void);
 
 private:
     otInstance  *mInstance;

@@ -41,7 +41,7 @@ def assert_is_ipv6_address(string):
     assert (type(ipaddress.ip_address(string)) is ipaddress.IPv6Address)
 
 def get_data_from_url(url, result, index):
-    response = urllib.request.urlopen(urllib.request.Request(url))
+    response = urllib.request.urlopen(urllib.request.Request(url, headers={'Accept': 'application/json'}))
     body = response.read()
     data = json.loads(body)
     result[index] = data
@@ -86,11 +86,12 @@ def diagnostics_check(data):
         expected_keys = [
             "extAddress", "rloc16", "mode", "connectivity", "route",
             "leaderData", "networkData", "ip6AddressList", "macCounters",
-            "childTable", "channelPages"
+            "childTable", "channelPages", "maxChildTimeout", "version",
+            "vendorName", "vendorModel", "vendorSwVersion", "threadStackVersion"
         ]
         expected_value_type = [
-            str, int, dict, dict, dict, dict, str, list, dict, list,
-            str
+            str, str, dict, dict, dict, dict, str, list, dict, list,
+            str, int, int, str, str, str, str
         ]
         expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
@@ -471,7 +472,7 @@ def main():
     node_num_of_router_test(200)
     node_ext_panid_test(200)
     node_coprocessor_version_test(200)
-    diagnostics_test(20)
+    # diagnostics_test(20)  # partly replaced with restjsonapi tests
     error_test(10)
 
     return 0

@@ -206,6 +206,25 @@ std::string Node2JsonString(const NodeInfo &aNode);
 std::string SparseNode2JsonString(const NodeInfo &aNode, std::set<std::string> aFieldset);
 
 /**
+ * This method formats a vector of diagnostic objects to a Json array and serialize it to a string.
+ *
+ * @param[in] aDiagSet  A vector of diagnostic objects.
+ * @param[in] aChildTable  A vector of diagnostic objects.
+ * @param[in] aChildIps  A vector of diagnostic objects.
+ * @param[in] aNeighbors  A vector of diagnostic objects.
+ * @param[in] aDeviceTlvSetExtension  A vector of diagnostic objects.
+ *
+ * @returns A string of serialized Json array.
+ *
+ */
+std::string DiagSet2JsonString(const std::vector<otNetworkDiagTlv>         &aDiagSet,
+                               std::vector<otMeshDiagChildEntry>            aChildTable,
+                               std::vector<DeviceIp6Addrs>                  aChildIps,
+                               std::vector<otMeshDiagRouterNeighborEntry>   aNeighbors,
+                               const std::vector<networkDiagTlvExtensions> &aDeviceTlvSetExtension,
+                               std::set<std::string>                        aFieldset);
+
+/**
  * This method formats a pre-formated Json string of attributes to a Json:Api item string.
  *
  * @param[in] aId  A string of a Json:Api compliant Id.
@@ -253,6 +272,50 @@ std::string AddDevice2JsonString(const std::string &aEui, const std::string &aPs
 std::string SparseAddDevice2JsonString(const std::string    &aEui,
                                        const std::string    &aPskd,
                                        std::set<std::string> aFieldset);
+
+/**
+ * This method formats a EnergyScanReport to a Json string and serialize it to a string.
+ *
+ * @param[in] aReport  A EnergyScanReport object.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string EnergyReport2JsonString(const EnergyScanReport &aReport);
+
+/**
+ * This method formats a EnergyScanReport to a Json object and serialize the key-value pairs defined in aFieldset to a
+ * string.
+ *
+ * @param[in] aNode  A EnergyScanReport object.
+ * @param[in] aFieldset  A set of strings comprising requested keys. A empty set defaults to any key.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string SparseEnergyReport2JsonString(const EnergyScanReport &aReport, std::set<std::string> aFieldset);
+
+/**
+ * This method formats a device info to a Json object and serialize it to a string.
+ *
+ * @param[in] aDeviceInfo  A DeviceInfo object.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string DeviceInfo2JsonString(const DeviceInfo &aDeviceInfo);
+
+/**
+ * This method formats a device info to a Json object and serialize the key-value pairs defined in aFieldset to a
+ * string.
+ *
+ * @param[in] aDeviceInfo  A DeviceInfo object.
+ * @param[in] aFieldset  A set of strings comprising requested keys. A empty set defaults to any key.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string SparseDeviceInfo2JsonString(const DeviceInfo &aDeviceInfo, std::set<std::string> aFieldset);
 
 /**
  * This method formats an Ipv6Address to a Json string and serialize it to a string.

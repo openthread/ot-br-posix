@@ -129,6 +129,102 @@ const CommissionerManager::JoinerEntry *CommissionerManager::FindJoiner(const ot
     return entry;
 }
 
+otError CommissionerManager::StartEnergyScan(uint32_t            aChannelMask,
+                                             uint8_t             aCount,
+                                             uint16_t            aPeriod,
+                                             uint16_t            aScanDuration,
+                                             const otIp6Address *aAddress)
+{
+    otError         error = OT_ERROR_NONE;
+    std::bitset<32> mask(aChannelMask);
+
+    VerifyOrExit(mEnergyScanTimeout <= Clock::now(), error = OT_ERROR_ALREADY);
+    VerifyOrExit(mEnergyScanState == kEnergyScanStateFree, error = OT_ERROR_ALREADY);
+    VerifyOrExit(aChannelMask != 0, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aAddress != nullptr, error = OT_ERROR_INVALID_ARGS);
+
+    mEnergyScanState       = kEnergyScanStateWaiting;
+    mEnergyScanChannelMask = aChannelMask;
+    mEnergyScanCount       = aCount;
+    mEnergyScanPeriod      = aPeriod;
+    mEnergyScanDuration    = aScanDuration;
+    memcpy(&mEnergyScanAddress.mFields.m8[0], &aAddress->mFields.m8[0], OT_IP6_ADDRESS_SIZE);
+
+    mEnergyScanReport.mReports.clear();
+    for (size_t i = 0; i < mask.size(); i++)
+    {
+        if (!mask[i])
+        {
+            continue;
+        }
+
+        mEnergyScanReport.mReports.emplace_back(
+            EnergyReport{.mChannel = static_cast<uint8_t>(i), .mMaxRssi = std::vector<int8_t>()});
+    }
+    memcpy(&mEnergyScanReport.mOrigin.mFields.m8[0], &aAddress->mFields.mComponents.mIid.mFields.m8[0],
+           OT_IP6_IID_SIZE);
+
+    if (mState == OT_COMMISSIONER_STATE_ACTIVE)
+    {
+        SendEnergyScan();
+    }
+    else
+    {
+        TryActivate();
+    }
+
+exit:
+    return error;
+}
+
+otError CommissionerManager::GetEnergyScanStatus(void)
+{
+    otError error = OT_ERROR_NONE;
+
+    switch (mEnergyScanState)
+    {
+    case kEnergyScanStateFree:
+        error = OT_ERROR_INVALID_STATE;
+        break;
+
+    case kEnergyScanStateWaiting:
+        error = OT_ERROR_PENDING;
+        break;
+
+    case kEnergyScanStateSent:
+        if (Clock::now() < mEnergyScanTimeout)
+        {
+            error = OT_ERROR_PENDING;
+        }
+        else
+        {
+            mEnergyScanState = kEnergyScanStateReady;
+            error            = OT_ERROR_NONE;
+        }
+        break;
+
+    case kEnergyScanStateReady:
+        error = OT_ERROR_NONE;
+        break;
+
+    case kEnergyScanStateFailed:
+        error = OT_ERROR_FAILED;
+        break;
+    }
+
+    return error;
+}
+
+const EnergyScanReport &CommissionerManager::GetEnergyScanResult(void) const
+{
+    return mEnergyScanReport;
+}
+
+void CommissionerManager::StopEnergyScan()
+{
+    mEnergyScanState = kEnergyScanStateFree;
+}
+
 void CommissionerManager::Process(void)
 {
     if (ShouldActivate())
@@ -213,6 +309,11 @@ bool CommissionerManager::ShouldActivate(void) const
         }
     }
 
+    if (mEnergyScanState == kEnergyScanStateWaiting || mEnergyScanState == kEnergyScanStateSent)
+    {
+        ExitNow(shouldActivate = true);
+    }
+
 exit:
     return shouldActivate;
 }
@@ -225,6 +326,31 @@ void CommissionerManager::TryActivate(void)
     }
 }
 
+void CommissionerManager::SendEnergyScan(void)
+{
+    otError      error   = OT_ERROR_NONE;
+    Milliseconds timeout = kEnergyScanNetDelay;
+
+    VerifyOrExit(mEnergyScanState == kEnergyScanStateWaiting);
+
+    SuccessOrExit(error = otCommissionerEnergyScan(mInstance, mEnergyScanChannelMask, mEnergyScanCount,
+                                                   mEnergyScanPeriod, mEnergyScanDuration, &mEnergyScanAddress,
+                                                   &CommissionerManager::EnergyScanReportCallback, this));
+
+    mEnergyScanState = kEnergyScanStateSent;
+
+    timeout += GetEnergyScanMinDelay(mEnergyScanChannelMask, mEnergyScanCount, mEnergyScanPeriod, mEnergyScanDuration);
+    mEnergyScanTimeout = Clock::now() + timeout;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to start energy scan: %s", otThreadErrorToString(error));
+    }
+
+    return;
+}
+
 void CommissionerManager::HandleCommissionerStateCallback(otCommissionerState aState)
 {
     if (mState != OT_COMMISSIONER_STATE_ACTIVE && aState == OT_COMMISSIONER_STATE_ACTIVE)
@@ -232,6 +358,16 @@ void CommissionerManager::HandleCommissionerStateCallback(otCommissionerState aS
         for (JoinerEntry &joiner : mJoiners)
         {
             IgnoreError(joiner.Register(mInstance));
+        }
+
+        SendEnergyScan();
+    }
+
+    if (aState == OT_COMMISSIONER_STATE_DISABLED)
+    {
+        if (mEnergyScanState == kEnergyScanStateSent)
+        {
+            mEnergyScanState = kEnergyScanStateFailed;
         }
     }
 
@@ -306,6 +442,30 @@ exit:
     return;
 }
 
+void CommissionerManager::HandleEnergyScanReportCallback(uint32_t       aChannelMask,
+                                                         const uint8_t *aEnergyList,
+                                                         uint8_t        aEnergyListLength)
+{
+    std::bitset<32> mask(aChannelMask);
+    size_t          reportCount = aEnergyListLength / mask.count();
+
+    VerifyOrExit(mEnergyScanState == kEnergyScanStateSent);
+    VerifyOrExit(mEnergyScanChannelMask == aChannelMask);
+    VerifyOrExit(aEnergyListLength == reportCount * mask.count());
+
+    for (size_t i = 0; i < reportCount; i++)
+    {
+        for (size_t channel = 0; channel < mask.count(); channel++)
+        {
+            int8_t rssi = aEnergyList[(i * mask.count()) + channel];
+            mEnergyScanReport.mReports[channel].mMaxRssi.push_back(rssi);
+        }
+    }
+
+exit:
+    return;
+}
+
 bool CommissionerManager::IsEui64Null(const otExtAddress &aEui64)
 {
     bool matches = true;
@@ -335,6 +495,15 @@ void CommissionerManager::JoinerCallback(otCommissionerJoinerEvent aEvent,
 {
     CommissionerManager *manager = reinterpret_cast<CommissionerManager *>(aContext);
     manager->HandleCommissionerJoinerCallback(aEvent, aJoinerInfo, aJoinerId);
+}
+
+void CommissionerManager::EnergyScanReportCallback(uint32_t       aChannelMask,
+                                                   const uint8_t *aEnergyList,
+                                                   uint8_t        aEnergyListLength,
+                                                   void          *aContext)
+{
+    CommissionerManager *manager = reinterpret_cast<CommissionerManager *>(aContext);
+    manager->HandleEnergyScanReportCallback(aChannelMask, aEnergyList, aEnergyListLength);
 }
 
 const char *CommissionerManager::JoinerStateToString(JoinerState aState)
