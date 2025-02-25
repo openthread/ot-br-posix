@@ -130,6 +130,8 @@ public:
     CommissionerManager(otInstance *aInstance)
         : mInstance{aInstance}
         , mJoiners{}
+        , mEnergyScanState{kEnergyScanStateFree}
+        , mEnergyScanTimeout{}
         , mState{OT_COMMISSIONER_STATE_DISABLED}
     {
     }
@@ -174,6 +176,70 @@ public:
     const JoinerEntry *FindJoiner(const otExtAddress &aEui64);
 
     /**
+     * Calculates the minimum required delay before a energy scan may return results.
+     *
+     * @note This delay is entirely derived from the specification defined required delays
+     *       and does not include any other heuristics.
+     *
+     * @param[in]  aChannelMask   The channel mask
+     * @param[in]  aCount         The number of energy measurements per channel.
+     * @param[in]  aPeriod        The time between energy measurements (milliseconds).
+     * @param[in]  aScanDuration  The scan duration for each energy measurement (milliseconds).
+     *
+     * @retval  The minimum delay until the energy scan may return results.
+     */
+    static inline Milliseconds GetEnergyScanMinDelay(uint32_t aChannelMask,
+                                                     uint8_t  aCount,
+                                                     uint16_t aPeriod,
+                                                     uint16_t aScanDuration)
+    {
+        // 1000ms from SCAN_DELAY + 500ms from MGMT_ED_REPORT.ans delay
+        return Milliseconds(1500 + std::bitset<32>(aChannelMask).count() * aCount *
+                                       (static_cast<uint32_t>(aPeriod) + aScanDuration));
+    }
+
+    /**
+     * Starts a new energy scan.
+     *
+     * If a energy scan is currently in progress or we are still within the timeout
+     * of a previous energy scan this fuction return OT_ERROR_INVALID_STATE.
+     *
+     * Any started energy scan must always be finalized by calling StopEnergyScan.
+     */
+    otError StartEnergyScan(uint32_t            aChannelMask,
+                            uint8_t             aCount,
+                            uint16_t            aPeriod,
+                            uint16_t            aScanDuration,
+                            const otIp6Address *aAddress);
+
+    /**
+     * Returns the status of the current energy scan.
+     *
+     * @retval OT_ERROR_NONE          The energy scan has completed.
+     * @retval OT_ERROR_PENDING       The energy scan has not yet completed.
+     * @retval OT_ERROR_FAILED        The commissioner was lost before the energy scan could be completed.
+     * @retval OT_ERROR_INVALID_STATE There is no current energy scan.
+     */
+    otError GetEnergyScanStatus(void);
+
+    /**
+     * Returns the currently received energy scan results.
+     *
+     * If the energy scan has not yet completed or failed additiona reports may
+     * be added to the result in the future.
+     *
+     * Result must not be used after StopEnergyScan is called.
+     */
+    const EnergyScanReport &GetEnergyScanResult(void) const;
+
+    /**
+     * Stops the current energy scan and resets the results.
+     *
+     * Must always be called for any started energy scan.
+     */
+    void StopEnergyScan(void);
+
+    /**
      * Processes the commissioner manager.
      */
     void Process(void);
@@ -184,13 +250,30 @@ public:
     static const char *JoinerStateToString(JoinerState aState);
 
 private:
+    static constexpr uint8_t      kMaxEnergyScanResults = 26;
+    static constexpr Milliseconds kEnergyScanNetDelay =
+        Milliseconds(1000); // Additive constant for the energy scan timeout to account for network delay
+
+    enum EnergyScanState
+    {
+        kEnergyScanStateFree,
+        kEnergyScanStateWaiting,
+        kEnergyScanStateSent,
+        kEnergyScanStateReady,
+        kEnergyScanStateFailed, // Set if the commissioner is lost
+    };
+
     bool ShouldActivate(void) const;
     void TryActivate(void);
+
+    void SendEnergyScan(void);
 
     void HandleCommissionerStateCallback(otCommissionerState aState);
     void HandleCommissionerJoinerCallback(otCommissionerJoinerEvent aEvent,
                                           const otJoinerInfo       *aJoinerInfo,
                                           const otExtAddress       *aJoinerId);
+
+    void HandleEnergyScanReportCallback(uint32_t aChannelMask, const uint8_t *aEnergyList, uint8_t aEnergyListLength);
 
     static bool IsEui64Null(const otExtAddress &aEui64);
 
@@ -200,9 +283,28 @@ private:
                                const otExtAddress       *aJoinerId,
                                void                     *aContext);
 
+    static void EnergyScanReportCallback(uint32_t       aChannelMask,
+                                         const uint8_t *aEnergyList,
+                                         uint8_t        aEnergyListLength,
+                                         void          *aContext);
+
     otInstance *mInstance;
 
     std::vector<JoinerEntry> mJoiners;
+
+    EnergyScanState mEnergyScanState;
+    uint32_t        mEnergyScanChannelMask;
+    uint8_t         mEnergyScanCount;
+    uint16_t        mEnergyScanPeriod;
+    uint16_t        mEnergyScanDuration;
+    otIp6Address    mEnergyScanAddress;
+
+    Timepoint
+        mEnergyScanTimeout; // Timeout based on energy scan parameters alone. Blocks new request until after this
+                            // expires. Thread specifiation requires a response delay of: count * num channels * (scan
+                            // duration + period) + 500ms We add an additional constant to account for network delay.
+
+    EnergyScanReport mEnergyScanReport;
 
     otCommissionerState mState; // The current commissioner state from our perspective.
                                 // If we do not own the commissioner this is OT_COMMISSIONER_STATE_DISABLE

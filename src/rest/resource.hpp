@@ -53,6 +53,8 @@ Include necessary headers for OpenThread functions, REST utilities, and JSON pro
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
+#include "rest/rest_devices_coll.hpp"
+#include "rest/rest_diagnostics_coll.hpp"
 #include "rest/services.hpp"
 #include "utils/thread_helper.hpp"
 
@@ -168,15 +170,6 @@ private:
     void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
     void GetCoprocessorVersion(Response &aResponse) const;
 
-    void DeleteOutDatedDiagnostic(void);
-    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
-
-    static void DiagnosticResponseHandler(otError              aError,
-                                          otMessage           *aMessage,
-                                          const otMessageInfo *aMessageInfo,
-                                          void                *aContext);
-    void        DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
-
     /**
      * Redirects requests from '/api/{collection}/{collectionItem}' to the corresponding collection.
      *
@@ -184,6 +177,13 @@ private:
      * @returns       A string containing the redirected url.
      */
     std::string redirectToCollection(Request &aRequest);
+
+    /**
+     * Rewrites the URL in the request to redirect to the corresponding deviceItem.
+     *
+     * @param[in,out] aRequest  A request instance containing the URL to be rewritten.
+     */
+    void redirectNodeToDeviceItem(Request &aRequest);
 
     /**
      * Handles all requests received on 'api/action'. [POST|GET|DELETE]
@@ -227,16 +227,91 @@ private:
      */
     void ApiActionDeleteHandler(const Request &aRequest, Response &aResponse);
 
+    /**
+     * Handles all requests received on 'api/diagnostics'. [GET|DELETE]
+     *
+     * Routes GET, and DELETE requests to their respective handlers.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated based on the request.
+     */
+    void ApiDiagnosticHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Handles the GET request received on 'api/diagnostics'.
+     *
+     * This method returns the collection of diagnostics. The items in this collection are created
+     * as a result of a POST request with type 'getNetworkDiagnosticTask' to 'api/actions'.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated with the collection of diagnostics.
+     */
+    void ApiDiagnosticGetHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Handles the DELETE request received on 'api/diagnostics'.
+     *
+     * This method clears all items in the collection of diagnostics.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated to confirm the deletion.
+     */
+    void ApiDiagnosticDeleteHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Handles all requests received on 'api/devices'. [GET|POST|DELETE]
+     *
+     * Routes POST, GET, and DELETE requests to their respective handlers.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated based on the request.
+     */
+    void ApiDeviceHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Handles the GET request received on 'api/devices'.
+     *
+     * This method returns the collection of devices.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated with the collection of devices.
+     */
+    void ApiDeviceGetHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Handles the DELETE request received on 'api/devices'.
+     *
+     * This method clears all items in the collection of devices.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated to confirm the deletion of the device
+     * collection.
+     */
+    void ApiDeviceDeleteHandler(const Request &aRequest, Response &aResponse);
+
+    /*********************************************************************************************************************
+     * TODO: redirect a POST request from api/devices to actions to fill up the device collection
+     *********************************************************************************************************************/
+    /**
+     * Handles the POST request received on 'api/devices'.
+     *
+     * This method discovers devices in the network and updates the collection of devices.
+     *
+     * @param[in]  aRequest   A request instance containing details for device discovery.
+     * @param[out] aResponse  A response instance that will be populated to confirm the update of the device collection.
+     */
+    void ApiDevicePostHandler(const Request &aRequest, Response &aResponse);
+    void ApiDevicePostCallbackHandler(const Request &aRequest, Response &aResponse);
+
     otInstance *mInstance;
     RcpHost    *mHost;
 
     std::unordered_map<std::string, ResourceHandler>         mResourceMap;
     std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
 
-    std::unordered_map<std::string, DiagInfo> mDiagSet;
-
     Services mServices;
-};
+
+}; // class Resource
 
 } // namespace rest
 } // namespace otbr

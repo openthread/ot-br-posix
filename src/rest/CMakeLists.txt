@@ -29,15 +29,22 @@
 add_library(otbr-rest
     actions/action.cpp
     actions/add_thread_device.cpp
+    actions/energy_scan.cpp
     actions/handler.cpp
+    actions/network_diagnostic.cpp
+    actions/reset_diagnostic_counters.cpp
     actions_list.cpp
     commissioner_manager.cpp
     connection.cpp
+    diagnostic_types.cpp
     json.cpp
+    network_diag_handler.cpp
     parser.cpp
     request.cpp
     resource.cpp
     response.cpp
+    rest_devices_coll.cpp
+    rest_diagnostics_coll.cpp
     rest_generic_collection.cpp
     rest_server_common.cpp
     rest_web_server.cpp

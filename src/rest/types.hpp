@@ -107,23 +107,109 @@ enum class ConnectionState : std::uint8_t
 };
 struct NodeInfo
 {
-    otBorderAgentId mBaId;
-    // otBorderAgentState mBaState;
-    std::string    mRole;
-    uint32_t       mNumOfRouter;
-    uint16_t       mRloc16;
-    const uint8_t *mExtPanId;
-    const uint8_t *mExtAddress;
-    otIp6Address   mRlocAddress;
-    otLeaderData   mLeaderData;
-    std::string    mNetworkName;
+    otBorderAgentId    mBaId;
+    otBorderAgentState mBaState;
+    std::string        mRole;
+    uint32_t           mNumOfRouter;
+    uint16_t           mRloc16;
+    const uint8_t     *mExtPanId;
+    const uint8_t     *mExtAddress;
+    otIp6Address       mRlocAddress;
+    otLeaderData       mLeaderData;
+    std::string        mNetworkName;
 };
+
+typedef struct EnergyReport
+{
+    uint8_t             mChannel;
+    std::vector<int8_t> mMaxRssi;
+} EnergyReport;
+
+typedef struct EnergyScanReport
+{
+    otIp6InterfaceIdentifier  mOrigin; // deviceId ml-eidiid
+    std::vector<EnergyReport> mReports;
+} EnergyScanReport;
 
 struct DiagInfo
 {
     steady_clock::time_point      mStartTime;
     std::vector<otNetworkDiagTlv> mDiagContent;
 };
+
+enum class DeviceSelfType
+{
+    kNone,
+    kThisDevice,
+    kThisDeviceParent,
+};
+
+struct DeviceIp6Addrs // item of TLV 30
+{
+    uint16_t                  mRloc16;
+    std::vector<otIp6Address> mIp6Addrs;
+};
+
+struct RouterNeighborLink
+{
+    uint8_t mRouterId;
+    uint8_t mLinkQuality;
+};
+
+struct RouterInfo
+{
+    otExtAddress   mExtAddress;
+    uint16_t       mRloc16;
+    uint8_t        mRouterId;
+    uint16_t       mVersion;
+    DeviceSelfType mSelfType;
+    bool           mIsLeader;
+    bool           mIsBorderRouter;
+
+    std::vector<RouterNeighborLink>            mNeighborLinks;
+    std::vector<otMeshDiagRouterNeighborEntry> mNeighborLinksEntry; // TLV 31
+    std::vector<otMeshDiagChildInfo>           mChildren;
+    std::vector<otMeshDiagChildEntry>          mChildrenEntry;    // TLV 29
+    std::vector<DeviceIp6Addrs>                mChildrenIp6Addrs; // TLV 30
+    std::vector<otIp6Address>                  mIpAddresses;
+};
+
+/**
+ * Represents static device infos
+ *
+ */
+struct DeviceInfo
+{
+    steady_clock::time_point mUpdateTime;
+
+    otExtAddress     mExtAddress;
+    bool             mNeedsUpdate;
+    std::string      mRole;
+    otExtAddress     mMlEidIid;
+    otExtAddress     mEui64;
+    otIp6Address     mIp6Addr;
+    std::string      mHostName = "";
+    otLinkModeConfig mode;
+};
+
+// custom Tlvs
+#define NETWORK_DIAGNOSTIC_TLVEXT_BR_COUNTER 255
+#define NETWORK_DIAGNOSTIC_TLVEXT_SERVICEROLEFLAGS 254
+typedef struct networkDiagTlvExtensions
+{
+    uint8_t mType; // custom Tlvs
+    union
+    {
+        otBorderRoutingCounters mBrCounters;
+        struct
+        {
+            bool mIsLeader;
+            bool mHostsService;
+            bool mIsPrimaryBBR;
+            bool mIsBorderRouter;
+        } mServiceRoleFlags;
+    } mData;
+} networkDiagTlvExtensions;
 
 } // namespace rest
 } // namespace otbr

@@ -121,6 +121,27 @@ exit:
     return ret;
 }
 
+/**
+ * @brief Check if aKey or aKey. is in aSet.
+ *
+ * @param aSet A set of strings representing keys.
+ * @param aKey A potential toplevel key.
+ * @return true if 'aKey' or 'aKey.' is in aSet
+ * @return false Otherwise.
+ */
+static bool hasToplevelKey(std::set<std::string> aSet, std::string aKey)
+{
+    return (hasKey(aSet, aKey) || (hasKey(aSet, aKey + ".")));
+}
+
+static cJSON *MeshChildTable2Json(const std::vector<otMeshDiagChildEntry> &aChildren);
+static cJSON *MeshRouterNeighbors2Json(const std::vector<otMeshDiagRouterNeighborEntry> &aNeighbors);
+
+static cJSON *MeshChildIp62Json(const DeviceIp6Addrs &aChildIp6Addrs);
+static cJSON *MeshChildrenIp62Json(const std::vector<DeviceIp6Addrs> &aChildrenIp6Addrs);
+
+// static cJSON *JsonApiMetaDiagCollection2cJSON(uint16_t router_count, uint16_t children_count, uint16_t no_response);
+
 static cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
 {
     char hex[2 * aLength + 1];
@@ -377,6 +398,31 @@ static cJSON *MacCounters2Json(const otNetworkDiagMacCounters &aMacCounters)
     return macCounters;
 }
 
+static cJSON *MleCounters2Json(const otNetworkDiagMleCounters &aMleCounters)
+{
+    cJSON *mleCounters = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(mleCounters, "radioDisabledCount", cJSON_CreateNumber(aMleCounters.mDisabledRole));
+    cJSON_AddItemToObject(mleCounters, "detachedRoleCount", cJSON_CreateNumber(aMleCounters.mDetachedRole));
+    cJSON_AddItemToObject(mleCounters, "childRoleCount", cJSON_CreateNumber(aMleCounters.mChildRole));
+    cJSON_AddItemToObject(mleCounters, "routerRoleCount", cJSON_CreateNumber(aMleCounters.mRouterRole));
+    cJSON_AddItemToObject(mleCounters, "leaderRoleCount", cJSON_CreateNumber(aMleCounters.mLeaderRole));
+    cJSON_AddItemToObject(mleCounters, "attachAttemptsCount", cJSON_CreateNumber(aMleCounters.mAttachAttempts));
+    cJSON_AddItemToObject(mleCounters, "partIdChangesCount", cJSON_CreateNumber(aMleCounters.mPartitionIdChanges));
+    cJSON_AddItemToObject(mleCounters, "betterPartIdAttachAttemptsCount",
+                          cJSON_CreateNumber(aMleCounters.mBetterPartitionAttachAttempts));
+    cJSON_AddItemToObject(mleCounters, "newParentCount", cJSON_CreateNumber(aMleCounters.mParentChanges));
+
+    cJSON_AddItemToObject(mleCounters, "totalTrackingTime", cJSON_CreateNumber(aMleCounters.mTrackedTime));
+    cJSON_AddItemToObject(mleCounters, "radioDisabledTime", cJSON_CreateNumber(aMleCounters.mDisabledTime));
+    cJSON_AddItemToObject(mleCounters, "detachedRoleTime", cJSON_CreateNumber(aMleCounters.mDetachedTime));
+    cJSON_AddItemToObject(mleCounters, "childRoleTime", cJSON_CreateNumber(aMleCounters.mChildTime));
+    cJSON_AddItemToObject(mleCounters, "routerRoleTime", cJSON_CreateNumber(aMleCounters.mRouterTime));
+    cJSON_AddItemToObject(mleCounters, "leaderRoleTime", cJSON_CreateNumber(aMleCounters.mLeaderTime));
+
+    return mleCounters;
+}
+
 static cJSON *Connectivity2Json(const otNetworkDiagConnectivity &aConnectivity)
 {
     cJSON *connectivity = cJSON_CreateObject();
@@ -448,133 +494,6 @@ std::string IpAddr2JsonString(const otIp6Address &aAddress)
     return ret;
 }
 
-std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet)
-{
-    cJSON      *diagInfo          = cJSON_CreateArray();
-    cJSON      *diagInfoOfOneNode = nullptr;
-    cJSON      *addrList          = nullptr;
-    cJSON      *tableList         = nullptr;
-    std::string ret;
-    uint64_t    timeout;
-
-    for (auto diagItem : aDiagSet)
-    {
-        diagInfoOfOneNode = cJSON_CreateObject();
-        for (auto diagTlv : diagItem)
-        {
-            switch (diagTlv.mType)
-            {
-            case OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "extAddress",
-                                      Bytes2HexJson(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "rloc16", cJSON_CreateNumber(diagTlv.mData.mAddr16));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_MODE:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "mode", Mode2Json(diagTlv.mData.mMode));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_TIMEOUT:
-
-                timeout = static_cast<uint64_t>(diagTlv.mData.mTimeout);
-                cJSON_AddItemToObject(diagInfoOfOneNode, "timeout", cJSON_CreateNumber(timeout));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_CONNECTIVITY:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "connectivity",
-                                      Connectivity2Json(diagTlv.mData.mConnectivity));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_ROUTE:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "route", Route2Json(diagTlv.mData.mRoute));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_LEADER_DATA:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "leaderData", LeaderData2Json(diagTlv.mData.mLeaderData));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_NETWORK_DATA:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "networkData",
-                                      Bytes2HexJson(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST:
-
-                addrList = cJSON_CreateArray();
-
-                for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
-                {
-                    cJSON_AddItemToArray(addrList, IpAddr2Json(diagTlv.mData.mIp6AddrList.mList[i]));
-                }
-                cJSON_AddItemToObject(diagInfoOfOneNode, "ip6AddressList", addrList);
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_MAC_COUNTERS:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "macCounters", MacCounters2Json(diagTlv.mData.mMacCounters));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_BATTERY_LEVEL:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "batteryLevel",
-                                      cJSON_CreateNumber(diagTlv.mData.mBatteryLevel));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_SUPPLY_VOLTAGE:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "supplyVoltage",
-                                      cJSON_CreateNumber(diagTlv.mData.mSupplyVoltage));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE:
-
-                tableList = cJSON_CreateArray();
-
-                for (uint16_t i = 0; i < diagTlv.mData.mChildTable.mCount; ++i)
-                {
-                    cJSON_AddItemToArray(tableList, ChildTableEntry2Json(diagTlv.mData.mChildTable.mTable[i]));
-                }
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "childTable", tableList);
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_CHANNEL_PAGES:
-
-                cJSON_AddItemToObject(
-                    diagInfoOfOneNode, "channelPages",
-                    Bytes2HexJson(diagTlv.mData.mChannelPages.m8, diagTlv.mData.mChannelPages.mCount));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_MAX_CHILD_TIMEOUT:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "maxChildTimeout",
-                                      cJSON_CreateNumber(diagTlv.mData.mMaxChildTimeout));
-
-                break;
-            default:
-                break;
-            }
-        }
-        cJSON_AddItemToArray(diagInfo, diagInfoOfOneNode);
-    }
-
-    ret = Json2String(diagInfo);
-
-    cJSON_Delete(diagInfo);
-
-    return ret;
-}
-
 cJSON *Node2Json(const NodeInfo &aNode, std::set<std::string> aFieldset)
 {
     cJSON *node = cJSON_CreateObject();
@@ -583,10 +502,10 @@ cJSON *Node2Json(const NodeInfo &aNode, std::set<std::string> aFieldset)
     {
         cJSON_AddItemToObject(node, KEY_BORDERAGENTID, Bytes2HexJson(aNode.mBaId.mId, sizeof(aNode.mBaId)));
     }
-    // if (hasKey(aFieldset, KEY_BORDERAGENTSTATE))
-    // {
-    //     cJSON_AddItemToObject(node, KEY_BORDERAGENTSTATE, cJSON_CreateNumber(aNode.mBaState));
-    // }
+    if (hasKey(aFieldset, KEY_BORDERAGENTSTATE))
+    {
+        cJSON_AddItemToObject(node, KEY_BORDERAGENTSTATE, cJSON_CreateNumber(aNode.mBaState));
+    }
     if (hasKey(aFieldset, KEY_STATE))
     {
         cJSON_AddItemToObject(node, KEY_STATE, cJSON_CreateString(aNode.mRole.c_str()));
@@ -671,6 +590,281 @@ cJSON *brCounter2Json(const otBorderRoutingCounters *aBrCounters)
     return ret;
 }
 
+static cJSON *Diag2cJSON(const std::vector<otNetworkDiagTlv> &aDiagSet, std::set<std::string> aFieldset)
+{
+    cJSON   *diagInfoOfOneNode = cJSON_CreateObject();
+    cJSON   *addrList          = nullptr;
+    cJSON   *tableList         = nullptr;
+    uint64_t timeout;
+
+    for (auto diagTlv : aDiagSet)
+    {
+        switch (diagTlv.mType)
+        {
+        case OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS:
+            if (hasKey(aFieldset, KEY_EXTADDRESS))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_EXTADDRESS,
+                                      Bytes2HexJson(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS:
+            if (hasKey(aFieldset, KEY_RLOC16))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_RLOC16, Number2HexJson(diagTlv.mData.mAddr16));
+            }
+
+            if ((diagTlv.mData.mAddr16 & CHILD_MASK) == 0 && hasKey(aFieldset, KEY_ROUTERID))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_ROUTERID, cJSON_CreateNumber(diagTlv.mData.mAddr16 >> 10));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_MODE:
+            if (hasKey(aFieldset, KEY_MODE))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_MODE, Mode2Json(diagTlv.mData.mMode));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_TIMEOUT:
+            if (hasKey(aFieldset, KEY_TIMEOUT))
+            {
+                timeout = static_cast<uint64_t>(diagTlv.mData.mTimeout);
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_TIMEOUT, cJSON_CreateNumber(timeout));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_CONNECTIVITY:
+            if (hasKey(aFieldset, KEY_CONNECTIVITY))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_CONNECTIVITY,
+                                      Connectivity2Json(diagTlv.mData.mConnectivity));
+            }
+
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_ROUTE:
+            if (hasKey(aFieldset, KEY_ROUTE))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_ROUTE, Route2Json(diagTlv.mData.mRoute));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_LEADER_DATA:
+            if (hasKey(aFieldset, KEY_LEADERDATA))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_LEADERDATA, LeaderData2Json(diagTlv.mData.mLeaderData));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_NETWORK_DATA:
+            if (hasKey(aFieldset, KEY_NETWORKDATA))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_NETWORKDATA,
+                                      Bytes2HexJson(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST:
+
+            addrList = cJSON_CreateArray();
+
+            for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
+            {
+                cJSON_AddItemToArray(addrList, IpAddr2Json(diagTlv.mData.mIp6AddrList.mList[i]));
+            }
+
+            if (hasKey(aFieldset, KEY_IP6ADDRESSLIST))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_IP6ADDRESSLIST, addrList);
+            }
+
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_MAC_COUNTERS:
+            if (hasKey(aFieldset, KEY_MACCOUNTERS))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_MACCOUNTERS, MacCounters2Json(diagTlv.mData.mMacCounters));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_BATTERY_LEVEL:
+            if (hasKey(aFieldset, KEY_BATTERYLEVEL))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_BATTERYLEVEL,
+                                      cJSON_CreateNumber(diagTlv.mData.mBatteryLevel));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_SUPPLY_VOLTAGE:
+            if (hasKey(aFieldset, KEY_SUPPLYVOLTAGE))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_SUPPLYVOLTAGE,
+                                      cJSON_CreateNumber(diagTlv.mData.mSupplyVoltage));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE:
+
+            tableList = cJSON_CreateArray();
+
+            for (uint16_t i = 0; i < diagTlv.mData.mChildTable.mCount; ++i)
+            {
+                cJSON_AddItemToArray(tableList, ChildTableEntry2Json(diagTlv.mData.mChildTable.mTable[i]));
+            }
+
+            if (hasKey(aFieldset, KEY_CHILDTABLE))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_CHILDTABLE, tableList);
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_CHANNEL_PAGES:
+            if (hasKey(aFieldset, KEY_CHANNELPAGES))
+            {
+                cJSON_AddItemToObject(
+                    diagInfoOfOneNode, KEY_CHANNELPAGES,
+                    Bytes2HexJson(diagTlv.mData.mChannelPages.m8, diagTlv.mData.mChannelPages.mCount));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_MAX_CHILD_TIMEOUT:
+            if (hasKey(aFieldset, KEY_MAXCHILDTIMEOUT))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_MAXCHILDTIMEOUT,
+                                      cJSON_CreateNumber(diagTlv.mData.mMaxChildTimeout));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_EUI64:
+            if (hasKey(aFieldset, KEY_EUI64))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_EUI64,
+                                      Bytes2HexJson(diagTlv.mData.mEui64.m8, OT_EXT_ADDRESS_SIZE));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_VERSION:
+            if (hasKey(aFieldset, KEY_VERSION))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_VERSION, cJSON_CreateNumber(diagTlv.mData.mVersion));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_VENDOR_NAME:
+            if (hasKey(aFieldset, KEY_VENDORNAME))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_VENDORNAME,
+                                      cJSON_CreateString(&diagTlv.mData.mVendorName[0]));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_VENDOR_MODEL:
+            if (hasKey(aFieldset, KEY_VENDORMODEL))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_VENDORMODEL,
+                                      cJSON_CreateString(&diagTlv.mData.mVendorModel[0]));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_VENDOR_SW_VERSION:
+            if (hasKey(aFieldset, KEY_VENDORSWVERSION))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_VENDORSWVERSION,
+                                      cJSON_CreateString(&diagTlv.mData.mVendorSwVersion[0]));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_THREAD_STACK_VERSION:
+            if (hasKey(aFieldset, KEY_THREADSTACKVERSION))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_THREADSTACKVERSION,
+                                      cJSON_CreateString(&diagTlv.mData.mThreadStackVersion[0]));
+            }
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_CHILD:
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_CHILD_IP6_ADDR_LIST:
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_ROUTER_NEIGHBOR:
+            break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_MLE_COUNTERS:
+            if (hasKey(aFieldset, KEY_MLECOUNTERS))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_MLECOUNTERS, MleCounters2Json(diagTlv.mData.mMleCounters));
+            }
+            break;
+        default:
+            // unknown TLV type
+            break;
+        }
+    }
+    return diagInfoOfOneNode;
+}
+
+// TODO: simlify this interface
+std::string DiagSet2JsonString(const std::vector<otNetworkDiagTlv>         &aDiagSet,
+                               std::vector<otMeshDiagChildEntry>            aChildTable,
+                               std::vector<DeviceIp6Addrs>                  aChildIps,
+                               std::vector<otMeshDiagRouterNeighborEntry>   aNeighbors,
+                               const std::vector<networkDiagTlvExtensions> &aDiagTlvSetExtension,
+                               std::set<std::string>                        aFieldset)
+{
+    cJSON *diagInfoOfOneNode = nullptr;
+    cJSON *children          = nullptr;
+    cJSON *childrenIpv6      = nullptr;
+    cJSON *neighbors         = nullptr;
+
+    bool isRouter;
+
+    std::string ret;
+
+    diagInfoOfOneNode = Diag2cJSON(aDiagSet, aFieldset);
+    isRouter          = cJSON_HasObjectItem(diagInfoOfOneNode, KEY_ROUTERID);
+
+    if (hasKey(aFieldset, KEY_CHILDREN) && isRouter)
+    {
+        children = MeshChildTable2Json(aChildTable);
+        cJSON_AddItemToObject(diagInfoOfOneNode, KEY_CHILDREN, children);
+    }
+
+    if (hasKey(aFieldset, KEY_CHILDRENIP6) && isRouter)
+    {
+        childrenIpv6 = MeshChildrenIp62Json(aChildIps);
+        cJSON_AddItemToObject(diagInfoOfOneNode, KEY_CHILDRENIP6, childrenIpv6);
+    }
+
+    if (hasKey(aFieldset, KEY_NEIGHBORS) && isRouter)
+    {
+        neighbors = MeshRouterNeighbors2Json(aNeighbors);
+        cJSON_AddItemToObject(diagInfoOfOneNode, KEY_NEIGHBORS, neighbors);
+    }
+
+    for (auto diagTlvExt : aDiagTlvSetExtension)
+    {
+        switch (diagTlvExt.mType)
+        {
+        case NETWORK_DIAGNOSTIC_TLVEXT_BR_COUNTER:
+            if (hasKey(aFieldset, KEY_BRCOUNTERS))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_BRCOUNTERS, brCounter2Json(&diagTlvExt.mData.mBrCounters));
+            }
+            break;
+        case NETWORK_DIAGNOSTIC_TLVEXT_SERVICEROLEFLAGS:
+            if (hasKey(aFieldset, KEY_LEADER))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_LEADER,
+                                      cJSON_CreateBool(diagTlvExt.mData.mServiceRoleFlags.mIsLeader));
+            }
+            if (hasKey(aFieldset, KEY_SERVICE))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_SERVICE,
+                                      cJSON_CreateBool(diagTlvExt.mData.mServiceRoleFlags.mHostsService));
+            }
+            if (hasKey(aFieldset, KEY_PBBR))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_PBBR,
+                                      cJSON_CreateBool(diagTlvExt.mData.mServiceRoleFlags.mIsPrimaryBBR));
+            }
+            if (hasKey(aFieldset, KEY_BR))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_BR,
+                                      cJSON_CreateBool(diagTlvExt.mData.mServiceRoleFlags.mIsBorderRouter));
+            }
+            break;
+        default:
+            // unknown TLV type
+            break;
+        }
+    }
+
+    ret = Json2String(diagInfoOfOneNode);
+    cJSON_Delete(diagInfoOfOneNode);
+    return ret;
+}
+
 std::string jsonStr2JsonApiItem(std::string aId, const std::string aType, std::string aAttribute)
 {
     cJSON      *root = cJSON_CreateObject();
@@ -716,6 +910,79 @@ std::string jsonStr2JsonApiColl(std::string data, std::string meta)
 
     ret = Json2String(root);
     cJSON_Delete(root);
+
+    return ret;
+}
+
+static cJSON *DeviceInfo2Json(const DeviceInfo &aDeviceInfo, std::set<std::string> aFieldset)
+{
+    cJSON *deviceInfo = cJSON_CreateObject();
+
+    if (hasKey(aFieldset, KEY_EXTADDRESS))
+    {
+        cJSON_AddItemToObject(deviceInfo, KEY_EXTADDRESS,
+                              Bytes2HexJson(aDeviceInfo.mExtAddress.m8, OT_EXT_ADDRESS_SIZE));
+    }
+    if (hasKey(aFieldset, KEY_MLEIDIID))
+    {
+        cJSON_AddItemToObject(deviceInfo, KEY_MLEIDIID, Bytes2HexJson(aDeviceInfo.mMlEidIid.m8, OT_EXT_ADDRESS_SIZE));
+    }
+    if (hasKey(aFieldset, KEY_OMRIPV6))
+    {
+        cJSON_AddItemToObject(deviceInfo, KEY_OMRIPV6, IpAddr2Json(aDeviceInfo.mIp6Addr));
+    }
+    // if (hasKey(aFieldset, KEY_EUI64))
+    // {
+    //     cJSON_AddItemToObject(deviceInfo, KEY_EUI64, Bytes2HexJson(aDeviceInfo.mEui64.m8, OT_EXT_ADDRESS_SIZE));
+    // }
+    if (hasKey(aFieldset, KEY_HOSTNAME))
+    {
+        cJSON_AddItemToObject(deviceInfo, KEY_HOSTNAME, cJSON_CreateString(aDeviceInfo.mHostName.c_str()));
+    }
+    if (hasKey(aFieldset, KEY_ROLE))
+    {
+        cJSON_AddItemToObject(deviceInfo, KEY_ROLE, cJSON_CreateString(aDeviceInfo.mRole.c_str()));
+    }
+    if (hasToplevelKey(aFieldset, KEY_MODE))
+    {
+        cJSON *mode = cJSON_CreateObject();
+        if (hasKey(aFieldset, concat(KEY_MODE, KEY_ISFTD)))
+        {
+            cJSON_AddItemToObject(mode, KEY_ISFTD, cJSON_CreateBool(aDeviceInfo.mode.mDeviceType));
+        }
+        if (hasKey(aFieldset, concat(KEY_MODE, KEY_RXONWHENIDLE)))
+        {
+            cJSON_AddItemToObject(mode, KEY_RXONWHENIDLE, cJSON_CreateBool(aDeviceInfo.mode.mRxOnWhenIdle));
+        }
+        if (hasKey(aFieldset, concat(KEY_MODE, KEY_FULLNETWORKDATA)))
+        {
+            cJSON_AddItemToObject(mode, KEY_FULLNETWORKDATA, cJSON_CreateBool(aDeviceInfo.mode.mNetworkData));
+        }
+        cJSON_AddItemToObject(deviceInfo, KEY_MODE, mode);
+    }
+
+    return deviceInfo;
+}
+
+std::string DeviceInfo2JsonString(const DeviceInfo &aDeviceInfo)
+{
+    std::string           ret;
+    std::set<std::string> fieldset;
+    cJSON                *json = DeviceInfo2Json(aDeviceInfo, fieldset);
+
+    ret = Json2String(json);
+    cJSON_Delete(json);
+
+    return ret;
+}
+
+std::string SparseDeviceInfo2JsonString(const DeviceInfo &aDeviceInfo, std::set<std::string> aFieldset)
+{
+    std::string ret;
+    cJSON      *json = DeviceInfo2Json(aDeviceInfo, aFieldset);
+
+    ret = Json2String(json);
+    cJSON_Delete(json);
 
     return ret;
 }
@@ -1352,6 +1619,70 @@ exit:
     return ret;
 }
 
+static cJSON *EnergyReport2Json(const EnergyScanReport &aReport, std::set<std::string> aFieldset)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON *channels;
+    cJSON *chitem;
+    cJSON *energy;
+
+    if (hasKey(aFieldset, KEY_ORIGIN))
+    {
+        cJSON_AddItemToObject(root, KEY_ORIGIN, Bytes2HexJson(aReport.mOrigin.mFields.m8, OT_EXT_ADDRESS_SIZE));
+    }
+
+    if (hasToplevelKey(aFieldset, KEY_REPORT))
+    {
+        channels = cJSON_CreateArray();
+        for (const auto &it : aReport.mReports)
+        {
+            chitem = cJSON_CreateObject();
+            if (hasKey(aFieldset, concat(KEY_REPORT, KEY_CHANNEL)))
+            {
+                cJSON_AddItemToObject(chitem, KEY_CHANNEL, cJSON_CreateNumber(it.mChannel));
+            }
+
+            if (hasKey(aFieldset, concat(KEY_REPORT, KEY_MAXRSSI)))
+            {
+                energy = cJSON_CreateArray();
+                for (const auto &itRssi : it.mMaxRssi)
+                {
+                    cJSON_AddItemToArray(energy, cJSON_CreateNumber(itRssi));
+                }
+                cJSON_AddItemToObject(chitem, KEY_MAXRSSI, energy);
+            }
+            cJSON_AddItemToArray(channels, chitem);
+        }
+
+        cJSON_AddItemToObject(root, KEY_REPORT, channels);
+    }
+
+    return root;
+}
+
+std::string EnergyReport2JsonString(const EnergyScanReport &aReport)
+{
+    std::string           ret;
+    std::set<std::string> fieldset;
+    cJSON                *json = EnergyReport2Json(aReport, fieldset);
+
+    ret = Json2String(json);
+    cJSON_Delete(json);
+
+    return ret;
+}
+
+std::string SparseEnergyReport2JsonString(const EnergyScanReport &aReport, std::set<std::string> aFieldset)
+{
+    std::string ret;
+    cJSON      *json = EnergyReport2Json(aReport, aFieldset);
+
+    ret = Json2String(json);
+    cJSON_Delete(json);
+
+    return ret;
+}
+
 cJSON *JoinerTable2Json(const std::vector<otJoinerInfo> &aJoinerTable)
 {
     cJSON *table = cJSON_CreateArray();
@@ -1368,6 +1699,138 @@ cJSON *JoinerTable2Json(const std::vector<otJoinerInfo> &aJoinerTable)
 std::string JoinerTable2JsonString(const std::vector<otJoinerInfo> &aJoinerTable)
 {
     return Json2String(JoinerTable2Json(aJoinerTable));
+}
+
+static cJSON *MeshChildEntry2Json(const otMeshDiagChildEntry &aChild)
+{
+    cJSON *child = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(child, "rxOnWhenIdle", cJSON_CreateBool(aChild.mRxOnWhenIdle));
+    cJSON_AddItemToObject(child, "deviceTypeFTD", cJSON_CreateBool(aChild.mDeviceTypeFtd));
+    cJSON_AddItemToObject(child, "fullNetworkData", cJSON_CreateBool(aChild.mFullNetData));
+    cJSON_AddItemToObject(child, "cslSynchronized", cJSON_CreateBool(aChild.mCslSynchronized));
+    cJSON_AddItemToObject(child, "supportsErrorRate", cJSON_CreateBool(aChild.mSupportsErrRate));
+
+    cJSON_AddItemToObject(child, "rloc16", Number2HexJson(aChild.mRloc16));
+    cJSON_AddItemToObject(child, "childId", cJSON_CreateNumber(aChild.mRloc16 & CHILD_MASK));
+    cJSON_AddItemToObject(child, "extAddress", Bytes2HexJson(aChild.mExtAddress.m8, OT_EXT_ADDRESS_SIZE));
+    cJSON_AddItemToObject(child, "version", cJSON_CreateNumber(aChild.mVersion));
+    cJSON_AddItemToObject(child, "timeout", cJSON_CreateNumber(aChild.mTimeout));
+    cJSON_AddItemToObject(child, "age", cJSON_CreateNumber(aChild.mAge));
+    cJSON_AddItemToObject(child, "connectionTime", cJSON_CreateNumber(aChild.mConnectionTime));
+
+    if (aChild.mSupervisionInterval != 0)
+    {
+        cJSON_AddItemToObject(child, "supervisionInterval", cJSON_CreateNumber(aChild.mSupervisionInterval));
+    }
+
+    cJSON_AddItemToObject(child, "linkMargin", cJSON_CreateNumber(aChild.mLinkMargin));
+    cJSON_AddItemToObject(child, "averageRssi", cJSON_CreateNumber(aChild.mAverageRssi));
+    cJSON_AddItemToObject(child, "lastRssi", cJSON_CreateNumber(aChild.mLastRssi));
+
+    if (aChild.mSupportsErrRate)
+    {
+        float errRate;
+
+        errRate = static_cast<float>(aChild.mFrameErrorRate) / static_cast<float>(0xFFFF);
+        cJSON_AddItemToObject(child, "frameErrorRate", cJSON_CreateNumber(errRate));
+
+        errRate = static_cast<float>(aChild.mMessageErrorRate) / static_cast<float>(0xFFFF);
+        cJSON_AddItemToObject(child, "messageErrorRate", cJSON_CreateNumber(errRate));
+    }
+
+    cJSON_AddItemToObject(child, "queuedMessageCount", cJSON_CreateNumber(aChild.mQueuedMessageCount));
+
+    if (aChild.mCslSynchronized)
+    {
+        cJSON_AddItemToObject(child, "cslPeriod", cJSON_CreateNumber(aChild.mCslPeriod));
+        cJSON_AddItemToObject(child, "cslTimeout", cJSON_CreateNumber(aChild.mCslTimeout));
+        cJSON_AddItemToObject(child, "cslChannel", cJSON_CreateNumber(aChild.mCslChannel));
+    }
+
+    return child;
+}
+
+static cJSON *MeshChildTable2Json(const std::vector<otMeshDiagChildEntry> &aChildren)
+{
+    cJSON *json = cJSON_CreateArray();
+
+    for (const otMeshDiagChildEntry &child : aChildren)
+    {
+        cJSON_AddItemToArray(json, MeshChildEntry2Json(child));
+    }
+
+    return json;
+}
+
+static cJSON *MeshChildIp62Json(const DeviceIp6Addrs &aChildIp6Addrs)
+{
+    cJSON *child = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(child, "rloc16", Number2HexJson(aChildIp6Addrs.mRloc16));
+    // cJSON_AddItemToObject(child, "ExtAddress", Bytes2HexJson(aChild.mExtAddress.m8, OT_EXT_ADDRESS_SIZE));
+
+    cJSON *ips = cJSON_CreateArray();
+
+    for (const otIp6Address ipaddr : aChildIp6Addrs.mIp6Addrs)
+    {
+        cJSON_AddItemToArray(ips, IpAddr2Json(ipaddr));
+    }
+
+    cJSON_AddItemToObject(child, "ip6Addresses", ips);
+
+    return child;
+}
+
+static cJSON *MeshChildrenIp62Json(const std::vector<DeviceIp6Addrs> &aChildrenIp6Addrs)
+{
+    cJSON *json = cJSON_CreateArray();
+
+    for (const DeviceIp6Addrs &child : aChildrenIp6Addrs)
+    {
+        cJSON_AddItemToArray(json, MeshChildIp62Json(child));
+    }
+
+    return json;
+}
+
+static cJSON *MeshRouterNeighborEntry2Json(const otMeshDiagRouterNeighborEntry &aNeighbor)
+{
+    cJSON *neighbor = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(neighbor, "supportsErrorRate", cJSON_CreateBool(aNeighbor.mSupportsErrRate));
+    cJSON_AddItemToObject(neighbor, "rloc16", Number2HexJson(aNeighbor.mRloc16));
+    cJSON_AddItemToObject(neighbor, "extAddress", Bytes2HexJson(aNeighbor.mExtAddress.m8, OT_EXT_ADDRESS_SIZE));
+    cJSON_AddItemToObject(neighbor, "version", cJSON_CreateNumber(aNeighbor.mVersion));
+    cJSON_AddItemToObject(neighbor, "connectionTime", cJSON_CreateNumber(aNeighbor.mConnectionTime));
+    cJSON_AddItemToObject(neighbor, "linkMargin", cJSON_CreateNumber(aNeighbor.mLinkMargin));
+    cJSON_AddItemToObject(neighbor, "averageRssi", cJSON_CreateNumber(aNeighbor.mAverageRssi));
+    cJSON_AddItemToObject(neighbor, "lastRssi", cJSON_CreateNumber(aNeighbor.mLastRssi));
+
+    if (aNeighbor.mSupportsErrRate)
+    {
+        float errRate;
+
+        errRate = static_cast<float>(aNeighbor.mFrameErrorRate) / static_cast<float>(0xFFFF);
+        cJSON_AddItemToObject(neighbor, "frameErrorRate", cJSON_CreateNumber(errRate));
+
+        errRate = static_cast<float>(aNeighbor.mMessageErrorRate) / static_cast<float>(0xFFFF);
+        cJSON_AddItemToObject(neighbor, "messageErrorRate", cJSON_CreateNumber(errRate));
+    }
+
+    return neighbor;
+}
+
+static cJSON *MeshRouterNeighbors2Json(const std::vector<otMeshDiagRouterNeighborEntry> &aNeighbors)
+{
+    cJSON *json = cJSON_CreateArray();
+
+    for (const otMeshDiagRouterNeighborEntry &neighbor : aNeighbors)
+    {
+        cJSON_AddItemToArray(json, MeshRouterNeighborEntry2Json(neighbor));
+    }
+
+    return json;
 }
 
 cJSON *CreateMetaCollection(uint32_t aOffset, uint32_t aLimit, uint32_t aTotal)

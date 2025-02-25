@@ -35,23 +35,26 @@
 #define OTBR_LOG_TAG "REST"
 #endif
 
+#include <inttypes.h>
 #include <set>
 #include <openthread/commissioner.h>
 #include <openthread/srp_server.h>
 #include "common/logging.hpp"
 #include "common/task_runner.hpp"
+#include "rest/network_diag_handler.hpp"
 #include "rest/resource.hpp"
 #include "utils/string_utils.hpp"
 
 #include "rest/actions_list.hpp" // Actions Collection
 #include "rest/commissioner_manager.hpp"
+#include "rest/rest_devices_coll.hpp"     // Devices Collection
+#include "rest/rest_diagnostics_coll.hpp" // Diagnostics Collection
 
 #include <cJSON.h>
 
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
 
-#define OT_REST_RESOURCE_PATH_DIAGNOSTICS "/diagnostics"
 #define OT_REST_RESOURCE_PATH_NODE "/node"
 #define OT_REST_RESOURCE_PATH_NODE_BAID "/node/ba-id"
 #define OT_REST_RESOURCE_PATH_NODE_RLOC "/node/rloc"
@@ -76,6 +79,10 @@
 // API endpoint path definition
 #define OT_REST_RESOURCE_PATH_API "/api"
 #define OT_REST_RESOURCE_PATH_API_ACTIONS OT_REST_RESOURCE_PATH_API "/actions"
+#define OT_REST_RESOURCE_PATH_API_DEVICES OT_REST_RESOURCE_PATH_API "/devices"
+#define OT_REST_RESOURCE_PATH_API_DIAGNOSTICS OT_REST_RESOURCE_PATH_API "/diagnostics"
+#define OT_REST_RESOURCE_PATH_API_NODE OT_REST_RESOURCE_PATH_API OT_REST_RESOURCE_PATH_NODE
+#define OT_REST_RESOURCE_PATH_API_NETWORKS OT_REST_RESOURCE_PATH_API "/networks"
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
 #define OT_REST_HTTP_STATUS_201 "201 Created"
@@ -101,18 +108,6 @@ using std::placeholders::_2;
 
 namespace otbr {
 namespace rest {
-
-// MulticastAddr
-static const char *kMulticastAddrAllRouters = "ff03::2";
-
-// Default TlvTypes for Diagnostic inforamtion
-static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 19};
-
-// Timeout (in Microseconds) for deleting outdated diagnostics
-static const uint32_t kDiagResetTimeout = 3000000;
-
-// Timeout (in Microseconds) for collecting diagnostics
-static const uint32_t kDiagCollectTimeout = 2000000;
 
 static std::string GetHttpStatus(HttpStatusCode aErrorCode)
 {
@@ -175,7 +170,6 @@ Resource::Resource(RcpHost *aHost)
     , mServices()
 {
     // Resource Handler
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::Diagnostic);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE, &Resource::NodeInfo);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_BAID, &Resource::BaId);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_STATE, &Resource::State);
@@ -192,17 +186,27 @@ Resource::Resource(RcpHost *aHost)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, &Resource::CommissionerJoiner);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, &Resource::CoprocessorVersion);
 
-    // Resource callback handler
-    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
-
     // API Resource Handler
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_API_ACTIONS, &Resource::ApiActionHandler);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_API_DEVICES, &Resource::ApiDeviceHandler);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_API_DIAGNOSTICS, &Resource::ApiDiagnosticHandler);
+
+    // Resource callback handler
+    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_API_DEVICES, &Resource::ApiDevicePostCallbackHandler);
 }
 
 void Resource::Init(void)
 {
     mInstance = mHost->GetThreadHelper()->GetInstance();
     mServices.Init(mInstance);
+
+    // add node to api/devices
+    DeviceInfo          aDeviceInfo = {};
+    const otExtAddress *thisextaddr = otLinkGetExtendedAddress(mInstance);
+    std::string         thisextaddr_str;
+    thisextaddr_str = otbr::Utils::Bytes2Hex(thisextaddr->m8, OT_EXT_ADDRESS_SIZE);
+    thisextaddr_str = StringUtils::ToLowercase(thisextaddr_str);
+    mServices.GetNetworkDiagHandler().SetDeviceItemAttributes(thisextaddr_str, aDeviceInfo);
 }
 
 void Resource::Process(void)
@@ -216,6 +220,13 @@ std::string Resource::redirectToCollection(Request &aRequest)
     uint8_t apiPathLength = strlen("/api/");
 
     std::string url = aRequest.GetUrlPath();
+
+    // redirect OT_REST_RESOURCE_PATH_NODE to /api/devices/{thisDeviceId}
+    if ((url == std::string(OT_REST_RESOURCE_PATH_NODE)) || (url == std::string(OT_REST_RESOURCE_PATH_API_NODE)))
+    {
+        redirectNodeToDeviceItem(aRequest);
+        url = aRequest.GetUrlPath();
+    }
 
     VerifyOrExit(url.compare(0, apiPathLength, std::string("/api/")) == 0);
     // check url matches structure /api/{collection}/{itemId}
@@ -257,31 +268,6 @@ void Resource::HandleCallback(Request &aRequest, Response &aResponse)
     {
         ResourceCallbackHandler resourceHandler = it->second;
         (this->*resourceHandler)(aRequest, aResponse);
-    }
-}
-
-void Resource::HandleDiagnosticCallback(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::vector<std::vector<otNetworkDiagTlv>> diagContentSet;
-    std::string                                body;
-    std::string                                errorCode;
-
-    auto duration = duration_cast<microseconds>(steady_clock::now() - aResponse.GetStartTime()).count();
-    if (duration >= kDiagCollectTimeout)
-    {
-        DeleteOutDatedDiagnostic();
-
-        for (auto it = mDiagSet.begin(); it != mDiagSet.end(); ++it)
-        {
-            diagContentSet.push_back(it->second.mDiagContent);
-        }
-
-        body      = Json::Diag2JsonString(diagContentSet);
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
-        aResponse.SetBody(body);
-        aResponse.SetComplete();
     }
 }
 
@@ -365,6 +351,27 @@ exit:
     }
 }
 
+void Resource::redirectNodeToDeviceItem(Request &aRequest)
+{
+    uint64_t            keyExtaddr = 0;
+    const otExtAddress *extAddr;
+    char                buffer[18];
+    std::string         url;
+
+    extAddr = otLinkGetExtendedAddress(mInstance);
+
+    for (int i = 0; i < OT_EXT_ADDRESS_SIZE; i++)
+    {
+        keyExtaddr = (keyExtaddr << 8) | extAddr->m8[i];
+    }
+
+    std::snprintf(buffer, sizeof(buffer), "/%016" PRIx64, keyExtaddr);
+
+    url = OT_REST_RESOURCE_PATH_API_DEVICES + std::string(buffer);
+
+    aRequest.SetUrlPath(url);
+}
+
 void Resource::NodeInfo(const Request &aRequest, Response &aResponse)
 {
     std::string errorCode;
@@ -372,7 +379,7 @@ void Resource::NodeInfo(const Request &aRequest, Response &aResponse)
     switch (aRequest.GetMethod())
     {
     case HttpMethod::kGet:
-        GetNodeInfo(aResponse);
+        ApiDeviceGetHandler(aRequest, aResponse);
         break;
     case HttpMethod::kDelete:
         DeleteNodeInfo(aResponse);
@@ -1372,6 +1379,151 @@ void Resource::ApiActionDeleteHandler(const Request &aRequest, Response &aRespon
     aResponse.SetComplete();
 }
 
+void Resource::ApiDiagnosticGetHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string    errorCode  = GetHttpStatus(HttpStatusCode::kStatusOk);
+    HttpStatusCode statusCode = HttpStatusCode::kStatusOk;
+
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+    std::string                        itemId;
+
+    VerifyOrExit(((aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = HttpStatusCode::kStatusUnsupportedMediaType);
+
+    itemId = getItemIdFromUrl(aRequest, mServices.GetDiagnosticsCollection().GetCollectionName());
+
+    if (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        aResponse.SetContentType(OT_REST_CONTENT_TYPE_JSONAPI);
+        for (auto &it : mServices.GetDiagnosticsCollection().GetContainedTypes())
+        {
+            if (aRequest.HasQuery("fields[" + it + "]"))
+            {
+                queries[it] = aRequest.GetQueryParameter("fields[" + it + "]");
+            }
+        }
+        if (!itemId.empty())
+        {
+            // return the item
+            resp_body = mServices.GetDiagnosticsCollection().ToJsonApiItemId(itemId, queries);
+            VerifyOrExit(!resp_body.empty(), statusCode = HttpStatusCode::kStatusResourceNotFound);
+        }
+        else
+        {
+            // return all items
+            resp_body = mServices.GetDiagnosticsCollection().ToJsonApiColl(queries);
+        }
+    }
+    else if (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        aResponse.SetContentType(OT_REST_CONTENT_TYPE_JSON);
+        if (!itemId.empty())
+        {
+            // return the item
+            resp_body = mServices.GetDiagnosticsCollection().ToJsonStringItemId(itemId, queries);
+            VerifyOrExit(!resp_body.empty(), statusCode = HttpStatusCode::kStatusResourceNotFound);
+        }
+        else
+        {
+            // return all items
+            resp_body = mServices.GetDiagnosticsCollection().ToJsonString();
+        }
+    }
+
+    aResponse.SetBody(resp_body);
+    aResponse.SetStartTime(steady_clock::now());
+    aResponse.SetResponsCode(errorCode);
+    aResponse.SetComplete();
+
+exit:
+    if (statusCode != HttpStatusCode::kStatusOk)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+}
+
+void Resource::ApiDiagnosticDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    OTBR_UNUSED_VARIABLE(aRequest);
+
+    mServices.GetNetworkDiagHandler().Clear();
+    mServices.GetDiagnosticsCollection().Clear();
+
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
+    aResponse.SetResponsCode(errorCode);
+    aResponse.SetComplete();
+}
+
+void Resource::ApiDiagnosticHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+    std::string methods = "OPTIONS, GET, DELETE";
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kGet:
+        ApiDiagnosticGetHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kDelete:
+        ApiDiagnosticDeleteHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
+        aResponse.SetAllowMethods(methods);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    case HttpMethod::kPost:
+    default:
+        aResponse.SetAllowMethods(methods);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
+    }
+}
+
+void Resource::ApiDeviceHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kDelete:
+        ApiDeviceDeleteHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kGet:
+        ApiDeviceGetHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kPost:
+        ApiDevicePostHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
+    }
+}
+
+void Resource::ApiDeviceDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    OTBR_UNUSED_VARIABLE(aRequest);
+
+    mServices.GetDevicesCollection().Clear();
+
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
+    aResponse.SetResponsCode(errorCode);
+    aResponse.SetComplete();
+}
+
 std::string getItemIdFromUrl(const Request &aRequest, std::string aCollectionName)
 {
     std::string itemId = "";
@@ -1398,101 +1550,139 @@ exit:
     return itemId;
 }
 
-void Resource::DeleteOutDatedDiagnostic(void)
+void Resource::ApiDeviceGetHandler(const Request &aRequest, Response &aResponse)
 {
-    auto eraseIt = mDiagSet.begin();
-    for (eraseIt = mDiagSet.begin(); eraseIt != mDiagSet.end();)
-    {
-        auto diagInfo = eraseIt->second;
-        auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo.mStartTime).count();
+    std::string    errorCode  = GetHttpStatus(HttpStatusCode::kStatusOk);
+    HttpStatusCode statusCode = HttpStatusCode::kStatusOk;
 
-        if (duration >= kDiagResetTimeout)
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+
+    std::string itemId = getItemIdFromUrl(aRequest, mServices.GetDevicesCollection().GetCollectionName());
+    VerifyOrExit(((aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = HttpStatusCode::kStatusUnsupportedMediaType);
+
+    if (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        aResponse.SetContentType(OT_REST_CONTENT_TYPE_JSONAPI);
+        for (auto &it : mServices.GetDevicesCollection().GetContainedTypes())
         {
-            eraseIt = mDiagSet.erase(eraseIt);
+            if (aRequest.HasQuery("fields[" + it + "]"))
+            {
+                queries[it] = aRequest.GetQueryParameter("fields[" + it + "]");
+            }
+        }
+        if (!itemId.empty())
+        {
+            // return the item
+            resp_body = mServices.GetDevicesCollection().ToJsonApiItemId(itemId, queries);
+            VerifyOrExit(!resp_body.empty(), statusCode = HttpStatusCode::kStatusResourceNotFound);
         }
         else
         {
-            eraseIt++;
+            // return all items
+            resp_body = mServices.GetDevicesCollection().ToJsonApiColl(queries);
         }
+    }
+    else if (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        aResponse.SetContentType(OT_REST_CONTENT_TYPE_JSON);
+        for (auto &it : mServices.GetDevicesCollection().GetContainedTypes())
+        {
+            if (aRequest.HasQuery("fields[" + it + "]"))
+            {
+                queries[it] = aRequest.GetQueryParameter("fields[" + it + "]");
+            }
+        }
+        if (!itemId.empty())
+        {
+            // return the item
+            resp_body = mServices.GetDevicesCollection().ToJsonStringItemId(itemId, queries);
+            VerifyOrExit(!resp_body.empty(), statusCode = HttpStatusCode::kStatusResourceNotFound);
+        }
+        else
+        {
+            // return all items
+            resp_body = mServices.GetDevicesCollection().ToJsonString();
+        }
+    }
+
+    aResponse.SetBody(resp_body);
+    aResponse.SetStartTime(steady_clock::now());
+    aResponse.SetResponsCode(errorCode);
+    aResponse.SetComplete();
+
+exit:
+    if (statusCode != HttpStatusCode::kStatusOk)
+    {
+        // otbrLogWarning("%s:%d REST query error %d", __FILE__, __LINE__, error);
+        ErrorHandler(aResponse, statusCode);
     }
 }
 
-void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag)
+// Discover device in the network and update the device collection.
+void Resource::ApiDevicePostHandler(const Request &aRequest, Response &aResponse)
 {
-    DiagInfo value;
+    otError     error = OT_ERROR_NONE;
+    std::string resp_body;
+    std::string errorCode;
 
-    value.mStartTime = steady_clock::now();
-    value.mDiagContent.assign(aDiag.begin(), aDiag.end());
-    mDiagSet[aKey] = value;
-}
-
-void Resource::Diagnostic(const Request &aRequest, Response &aResponse)
-{
-    otbrError error = OTBR_ERROR_NONE;
     OT_UNUSED_VARIABLE(aRequest);
-    struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
-    struct otIp6Address multicastAddress;
 
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes),
-                                           &Resource::DiagnosticResponseHandler,
-                                           const_cast<Resource *>(this)) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
-    VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes),
-                                           &Resource::DiagnosticResponseHandler,
-                                           const_cast<Resource *>(this)) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
+    aResponse.SetStartTime(steady_clock::now());
 
-exit:
+    // get handler for network diagnostics
+    error = mServices.GetNetworkDiagHandler().HandleNetworkDiscoveryRequest(NETWORKDIAG_REQ_TIMEOUT, NETWORKDIAG_MAXAGE,
+                                                                            NETWORKDIAG_REQ_MAX_RETRIES);
 
-    if (error == OTBR_ERROR_NONE)
+    if (error == OT_ERROR_NONE)
     {
-        aResponse.SetStartTime(steady_clock::now());
         aResponse.SetCallback();
+    }
+    else if (error == OT_ERROR_INVALID_STATE)
+    {
+        otbrLogWarning("%s:%d otbr error %s", __FILE__, __LINE__, otThreadErrorToString(error));
+        ErrorHandler(aResponse, HttpStatusCode::kStatusServiceUnavailable);
     }
     else
     {
+        otbrLogWarning("%s:%d otbr error %s", __FILE__, __LINE__, otThreadErrorToString(error));
         ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
     }
 }
 
-void Resource::DiagnosticResponseHandler(otError              aError,
-                                         otMessage           *aMessage,
-                                         const otMessageInfo *aMessageInfo,
-                                         void                *aContext)
+void Resource::ApiDevicePostCallbackHandler(const Request &aRequest, Response &aResponse)
 {
-    static_cast<Resource *>(aContext)->DiagnosticResponseHandler(aError, aMessage, aMessageInfo);
-}
+    OT_UNUSED_VARIABLE(aRequest);
+    otbrError                          error = OTBR_ERROR_NONE;
+    std::string                        resp_body;
+    std::string                        errorCode;
+    std::map<std::string, std::string> queries; // empty query
 
-void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo)
-{
-    std::vector<otNetworkDiagTlv> diagSet;
-    otNetworkDiagTlv              diagTlv;
-    otNetworkDiagIterator         iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
-    otError                       error;
-    char                          rloc[7];
-    std::string                   keyRloc = "0xffee";
-
-    SuccessOrExit(aError);
-
-    OTBR_UNUSED_VARIABLE(aMessageInfo);
-
-    while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
-    {
-        if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS)
-        {
-            snprintf(rloc, sizeof(rloc), "0x%04x", diagTlv.mData.mAddr16);
-            keyRloc = Json::CString2JsonString(rloc);
-        }
-        diagSet.push_back(diagTlv);
-    }
-    UpdateDiag(keyRloc, diagSet);
+    VerifyOrExit((error = mServices.GetNetworkDiagHandler().Process()) == OTBR_ERROR_NONE);
 
 exit:
-    if (aError != OT_ERROR_NONE)
+    if (error == OTBR_ERROR_NONE)
     {
-        otbrLogWarning("Failed to get diagnostic data: %s", otThreadErrorToString(aError));
+        ApiDeviceGetHandler(aRequest, aResponse);
+    }
+    else if (error == OTBR_ERROR_ABORTED)
+    {
+        aResponse.SetContentType(OT_REST_CONTENT_TYPE_JSONAPI);
+
+        // return all items collected until timeout
+        resp_body = mServices.GetDevicesCollection().ToJsonApiColl(queries);
+
+        aResponse.SetBody(resp_body);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusRequestTimeout);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+    }
+    else if (error != OTBR_ERROR_ERRNO)
+    {
+        otbrLogWarning("%s:%d otbr error %s", __FILE__, __LINE__, otbrErrorString(error));
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
     }
 }
 

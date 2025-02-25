@@ -31,6 +31,9 @@
 #include <unordered_map>
 
 #include "add_thread_device.hpp"
+#include "energy_scan.hpp"
+#include "network_diagnostic.hpp"
+#include "reset_diagnostic_counters.hpp"
 
 namespace otbr {
 namespace rest {
@@ -38,6 +41,9 @@ namespace actions {
 
 static std::unordered_map<std::string, Handler> sHandlers = {
     {ADD_DEVICE_ACTION_TYPE_NAME, Handler::MakeHandler<AddThreadDevice>()},
+    {ENERGY_SCAN_ACTION_TYPE_NAME, Handler::MakeHandler<EnergyScan>()},
+    {NETWORK_DIAG_ACTION_TYPE_NAME, Handler::MakeHandler<NetworkDiagnostic>()},
+    {RESET_DIAG_COUNTERS_ACTION_TYPE_NAME, Handler::MakeHandler<ResetDiagnosticCounters>()},
 };
 
 const Handler *FindHandler(const char *aName)
