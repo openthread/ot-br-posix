@@ -121,6 +121,13 @@ otbr_install()
         )
     fi
 
+    if with RELEASE; then
+        otbr_options+=(
+            "-DCMAKE_BUILD_TYPE=MinSizeRel"
+            "-DOTBR_VENDOR_NAME=OpenThreadTest"
+        )
+    fi
+
     if with NAT64 && [[ ${NAT64_SERVICE-} == "openthread" ]]; then
         otbr_options+=(
             "-DOTBR_NAT64=ON"
