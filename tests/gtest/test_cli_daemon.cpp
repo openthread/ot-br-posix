@@ -41,23 +41,36 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <vector>
 
-#include <openthread/ip6.h>
-
+#include "common/code_utils.hpp"
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "host/posix/cli_daemon.hpp"
+#include "utils/socket_utils.hpp"
 
 // Only Test on linux platform for now.
 #ifdef __linux__
 
+using ::testing::_;
+using ::testing::Return;
+
+class MockCliDaemonDependencies : public otbr::CliDaemon::Dependencies
+{
+public:
+    MOCK_METHOD(otbrError, InputCommandLine, (const uint8_t *aBuf, uint16_t aLength), (override));
+};
+
 TEST(CliDaemon, InitSocketCreationWithFullNetIfName)
 {
+    MockCliDaemonDependencies mockDeps;
+
     const char *netIfName  = "tun0";
     const char *socketFile = "/run/openthread-tun0.sock";
     const char *lockFile   = "/run/openthread-tun0.lock";
 
-    otbr::CliDaemon cliDaemon;
+    otbr::CliDaemon cliDaemon(mockDeps);
     cliDaemon.Init(netIfName);
 
     struct stat st;
@@ -68,16 +81,108 @@ TEST(CliDaemon, InitSocketCreationWithFullNetIfName)
 
 TEST(CliDaemon, InitSocketCreationWithEmptyNetIfName)
 {
+    MockCliDaemonDependencies mockDeps;
+
     const char *socketFile = "/run/openthread-wpan0.sock";
     const char *lockFile   = "/run/openthread-wpan0.lock";
 
-    otbr::CliDaemon cliDaemon;
+    otbr::CliDaemon cliDaemon(mockDeps);
     cliDaemon.Init("");
 
     struct stat st;
 
     EXPECT_EQ(stat(socketFile, &st), 0);
     EXPECT_EQ(stat(lockFile, &st), 0);
+}
+
+TEST(CliDaemon, ProcessReceiveData)
+{
+    MockCliDaemonDependencies mockDeps;
+
+    otbr::MainloopContext context;
+    const char           *netIfName   = "tun0";
+    const char           *socketFile  = "/run/openthread-tun0.sock";
+    const char           *testData    = "test command";
+    uint16_t              testDataLen = strlen(testData);
+
+    otbr::CliDaemon cliDaemon(mockDeps);
+    cliDaemon.Init(netIfName);
+
+    context.mMaxFd = -1;
+    FD_ZERO(&context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+
+    int clientSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+    ASSERT_GE(clientSocket, 0);
+
+    struct sockaddr_un serverAddr;
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sun_family = AF_UNIX;
+    strncpy(serverAddr.sun_path, socketFile, sizeof(serverAddr.sun_path) - 1);
+
+    ASSERT_EQ(connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)), 0);
+
+    cliDaemon.UpdateFdSet(&context);
+    cliDaemon.Process(&context);
+
+    EXPECT_CALL(mockDeps, InputCommandLine(_, testDataLen)).Times(1).WillOnce(Return(OTBR_ERROR_NONE));
+    send(clientSocket, testData, testDataLen, 0);
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    cliDaemon.UpdateFdSet(&context);
+
+    cliDaemon.Process(&context);
+
+    close(clientSocket);
+    cliDaemon.Deinit();
+}
+
+TEST(CliDaemon, ProcessInputCommandLineError)
+{
+    MockCliDaemonDependencies mockDeps;
+
+    otbr::MainloopContext context;
+    const char           *netIfName   = "tun0";
+    const char           *socketFile  = "/run/openthread-tun0.sock";
+    const char           *testData    = "test command";
+    uint16_t              testDataLen = strlen(testData);
+
+    otbr::CliDaemon cliDaemon(mockDeps);
+    cliDaemon.Init(netIfName);
+
+    context.mMaxFd = -1;
+    FD_ZERO(&context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+
+    int clientSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+    ASSERT_GE(clientSocket, 0);
+
+    struct sockaddr_un serverAddr;
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sun_family = AF_UNIX;
+    strncpy(serverAddr.sun_path, socketFile, sizeof(serverAddr.sun_path) - 1);
+
+    ASSERT_EQ(connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)), 0);
+
+    cliDaemon.UpdateFdSet(&context);
+    cliDaemon.Process(&context);
+
+    EXPECT_CALL(mockDeps, InputCommandLine(_, testDataLen)).Times(1).WillOnce(Return(OTBR_ERROR_PARSE));
+    send(clientSocket, testData, testDataLen, 0);
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    cliDaemon.UpdateFdSet(&context);
+
+    cliDaemon.Process(&context);
+
+    close(clientSocket);
+    cliDaemon.Deinit();
 }
 
 #endif // __linux__
