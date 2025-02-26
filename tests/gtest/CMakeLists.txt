@@ -75,6 +75,7 @@ if(OTBR_MDNS)
 endif()
 
 add_executable(otbr-posix-gtest-unit
+    test_cli_daemon.cpp
     test_infra_if.cpp
     test_netif.cpp
 )

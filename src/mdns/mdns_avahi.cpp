@@ -1388,7 +1388,7 @@ void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser
                  avahiError = AVAHI_ERR_INVALID_ADDRESS);
     address = Ip6Address(*static_cast<const uint8_t(*)[OTBR_IP6_ADDRESS_SIZE]>(aRdata));
 
-    VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
+    VerifyOrExit(!address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
                  avahiError = AVAHI_ERR_INVALID_ADDRESS);
     otbrLogInfo("Resolved host address: %s %s", aEvent == AVAHI_BROWSER_NEW ? "add" : "remove",
                 address.ToString().c_str());
@@ -1519,7 +1519,7 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
                  avahiError = AVAHI_ERR_INVALID_ADDRESS);
     address = Ip6Address(*static_cast<const uint8_t(*)[OTBR_IP6_ADDRESS_SIZE]>(aRdata));
 
-    VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
+    VerifyOrExit(!address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
                  avahiError = AVAHI_ERR_INVALID_ADDRESS);
     otbrLogInfo("Resolved host address: %s %s", aEvent == AVAHI_BROWSER_NEW ? "add" : "remove",
                 address.ToString().c_str());

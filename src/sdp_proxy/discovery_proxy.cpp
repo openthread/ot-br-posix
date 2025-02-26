@@ -170,23 +170,41 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
     }
 }
 
+void DiscoveryProxy::FilterLinkLocalAddresses(const AddressList &aAddrList, AddressList &aFilteredList)
+{
+    aFilteredList.clear();
+
+    for (const Ip6Address &address : aAddrList)
+    {
+        if (address.IsLinkLocal())
+        {
+            continue;
+        }
+
+        aFilteredList.push_back(address);
+    }
+}
+
 void DiscoveryProxy::OnServiceDiscovered(const std::string                             &aType,
                                          const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)
 {
     otDnssdServiceInstanceInfo instanceInfo;
     const otDnssdQuery        *query                 = nullptr;
     std::string                unescapedInstanceName = DnsUtils::UnescapeInstanceName(aInstanceInfo.mName);
+    AddressList                filteredAddrList;
+
+    FilterLinkLocalAddresses(aInstanceInfo.mAddresses, filteredAddrList);
 
     otbrLogInfo("Service discovered: %s, instance %s hostname %s addresses %zu port %d priority %d "
                 "weight %d",
-                aType.c_str(), aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
-                aInstanceInfo.mAddresses.size(), aInstanceInfo.mPort, aInstanceInfo.mPriority, aInstanceInfo.mWeight);
+                aType.c_str(), aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(), filteredAddrList.size(),
+                aInstanceInfo.mPort, aInstanceInfo.mPriority, aInstanceInfo.mWeight);
 
-    instanceInfo.mAddressNum = aInstanceInfo.mAddresses.size();
+    instanceInfo.mAddressNum = filteredAddrList.size();
 
-    if (!aInstanceInfo.mAddresses.empty())
+    if (!filteredAddrList.empty())
     {
-        instanceInfo.mAddresses = reinterpret_cast<const otIp6Address *>(&aInstanceInfo.mAddresses[0]);
+        instanceInfo.mAddresses = reinterpret_cast<const otIp6Address *>(&filteredAddrList[0]);
     }
     else
     {
@@ -249,24 +267,21 @@ void DiscoveryProxy::OnHostDiscovered(const std::string                         
     otDnssdHostInfo     hostInfo;
     const otDnssdQuery *query            = nullptr;
     std::string         resolvedHostName = aHostInfo.mHostName;
+    AddressList         filteredAddrList;
+
+    FilterLinkLocalAddresses(aHostInfo.mAddresses, filteredAddrList);
+    VerifyOrExit(!filteredAddrList.empty());
 
     otbrLogInfo("Host discovered: %s hostname %s addresses %zu", aHostName.c_str(), aHostInfo.mHostName.c_str(),
-                aHostInfo.mAddresses.size());
+                filteredAddrList.size());
 
     if (resolvedHostName.empty())
     {
         resolvedHostName = aHostName + ".local.";
     }
 
-    hostInfo.mAddressNum = aHostInfo.mAddresses.size();
-    if (!aHostInfo.mAddresses.empty())
-    {
-        hostInfo.mAddresses = reinterpret_cast<const otIp6Address *>(&aHostInfo.mAddresses[0]);
-    }
-    else
-    {
-        hostInfo.mAddresses = nullptr;
-    }
+    hostInfo.mAddressNum = filteredAddrList.size();
+    hostInfo.mAddresses  = reinterpret_cast<const otIp6Address *>(&filteredAddrList[0]);
 
     hostInfo.mTtl = CapTtl(aHostInfo.mTtl);
 
@@ -298,6 +313,9 @@ void DiscoveryProxy::OnHostDiscovered(const std::string                         
             otDnssdQueryHandleDiscoveredHost(mHost.GetInstance(), hostFullName.c_str(), &hostInfo);
         }
     }
+
+exit:
+    return;
 }
 
 std::string DiscoveryProxy::TranslateDomain(const std::string &aName, const std::string &aTargetDomain)
