@@ -43,14 +43,14 @@ config_ra()
     local new_pltime="$5"
     local new_vltime="$6"
 
-    local old_prefix_delegated=false
+    local deprecate_old_prefix=false
     if [ -n "$old_prefix" ] && [ "$old_prefix/$old_prefix_len" != "$new_prefix/$new_prefix_len" ]; then
-        old_prefix_delegated=true
+        deprecate_old_prefix=true
     fi
 
-    local new_prefix_published=false
+    local publish_new_prefix=false
     if [ -n "$new_prefix" ] && [ -n "$new_prefix_len" ] && [ -n "$new_pltime" ] && [ -n "$new_vltime" ]; then
-        new_prefix_published=true
+        publish_new_prefix=true
     fi
 
     logger "$LOG_TAG $reason start config radvd"
@@ -62,7 +62,7 @@ interface ${WPAN_INTERFACE}
     AdvSendAdvert on;
 EOF
 
-    if "$old_prefix_delegated"; then
+    if "$deprecate_old_prefix"; then
         logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
 sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
     prefix ${old_prefix}/${old_prefix_len}
@@ -76,7 +76,7 @@ sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
 EOF
     fi
 
-    if $new_prefix_published; then
+    if $publish_new_prefix; then
         logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
 sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
     prefix ${new_prefix}/${new_prefix_len}
