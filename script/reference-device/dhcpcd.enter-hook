@@ -34,9 +34,25 @@ WPAN_INTERFACE="wpan0"
 RADVD_CONF="/etc/radvd.conf"
 LOG_TAG="dhcpcd.enter.hook:"
 
-
 config_ra()
 {
+    local old_prefix="$1"
+    local old_prefix_len="$2"
+    local new_prefix="$3"
+    local new_prefix_len="$4"
+    local new_pltime="$5"
+    local new_vltime="$6"
+
+    local deprecate_old_prefix=false
+    if [ -n "$old_prefix" ] && [ "$old_prefix/$old_prefix_len" != "$new_prefix/$new_prefix_len" ]; then
+        deprecate_old_prefix=true
+    fi
+
+    local publish_new_prefix=false
+    if [ -n "$new_prefix" ] && [ -n "$new_prefix_len" ] && [ -n "$new_pltime" ] && [ -n "$new_vltime" ]; then
+        publish_new_prefix=true
+    fi
+
     logger "$LOG_TAG $reason start config radvd"
 
 sudo tee "${RADVD_CONF}" > /dev/null <<EOF
@@ -44,16 +60,40 @@ interface ${WPAN_INTERFACE}
 {
     IgnoreIfMissing on;
     AdvSendAdvert on;
-    prefix ${1}/${2}
+EOF
+
+    if "$deprecate_old_prefix"; then
+        logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
+    prefix ${old_prefix}/${old_prefix_len}
     {
         AdvOnLink on;
         AdvAutonomous on;
         AdvRouterAddr off;
-        AdvPreferredLifetime ${3};
-        AdvValidLifetime ${4};
+        AdvPreferredLifetime 0;
+        AdvValidLifetime 0;
     };
+EOF
+    fi
+
+    if $publish_new_prefix; then
+        logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
+    prefix ${new_prefix}/${new_prefix_len}
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+        AdvPreferredLifetime ${new_pltime};
+        AdvValidLifetime ${new_vltime};
+    };
+EOF
+    fi
+
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
 };
 EOF
+
 }
 
 
@@ -63,17 +103,17 @@ if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
         # Split the variable into name and value
         name="${var%%=*}"
         value="${var#*=}"
-        logger -t "$LOG_TAG $reason sysenv: " "$name=$value"
+        logger "$LOG_TAG $reason sysenv: $name=$value"
     done
 
     case $reason in
         DELEGATED6 | REBIND6 | RENEW6 | BOUND6 )
-            if [ -z "$new_dhcp6_ia_pd1_prefix1" ] || [ -z "$new_dhcp6_ia_pd1_prefix1_length" ] || \
-               [ -z "$new_dhcp6_ia_pd1_prefix1_pltime" ] || [ -z "$new_dhcp6_ia_pd1_prefix1_vltime" ]; then
-                logger "$LOG_TAG WARNING: Missing DHCPv6 prefix information. Skipping radvd configuration."
-            else
-                logger "$LOG_TAG prefix is $new_dhcp6_ia_pd1_prefix1  length is $new_dhcp6_ia_pd1_prefix1_length pltime is  $new_dhcp6_ia_pd1_prefix1_pltime vltime is $new_dhcp6_ia_pd1_prefix1_vltime"
-                config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
+            # TODO: Handle multiple IA_PD prefixes (new_dhcp6_ia_pd{i}_prefix{j}, new_dhcp6_ia_pd{i}_prefix{j}_length, etc.)
+            #       and deprecate old prefixes properly for each.  Currently, only one prefix is handled.
+            if { [ -n "$new_dhcp6_ia_pd1_prefix1" ] && [ -n "$new_dhcp6_ia_pd1_prefix1_length" ]; } || \
+               { [ -n "$old_dhcp6_ia_pd1_prefix1" ] && [ -n "$old_dhcp6_ia_pd1_prefix1_length" ]; }; then
+                config_ra "$old_dhcp6_ia_pd1_prefix1" "$old_dhcp6_ia_pd1_prefix1_length" \
+                    "$new_dhcp6_ia_pd1_prefix1" "$new_dhcp6_ia_pd1_prefix1_length" "$new_dhcp6_ia_pd1_prefix1_pltime"  "$new_dhcp6_ia_pd1_prefix1_vltime"
                 if systemctl is-active network.target; then
                     sudo systemctl reload-or-restart radvd || logger "$LOG_TAG Failed to reload radvd"
                 fi
