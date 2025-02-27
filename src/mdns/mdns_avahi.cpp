@@ -1367,13 +1367,11 @@ void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser
     OTBR_UNUSED_VARIABLE(aRecordBrowser);
     OTBR_UNUSED_VARIABLE(aInterfaceIndex);
     OTBR_UNUSED_VARIABLE(aProtocol);
-    OTBR_UNUSED_VARIABLE(aEvent);
     OTBR_UNUSED_VARIABLE(aClazz);
     OTBR_UNUSED_VARIABLE(aType);
     OTBR_UNUSED_VARIABLE(aFlags);
 
     Ip6Address address;
-    bool       resolved   = false;
     int        avahiError = AVAHI_OK;
 
     otbrLog(aEvent != AVAHI_BROWSER_FAILURE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
@@ -1400,10 +1398,9 @@ void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser
     {
         mInstanceInfo.RemoveAddress(address);
     }
-    resolved = true;
 
 exit:
-    if (resolved)
+    if (aEvent == AVAHI_BROWSER_ALL_FOR_NOW)
     {
         // NOTE: This `HostSubscrption` object may be freed in `OnHostResolved`.
         mPublisherAvahi->OnServiceResolved(mType, mInstanceInfo);
@@ -1498,13 +1495,11 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
 {
     OTBR_UNUSED_VARIABLE(aRecordBrowser);
     OTBR_UNUSED_VARIABLE(aProtocol);
-    OTBR_UNUSED_VARIABLE(aEvent);
     OTBR_UNUSED_VARIABLE(aClazz);
     OTBR_UNUSED_VARIABLE(aType);
     OTBR_UNUSED_VARIABLE(aFlags);
 
     Ip6Address address;
-    bool       resolved   = false;
     int        avahiError = AVAHI_OK;
 
     otbrLog(aEvent != AVAHI_BROWSER_FAILURE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
@@ -1536,10 +1531,9 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
     mHostInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
     // TODO: Use a more proper TTL
     mHostInfo.mTtl = kDefaultTtl;
-    resolved       = true;
 
 exit:
-    if (resolved)
+    if (aEvent == AVAHI_BROWSER_ALL_FOR_NOW)
     {
         // NOTE: This `HostSubscrption` object may be freed in `OnHostResolved`.
         mPublisherAvahi->OnHostResolved(mHostName, mHostInfo);

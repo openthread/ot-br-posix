@@ -41,7 +41,7 @@
 using namespace otbr;
 using namespace otbr::Mdns;
 
-static constexpr int kTimeoutSeconds = 3;
+static constexpr int kTimeoutSeconds = 10;
 
 int RunMainloopUntilTimeout(int aSeconds)
 {
