@@ -1367,19 +1367,35 @@ void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser
     OTBR_UNUSED_VARIABLE(aRecordBrowser);
     OTBR_UNUSED_VARIABLE(aInterfaceIndex);
     OTBR_UNUSED_VARIABLE(aProtocol);
-    OTBR_UNUSED_VARIABLE(aEvent);
     OTBR_UNUSED_VARIABLE(aClazz);
     OTBR_UNUSED_VARIABLE(aType);
     OTBR_UNUSED_VARIABLE(aFlags);
 
     Ip6Address address;
-    bool       resolved   = false;
-    int        avahiError = AVAHI_OK;
+    bool       shouldReport = false;
+    int        avahiError   = AVAHI_OK;
 
     otbrLog(aEvent != AVAHI_BROWSER_FAILURE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
             "Resolve host reply: %s inf %d protocol %d class %" PRIu16 " type %" PRIu16 " size %zu flags %d event %d",
             aName, aInterfaceIndex, aProtocol, aClazz, aType, aSize, static_cast<int>(aFlags),
             static_cast<int>(aEvent));
+
+    if (aEvent == AVAHI_BROWSER_ALL_FOR_NOW)
+    {
+        // The `AVAHI_BROWSER_ALL_FOR_NOW` event is a one-time event to
+        // notify the user that more records will probably not appear
+        // in the near future. When the browser is initially started,
+        // we wait for this event before marking `mResolved` and
+        // invoking `OnServiceResolved()`. This ensures that we wait and
+        // collect all discovered IPv6 addresses. Afterwards, if there
+        // are new events updating the addresses (adding or removing an
+        // address), we invoke the callback providing the full updated
+        // address list on each such event.
+
+        mResolved    = true;
+        shouldReport = true;
+        ExitNow();
+    }
 
     VerifyOrExit(aEvent == AVAHI_BROWSER_NEW || aEvent == AVAHI_BROWSER_REMOVE);
     VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE || aSize == OTBR_IP4_ADDRESS_SIZE,
@@ -1400,10 +1416,11 @@ void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser
     {
         mInstanceInfo.RemoveAddress(address);
     }
-    resolved = true;
+
+    shouldReport = true;
 
 exit:
-    if (resolved)
+    if (mResolved && shouldReport)
     {
         // NOTE: This `HostSubscrption` object may be freed in `OnHostResolved`.
         mPublisherAvahi->OnServiceResolved(mType, mInstanceInfo);
@@ -1498,19 +1515,35 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
 {
     OTBR_UNUSED_VARIABLE(aRecordBrowser);
     OTBR_UNUSED_VARIABLE(aProtocol);
-    OTBR_UNUSED_VARIABLE(aEvent);
     OTBR_UNUSED_VARIABLE(aClazz);
     OTBR_UNUSED_VARIABLE(aType);
     OTBR_UNUSED_VARIABLE(aFlags);
 
     Ip6Address address;
-    bool       resolved   = false;
-    int        avahiError = AVAHI_OK;
+    bool       shouldReport = false;
+    int        avahiError   = AVAHI_OK;
 
     otbrLog(aEvent != AVAHI_BROWSER_FAILURE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
             "Resolve host reply: %s inf %d protocol %d class %" PRIu16 " type %" PRIu16 " size %zu flags %d event %d",
             aName, aInterfaceIndex, aProtocol, aClazz, aType, aSize, static_cast<int>(aFlags),
             static_cast<int>(aEvent));
+
+    if (aEvent == AVAHI_BROWSER_ALL_FOR_NOW)
+    {
+        // The `AVAHI_BROWSER_ALL_FOR_NOW` event is a one-time event to
+        // notify the user that more records will probably not appear
+        // in the near future. When the browser is initially started,
+        // we wait for this event before marking `mResolved` and
+        // invoking `OnHostResolved()`. This ensures that we wait and
+        // collect all discovered IPv6 addresses. Afterwards, if there
+        // are new events updating the addresses (adding or removing an
+        // address), we invoke the callback providing the full updated
+        // address list on each such event.
+
+        shouldReport = true;
+        mResolved    = true;
+        ExitNow();
+    }
 
     VerifyOrExit(aEvent == AVAHI_BROWSER_NEW || aEvent == AVAHI_BROWSER_REMOVE);
     VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE || aSize == OTBR_IP4_ADDRESS_SIZE,
@@ -1536,10 +1569,11 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
     mHostInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
     // TODO: Use a more proper TTL
     mHostInfo.mTtl = kDefaultTtl;
-    resolved       = true;
+
+    shouldReport = true;
 
 exit:
-    if (resolved)
+    if (mResolved && shouldReport)
     {
         // NOTE: This `HostSubscrption` object may be freed in `OnHostResolved`.
         mPublisherAvahi->OnHostResolved(mHostName, mHostInfo);
