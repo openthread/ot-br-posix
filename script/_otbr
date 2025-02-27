@@ -72,7 +72,6 @@ otbr_install()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_DNSSD_DISCOVERY_PROXY=ON"
-        "-DOTBR_SRP_ADVERTISING_PROXY=ON"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "-DOTBR_MDNS=${OTBR_MDNS:=mDNSResponder}"
         # Force re-evaluation of version strings
@@ -80,6 +79,16 @@ otbr_install()
         "-DOT_PACKAGE_VERSION="
         "${otbr_options[@]}"
     )
+
+    if with DNSSD_PLAT; then
+        otbr_options+=(
+            "-DOTBR_DNSSD_PLAT=ON"
+        )
+    else
+        otbr_options+=(
+            "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+        )
+    fi
 
     if with WEB_GUI; then
         otbr_options+=("-DOTBR_WEB=ON")

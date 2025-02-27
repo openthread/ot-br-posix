@@ -47,7 +47,10 @@ static otbr::DnssdPlatform::RegisterCallback MakeRegisterCallback(otInstance    
                                                                   otPlatDnssdRegisterCallback aCallback)
 {
     return [aInstance, aCallback](otPlatDnssdRequestId aRequestId, otError aError) {
-        aCallback(aInstance, aRequestId, aError);
+        if (aCallback)
+        {
+            aCallback(aInstance, aRequestId, aError);
+        }
     };
 }
 
