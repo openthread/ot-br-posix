@@ -29,5 +29,4 @@
 add_subdirectory(openthread)
 if(OTBR_REST)
     add_subdirectory(cJSON)
-    add_subdirectory(http-parser)
 endif()
