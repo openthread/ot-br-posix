@@ -44,19 +44,38 @@ namespace otbr {
 class CliDaemon
 {
 public:
-    CliDaemon(void);
+    class Dependencies
+    {
+    public:
+        virtual ~Dependencies(void) = default;
+
+        virtual otbrError InputCommandLine(const uint8_t *aBuf, uint16_t aLength);
+    };
+
+    CliDaemon(Dependencies &aDependencies);
 
     void Init(const std::string &aNetIfName);
+    void Deinit(void);
+
+    void Process(const MainloopContext *aContext);
+    void UpdateFdSet(MainloopContext *aContext);
 
 private:
-    void CreateListenSocketOrDie(void);
+    static constexpr size_t kCliMaxLineLength = 640;
+
+    void Clear(void);
 
     std::string GetSocketFilename(const char *aSuffix) const;
 
+    void CreateListenSocketOrDie(void);
+    void InitializeSessionSocket(void);
+
     int mListenSocket;
     int mDaemonLock;
+    int mSessionSocket;
 
-    std::string mNetifName;
+    std::string   mNetifName;
+    Dependencies &mDeps;
 };
 
 } // namespace otbr

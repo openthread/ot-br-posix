@@ -47,6 +47,14 @@
 
 namespace otbr {
 
+otbrError CliDaemon::Dependencies::InputCommandLine(const uint8_t *aBuf, uint16_t aLength)
+{
+    OTBR_UNUSED_VARIABLE(aBuf);
+    OTBR_UNUSED_VARIABLE(aLength);
+
+    return OTBR_ERROR_NONE;
+}
+
 static constexpr char kDefaultNetIfName[] = "wpan0";
 static constexpr char kSocketBaseName[]   = "/run/openthread-";
 static constexpr char kSocketSuffix[]     = ".sock";
@@ -65,9 +73,11 @@ std::string CliDaemon::GetSocketFilename(const char *aSuffix) const
     return fileName;
 }
 
-CliDaemon::CliDaemon(void)
+CliDaemon::CliDaemon(Dependencies &aDependencies)
     : mListenSocket(-1)
     , mDaemonLock(-1)
+    , mSessionSocket(-1)
+    , mDeps(aDependencies)
 {
 }
 
@@ -96,6 +106,43 @@ void CliDaemon::CreateListenSocketOrDie(void)
                 strerror(errno));
 }
 
+void CliDaemon::InitializeSessionSocket(void)
+{
+    int newSessionSocket = -1;
+    int flag             = -1;
+
+    VerifyOrExit((newSessionSocket = accept(mListenSocket, nullptr, nullptr)) != -1);
+
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_GETFD, 0)) != -1, close(newSessionSocket));
+
+    flag |= FD_CLOEXEC;
+
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_SETFD, flag)) != -1, close(newSessionSocket));
+
+#ifndef __linux__
+    // some platforms (macOS, Solaris) don't have MSG_NOSIGNAL
+    // SOME of those (macOS, but NOT Solaris) support SO_NOSIGPIPE
+    // if we have SO_NOSIGPIPE, then set it. Otherwise, we're going
+    // to simply ignore it.
+#if defined(SO_NOSIGPIPE)
+    VerifyOrExit((flag = setsockopt(newSessionSocket, SOL_SOCKET, SO_NOSIGPIPE, &flag, sizeof(flag))) != -1,
+                 close(newSessionSocket));
+#else
+#warning "no support for MSG_NOSIGNAL or SO_NOSIGPIPE"
+#endif
+#endif // __linux__
+
+    Clear();
+
+    mSessionSocket = newSessionSocket;
+    otbrLogInfo("Session socket is ready");
+exit:
+    if (flag == -1)
+    {
+        otbrLogWarning("Failed to initialize session socket: %s", strerror(errno));
+    }
+}
+
 void CliDaemon::Init(const std::string &aNetIfName)
 {
     // This allows implementing pseudo reset.
@@ -108,6 +155,79 @@ void CliDaemon::Init(const std::string &aNetIfName)
     // only accept 1 connection.
     //
     VerifyOrDie(listen(mListenSocket, 1) != -1, strerror(errno));
+
+exit:
+    return;
+}
+
+void CliDaemon::Clear(void)
+{
+    if (mSessionSocket != -1)
+    {
+        close(mSessionSocket);
+        mSessionSocket = -1;
+    }
+}
+
+void CliDaemon::Deinit(void)
+{
+    Clear();
+}
+
+void CliDaemon::UpdateFdSet(MainloopContext *aContext)
+{
+    assert(aContext != nullptr);
+    assert(mListenSocket != -1);
+    assert(mSessionSocket != -1);
+
+    aContext->AddFdToSet(mListenSocket, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
+    aContext->AddFdToSet(mSessionSocket, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
+
+    return;
+}
+
+void CliDaemon::Process(const MainloopContext *aContext)
+{
+    ssize_t received;
+
+    VerifyOrExit(aContext != nullptr);
+    VerifyOrExit(mListenSocket != -1);
+
+    VerifyOrDie(!FD_ISSET(mListenSocket, &aContext->mErrorFdSet), strerror(errno));
+
+    if (FD_ISSET(mListenSocket, &aContext->mReadFdSet))
+    {
+        InitializeSessionSocket();
+    }
+
+    VerifyOrExit(mSessionSocket != -1);
+
+    if (FD_ISSET(mSessionSocket, &aContext->mErrorFdSet))
+    {
+        Clear();
+    }
+    else if (FD_ISSET(mSessionSocket, &aContext->mReadFdSet))
+    {
+        uint8_t   buffer[kCliMaxLineLength];
+        otbrError error = OTBR_ERROR_NONE;
+
+        VerifyOrDie((received = read(mSessionSocket, buffer, sizeof(buffer))) != -1, strerror(errno));
+
+        if (received == 0)
+        {
+            otbrLogInfo("Session socket closed by peer");
+            Clear();
+        }
+        else
+        {
+            error = mDeps.InputCommandLine(buffer, received);
+
+            if (error != OTBR_ERROR_NONE)
+            {
+                otbrLogWarning("Failed to input command line, error:%s", otbrErrorString(error));
+            }
+        }
+    }
 
 exit:
     return;
