@@ -84,19 +84,19 @@
 #define OT_REST_RESOURCE_PATH_API_NODE OT_REST_RESOURCE_PATH_API OT_REST_RESOURCE_PATH_NODE
 #define OT_REST_RESOURCE_PATH_API_NETWORKS OT_REST_RESOURCE_PATH_API "/networks"
 
-#define OT_REST_HTTP_STATUS_200 "200 OK"
-#define OT_REST_HTTP_STATUS_201 "201 Created"
-#define OT_REST_HTTP_STATUS_204 "204 No Content"
-#define OT_REST_HTTP_STATUS_400 "400 Bad Request"
-#define OT_REST_HTTP_STATUS_404 "404 Not Found"
-#define OT_REST_HTTP_STATUS_405 "405 Method Not Allowed"
-#define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
-#define OT_REST_HTTP_STATUS_409 "409 Conflict"
-#define OT_REST_HTTP_STATUS_415 "415 Unsupported Media Type"
-#define OT_REST_HTTP_STATUS_422 "422 Unprocessable Content"
-#define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
-#define OT_REST_HTTP_STATUS_503 "503 Service Unavailable"
-#define OT_REST_HTTP_STATUS_507 "507 Insufficient Storage"
+#define OT_REST_HTTP_STATUS_200 "OK"
+#define OT_REST_HTTP_STATUS_201 "Created"
+#define OT_REST_HTTP_STATUS_204 "No Content"
+#define OT_REST_HTTP_STATUS_400 "Bad Request"
+#define OT_REST_HTTP_STATUS_404 "Not Found"
+#define OT_REST_HTTP_STATUS_405 "Method Not Allowed"
+#define OT_REST_HTTP_STATUS_408 "Request Timeout"
+#define OT_REST_HTTP_STATUS_409 "Conflict"
+#define OT_REST_HTTP_STATUS_415 "Unsupported Media Type"
+#define OT_REST_HTTP_STATUS_422 "Unprocessable Content"
+#define OT_REST_HTTP_STATUS_500 "Internal Server Error"
+#define OT_REST_HTTP_STATUS_503 "Service Unavailable"
+#define OT_REST_HTTP_STATUS_507 "Insufficient Storage"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -491,7 +491,7 @@ void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
         ExitNow(error = OTBR_ERROR_INVALID_ARGS);
     }
 
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
     aResponse.SetResponsCode(errorCode);
 
 exit:
@@ -779,7 +779,7 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
     otbrError                error   = OTBR_ERROR_NONE;
     struct NodeInfo          node;
     std::string              body;
-    std::string              errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    std::string              errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
     otOperationalDataset     dataset   = {};
     otOperationalDatasetTlvs datasetTlvs;
     otOperationalDatasetTlvs datasetUpdateTlvs;
@@ -1181,7 +1181,7 @@ void Resource::ApiActionHandler(const Request &aRequest, Response &aResponse)
         ApiActionDeleteHandler(aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
         aResponse.SetAllowMethods(methods);
         aResponse.SetResponsCode(errorCode);
         aResponse.SetComplete();
@@ -1488,6 +1488,7 @@ void Resource::ApiDiagnosticHandler(const Request &aRequest, Response &aResponse
 void Resource::ApiDeviceHandler(const Request &aRequest, Response &aResponse)
 {
     std::string errorCode;
+    std::string methods = "OPTIONS, GET, POST, DELETE";
 
     switch (aRequest.GetMethod())
     {
@@ -1501,11 +1502,13 @@ void Resource::ApiDeviceHandler(const Request &aRequest, Response &aResponse)
         ApiDevicePostHandler(aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
+        aResponse.SetAllowMethods(methods);
         aResponse.SetResponsCode(errorCode);
         aResponse.SetComplete();
         break;
     default:
+        aResponse.SetAllowMethods(methods);
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
         break;
     }
