@@ -1097,8 +1097,8 @@ std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessag
     std::string ret;
     cJSON      *error = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(error, "errorCode", cJSON_CreateNumber(static_cast<int16_t>(aErrorCode)));
-    cJSON_AddItemToObject(error, "errorMessage", cJSON_CreateString(aErrorMessage.c_str()));
+    cJSON_AddItemToObject(error, "title", cJSON_CreateString(aErrorMessage.c_str()));
+    cJSON_AddItemToObject(error, "status", cJSON_CreateNumber(static_cast<int16_t>(aErrorCode)));
 
     ret = Json2String(error);
 

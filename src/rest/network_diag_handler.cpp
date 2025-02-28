@@ -1132,10 +1132,11 @@ exit:
 
 void NetworkDiagHandler::UpdateNodeItem(ThisThreadDevice *thisItem)
 {
-    otError      error = OT_ERROR_NONE;
-    otRouterInfo routerInfo;
-    uint8_t      maxRouterId;
-    otDeviceRole role;
+    otError             error = OT_ERROR_NONE;
+    otRouterInfo        routerInfo;
+    uint8_t             maxRouterId;
+    otDeviceRole        role;
+    const otIp6Address *mlEid;
 
     error = otBorderAgentGetId(mInstance, &thisItem->mNodeInfo.mBaId);
     // if (error == OT_ERROR_NONE)
@@ -1169,6 +1170,12 @@ void NetworkDiagHandler::UpdateNodeItem(ThisThreadDevice *thisItem)
         thisItem->mNodeInfo.mNetworkName = otThreadGetNetworkName(mInstance);
         thisItem->mNodeInfo.mRloc16      = otThreadGetRloc16(mInstance);
         thisItem->mNodeInfo.mRlocAddress = *otThreadGetRloc(mInstance);
+
+        mlEid = otThreadGetMeshLocalEid(mInstance);
+        if (mlEid)
+        {
+            memcpy(&thisItem->mDeviceInfo.mMlEidIid, &mlEid->mFields.m8[8], sizeof(thisItem->mDeviceInfo.mMlEidIid));
+        }
     }
     else
     {
@@ -1205,9 +1212,9 @@ void NetworkDiagHandler::SetDeviceItemAttributes(std::string aExtAddr, DeviceInf
             std::unique_ptr<ThisThreadDevice> thisItem =
                 std::unique_ptr<ThisThreadDevice>(new ThisThreadDevice(aExtAddr));
 
-            UpdateNodeItem(thisItem.get());
-
             thisItem->mDeviceInfo = aDeviceInfo;
+            otLinkGetFactoryAssignedIeeeEui64(mInstance, &thisItem->mDeviceInfo.mEui64);
+            UpdateNodeItem(thisItem.get());
 
             mServices.GetDevicesCollection().AddItem(std::move(thisItem));
         }

@@ -491,7 +491,7 @@ void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
         ExitNow(error = OTBR_ERROR_INVALID_ARGS);
     }
 
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
     aResponse.SetResponsCode(errorCode);
 
 exit:
@@ -779,7 +779,7 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
     otbrError                error   = OTBR_ERROR_NONE;
     struct NodeInfo          node;
     std::string              body;
-    std::string              errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    std::string              errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
     otOperationalDataset     dataset   = {};
     otOperationalDatasetTlvs datasetTlvs;
     otOperationalDatasetTlvs datasetUpdateTlvs;
@@ -1181,7 +1181,7 @@ void Resource::ApiActionHandler(const Request &aRequest, Response &aResponse)
         ApiActionDeleteHandler(aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
         aResponse.SetAllowMethods(methods);
         aResponse.SetResponsCode(errorCode);
         aResponse.SetComplete();
@@ -1488,6 +1488,7 @@ void Resource::ApiDiagnosticHandler(const Request &aRequest, Response &aResponse
 void Resource::ApiDeviceHandler(const Request &aRequest, Response &aResponse)
 {
     std::string errorCode;
+    std::string methods = "OPTIONS, GET, POST, DELETE";
 
     switch (aRequest.GetMethod())
     {
@@ -1501,11 +1502,13 @@ void Resource::ApiDeviceHandler(const Request &aRequest, Response &aResponse)
         ApiDevicePostHandler(aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
+        aResponse.SetAllowMethods(methods);
         aResponse.SetResponsCode(errorCode);
         aResponse.SetComplete();
         break;
     default:
+        aResponse.SetAllowMethods(methods);
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
         break;
     }
