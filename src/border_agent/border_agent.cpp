@@ -160,13 +160,13 @@ BorderAgent::BorderAgent(otbr::Host::RcpHost &aHost, Mdns::Publisher &aPublisher
     : mHost(aHost)
     , mPublisher(aPublisher)
     , mIsEnabled(false)
-    , mIsEphemeralKeyEnabled(otThreadGetVersion() >= OT_THREAD_VERSION_1_4)
     , mVendorName(OTBR_VENDOR_NAME)
     , mProductName(OTBR_PRODUCT_NAME)
     , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
+    , mIsInitialized(false)
+    , mMeshCoPUdpPort(0)
+    , mBaIsActive(false)
 {
-    mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
-    otbrLogInfo("Ephemeral Key is: %s during initialization", (mIsEphemeralKeyEnabled ? "enabled" : "disabled"));
 }
 
 otbrError BorderAgent::CreateEphemeralKey(std::string &aEphemeralKey)
@@ -196,7 +196,7 @@ exit:
     return error;
 }
 
-otbrError BorderAgent::SetMeshCopServiceValues(const std::string              &aServiceInstanceName,
+otbrError BorderAgent::SetMeshCoPServiceValues(const std::string              &aServiceInstanceName,
                                                const std::string              &aProductName,
                                                const std::string              &aVendorName,
                                                const std::vector<uint8_t>     &aVendorOui,
@@ -215,10 +215,10 @@ otbrError BorderAgent::SetMeshCopServiceValues(const std::string              &a
     mProductName = aProductName;
     mVendorName  = aVendorName;
     mVendorOui   = aVendorOui;
-    mMeshCopTxtUpdate.clear();
+    mMeshCoPTxtUpdate.clear();
     for (const auto &txtEntry : aNonStandardTxtEntries)
     {
-        mMeshCopTxtUpdate[txtEntry.mKey] = txtEntry.mValue;
+        mMeshCoPTxtUpdate[txtEntry.mKey] = txtEntry.mValue;
     }
 
     mBaseServiceInstanceName = aServiceInstanceName;
@@ -243,25 +243,6 @@ exit:
     return;
 }
 
-void BorderAgent::SetEphemeralKeyEnabled(bool aIsEnabled)
-{
-    VerifyOrExit(GetEphemeralKeyEnabled() != aIsEnabled);
-    mIsEphemeralKeyEnabled = aIsEnabled;
-
-    if (!mIsEphemeralKeyEnabled)
-    {
-        // If the ePSKc feature is enabled, we call the stop function which
-        // will wait for the session to close if it is in active use before
-        // removing ephemeral key and unpublishing the service.
-        otBorderAgentEphemeralKeyStop(mHost.GetInstance());
-    }
-
-    UpdateMeshCopService();
-
-exit:
-    return;
-}
-
 void BorderAgent::Start(void)
 {
     otbrLogInfo("Start Thread Border Agent");
@@ -279,7 +260,7 @@ void BorderAgent::Start(void)
 #endif
 
     mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
-    UpdateMeshCopService();
+    UpdateMeshCoPService();
 
     otBorderAgentEphemeralKeySetCallback(mHost.GetInstance(), BorderAgent::HandleEpskcStateChanged, this);
 }
@@ -287,7 +268,7 @@ void BorderAgent::Start(void)
 void BorderAgent::Stop(void)
 {
     otbrLogInfo("Stop Thread Border Agent");
-    UnpublishMeshCopService();
+    UnpublishMeshCoPService();
 }
 
 void BorderAgent::HandleEpskcStateChanged(void *aContext)
@@ -375,7 +356,7 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     switch (aState)
     {
     case Mdns::Publisher::State::kReady:
-        UpdateMeshCopService();
+        UpdateMeshCoPService();
         break;
     default:
         otbrLogWarning("mDNS publisher not available!");
@@ -385,33 +366,44 @@ exit:
     return;
 }
 
-static uint64_t ConvertTimestampToUint64(const otTimestamp &aTimestamp)
+void BorderAgent::HandleBorderAgentStateChange(bool aIsActive, uint16_t aPort)
 {
-    // 64 bits Timestamp fields layout
-    //-----48 bits------//-----15 bits-----//-------1 bit-------//
-    //     Seconds      //      Ticks      //  Authoritative    //
-    return (aTimestamp.mSeconds << 16) | static_cast<uint64_t>(aTimestamp.mTicks << 1) |
-           static_cast<uint64_t>(aTimestamp.mAuthoritative);
+    VerifyOrExit(aIsActive != mBaIsActive || aPort != mMeshCoPUdpPort);
+
+    mBaIsActive     = aIsActive;
+    mMeshCoPUdpPort = aPort;
+
+    UpdateMeshCoPService();
+
+exit:
+    return;
 }
 
-#if OTBR_ENABLE_BORDER_ROUTING
-void AppendOmrTxtEntry(otInstance &aInstance, Mdns::Publisher::TxtList &aTxtList)
+void BorderAgent::HandleOtMeshCoPTxtValueChange(const std::vector<uint8_t> &aOtMeshCoPTxtValues)
 {
-    otIp6Prefix       omrPrefix;
-    otRoutePreference preference;
+    mOtMeshCoPTxtValues.assign(aOtMeshCoPTxtValues.begin(), aOtMeshCoPTxtValues.end());
 
-    if (OT_ERROR_NONE == otBorderRoutingGetFavoredOmrPrefix(&aInstance, &omrPrefix, &preference))
+    // Parse extended address from the encoded data for the first time
+    if (!mIsInitialized)
     {
-        std::vector<uint8_t> omrData;
+        Mdns::Publisher::TxtList txtList;
 
-        omrData.reserve(1 + OT_IP6_PREFIX_SIZE);
-        omrData.push_back(omrPrefix.mLength);
-        std::copy(omrPrefix.mPrefix.mFields.m8, omrPrefix.mPrefix.mFields.m8 + (omrPrefix.mLength + 7) / 8,
-                  std::back_inserter(omrData));
-        aTxtList.emplace_back("omr", omrData.data(), omrData.size());
+        Mdns::Publisher::DecodeTxtData(txtList, mOtMeshCoPTxtValues.data(), mOtMeshCoPTxtValues.size());
+        for (auto &entry : txtList)
+        {
+            if (entry.mKey == "xa")
+            {
+                memcpy(mExtAddress.m8, entry.mValue.data(), sizeof(otExtAddress));
+                break;
+            }
+        }
+
+        mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
+        mIsInitialized       = true;
     }
+
+    UpdateMeshCoPService();
 }
-#endif
 
 StateBitmap GetStateBitmap(otInstance &aInstance)
 {
@@ -454,41 +446,6 @@ StateBitmap GetStateBitmap(otInstance &aInstance)
     return state;
 }
 
-#if OTBR_ENABLE_BACKBONE_ROUTER
-void AppendBbrTxtEntries(otInstance &aInstance, StateBitmap aState, Mdns::Publisher::TxtList &aTxtList)
-{
-    if (aState.mBbrIsActive)
-    {
-        otBackboneRouterConfig bbrConfig;
-        uint16_t               bbrPort = htobe16(BackboneRouter::BackboneAgent::kBackboneUdpPort);
-
-        otBackboneRouterGetConfig(&aInstance, &bbrConfig);
-        aTxtList.emplace_back("sq", &bbrConfig.mSequenceNumber, sizeof(bbrConfig.mSequenceNumber));
-        aTxtList.emplace_back("bb", reinterpret_cast<const uint8_t *>(&bbrPort), sizeof(bbrPort));
-    }
-
-    aTxtList.emplace_back("dn", otThreadGetDomainName(&aInstance));
-}
-#endif
-
-void AppendActiveTimestampTxtEntry(otInstance &aInstance, Mdns::Publisher::TxtList &aTxtList)
-{
-    otError              error;
-    otOperationalDataset activeDataset;
-
-    if ((error = otDatasetGetActive(&aInstance, &activeDataset)) != OT_ERROR_NONE)
-    {
-        otbrLogWarning("Failed to get active dataset: %s", otThreadErrorToString(error));
-    }
-    else
-    {
-        uint64_t activeTimestampValue = ConvertTimestampToUint64(activeDataset.mActiveTimestamp);
-
-        activeTimestampValue = htobe64(activeTimestampValue);
-        aTxtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestampValue), sizeof(activeTimestampValue));
-    }
-}
-
 void AppendVendorTxtEntries(const std::map<std::string, std::vector<uint8_t>> &aVendorEntries,
                             Mdns::Publisher::TxtList                          &aTxtList)
 {
@@ -515,14 +472,8 @@ void AppendVendorTxtEntries(const std::map<std::string, std::vector<uint8_t>> &a
     }
 }
 
-void BorderAgent::PublishMeshCopService(void)
+void BorderAgent::PublishMeshCoPService(void)
 {
-    StateBitmap              state;
-    uint32_t                 stateUint32;
-    otInstance              *instance    = mHost.GetInstance();
-    const otExtendedPanId   *extPanId    = otThreadGetExtendedPanId(instance);
-    const otExtAddress      *extAddr     = otLinkGetExtendedAddress(instance);
-    const char              *networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
     Mdns::Publisher::TxtData txtData;
     int                      port;
@@ -531,23 +482,6 @@ void BorderAgent::PublishMeshCopService(void)
     OTBR_UNUSED_VARIABLE(error);
 
     otbrLogInfo("Publish meshcop service %s.%s.local.", mServiceInstanceName.c_str(), kBorderAgentServiceType);
-
-#if OTBR_ENABLE_PUBLISH_MESHCOP_BA_ID
-    {
-        otError         error;
-        otBorderAgentId id;
-
-        error = otBorderAgentGetId(instance, &id);
-        if (error == OT_ERROR_NONE)
-        {
-            txtList.emplace_back("id", id.mId, sizeof(id));
-        }
-        else
-        {
-            otbrLogWarning("Failed to retrieve Border Agent ID: %s", otThreadErrorToString(error));
-        }
-    }
-#endif
 
     if (!mVendorOui.empty())
     {
@@ -561,50 +495,26 @@ void BorderAgent::PublishMeshCopService(void)
     {
         txtList.emplace_back("mn", mProductName.c_str());
     }
-    txtList.emplace_back("nn", networkName);
-    txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
-    txtList.emplace_back("tv", mHost.GetThreadVersion());
 
-    // "xa" stands for Extended MAC Address (64-bit) of the Thread Interface of the Border Agent.
-    txtList.emplace_back("xa", extAddr->m8, sizeof(extAddr->m8));
-    state                 = GetStateBitmap(*instance);
-    state.mEpskcSupported = GetEphemeralKeyEnabled();
-    stateUint32           = htobe32(state.ToUint32());
-    txtList.emplace_back("sb", reinterpret_cast<uint8_t *>(&stateUint32), sizeof(stateUint32));
+    AppendVendorTxtEntries(mMeshCoPTxtUpdate, txtList);
 
-    if (state.mThreadIfStatus == kThreadIfStatusActive)
-    {
-        uint32_t partitionId;
-
-        AppendActiveTimestampTxtEntry(*instance, txtList);
-        partitionId = otThreadGetPartitionId(instance);
-        txtList.emplace_back("pt", reinterpret_cast<uint8_t *>(&partitionId), sizeof(partitionId));
-    }
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    AppendBbrTxtEntries(*instance, state, txtList);
-#endif
-#if OTBR_ENABLE_BORDER_ROUTING
-    AppendOmrTxtEntry(*instance, txtList);
-#endif
-
-    AppendVendorTxtEntries(mMeshCopTxtUpdate, txtList);
-
-    if (otBorderAgentIsActive(instance))
-    {
-        port = otBorderAgentGetUdpPort(instance);
-    }
-    else
-    {
-        // When thread interface is not active, the border agent is not started, thus it's not listening to any port and
-        // not handling requests. In such situation, we use a dummy port number for publishing the MeshCoP service to
-        // advertise the status of the border router. One can learn the thread interface status from `sb` entry so it
-        // doesn't have to send requests to the dummy port when border agent is not running.
-        port = kBorderAgentServiceDummyPort;
-    }
+    // When thread interface is not active, the border agent is not started, thus it's not listening to any port and
+    // not handling requests. In such situation, we use a dummy port number for publishing the MeshCoP service to
+    // advertise the status of the border router. One can learn the thread interface status from `sb` entry so it
+    // doesn't have to send requests to the dummy port when border agent is not running.
+    port = mBaIsActive ? mMeshCoPUdpPort : kBorderAgentServiceDummyPort;
 
     error = Mdns::Publisher::EncodeTxtData(txtList, txtData);
     assert(error == OTBR_ERROR_NONE);
+
+    if (txtData.size() == 1)
+    {
+        txtData.assign(mOtMeshCoPTxtValues.begin(), mOtMeshCoPTxtValues.end());
+    }
+    else
+    {
+        txtData.insert(txtData.end(), mOtMeshCoPTxtValues.begin(), mOtMeshCoPTxtValues.end());
+    }
 
     mPublisher.PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentServiceType,
                               Mdns::Publisher::SubTypeList{}, port, txtData, [this](otbrError aError) {
@@ -626,14 +536,14 @@ void BorderAgent::PublishMeshCopService(void)
                                       // Try to unpublish current service in case we are trying to register
                                       // multiple new services simultaneously when the original service name
                                       // is conflicted.
-                                      UnpublishMeshCopService();
+                                      UnpublishMeshCoPService();
                                       mServiceInstanceName = GetAlternativeServiceInstanceName();
-                                      PublishMeshCopService();
+                                      PublishMeshCoPService();
                                   }
                               });
 }
 
-void BorderAgent::UnpublishMeshCopService(void)
+void BorderAgent::UnpublishMeshCoPService(void)
 {
     otbrLogInfo("Unpublish meshcop service %s.%s.local", mServiceInstanceName.c_str(), kBorderAgentServiceType);
 
@@ -643,11 +553,12 @@ void BorderAgent::UnpublishMeshCopService(void)
     });
 }
 
-void BorderAgent::UpdateMeshCopService(void)
+void BorderAgent::UpdateMeshCoPService(void)
 {
+    VerifyOrExit(mIsInitialized);
     VerifyOrExit(IsEnabled());
     VerifyOrExit(mPublisher.IsStarted());
-    PublishMeshCopService();
+    PublishMeshCoPService();
 
 exit:
     return;
@@ -656,46 +567,19 @@ exit:
 #if OTBR_ENABLE_DBUS_SERVER
 void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate)
 {
-    mMeshCopTxtUpdate = std::move(aUpdate);
-    UpdateMeshCopService();
+    mMeshCoPTxtUpdate = std::move(aUpdate);
+    UpdateMeshCoPService();
 }
 #endif
 
-void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
-{
-    VerifyOrExit(IsEnabled());
-
-    if (aFlags & OT_CHANGED_THREAD_ROLE)
-    {
-        otbrLogInfo("Thread is %s", (IsThreadStarted() ? "up" : "down"));
-    }
-
-    if (aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
-                  OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_THREAD_NETDATA))
-    {
-        UpdateMeshCopService();
-    }
-
-exit:
-    return;
-}
-
-bool BorderAgent::IsThreadStarted(void) const
-{
-    otDeviceRole role = mHost.GetDeviceRole();
-
-    return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
-}
-
 std::string BorderAgent::GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const
 {
-    const otExtAddress *extAddress = otLinkGetExtendedAddress(mHost.GetInstance());
-    std::stringstream   ss;
+    std::stringstream ss;
 
     ss << aServiceInstanceName << " #";
     ss << std::uppercase << std::hex << std::setfill('0');
-    ss << std::setw(2) << static_cast<int>(extAddress->m8[6]);
-    ss << std::setw(2) << static_cast<int>(extAddress->m8[7]);
+    ss << std::setw(2) << static_cast<int>(mExtAddress.m8[6]);
+    ss << std::setw(2) << static_cast<int>(mExtAddress.m8[7]);
     return ss.str();
 }
 
