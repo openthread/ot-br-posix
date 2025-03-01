@@ -241,6 +241,8 @@ void PublisherMDnsSd::Stop(StopMode aStopMode)
 {
     VerifyOrExit(mState == State::kReady);
 
+    mState = State::kIdle;
+
     // If we get a `kDNSServiceErr_ServiceNotRunning` and need to
     // restart the `Publisher`, we should immediately de-allocate
     // all `ServiceRef`. Otherwise, we first clear the `Registrations`
@@ -265,7 +267,7 @@ void PublisherMDnsSd::Stop(StopMode aStopMode)
     mSubscribedServices.clear();
     mSubscribedHosts.clear();
 
-    mState = State::kIdle;
+    mStateCallback(mState);
 
 exit:
     return;
@@ -756,7 +758,8 @@ void PublisherMDnsSd::DnssdKeyRegistration::Unregister(void)
 
     VerifyOrExit(serviceRef != nullptr);
 
-    dnsError = DNSServiceRemoveRecord(serviceRef, mRecordRef, /* flags */ 0);
+    dnsError   = DNSServiceRemoveRecord(serviceRef, mRecordRef, /* flags */ 0);
+    mRecordRef = nullptr;
 
     otbrLogInfo("Unregistered key %s: error:%s", mName.c_str(), DNSErrorToString(dnsError));
 

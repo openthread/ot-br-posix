@@ -519,6 +519,10 @@ bool PublisherAvahi::IsStarted(void) const
 
 void PublisherAvahi::Stop(void)
 {
+    VerifyOrExit(mState == State::kReady);
+
+    mState = State::kIdle;
+
     mServiceRegistrations.clear();
     mHostRegistrations.clear();
 
@@ -531,7 +535,10 @@ void PublisherAvahi::Stop(void)
         mClient = nullptr;
     }
 
-    mState = Mdns::Publisher::State::kIdle;
+    mStateCallback(mState);
+
+exit:
+    return;
 }
 
 void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext)
@@ -664,8 +671,6 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
 
     case AVAHI_CLIENT_FAILURE:
         otbrLogErr("Avahi client failed to start: %s", avahi_strerror(avahi_client_errno(aClient)));
-        mState = State::kIdle;
-        mStateCallback(mState);
         Stop();
         Start();
         break;
