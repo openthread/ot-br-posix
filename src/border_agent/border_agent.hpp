@@ -50,11 +50,11 @@
 #include "trel_dnssd/trel_dnssd.hpp"
 
 #ifndef OTBR_VENDOR_NAME
-#define OTBR_VENDOR_NAME "OpenThread"
+#error "Missing Vendor name"
 #endif
 
 #ifndef OTBR_PRODUCT_NAME
-#define OTBR_PRODUCT_NAME "BorderRouter"
+#error "Missing product name"
 #endif
 
 #ifndef OTBR_MESHCOP_SERVICE_INSTANCE_NAME
