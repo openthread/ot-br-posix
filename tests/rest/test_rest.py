@@ -32,6 +32,7 @@ import urllib.error
 import ipaddress
 import json
 import re
+import time
 from threading import Thread
 
 rest_api_addr = "http://0.0.0.0:8081"
@@ -255,6 +256,14 @@ def node_state_check(data):
 
     return True
 
+def node_state_check_attached(data):
+    node_state_check(data)
+        
+    if (data != "detached") and (data != "disabled"):
+        return True
+    else:
+        return False
+
 
 def node_network_name_check(data):
     assert data is not None
@@ -365,6 +374,21 @@ def node_state_test(thread_num):
     print(" /node/state : all {}, valid {} ".format(thread_num, valid))
 
 
+def node_state_test_attached():
+    url = rest_api_addr + "/node/state"
+
+    response_data = [None]
+    is_attached = False
+    now = time.time()
+
+    while not is_attached and time.time() - now < 130:
+        get_data_from_url(url, response_data, 0)
+        is_attached = node_state_check_attached(response_data[0])
+        print(" /node/state : attached {} ".format(is_attached))
+        if not is_attached:
+            time.sleep(1)
+
+
 def node_network_name_test(thread_num):
     url = rest_api_addr + "/node/network-name"
 
@@ -468,6 +492,7 @@ def main():
     node_ext_address_test(200)
     node_state_test(200)
     node_network_name_test(200)
+    node_state_test_attached()  # wait for attached state
     node_leader_data_test(200)
     node_num_of_router_test(200)
     node_ext_panid_test(200)
