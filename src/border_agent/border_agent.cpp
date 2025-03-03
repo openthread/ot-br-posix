@@ -159,14 +159,19 @@ struct StateBitmap
 BorderAgent::BorderAgent(otbr::Host::RcpHost &aHost, Mdns::Publisher &aPublisher)
     : mHost(aHost)
     , mPublisher(aPublisher)
-    , mIsEnabled(false)
-    , mIsEphemeralKeyEnabled(otThreadGetVersion() >= OT_THREAD_VERSION_1_4)
-    , mVendorName(OTBR_VENDOR_NAME)
-    , mProductName(OTBR_PRODUCT_NAME)
-    , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
 {
-    mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+    ClearState();
+}
+
+void BorderAgent::Init(void)
+{
     otbrLogInfo("Ephemeral Key is: %s during initialization", (mIsEphemeralKeyEnabled ? "enabled" : "disabled"));
+    mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+}
+
+void BorderAgent::Deinit(void)
+{
+    ClearState();
 }
 
 otbrError BorderAgent::CreateEphemeralKey(std::string &aEphemeralKey)
@@ -260,6 +265,19 @@ void BorderAgent::SetEphemeralKeyEnabled(bool aIsEnabled)
 
 exit:
     return;
+}
+
+void BorderAgent::ClearState(void)
+{
+    mIsEnabled             = false;
+    mIsEphemeralKeyEnabled = (otThreadGetVersion() >= OT_THREAD_VERSION_1_4);
+    mMeshCopTxtUpdate.clear();
+    mVendorOui.clear();
+    mVendorName              = OTBR_VENDOR_NAME;
+    mProductName             = OTBR_PRODUCT_NAME;
+    mBaseServiceInstanceName = OTBR_MESHCOP_SERVICE_INSTANCE_NAME;
+    mServiceInstanceName.clear();
+    mEphemeralKeyChangedCallbacks.clear();
 }
 
 void BorderAgent::Start(void)

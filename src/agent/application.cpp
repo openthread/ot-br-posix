@@ -255,6 +255,7 @@ void Application::InitRcpMode(void)
     mPublisher->Start();
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
+    mBorderAgent->Init();
 // This is for delaying publishing the MeshCoP service until the correct
 // vendor name and OUI etc. are correctly set by BorderAgent::SetMeshCopServiceValues()
 #if OTBR_STOP_BORDER_AGENT_ON_INIT
@@ -302,6 +303,7 @@ void Application::DeinitRcpMode(void)
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
     mBorderAgent->SetEnabled(false);
+    mBorderAgent->Deinit();
 #endif
 #if OTBR_ENABLE_MDNS
     mMdnsStateSubject.Clear();
