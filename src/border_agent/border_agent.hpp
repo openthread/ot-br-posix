@@ -92,6 +92,16 @@ public:
     ~BorderAgent(void) = default;
 
     /**
+     * Initializes the Thread Border Agent.
+     */
+    void Init(void);
+
+    /**
+     * Deinitializes the Thread Border Agent.
+     */
+    void Deinit(void);
+
+    /**
      * Overrides MeshCoP service (i.e. _meshcop._udp) instance name, product name, vendor name and vendor OUI.
      *
      * This method must be called before this BorderAgent is enabled by SetEnabled.
@@ -160,6 +170,7 @@ public:
     void AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback);
 
 private:
+    void ClearState(void);
     void Start(void);
     void Stop(void);
     bool IsEnabled(void) const { return mIsEnabled; }
