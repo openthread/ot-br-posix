@@ -37,6 +37,7 @@ Makefile.in
 stamp-h1
 .stamp-h1
 build
+scan-build
 
 # Border Router Docs
 doc/Doxyfile
