@@ -40,11 +40,10 @@
 #include <netinet/ip.h>
 #include <sys/socket.h>
 
-#include "common/mainloop.hpp"
-#include "rest/connection.hpp"
+#include "host/rcp_host.hpp"
+#include "rest/resource.hpp"
 
 using otbr::Host::RcpHost;
-using std::chrono::steady_clock;
 
 namespace otbr {
 namespace rest {
@@ -52,7 +51,7 @@ namespace rest {
 /**
  * This class implements a REST server.
  */
-class RestWebServer : public MainloopProcessor
+class RestWebServer
 {
 public:
     /**
@@ -65,32 +64,20 @@ public:
     /**
      * The destructor destroys the server instance.
      */
-    ~RestWebServer(void) override;
+    ~RestWebServer(void);
 
     /**
      * This method initializes the REST server.
      */
     void Init(void);
 
-    void Update(MainloopContext &aMainloop) override;
-    void Process(const MainloopContext &aMainloop) override;
-
 private:
-    void      UpdateConnections(const fd_set &aReadFdSet);
-    void      CreateNewConnection(int32_t &aFd);
-    otbrError Accept(int32_t aListenFd);
-    bool      ParseListenAddress(const std::string listenAddress, struct in6_addr *sin6_addr);
-    void      InitializeListenFd(void);
-    bool      SetFdNonblocking(int32_t fd);
+    bool ParseListenAddress(const std::string listenAddress, struct in6_addr *sin6_addr);
+    void InitializeListenFd(void);
 
     // Resource handler
-    Resource mResource;
-    // Struct for server configuration
-    sockaddr_in6 mAddress;
-    // File descriptor for listening
-    int32_t mListenFd;
-    // Connection List
-    std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
+    Resource        mResource;
+    httplib::Server mServer;
 };
 
 } // namespace rest
