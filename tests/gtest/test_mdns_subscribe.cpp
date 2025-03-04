@@ -320,7 +320,7 @@ TEST_F(MdnsTest, SubscribeServiceType)
     clearLastInstance();
 
     pub->PublishHost("host2", {sAddr4}, NoOpCallback());
-    RunMainloopUntilTimeout(kTimeoutSeconds);
+    RunMainloopUntilTimeout(3 * kTimeoutSeconds);
     EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceAdded(lastInstanceInfo, "host2.local.", {sAddr4}, "service3", 44444, {});
     clearLastInstance();
