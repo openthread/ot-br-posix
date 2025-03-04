@@ -29,6 +29,8 @@
 add_library(otbr-border-agent
     border_agent.cpp
     border_agent.hpp
+    udp_proxy.hpp
+    udp_proxy.cpp
 )
 
 target_link_libraries(otbr-border-agent PRIVATE
