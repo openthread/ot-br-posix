@@ -196,6 +196,7 @@ private:
             : Subscription(aAvahiPublisher)
             , mHostName(std::move(aHostName))
             , mRecordBrowser(nullptr)
+            , mResolved(false)
         {
         }
 
@@ -229,6 +230,7 @@ private:
         std::string         mHostName;
         DiscoveredHostInfo  mHostInfo;
         AvahiRecordBrowser *mRecordBrowser;
+        bool                mResolved;
     };
 
     struct ServiceResolver
@@ -300,6 +302,7 @@ private:
         AvahiServiceResolver  *mServiceResolver = nullptr;
         AvahiRecordBrowser    *mRecordBrowser   = nullptr;
         DiscoveredInstanceInfo mInstanceInfo;
+        bool                   mResolved = false;
     };
     struct ServiceSubscription : public Subscription
     {

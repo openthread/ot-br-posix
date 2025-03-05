@@ -766,7 +766,12 @@ void Publisher::UpdateHostResolutionEmaLatency(const std::string &aHostName, otb
 
 void Publisher::AddAddress(AddressList &aAddressList, const Ip6Address &aAddress)
 {
-    aAddressList.push_back(aAddress);
+    auto it = std::find(aAddressList.begin(), aAddressList.end(), aAddress);
+
+    if (it == aAddressList.end())
+    {
+        aAddressList.push_back(aAddress);
+    }
 }
 
 void Publisher::RemoveAddress(AddressList &aAddressList, const Ip6Address &aAddress)
