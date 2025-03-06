@@ -251,14 +251,19 @@ void RcpHost::Init(void)
     otTrelSetEnabled(mInstance, featureFlagList.enable_trel());
 #endif
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE && OTBR_ENABLE_SRP_SERVER_ON_INIT
+#error \
+    "OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE and OTBR_ENABLE_SRP_SERVER_ON_INIT shouldn't be enabled at the same time"
+#endif
+
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
     // Let SRP server use auto-enable mode. The auto-enable mode delegates the control of SRP server to the Border
     // Routing Manager. SRP server automatically starts when bi-directional connectivity is ready.
     otSrpServerSetAutoEnableMode(mInstance, /* aEnabled */ true);
-#else
-    otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
 #endif
+
+#if OTBR_ENABLE_SRP_SERVER_ON_INIT
+    otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
 #endif
 
 #if !OTBR_ENABLE_FEATURE_FLAGS
