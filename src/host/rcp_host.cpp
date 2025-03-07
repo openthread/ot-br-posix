@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <openthread/backbone_router_ftd.h>
+#include <openthread/border_agent.h>
 #include <openthread/border_routing.h>
 #include <openthread/dataset.h>
 #include <openthread/dnssd_server.h>
@@ -279,6 +280,8 @@ void RcpHost::Init(void)
 #endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
+    otBorderAgentSetMeshCoPServiceChangedCallback(mInstance, RcpHost::HandleMeshCoPServiceChanged, this);
+
     mThreadHelper = MakeUnique<otbr::agent::ThreadHelper>(mInstance, this);
 
     OtNetworkProperties::SetInstance(mInstance);
@@ -340,6 +343,7 @@ void RcpHost::Deinit(void)
     mSetThreadEnabledReceiver  = nullptr;
     mScheduleMigrationReceiver = nullptr;
     mDetachGracefullyCallbacks.clear();
+    mBorderAgentMeshCoPServiceChangedCallback = nullptr;
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -785,6 +789,36 @@ void RcpHost::UpdateThreadEnabledState(ThreadEnabledState aState)
     {
         callback(mThreadEnabledState);
     }
+}
+
+void RcpHost::HandleMeshCoPServiceChanged(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->HandleMeshCoPServiceChanged();
+}
+
+void RcpHost::HandleMeshCoPServiceChanged(void)
+{
+    otBorderAgentMeshCoPServiceTxtData txtData;
+
+    VerifyOrExit(mBorderAgentMeshCoPServiceChangedCallback != nullptr);
+
+    if (otBorderAgentGetMeshCoPServiceTxtData(mInstance, &txtData) != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to read MeshCoP Service TXT Data");
+    }
+    else
+    {
+        mBorderAgentMeshCoPServiceChangedCallback(otBorderAgentIsActive(mInstance), otBorderAgentGetUdpPort(mInstance),
+                                                  txtData.mData, txtData.mLength);
+    }
+
+exit:
+    return;
+}
+
+void RcpHost::SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback)
+{
+    mBorderAgentMeshCoPServiceChangedCallback = std::move(aCallback);
 }
 
 /*
