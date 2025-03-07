@@ -42,13 +42,16 @@
 
 #include <openthread/border_agent.h>
 
+#include "openthread/mesh_diag.h"
 #include "openthread/netdiag.h"
 
 #define OT_REST_ACCEPT_HEADER "Accept"
+#define OT_REST_ALLOW_HEADER "Allow"
 #define OT_REST_CONTENT_TYPE_HEADER "Content-Type"
 
 #define OT_REST_CONTENT_TYPE_JSON "application/json"
 #define OT_REST_CONTENT_TYPE_PLAIN "text/plain"
+#define OT_REST_CONTENT_TYPE_JSONAPI "application/vnd.api+json"
 
 using std::chrono::steady_clock;
 
@@ -68,16 +71,19 @@ enum class HttpMethod : std::uint8_t
 
 enum class HttpStatusCode : std::uint16_t
 {
-    kStatusOk                  = 200,
-    kStatusCreated             = 201,
-    kStatusNoContent           = 204,
-    kStatusBadRequest          = 400,
-    kStatusResourceNotFound    = 404,
-    kStatusMethodNotAllowed    = 405,
-    kStatusRequestTimeout      = 408,
-    kStatusConflict            = 409,
-    kStatusInternalServerError = 500,
-    kStatusInsufficientStorage = 507,
+    kStatusOk                   = 200,
+    kStatusCreated              = 201,
+    kStatusNoContent            = 204,
+    kStatusBadRequest           = 400,
+    kStatusResourceNotFound     = 404,
+    kStatusMethodNotAllowed     = 405,
+    kStatusRequestTimeout       = 408,
+    kStatusConflict             = 409,
+    kStatusUnsupportedMediaType = 415,
+    kStatusUnprocessable        = 422,
+    kStatusInternalServerError  = 500,
+    kStatusServiceUnavailable   = 503,
+    kStatusInsufficientStorage  = 507,
 };
 
 enum class PostError : std::uint8_t
@@ -102,14 +108,15 @@ enum class ConnectionState : std::uint8_t
 struct NodeInfo
 {
     otBorderAgentId mBaId;
-    std::string     mRole;
-    uint32_t        mNumOfRouter;
-    uint16_t        mRloc16;
-    const uint8_t  *mExtPanId;
-    const uint8_t  *mExtAddress;
-    otIp6Address    mRlocAddress;
-    otLeaderData    mLeaderData;
-    std::string     mNetworkName;
+    // otBorderAgentState mBaState;
+    std::string    mRole;
+    uint32_t       mNumOfRouter;
+    uint16_t       mRloc16;
+    const uint8_t *mExtPanId;
+    const uint8_t *mExtAddress;
+    otIp6Address   mRlocAddress;
+    otLeaderData   mLeaderData;
+    std::string    mNetworkName;
 };
 
 struct DiagInfo

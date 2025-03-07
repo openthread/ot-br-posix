@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -25,34 +26,19 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+# Install Bruno CLI
+#
 
-add_library(otbr-rest
-    actions/action.cpp
-    actions/add_thread_device.cpp
-    actions/handler.cpp
-    actions_list.cpp
-    commissioner_manager.cpp
-    connection.cpp
-    json.cpp
-    parser.cpp
-    request.cpp
-    resource.cpp
-    response.cpp
-    rest_generic_collection.cpp
-    rest_server_common.cpp
-    rest_web_server.cpp
-    services.cpp
-    timestamp.cpp
-    uuid.cpp
-)
-
-target_link_libraries(otbr-rest
-    PUBLIC
-        http_parser
-    PRIVATE
-        cjson
-        otbr-config
-        otbr-utils
-        openthread-ftd
-        openthread-posix
-)
+# installs fnm (Fast Node Manager)
+curl -fsSL https://fnm.vercel.app/install | bash
+# activate fnm
+# shellcheck source=/dev/null
+source ~/.bashrc
+# download and install Node.js
+fnm use --install-if-missing 20
+# verifies the right Node.js version is in the environment
+node -v # should print `v20.17.0`
+# verifies the right npm version is in the environment
+npm -v # should print `10.8.2`
+# install Bruno CLI
+npm install -g @usebruno/cli

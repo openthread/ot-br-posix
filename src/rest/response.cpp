@@ -34,7 +34,7 @@
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
     "Access-Control-Request-Headers"
-#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD "DELETE, GET, OPTIONS, PUT"
+#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD "DELETE, GET, OPTIONS, PUT, POST"
 #define OT_REST_RESPONSE_CONNECTION "close"
 
 namespace otbr {
@@ -78,6 +78,11 @@ bool Response::IsComplete()
 void Response::SetResponsCode(std::string &aCode)
 {
     mCode = aCode;
+}
+
+void Response::SetAllowMethods(const std::string &aMethods)
+{
+    mHeaders[OT_REST_ALLOW_HEADER] = aMethods;
 }
 
 void Response::SetContentType(const std::string &aContentType)
