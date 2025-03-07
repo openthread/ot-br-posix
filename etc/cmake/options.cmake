@@ -88,9 +88,18 @@ if (OTBR_SRP_ADVERTISING_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_ADVERTISING_PROXY=1)
 endif()
 
-cmake_dependent_option(OTBR_SRP_SERVER_AUTO_ENABLE "Enable SRP server auto enable mode" ON "OTBR_SRP_ADVERTISING_PROXY;OTBR_BORDER_ROUTING" OFF)
+option(OTBR_SRP_SERVER_AUTO_ENABLE "Enable SRP server auto enable mode" OFF)
 if (OTBR_SRP_SERVER_AUTO_ENABLE)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE=1)
+endif()
+
+option(OTBR_SRP_SERVER_ON_INIT "Enable SRP server on initialization" OFF)
+if (OTBR_SRP_SERVER_ON_INIT)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_SERVER_ON_INIT=1)
+endif()
+
+if (OTBR_SRP_ADVERTISING_PROXY AND OTBR_BORDER_ROUTING)
+    set(OTBR_SRP_SERVER_AUTO_ENABLE ON CACHE STRING "Enable SRP server auto enable mode")
 endif()
 
 option(OTBR_DNSSD_DISCOVERY_PROXY   "Enable DNS-SD Discovery Proxy support" OFF)
