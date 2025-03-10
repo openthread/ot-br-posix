@@ -40,18 +40,23 @@
 
 #include <openthread/border_agent.h>
 #include <openthread/border_router.h>
+#include <openthread/dataset.h>
+#include <openthread/dataset_ftd.h>
+#include <openthread/netdiag.h>
 
-#include "common/api_strings.hpp"
+#include <vector>
+
+#include <httplib.h>
 #include "host/rcp_host.hpp"
-#include "openthread/dataset.h"
-#include "openthread/dataset_ftd.h"
-#include "rest/json.hpp"
-#include "rest/request.hpp"
-#include "rest/response.hpp"
+#include "rest/types.hpp"
 #include "utils/thread_helper.hpp"
 
 using otbr::Host::RcpHost;
 using std::chrono::steady_clock;
+
+using httplib::Request;
+using httplib::Response;
+using httplib::StatusCode;
 
 namespace otbr {
 namespace rest {
@@ -67,21 +72,12 @@ public:
      *
      * @param[in] aHost  A pointer to the Thread controller.
      */
-    Resource(RcpHost *aHost);
+    Resource(httplib::Server &aServer, RcpHost *aHost);
 
     /**
      * This method initialize the Resource handler.
      */
     void Init(void);
-
-    /**
-     * This method is the main entry of resource handler, which find corresponding handler according to request url
-     * find the resource and set the content of response.
-     *
-     * @param[in]     aRequest  A request instance referred by the Resource handler.
-     * @param[in,out] aResponse  A response instance will be set by the Resource handler.
-     */
-    void Handle(Request &aRequest, Response &aResponse) const;
 
     /**
      * This method distributes a callback handler for each connection needs a callback.
@@ -98,9 +94,12 @@ public:
      * @param[in]     aRequest    A request instance referred by the Resource handler.
      * @param[in,out] aErrorCode  An enum class represents the status code.
      */
-    void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const;
+    void ErrorHandler(Response &aResponse, StatusCode aErrorCode) const;
 
 private:
+    typedef void (Resource::*RequestHandler)(const Request &aRequest, Response &aResponse) const;
+    httplib::Server::Handler MakeHandler(RequestHandler aHandler);
+
     /**
      * This enumeration represents the Dataset type (active or pending).
      */
@@ -110,8 +109,6 @@ private:
         kPending, ///< Pending Dataset
     };
 
-    typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse) const;
-    typedef void (Resource::*ResourceCallbackHandler)(const Request &aRequest, Response &aResponse);
     void NodeInfo(const Request &aRequest, Response &aResponse) const;
     void BaId(const Request &aRequest, Response &aResponse) const;
     void ExtendedAddr(const Request &aRequest, Response &aResponse) const;
@@ -164,8 +161,11 @@ private:
     otInstance *mInstance;
     RcpHost    *mHost;
 
-    std::unordered_map<std::string, ResourceHandler>         mResourceMap;
-    std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
+    template <typename Call, typename... Args>
+    auto RunInMainLoop(Call aCall, Args... aArgs) const -> decltype(aCall(aArgs...))
+    {
+        return mHost->GetTaskRunner().PostAndWait<decltype(aCall(aArgs...))>([&]() { return aCall(aArgs...); });
+    }
 
     std::unordered_map<std::string, DiagInfo> mDiagSet;
 };
