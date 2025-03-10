@@ -36,6 +36,8 @@ add_library(otbr-posix
     netif_linux.cpp
     netif_unix.cpp
     netif.hpp
+    udp_proxy.cpp
+    udp_proxy.hpp
 )
 
 target_link_libraries(otbr-posix
