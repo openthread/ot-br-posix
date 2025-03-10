@@ -41,15 +41,22 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <vector>
 
-#include <openthread/ip6.h>
-
+#include "common/code_utils.hpp"
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "host/posix/cli_daemon.hpp"
+#include "utils/socket_utils.hpp"
 
 // Only Test on linux platform for now.
 #ifdef __linux__
+
+using ::testing::_;
+using ::testing::Return;
+
+static otbr::CliDaemon::Dependencies sDefaultCliDaemonDependencies;
 
 TEST(CliDaemon, InitSocketCreationWithFullNetIfName)
 {
@@ -57,7 +64,7 @@ TEST(CliDaemon, InitSocketCreationWithFullNetIfName)
     const char *socketFile = "/run/openthread-tun0.sock";
     const char *lockFile   = "/run/openthread-tun0.lock";
 
-    otbr::CliDaemon cliDaemon;
+    otbr::CliDaemon cliDaemon(sDefaultCliDaemonDependencies);
     cliDaemon.Init(netIfName);
 
     struct stat st;
@@ -71,13 +78,96 @@ TEST(CliDaemon, InitSocketCreationWithEmptyNetIfName)
     const char *socketFile = "/run/openthread-wpan0.sock";
     const char *lockFile   = "/run/openthread-wpan0.lock";
 
-    otbr::CliDaemon cliDaemon;
+    otbr::CliDaemon cliDaemon(sDefaultCliDaemonDependencies);
     cliDaemon.Init("");
 
     struct stat st;
 
     EXPECT_EQ(stat(socketFile, &st), 0);
     EXPECT_EQ(stat(lockFile, &st), 0);
+}
+
+class CliDaemonDependencyTestInputCommandLine : public otbr::CliDaemon::Dependencies
+{
+public:
+    CliDaemonDependencyTestInputCommandLine(bool &aReceived, std::string &aReceivedCommand)
+        : mReceived(aReceived)
+        , mReceivedCommand(aReceivedCommand)
+    {
+    }
+
+    otbrError InputCommandLine(const uint8_t *aData, uint16_t aLength) override
+    {
+        mReceivedCommand = std::string(reinterpret_cast<const char *>(aData), aLength);
+        mReceived        = true;
+        return OTBR_ERROR_NONE;
+    }
+
+    bool        &mReceived;
+    std::string &mReceivedCommand;
+};
+
+TEST(CliDaemon, InputCommandLineCorrectly_AfterReveivingOnSessionSocket)
+{
+    bool                                    received = false;
+    std::string                             receivedCommand;
+    CliDaemonDependencyTestInputCommandLine cliDependency(received, receivedCommand);
+
+    const char *command    = "test command";
+    const char *netIfName  = "tun0";
+    const char *socketFile = "/run/openthread-tun0.sock";
+
+    otbr::CliDaemon cliDaemon(cliDependency);
+    EXPECT_EQ(cliDaemon.Init(netIfName), OT_ERROR_NONE);
+
+    {
+        int clientSocket;
+
+        if ((clientSocket = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+        {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+
+        ASSERT_GE(clientSocket, 0);
+
+        struct sockaddr_un serverAddr;
+        memset(&serverAddr, 0, sizeof(serverAddr));
+        serverAddr.sun_family = AF_UNIX;
+        strncpy(serverAddr.sun_path, socketFile, sizeof(serverAddr.sun_path) - 1);
+        ASSERT_EQ(connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)), 0);
+
+        if (send(clientSocket, command, strlen(command), 0) < 0)
+        {
+            FAIL() << "Error sending command: " << std::strerror(errno);
+        }
+
+        close(clientSocket);
+    }
+
+    otbr::MainloopContext context;
+    while (!received)
+    {
+        context.mMaxFd   = -1;
+        context.mTimeout = {100, 0};
+        FD_ZERO(&context.mReadFdSet);
+        FD_ZERO(&context.mWriteFdSet);
+        FD_ZERO(&context.mErrorFdSet);
+
+        cliDaemon.UpdateFdSet(context);
+        int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
+                          &context.mTimeout);
+        if (rval < 0)
+        {
+            perror("select failed");
+            exit(EXIT_FAILURE);
+        }
+        cliDaemon.Process(context);
+    }
+
+    EXPECT_STREQ(receivedCommand.c_str(), command);
+
+    cliDaemon.Deinit();
 }
 
 #endif // __linux__
