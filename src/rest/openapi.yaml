@@ -404,6 +404,21 @@ paths:
                 type: string
                 description: Coprocessor version string
                 example: "OPENTHREAD/thread-reference-20200818-1740-g33cc75ed3; NRF52840; Jun  2 2022 14:25:49"
+  /node/ip-address/mleid:
+    get:
+      tags:
+        - node
+      summary: Get the MLEID ip address
+      description: Retrieves the border router mesh-local EID IP address.
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: string
+                description: mleid ip address
+                example: "fd06:1488:f31:d0f9:f4f4:3594:e17c:4882"
 
 components:
   schemas:
