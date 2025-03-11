@@ -107,10 +107,8 @@ public:
     void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                              const AsyncResultReceiver          &aReceiver) override;
 #endif
-    void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
-    void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
-    void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) override;
-
+    void            AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
+    void            AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
     CoprocessorType GetCoprocessorType(void) override
     {
         return OT_COPROCESSOR_NCP;
