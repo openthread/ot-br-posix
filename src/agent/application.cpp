@@ -260,6 +260,9 @@ void Application::InitRcpMode(void)
             mBorderAgent->HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
                                                                  std::vector<uint8_t>(aTxtData, aTxtData + aLength));
         });
+    mHost.AddEphemeralKeyStateChangedCallback([this](otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort) {
+        mBorderAgent->HandleEpskcStateChanged(aEpskcState, aPort);
+    });
 // This is for delaying publishing the MeshCoP service until the correct
 // vendor name and OUI etc. are correctly set by BorderAgent::SetMeshCopServiceValues()
 #if OTBR_STOP_BORDER_AGENT_ON_INIT
