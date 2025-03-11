@@ -110,6 +110,7 @@ public:
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
     void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
     void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) override;
+    void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {

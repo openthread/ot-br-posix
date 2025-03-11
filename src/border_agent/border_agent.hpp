@@ -84,10 +84,9 @@ public:
     /**
      * The constructor to initialize the Thread border agent.
      *
-     * @param[in] aHost       A reference to the Thread controller.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
      */
-    BorderAgent(otbr::Host::RcpHost &aHost, Mdns::Publisher &aPublisher);
+    BorderAgent(Mdns::Publisher &aPublisher);
 
     ~BorderAgent(void) = default;
 
@@ -146,6 +145,14 @@ public:
                                                 const std::vector<uint8_t> &aOtMeshCoPTxtValues);
 
     /**
+     * This method handles Epskc state changes.
+     *
+     * @param[in] aEpskcState    The Epskc state.
+     * @param[in] aPort          The UDP port of the Epskc service if it's active.
+     */
+    void HandleEpskcStateChanged(otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort);
+
+    /**
      * This method creates ephemeral key in the Border Agent.
      *
      * @param[out] aEphemeralKey  The ephemeral key digit string of length 9 with first 8 digits randomly
@@ -155,13 +162,6 @@ public:
      * @returns OTBR_ERROR_NONE          If successfully generate the ePSKc.
      */
     static otbrError CreateEphemeralKey(std::string &aEphemeralKey);
-
-    /**
-     * This method adds a callback for ephemeral key changes.
-     *
-     * @param[in] aCallback  The callback to receive ephemeral key changed events.
-     */
-    void AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback);
 
 #if OTBR_ENABLE_DBUS_SERVER
     /**
@@ -187,14 +187,11 @@ private:
     std::string GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const;
     std::string GetAlternativeServiceInstanceName() const;
 
-    static void HandleEpskcStateChanged(void *aContext);
-    void        HandleEpskcStateChanged(void);
-    void        PublishEpskcService(void);
-    void        UnpublishEpskcService(void);
+    void PublishEpskcService(uint16_t aPort);
+    void UnpublishEpskcService(void);
 
-    otbr::Host::RcpHost &mHost;
-    Mdns::Publisher     &mPublisher;
-    bool                 mIsEnabled;
+    Mdns::Publisher &mPublisher;
+    bool             mIsEnabled;
 
     std::map<std::string, std::vector<uint8_t>> mMeshCoPTxtUpdate;
 
@@ -213,8 +210,6 @@ private:
     // conflicts. For example, this value can be "OpenThread Border Router #7AC3" or
     // "OpenThread Border Router #7AC3 (14379)".
     std::string mServiceInstanceName;
-
-    std::vector<EphemeralKeyChangedCallback> mEphemeralKeyChangedCallbacks;
 
     // The encoded MeshCoP TXT values from OT core.
     std::vector<uint8_t> mOtMeshCoPTxtValues;

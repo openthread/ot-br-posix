@@ -283,6 +283,7 @@ void RcpHost::Init(void)
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
     otBorderAgentSetMeshCoPServiceChangedCallback(mInstance, RcpHost::HandleMeshCoPServiceChanged, this);
+    otBorderAgentEphemeralKeySetCallback(mInstance, RcpHost::HandleEpskcStateChanged, this);
 
     mThreadHelper = MakeUnique<otbr::agent::ThreadHelper>(mInstance, this);
 
@@ -346,6 +347,7 @@ void RcpHost::Deinit(void)
     mScheduleMigrationReceiver = nullptr;
     mDetachGracefullyCallbacks.clear();
     mBorderAgentMeshCoPServiceChangedCallback = nullptr;
+    mEphemeralKeyStateChangedCallbacks.clear();
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -821,6 +823,27 @@ exit:
 void RcpHost::SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback)
 {
     mBorderAgentMeshCoPServiceChangedCallback = std::move(aCallback);
+}
+
+void RcpHost::HandleEpskcStateChanged(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->HandleEpskcStateChanged();
+}
+
+void RcpHost::HandleEpskcStateChanged(void)
+{
+    otBorderAgentEphemeralKeyState epskcState = otBorderAgentEphemeralKeyGetState(mInstance);
+    uint16_t                       port       = otBorderAgentEphemeralKeyGetUdpPort(mInstance);
+
+    for (auto callback : mEphemeralKeyStateChangedCallbacks)
+    {
+        callback(epskcState, port);
+    }
+}
+
+void RcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback)
+{
+    mEphemeralKeyStateChangedCallbacks.push_back(aCallback);
 }
 
 /*
