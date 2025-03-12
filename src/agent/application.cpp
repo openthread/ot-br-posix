@@ -255,11 +255,7 @@ void Application::InitRcpMode(void)
     mPublisher->Start();
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    mHost.SetBorderAgentMeshCoPServiceChangedCallback(
-        [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
-            mBorderAgent->HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
-                                                                 std::vector<uint8_t>(aTxtData, aTxtData + aLength));
-        });
+    mBorderAgent->Init();
 // This is for delaying publishing the MeshCoP service until the correct
 // vendor name and OUI etc. are correctly set by BorderAgent::SetMeshCopServiceValues()
 #if OTBR_STOP_BORDER_AGENT_ON_INIT
