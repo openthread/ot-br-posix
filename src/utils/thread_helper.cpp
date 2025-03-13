@@ -55,7 +55,7 @@
 #if OTBR_ENABLE_LINK_METRICS_TELEMETRY
 #include <openthread/link_metrics.h>
 #endif
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER
 #include <openthread/srp_server.h>
 #endif
 #include <openthread/thread_ftd.h>
@@ -132,7 +132,7 @@ static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, 
     return nodeType;
 }
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER
 threadnetwork::TelemetryData_SrpServerState SrpServerStateFromOtSrpServerState(otSrpServerState srpServerState)
 {
     switch (srpServerState)
@@ -161,7 +161,7 @@ threadnetwork::TelemetryData_SrpServerAddressMode SrpServerAddressModeFromOtSrpS
         return threadnetwork::TelemetryData::SRP_SERVER_ADDRESS_MODE_UNSPECIFIED;
     }
 }
-#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#endif // OTBR_ENABLE_SRP_SERVER
 
 #if OTBR_ENABLE_NAT64
 threadnetwork::TelemetryData_Nat64State Nat64StateFromOtNat64State(otNat64State nat64State)
@@ -1424,7 +1424,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         RetrieveExternalRouteInfo(*wpanBorderRouter->mutable_external_route_info());
 #endif
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER
         // Begin of SrpServerInfo section.
         {
             auto                               srpServer = wpanBorderRouter->mutable_srp_server();
@@ -1492,7 +1492,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             srpServerResponseCounters->set_other_count(responseCounters->mOther);
         }
         // End of SrpServerInfo section.
-#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#endif // OTBR_ENABLE_SRP_SERVER
 
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
         // Begin of DnsServerInfo section.

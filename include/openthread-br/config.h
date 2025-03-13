@@ -37,4 +37,20 @@
 #include OTBR_CONFIG_FILE
 #endif
 
+/**
+ * @def OTBR_ENABLE_SRP_SERVER
+ *
+ * Enable SRP server if Advertising Proxy is enabled.
+ */
+#define OTBR_ENABLE_SRP_SERVER (OTBR_ENABLE_SRP_ADVERTISING_PROXY || OTBR_ENABLE_OT_SRP_ADV_PROXY)
+
+/**
+ * @def OTBR_SRP_SERVER_AUTO_ENABLE
+ *
+ * By default, enable auto-enable mode for SRP server if SRP server and Border Routing are enabled.
+ */
+#ifndef OTBR_SRP_SERVER_AUTO_ENABLE
+#define OTBR_SRP_SERVER_AUTO_ENABLE (OTBR_ENABLE_SRP_SERVER && OTBR_BORDER_ROUTING)
+#endif
+
 #endif // OTBR_CONFIG_H_
