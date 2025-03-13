@@ -65,7 +65,9 @@ if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
     done
 
     case $reason in
-        EXPIRE6 | STOP6)
+        EXPIRE6 | STOP6 | RELEASE6 )
+            # TODO: Handle multiple IA_PD prefixes (new_dhcp6_ia_pd{i}_prefix{j}, new_dhcp6_ia_pd{i}_prefix{j}_length, etc.)
+            #       and deprecate old prefixes properly for each.  Currently, only one prefix is handled.)
             if [ -z "$old_dhcp6_ia_pd1_prefix1" ] || [ -z "$old_dhcp6_ia_pd1_prefix1_length" ]; then
                 logger "$LOG_TAG WARNING: Missing DHCPv6 prefix information. Skipping radvd configuration."
             else

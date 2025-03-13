@@ -464,6 +464,13 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_THREAD_CHILD_TABLE:
+    case SPINEL_PROP_THREAD_ON_MESH_NETS:
+    case SPINEL_PROP_THREAD_OFF_MESH_ROUTES:
+    case SPINEL_PROP_THREAD_LEADER_NETWORK_DATA:
+    case SPINEL_PROP_IPV6_LL_ADDR:
+        break;
+
     case SPINEL_PROP_STREAM_NET:
     {
         const uint8_t *data;
@@ -739,6 +746,12 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
         VerifyOrExit(aKey == SPINEL_PROP_LAST_STATUS, error = OTBR_ERROR_INVALID_STATE);
         SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
         otbrLogInfo("Infra If handle ICMP6 ND result: %s", spinel_status_to_cstr(status));
+        break;
+
+    case SPINEL_PROP_DNSSD_STATE:
+        VerifyOrExit(aKey == SPINEL_PROP_LAST_STATUS, error = OTBR_ERROR_INVALID_STATE);
+        SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+        otbrLogInfo("Update dnssd state result: %s", spinel_status_to_cstr(status));
         break;
 
     default:

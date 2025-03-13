@@ -65,8 +65,7 @@ install_common_dependencies()
         coreutils \
         git \
         libprotobuf-dev \
-        protobuf-compiler \
-        socat
+        protobuf-compiler
 }
 
 install_openthread_binraries()
@@ -79,8 +78,6 @@ install_openthread_binraries()
     cmake .. -GNinja -DOT_PLATFORM=simulation -DOT_FULL_LOGS=1 -DOT_COMMISSIONER=ON -DOT_JOINER=ON
     ninja
     sudo ninja install
-
-    sudo apt-get install --no-install-recommends -y socat
 }
 
 configure_network()
@@ -97,18 +94,21 @@ case "$(uname)" in
         install_common_dependencies
 
         if [ "$BUILD_TARGET" == script-check ] || [ "$BUILD_TARGET" == docker-check ]; then
+            sudo bash third_party/openthread/repo/script/install_socat
             install_openthread_binraries
             configure_network
             exit 0
         fi
 
         if [ "$BUILD_TARGET" == check ] || [ "$BUILD_TARGET" == meshcop ]; then
+            sudo bash third_party/openthread/repo/script/install_socat
             install_openthread_binraries
             sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils
             configure_network
         fi
 
         if [ "$BUILD_TARGET" == ncp_mode ]; then
+            sudo bash third_party/openthread/repo/script/install_socat
             sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils
         fi
 
