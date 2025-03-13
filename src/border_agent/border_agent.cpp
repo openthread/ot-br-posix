@@ -284,18 +284,6 @@ void BorderAgent::Start(void)
 {
     otbrLogInfo("Start Thread Border Agent");
 
-#if OTBR_ENABLE_DBUS_SERVER
-    mHost.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
-        HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
-    });
-    mHost.RegisterResetHandler([this]() {
-        mHost.GetThreadHelper()->SetUpdateMeshCopTxtHandler(
-            [this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
-                HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
-            });
-    });
-#endif
-
     mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
     UpdateMeshCopService();
 

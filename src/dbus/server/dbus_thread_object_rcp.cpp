@@ -1304,8 +1304,7 @@ exit:
 
 void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
 {
-    auto                                        threadHelper = mHost.GetThreadHelper();
-    otError                                     error        = OT_ERROR_NONE;
+    otError                                     error = OT_ERROR_NONE;
     std::map<std::string, std::vector<uint8_t>> update;
     std::vector<TxtEntry>                       updatedTxtEntries;
     auto                                        args = std::tie(updatedTxtEntries);
@@ -1319,7 +1318,7 @@ void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     {
         VerifyOrExit(!update.count(reservedKey), error = OT_ERROR_INVALID_ARGS);
     }
-    threadHelper->OnUpdateMeshCopTxt(std::move(update));
+    mBorderAgent.HandleUpdateVendorMeshCoPTxtEntries(std::move(update));
 
 exit:
     aRequest.ReplyOtResult(error);

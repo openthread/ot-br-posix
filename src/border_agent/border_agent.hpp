@@ -169,17 +169,26 @@ public:
      */
     void AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback);
 
+#if OTBR_ENABLE_DBUS_SERVER
+    /**
+     * This method handles update of vendor MeshCoP TXT entries.
+     *
+     * @param[in] aUpdate  A map of vendor MeshCoP TXT entries.
+     */
+    void HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate);
+#endif
+
 private:
     void ClearState(void);
     void Start(void);
     void Stop(void);
-    bool IsEnabled(void) const { return mIsEnabled; }
+    bool IsEnabled(void) const
+    {
+        return mIsEnabled;
+    }
     void PublishMeshCopService(void);
     void UpdateMeshCopService(void);
     void UnpublishMeshCopService(void);
-#if OTBR_ENABLE_DBUS_SERVER
-    void HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate);
-#endif
 
     void HandleThreadStateChanged(otChangedFlags aFlags);
 
