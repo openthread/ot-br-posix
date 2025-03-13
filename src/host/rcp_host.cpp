@@ -256,6 +256,7 @@ void RcpHost::Init(void)
     "OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE and OTBR_ENABLE_SRP_SERVER_ON_INIT shouldn't be enabled at the same time"
 #endif
 
+#if OTBR_ENABLE_SRP_SERVER
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
     // Let SRP server use auto-enable mode. The auto-enable mode delegates the control of SRP server to the Border
     // Routing Manager. SRP server automatically starts when bi-directional connectivity is ready.
@@ -264,6 +265,7 @@ void RcpHost::Init(void)
 
 #if OTBR_ENABLE_SRP_SERVER_ON_INIT
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
+#endif
 #endif
 
 #if !OTBR_ENABLE_FEATURE_FLAGS
