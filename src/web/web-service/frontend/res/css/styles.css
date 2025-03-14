@@ -39,12 +39,12 @@ text {
 }
 
 .status-title {
-    font-size: 14px;
+    font-size: 16px;
     color: black;
 }
 
 .status-content {
-    font-size: 13px;
+    font-size: 14px;
     color: grey;
 }
 
@@ -85,6 +85,39 @@ text {
     background-color: #a3a2a2;
 }
 
+/* Custom styles for slider container */
+.slider-container {
+  margin: 10px;
+  padding: 5px;
+  height: 60px;
+  display: flex; /* Use flexbox for layout */
+  align-items: center; /* Center items vertically */
+}
+
+/* Align the text in the slider container to the left */
+.slider-container p {
+  font-size: 16px;
+  margin: 0;
+  color: #333;
+}
+
+/* Create space between slider and slider text */
+md-slider {
+  margin-left: 15px;
+}
+
+.checkbox-container {
+  margin: 10px;
+  padding: 5px;
+}
+
+.checkbox-container md-checkbox {
+  margin-right: 10px; /* Adjusts the spacing between checkboxes */
+}
+
+.checkbox-container p {
+  font-size: 16px;
+}
 
 .content {
     font-size: 13px;
