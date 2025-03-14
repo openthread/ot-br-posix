@@ -61,7 +61,7 @@ public:
     void UpdateFdSet(MainloopContext &aContext);
 
 private:
-    static constexpr size_t kCliMaxLineLength = 640;
+    static constexpr size_t kCliMaxLineLength = OTBR_CONFIG_CLI_MAX_LINE_LENGTH;
 
     void Clear(void);
 

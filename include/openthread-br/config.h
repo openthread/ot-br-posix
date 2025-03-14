@@ -37,4 +37,8 @@
 #include OTBR_CONFIG_FILE
 #endif
 
+#ifndef OTBR_CONFIG_CLI_MAX_LINE_LENGTH
+#define OTBR_CONFIG_CLI_MAX_LINE_LENGTH 640
+#endif
+
 #endif // OTBR_CONFIG_H_
