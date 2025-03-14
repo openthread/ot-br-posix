@@ -143,9 +143,51 @@ std::string ThisThreadDevice::ToJsonString(std::set<std::string> aKeys)
 {
     std::string str1 = Json::SparseDeviceInfo2JsonString(mDeviceInfo, aKeys);
     std::string str2 = Json::SparseNode2JsonString(mNodeInfo, aKeys);
-    str1.back()      = ',';
-    str2.erase(str2.begin());
-    return str1 + str2;
+
+    // Parse str1 and str2 into cJSON objects
+    cJSON *json1 = str1.empty() ? cJSON_CreateObject() : cJSON_Parse(str1.c_str());
+    cJSON *json2 = str2.empty() ? cJSON_CreateObject() : cJSON_Parse(str2.c_str());
+
+    if (json1 == nullptr || json2 == nullptr)
+    {
+        // Handle parsing error
+        if (json1 != nullptr)
+        {
+            cJSON_Delete(json1);
+        }
+        if (json2 != nullptr)
+        {
+            cJSON_Delete(json2);
+        }
+        return ""; // Return an empty JSON object in case of error
+    }
+
+    // Merge json2 into json1
+    cJSON *json1_child = nullptr;
+    cJSON_ArrayForEach(json1_child, json2)
+    {
+        cJSON *json1_item = cJSON_GetObjectItem(json1, json1_child->string);
+        if (json1_item == nullptr)
+        {
+            cJSON_AddItemToObject(json1, json1_child->string, cJSON_Duplicate(json1_child, 1));
+        }
+        else
+        {
+            // Handle duplicate keys if necessary
+            cJSON_ReplaceItemInObject(json1, json1_child->string, cJSON_Duplicate(json1_child, 1));
+        }
+    }
+
+    // Serialize the merged cJSON object back into a JSON string
+    char       *merged_str = cJSON_PrintUnformatted(json1);
+    std::string result(merged_str);
+
+    // Clean up
+    cJSON_Delete(json1);
+    cJSON_Delete(json2);
+    cJSON_free(merged_str);
+
+    return result;
 }
 
 // DevicesCollection class implementation
