@@ -54,6 +54,7 @@
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
 #include "dbus/server/dbus_request.hpp"
+#include "host/thread_host.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -222,7 +223,8 @@ public:
     void Flush(void);
 
 protected:
-    otbrError Initialize(bool aIsAsyncPropertyHandler);
+    otbrError      Initialize(bool aIsAsyncPropertyHandler);
+    static otError HostErrorToOtError(Host::Error aError);
 
 private:
     void GetAllPropertiesMethodHandler(DBusRequest &aRequest);
