@@ -95,7 +95,6 @@ void NcpNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aData
 
 NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
-    , mNetif(mNcpSpinel)
     , mInfraIf(mNcpSpinel)
 {
     memset(&mConfig, 0, sizeof(mConfig));
@@ -114,16 +113,8 @@ void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
     mNcpSpinel.Init(mSpinelDriver, *this);
-    mNetif.Init(mConfig.mInterfaceName);
     mInfraIf.Init();
 
-    mNcpSpinel.Ip6SetAddressCallback(
-        [this](const std::vector<Ip6AddressInfo> &aAddrInfos) { mNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
-    mNcpSpinel.Ip6SetAddressMulticastCallback(
-        [this](const std::vector<Ip6Address> &aAddrs) { mNetif.UpdateIp6MulticastAddresses(aAddrs); });
-    mNcpSpinel.NetifSetStateChangedCallback([this](bool aState) { mNetif.SetNetifState(aState); });
-    mNcpSpinel.Ip6SetReceiveCallback(
-        [this](const uint8_t *aData, uint16_t aLength) { mNetif.Ip6Receive(aData, aLength); });
     mNcpSpinel.InfraIfSetIcmp6NdSendCallback(
         [this](uint32_t aInfraIfIndex, const otIp6Address &aAddr, const uint8_t *aData, uint16_t aDataLen) {
             OTBR_UNUSED_VARIABLE(mInfraIf.SendIcmp6Nd(aInfraIfIndex, aAddr, aData, aDataLen));
@@ -148,7 +139,6 @@ void NcpHost::Init(void)
 void NcpHost::Deinit(void)
 {
     mNcpSpinel.Deinit();
-    mNetif.Deinit();
     otSysDeinit();
 }
 
@@ -266,8 +256,6 @@ void NcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallba
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
-
-    mNetif.Process(&aMainloop);
 }
 
 void NcpHost::Update(MainloopContext &aMainloop)
@@ -279,8 +267,6 @@ void NcpHost::Update(MainloopContext &aMainloop)
         aMainloop.mTimeout.tv_sec  = 0;
         aMainloop.mTimeout.tv_usec = 0;
     }
-
-    mNetif.UpdateFdSet(&aMainloop);
 }
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
@@ -294,6 +280,27 @@ void NcpHost::HandleMdnsState(Mdns::Publisher::State aState)
     mNcpSpinel.DnssdSetState(aState);
 }
 #endif
+
+void NcpHost::InitNetifCallbacks(Netif &aNetif)
+{
+    mNcpSpinel.Ip6SetAddressCallback(
+        [&aNetif](const std::vector<Ip6AddressInfo> &aAddrInfos) { aNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
+    mNcpSpinel.Ip6SetAddressMulticastCallback(
+        [&aNetif](const std::vector<Ip6Address> &aAddrs) { aNetif.UpdateIp6MulticastAddresses(aAddrs); });
+    mNcpSpinel.NetifSetStateChangedCallback([&aNetif](bool aState) { aNetif.SetNetifState(aState); });
+    mNcpSpinel.Ip6SetReceiveCallback(
+        [&aNetif](const uint8_t *aData, uint16_t aLength) { aNetif.Ip6Receive(aData, aLength); });
+}
+
+otbrError NcpHost::Ip6Send(const uint8_t *aData, uint16_t aLength)
+{
+    return mNcpSpinel.Ip6Send(aData, aLength);
+}
+
+otbrError NcpHost::Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded)
+{
+    return mNcpSpinel.Ip6MulAddrUpdateSubscription(aAddress, aIsAdded);
+}
 
 } // namespace Host
 } // namespace otbr

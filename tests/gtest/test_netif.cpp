@@ -56,6 +56,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
+#include "common/mainloop_manager.hpp"
 #include "common/types.hpp"
 #include "host/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
@@ -175,8 +176,8 @@ TEST(Netif, WpanInitWithFullInterfaceName)
     int          sockfd;
     struct ifreq ifr;
 
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    otbr::Netif netif(wpan, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -199,8 +200,8 @@ TEST(Netif, WpanInitWithFormatInterfaceName)
     int          sockfd;
     struct ifreq ifr;
 
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    otbr::Netif netif(wpan, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -222,8 +223,8 @@ TEST(Netif, WpanInitWithEmptyInterfaceName)
     int          sockfd;
     struct ifreq ifr;
 
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(""), OT_ERROR_NONE);
+    otbr::Netif netif("", sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -243,8 +244,8 @@ TEST(Netif, WpanInitWithInvalidInterfaceName)
 {
     const char *invalid_netif_name = "invalid_netif_name";
 
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(invalid_netif_name), OTBR_ERROR_INVALID_ARGS);
+    otbr::Netif netif(invalid_netif_name, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OTBR_ERROR_INVALID_ARGS);
 }
 
 TEST(Netif, WpanMtuSize)
@@ -253,8 +254,8 @@ TEST(Netif, WpanMtuSize)
     int          sockfd;
     struct ifreq ifr;
 
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    otbr::Netif netif(wpan, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -276,8 +277,8 @@ TEST(Netif, WpanDeinit)
     int          sockfd;
     struct ifreq ifr;
 
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    otbr::Netif netif(wpan, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -295,8 +296,8 @@ TEST(Netif, WpanDeinit)
 
 TEST(Netif, WpanAddrGenMode)
 {
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init("wpan0"), OT_ERROR_NONE);
+    otbr::Netif netif("wpan0", sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     std::fstream file("/proc/sys/net/ipv6/conf/wpan0/addr_gen_mode", std::ios::in);
     if (!file.is_open())
@@ -328,8 +329,8 @@ TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
     const char *kMlRlocStr = "fd0d:7fc:a1b9:f050:0:ff:fe00:b800";
     const char *kMlAlocStr = "fd0d:7fc:a1b9:f050:0:ff:fe00:fc00";
 
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    otbr::Netif netif(wpan, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     otbr::Ip6AddressInfo testArray1[] = {
         {kLl, 64, 0, 1, 0},
@@ -372,8 +373,8 @@ TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
 TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
 {
     const char *wpan = "wpan0";
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    otbr::Netif netif(wpan, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     otbr::Ip6Address kDefaultMulAddr1 = {
         {0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
@@ -438,9 +439,9 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
 
 TEST(Netif, WpanIfStateChangesCorrectly_AfterSettingNetifState)
 {
-    otbr::Netif netif(sDefaultNetifDependencies);
     const char *wpan = "wpan0";
-    EXPECT_EQ(netif.Init(wpan), OTBR_ERROR_NONE);
+    otbr::Netif netif(wpan, sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OTBR_ERROR_NONE);
 
     int fd = SocketWithCloseExec(AF_INET6, SOCK_DGRAM, IPPROTO_IP, kSocketNonBlock);
     if (fd < 0)
@@ -466,8 +467,8 @@ TEST(Netif, WpanIfStateChangesCorrectly_AfterSettingNetifState)
 
 TEST(Netif, WpanIfRecvIp6PacketCorrectly_AfterReceivingFromNetif)
 {
-    otbr::Netif netif(sDefaultNetifDependencies);
-    EXPECT_EQ(netif.Init("wpan0"), OTBR_ERROR_NONE);
+    otbr::Netif netif("wpan0", sDefaultNetifDependencies);
+    EXPECT_EQ(netif.Init(), OTBR_ERROR_NONE);
 
     const otIp6Address kOmr = {
         {0xfd, 0x2a, 0xc3, 0x0c, 0x87, 0xd3, 0x00, 0x01, 0xed, 0x1c, 0x0c, 0x91, 0xcc, 0xb6, 0x57, 0x8b}};
@@ -557,8 +558,8 @@ TEST(Netif, WpanIfSendIp6PacketCorrectly_AfterReceivingOnIf)
     NetifDependencyTestIp6Send netifDependency(received, receivedPayload);
     const char                *hello = "Hello Otbr Netif!";
 
-    otbr::Netif netif(netifDependency);
-    EXPECT_EQ(netif.Init("wpan0"), OT_ERROR_NONE);
+    otbr::Netif netif("wpan0", netifDependency);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     // OMR Prefix: fd76:a5d1:fcb0:1707::/64
     const otIp6Address kOmr = {
@@ -603,7 +604,7 @@ TEST(Netif, WpanIfSendIp6PacketCorrectly_AfterReceivingOnIf)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        netif.UpdateFdSet(&context);
+        otbr::MainloopManager::GetInstance().Update(context);
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         if (rval < 0)
@@ -611,7 +612,7 @@ TEST(Netif, WpanIfSendIp6PacketCorrectly_AfterReceivingOnIf)
             perror("select failed");
             exit(EXIT_FAILURE);
         }
-        netif.Process(&context);
+        otbr::MainloopManager::GetInstance().Process(context);
     }
 
     EXPECT_STREQ(receivedPayload.c_str(), hello);
@@ -651,11 +652,11 @@ TEST(Netif, WpanIfUpdateMulAddrSubscription_AfterAppJoiningMulGrp)
     const char               *multicastGroup = "ff99::1";
     const char               *wpan           = "wpan0";
     int                       sockFd;
-    otbr::Netif               netif(dependency);
+    otbr::Netif               netif(wpan, dependency);
     const otIp6Address        expectedMulAddr = {0xff, 0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
-    EXPECT_EQ(netif.Init("wpan0"), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init(), OT_ERROR_NONE);
 
     const otIp6Address kLl = {
         {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x14, 0x03, 0x32, 0x4c, 0xc2, 0xf8, 0xd0}};
@@ -705,7 +706,7 @@ TEST(Netif, WpanIfUpdateMulAddrSubscription_AfterAppJoiningMulGrp)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        netif.UpdateFdSet(&context);
+        otbr::MainloopManager::GetInstance().Update(context);
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         if (rval < 0)
@@ -713,7 +714,7 @@ TEST(Netif, WpanIfUpdateMulAddrSubscription_AfterAppJoiningMulGrp)
             perror("select failed");
             exit(EXIT_FAILURE);
         }
-        netif.Process(&context);
+        otbr::MainloopManager::GetInstance().Process(context);
     }
 
     EXPECT_EQ(otbr::Ip6Address(subscribedMulAddr), otbr::Ip6Address(expectedMulAddr));

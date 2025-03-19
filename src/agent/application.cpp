@@ -75,6 +75,14 @@ Application::Application(Host::ThreadHost  &aHost,
     {
         CreateRcpMode(aRestListenAddress, aRestListenPort);
     }
+    else if (mHost.GetCoprocessorType() == OT_COPROCESSOR_NCP)
+    {
+        CreateNcpMode();
+    }
+    else
+    {
+        DieNow("Unknown Co-processor type!");
+    }
 }
 
 void Application::Init(void)
@@ -318,10 +326,20 @@ void Application::DeinitRcpMode(void)
 #endif
 }
 
+void Application::CreateNcpMode(void)
+{
+    otbr::Host::NcpHost &ncpHost = static_cast<otbr::Host::NcpHost &>(mHost);
+
+    mNetif = MakeUnique<Netif>(mInterfaceName, ncpHost);
+}
+
 void Application::InitNcpMode(void)
 {
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     otbr::Host::NcpHost &ncpHost = static_cast<otbr::Host::NcpHost &>(mHost);
+
+    SuccessOrDie(mNetif->Init(), "Failed to initialize the Netif!");
+    ncpHost.InitNetifCallbacks(*mNetif);
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     ncpHost.SetMdnsPublisher(mPublisher.get());
     mMdnsStateSubject.AddObserver(ncpHost);
     mPublisher->Start();
@@ -336,6 +354,7 @@ void Application::DeinitNcpMode(void)
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mPublisher->Stop();
 #endif
+    mNetif->Deinit();
 }
 
 } // namespace otbr

@@ -64,6 +64,7 @@
 #if OTBR_ENABLE_DNSSD_PLAT
 #include "host/posix/dnssd.hpp"
 #endif
+#include "host/posix/netif.hpp"
 #include "utils/infra_link_selector.hpp"
 
 namespace otbr {
@@ -261,12 +262,15 @@ private:
     void InitRcpMode(void);
     void DeinitRcpMode(void);
 
+    void CreateNcpMode(void);
     void InitNcpMode(void);
     void DeinitNcpMode(void);
 
-    std::string       mInterfaceName;
-    const char       *mBackboneInterfaceName;
-    Host::ThreadHost &mHost;
+    std::string            mInterfaceName;
+    const char            *mBackboneInterfaceName;
+    Host::ThreadHost      &mHost;
+    std::unique_ptr<Netif> mNetif;
+
 #if OTBR_ENABLE_MDNS
     Mdns::StateSubject               mMdnsStateSubject;
     std::unique_ptr<Mdns::Publisher> mPublisher;
