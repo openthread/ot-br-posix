@@ -1344,7 +1344,7 @@ exit:
 
 otError DBusThreadObjectRcp::GetSrpServerInfoHandler(DBusMessageIter &aIter)
 {
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER
     auto                               threadHelper = mHost.GetThreadHelper();
     auto                               instance     = threadHelper->GetInstance();
     otError                            error        = OT_ERROR_NONE;
@@ -1404,11 +1404,11 @@ otError DBusThreadObjectRcp::GetSrpServerInfoHandler(DBusMessageIter &aIter)
 
 exit:
     return error;
-#else  // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#else  // OTBR_ENABLE_SRP_SERVER
     OTBR_UNUSED_VARIABLE(aIter);
 
     return OT_ERROR_NOT_IMPLEMENTED;
-#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#endif // OTBR_ENABLE_SRP_SERVER
 }
 
 otError DBusThreadObjectRcp::GetMdnsTelemetryInfoHandler(DBusMessageIter &aIter)

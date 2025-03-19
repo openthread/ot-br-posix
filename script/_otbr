@@ -80,9 +80,9 @@ otbr_install()
         "${otbr_options[@]}"
     )
 
-    if with DNSSD_PLAT; then
+    if with OT_SRP_ADV_PROXY; then
         otbr_options+=(
-            "-DOTBR_DNSSD_PLAT=ON"
+            "-DOTBR_OT_SRP_ADV_PROXY=ON"
         )
     else
         otbr_options+=(
