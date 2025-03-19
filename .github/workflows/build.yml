@@ -52,7 +52,7 @@ jobs:
       run: script/make-pretty check
 
   check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -62,7 +62,7 @@ jobs:
       BUILD_TARGET: check
       OTBR_BUILD_TYPE: ${{ matrix.build_type }}
       OTBR_MDNS: ${{ matrix.mdns }}
-      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_BORDER_ROUTING=ON -DOTBR_NAT64=ON -DOTBR_DHCP6_PD=ON -DOTBR_SRP_SERVER_AUTO_ENABLE=OFF -DOTBR_TREL=ON"
+      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_BORDER_ROUTING=ON -DOTBR_NAT64=ON -DOTBR_DHCP6_PD=ON -DOTBR_SRP_SERVER_ON_INIT=ON -DOTBR_SRP_SERVER_AUTO_ENABLE=OFF -DOTBR_TREL=ON"
       OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
       uses: codecov/codecov-action@v5
 
   rest-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -85,7 +85,7 @@ jobs:
       BUILD_TARGET: check
       OTBR_REST: ${{ matrix.rest }}
       OTBR_MDNS: mDNSResponder
-      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_TREL=ON"
+      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_TREL=ON -DOTBR_SRP_SERVER_ON_INIT=ON -DOTBR_SRP_SERVER_AUTO_ENABLE=OFF "
       OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v4
@@ -99,7 +99,7 @@ jobs:
       uses: codecov/codecov-action@v5
 
   script-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       BUILD_TARGET: script-check
       OTBR_COVERAGE: 1
@@ -115,7 +115,7 @@ jobs:
       uses: codecov/codecov-action@v5
 
   scan-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       BUILD_TARGET: scan-build
       CC: clang
@@ -130,7 +130,7 @@ jobs:
       run: tests/scripts/check-scan-build
 
   package:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       BUILD_TARGET: package
     steps:
