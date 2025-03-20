@@ -258,6 +258,11 @@ void NcpHost::SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServ
     OTBR_UNUSED_VARIABLE(aCallback);
 }
 
+void NcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback)
+{
+    OTBR_UNUSED_VARIABLE(aCallback);
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);

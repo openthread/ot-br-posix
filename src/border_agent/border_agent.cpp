@@ -156,9 +156,8 @@ struct StateBitmap
     }
 };
 
-BorderAgent::BorderAgent(otbr::Host::RcpHost &aHost, Mdns::Publisher &aPublisher)
-    : mHost(aHost)
-    , mPublisher(aPublisher)
+BorderAgent::BorderAgent(Mdns::Publisher &aPublisher)
+    : mPublisher(aPublisher)
 {
     ClearState();
 }
@@ -251,7 +250,6 @@ void BorderAgent::ClearState(void)
     mProductName             = OTBR_PRODUCT_NAME;
     mBaseServiceInstanceName = OTBR_MESHCOP_SERVICE_INSTANCE_NAME;
     mServiceInstanceName.clear();
-    mEphemeralKeyChangedCallbacks.clear();
 }
 
 void BorderAgent::Start(void)
@@ -260,8 +258,6 @@ void BorderAgent::Start(void)
 
     mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
     UpdateMeshCoPService();
-
-    otBorderAgentEphemeralKeySetCallback(mHost.GetInstance(), BorderAgent::HandleEpskcStateChanged, this);
 }
 
 void BorderAgent::Stop(void)
@@ -270,42 +266,30 @@ void BorderAgent::Stop(void)
     UnpublishMeshCoPService();
 }
 
-void BorderAgent::HandleEpskcStateChanged(void *aContext)
+void BorderAgent::HandleEpskcStateChanged(otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort)
 {
-    static_cast<BorderAgent *>(aContext)->HandleEpskcStateChanged();
-}
-
-void BorderAgent::HandleEpskcStateChanged(void)
-{
-    switch (otBorderAgentEphemeralKeyGetState(mHost.GetInstance()))
+    switch (aEpskcState)
     {
     case OT_BORDER_AGENT_STATE_STARTED:
     case OT_BORDER_AGENT_STATE_CONNECTED:
     case OT_BORDER_AGENT_STATE_ACCEPTED:
-        PublishEpskcService();
+        PublishEpskcService(aPort);
         break;
     case OT_BORDER_AGENT_STATE_DISABLED:
     case OT_BORDER_AGENT_STATE_STOPPED:
         UnpublishEpskcService();
         break;
     }
-
-    for (auto &ephemeralKeyCallback : mEphemeralKeyChangedCallbacks)
-    {
-        ephemeralKeyCallback();
-    }
 }
 
-void BorderAgent::PublishEpskcService()
+void BorderAgent::PublishEpskcService(uint16_t aPort)
 {
-    otInstance *instance = mHost.GetInstance();
-    int         port     = otBorderAgentEphemeralKeyGetUdpPort(instance);
-
     otbrLogInfo("Publish meshcop-e service %s.%s.local. port %d", mServiceInstanceName.c_str(),
-                kBorderAgentEpskcServiceType, port);
+                kBorderAgentEpskcServiceType, aPort);
 
     mPublisher.PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentEpskcServiceType,
-                              Mdns::Publisher::SubTypeList{}, port, /* aTxtData */ {}, [this](otbrError aError) {
+                              Mdns::Publisher::SubTypeList{}, aPort, /* aTxtData */ {},
+                              [this, aPort](otbrError aError) {
                                   if (aError == OTBR_ERROR_ABORTED)
                                   {
                                       // OTBR_ERROR_ABORTED is thrown when an ongoing service registration is
@@ -328,7 +312,7 @@ void BorderAgent::PublishEpskcService()
                                       // Potential risk that instance name is not the same with meshcop service.
                                       UnpublishEpskcService();
                                       mServiceInstanceName = GetAlternativeServiceInstanceName();
-                                      PublishEpskcService();
+                                      PublishEpskcService(aPort);
                                   }
                               });
 }
@@ -341,11 +325,6 @@ void BorderAgent::UnpublishEpskcService()
         otbrLogResult(aError, "Result of unpublish meshcop-e service %s.%s.local", mServiceInstanceName.c_str(),
                       kBorderAgentEpskcServiceType);
     });
-}
-
-void BorderAgent::AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback)
-{
-    mEphemeralKeyChangedCallbacks.push_back(std::move(aCallback));
 }
 
 void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
