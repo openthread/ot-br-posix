@@ -136,6 +136,7 @@ do_build()
         "-DOTBR_UNSECURE_JOIN=ON"
         "-DOTBR_TREL=ON"
         "-DOTBR_LINK_METRICS_TELEMETRY=ON"
+        "-DOTBR_VENDOR_NAME=OpenThreadTest"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 
@@ -195,6 +196,7 @@ do_package()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DOTBR_WEB=ON"
+        "-DOTBR_VENDOR_NAME=OpenThreadTest"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 
