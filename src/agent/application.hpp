@@ -163,7 +163,7 @@ public:
      */
     BorderAgent &GetBorderAgent(void)
     {
-        return *mBorderAgent;
+        return mBorderAgent;
     }
 #endif
 
@@ -275,7 +275,7 @@ private:
     DnssdPlatform mDnssdPlatform;
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    std::unique_ptr<BorderAgent> mBorderAgent;
+    BorderAgent mBorderAgent;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
