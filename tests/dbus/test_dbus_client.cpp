@@ -325,7 +325,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.topo_entries_size() == 1);
     TEST_ASSERT(telemetryData.topo_entries(0).rloc16() < 0xffff);
     TEST_ASSERT(telemetryData.wpan_border_router().border_routing_counters().rs_tx_failure() == 0);
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER
     TEST_ASSERT(telemetryData.wpan_border_router().srp_server().state() ==
                 threadnetwork::TelemetryData::SRP_SERVER_STATE_RUNNING);
 #endif

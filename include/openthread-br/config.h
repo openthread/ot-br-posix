@@ -37,6 +37,27 @@
 #include OTBR_CONFIG_FILE
 #endif
 
+/**
+ * @def OTBR_ENABLE_SRP_SERVER
+ *
+ * Enable SRP server if Advertising Proxy is enabled.
+ */
+#define OTBR_ENABLE_SRP_SERVER (OTBR_ENABLE_SRP_ADVERTISING_PROXY || OTBR_ENABLE_OT_SRP_ADV_PROXY)
+
+/**
+ * @def OTBR_SRP_SERVER_AUTO_ENABLE
+ *
+ * By default, enable auto-enable mode for SRP server if SRP server and Border Routing are enabled.
+ */
+#ifndef OTBR_SRP_SERVER_AUTO_ENABLE
+#define OTBR_SRP_SERVER_AUTO_ENABLE (OTBR_ENABLE_SRP_SERVER && OTBR_BORDER_ROUTING)
+#endif
+
+/**
+ * @def OTBR_CONFIG_CLI_MAX_LINE_LENGTH
+ *
+ * Defines the maximum length of a line in the CLI.
+ */
 #ifndef OTBR_CONFIG_CLI_MAX_LINE_LENGTH
 #define OTBR_CONFIG_CLI_MAX_LINE_LENGTH 640
 #endif

@@ -37,6 +37,7 @@
 #include <functional>
 #include <memory>
 
+#include <openthread/border_agent.h>
 #include <openthread/dataset.h>
 #include <openthread/error.h>
 #include <openthread/thread.h>
@@ -118,9 +119,11 @@ public:
     using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
     using ChannelMasksReceiver =
         std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
-    using DeviceRoleHandler          = std::function<void(otError, otDeviceRole)>;
-    using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
-    using ThreadEnabledStateCallback = std::function<void(ThreadEnabledState aState)>;
+    using DeviceRoleHandler                        = std::function<void(otError, otDeviceRole)>;
+    using ThreadStateChangedCallback               = std::function<void(otChangedFlags)>;
+    using ThreadEnabledStateCallback               = std::function<void(ThreadEnabledState)>;
+    using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
+    using EphemeralKeyStateChangedCallback         = std::function<void(otBorderAgentEphemeralKeyState, uint16_t)>;
 
     struct ChannelMaxPower
     {
@@ -248,6 +251,21 @@ public:
      * @param[in] aCallback  The callback to receive Thread Enabled state changed events.
      */
     virtual void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) = 0;
+
+    /**
+     * This method sets a callback that will be invoked when there are any changes on the MeshCoP service from
+     * Thread core.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    virtual void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) = 0;
+
+    /**
+     * This method adds a callback that will be invoked when there are any changes related to the ephemeral key.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    virtual void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) = 0;
 
     /**
      * Returns the co-processor type.
