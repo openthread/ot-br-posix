@@ -271,6 +271,14 @@ void NcpSpinel::DnssdSetState(Mdns::Publisher::State aState)
 }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
+void NcpSpinel::SetBorderAgentMeshCoPServiceChangedCallback(const BorderAgentMeshCoPServiceChangedCallback &aCallback)
+{
+    mBorderAgentMeshCoPServiceChangedCallback = aCallback;
+
+    // Get the MeshCoP service state to have an initial value.
+    SuccessOrDie(GetProperty(SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE), "Failed to get MeshCoP Service State");
+}
+
 void NcpSpinel::HandleReceivedFrame(const uint8_t *aFrame,
                                     uint16_t       aLength,
                                     uint8_t        aHeader,
@@ -351,6 +359,11 @@ void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_
 
     switch (mCmdTable[aTid])
     {
+    case SPINEL_CMD_PROP_VALUE_GET:
+    {
+        error = HandleResponseForPropGet(aTid, key, data, len);
+        break;
+    }
     case SPINEL_CMD_PROP_VALUE_SET:
     {
         error = HandleResponseForPropSet(aTid, key, data, len);
@@ -491,6 +504,22 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         SuccessOrExit(ParseInfraIfIcmp6Nd(aBuffer, aLength, infraIfIndex, destAddress, data, dataLen),
                       error = OTBR_ERROR_PARSE);
         SafeInvoke(mInfraIfIcmp6NdCallback, infraIfIndex, *destAddress, data, dataLen);
+        break;
+    }
+
+    case SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE:
+    {
+        bool                isActive;
+        uint16_t            port;
+        const uint8_t      *data;
+        uint16_t            dataLen;
+        ot::Spinel::Decoder decoder;
+
+        decoder.Init(aBuffer, aLength);
+        SuccessOrExit(decoder.ReadBool(isActive), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadData(data, dataLen), error = OTBR_ERROR_PARSE);
+        SafeInvoke(mBorderAgentMeshCoPServiceChangedCallback, isActive, port, data, dataLen);
         break;
     }
 
@@ -680,6 +709,41 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
 exit:
     otbrLogResult(error, "HandleValueRemoved, key:%u", aKey);
     return;
+}
+
+otbrError NcpSpinel::HandleResponseForPropGet(spinel_tid_t      aTid,
+                                              spinel_prop_key_t aKey,
+                                              const uint8_t    *aData,
+                                              uint16_t          aLength)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    switch (mWaitingKeyTable[aTid])
+    {
+    case SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE:
+    {
+        bool                isActive;
+        uint16_t            port;
+        const uint8_t      *data;
+        uint16_t            dataLen;
+        ot::Spinel::Decoder decoder;
+
+        decoder.Init(aData, aLength);
+        SuccessOrExit(decoder.ReadBool(isActive), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadData(data, dataLen), error = OTBR_ERROR_PARSE);
+
+        SafeInvoke(mBorderAgentMeshCoPServiceChangedCallback, isActive, port, data, dataLen);
+        break;
+    }
+
+    default:
+        VerifyOrExit(aKey == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
+        break;
+    }
+
+exit:
+    return error;
 }
 
 otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
@@ -903,6 +967,14 @@ exit:
         FreeTidTableItem(tid);
     }
     return error;
+}
+
+otError NcpSpinel::GetProperty(spinel_prop_key_t aKey)
+{
+    return SendCommand(SPINEL_CMD_PROP_VALUE_GET, aKey, [](ot::Spinel::Encoder &aEncoder) {
+        OTBR_UNUSED_VARIABLE(aEncoder);
+        return OT_ERROR_NONE;
+    });
 }
 
 otError NcpSpinel::SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)

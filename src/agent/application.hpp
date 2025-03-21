@@ -164,7 +164,7 @@ public:
      */
     BorderAgent &GetBorderAgent(void)
     {
-        return *mBorderAgent;
+        return mBorderAgent;
     }
 #endif
 
@@ -266,6 +266,10 @@ private:
     void InitNcpMode(void);
     void DeinitNcpMode(void);
 
+#if OTBR_ENABLE_BORDER_AGENT
+    void SetBorderAgentOnInitState(void);
+#endif
+
     std::string            mInterfaceName;
     const char            *mBackboneInterfaceName;
     Host::ThreadHost      &mHost;
@@ -279,7 +283,7 @@ private:
     DnssdPlatform mDnssdPlatform;
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    std::unique_ptr<BorderAgent> mBorderAgent;
+    BorderAgent mBorderAgent;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
