@@ -96,25 +96,26 @@ enum
     kIcmpv6Mldv2RecordChangeToExcludeType = 4,
 };
 
-Netif::Netif(Dependencies &aDependencies)
+Netif::Netif(const std::string &aInterfaceName, Dependencies &aDependencies)
     : mTunFd(-1)
     , mIpFd(-1)
     , mNetlinkFd(-1)
     , mMldFd(-1)
     , mNetlinkSequence(0)
     , mNetifIndex(0)
+    , mNetifName(aInterfaceName)
     , mDeps(aDependencies)
 {
 }
 
-otbrError Netif::Init(const std::string &aInterfaceName)
+otbrError Netif::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
     mIpFd = SocketWithCloseExec(AF_INET6, SOCK_DGRAM, IPPROTO_IP, kSocketNonBlock);
     VerifyOrExit(mIpFd >= 0, error = OTBR_ERROR_ERRNO);
 
-    SuccessOrExit(error = CreateTunDevice(aInterfaceName));
+    SuccessOrExit(error = CreateTunDevice(mNetifName));
     SuccessOrExit(error = InitNetlink());
 
     mNetifIndex = if_nametoindex(mNetifName.c_str());
@@ -135,42 +136,6 @@ exit:
 void Netif::Deinit(void)
 {
     Clear();
-}
-
-void Netif::Process(const MainloopContext *aContext)
-{
-    if (FD_ISSET(mTunFd, &aContext->mErrorFdSet))
-    {
-        close(mTunFd);
-        DieNow("Error on Tun Fd!");
-    }
-
-    if (FD_ISSET(mMldFd, &aContext->mErrorFdSet))
-    {
-        close(mMldFd);
-        DieNow("Error on MLD Fd!");
-    }
-
-    if (FD_ISSET(mTunFd, &aContext->mReadFdSet))
-    {
-        ProcessIp6Send();
-    }
-
-    if (FD_ISSET(mMldFd, &aContext->mReadFdSet))
-    {
-        ProcessMldEvent();
-    }
-}
-
-void Netif::UpdateFdSet(MainloopContext *aContext)
-{
-    assert(aContext != nullptr);
-    assert(mTunFd >= 0);
-    assert(mIpFd >= 0);
-    assert(mMldFd >= 0);
-
-    aContext->AddFdToSet(mTunFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
-    aContext->AddFdToSet(mMldFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
 }
 
 void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)
@@ -495,6 +460,41 @@ exit:
     if (ifAddrs)
     {
         freeifaddrs(ifAddrs);
+    }
+}
+
+void Netif::Update(MainloopContext &aContext)
+{
+    assert(mTunFd >= 0);
+    assert(mIpFd >= 0);
+    assert(mMldFd >= 0);
+
+    aContext.AddFdToSet(mTunFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
+    aContext.AddFdToSet(mMldFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
+}
+
+void Netif::Process(const MainloopContext &aContext)
+{
+    if (FD_ISSET(mTunFd, &aContext.mErrorFdSet))
+    {
+        close(mTunFd);
+        DieNow("Error on Tun Fd!");
+    }
+
+    if (FD_ISSET(mMldFd, &aContext.mErrorFdSet))
+    {
+        close(mMldFd);
+        DieNow("Error on MLD Fd!");
+    }
+
+    if (FD_ISSET(mTunFd, &aContext.mReadFdSet))
+    {
+        ProcessIp6Send();
+    }
+
+    if (FD_ISSET(mMldFd, &aContext.mReadFdSet))
+    {
+        ProcessMldEvent();
     }
 }
 

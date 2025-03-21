@@ -89,7 +89,7 @@ public:
 /**
  * The class provides methods for controlling the Thread stack on the network co-processor (NCP).
  */
-class NcpSpinel : public Netif::Dependencies, public InfraIf::Dependencies
+class NcpSpinel : public InfraIf::Dependencies
 {
 public:
     using Ip6AddressTableCallback          = std::function<void(const std::vector<Ip6AddressInfo> &)>;
@@ -188,7 +188,7 @@ public:
     void Ip6SetReceiveCallback(const Ip6ReceiveCallback &aCallback) { mIp6ReceiveCallback = aCallback; }
 
     /**
-     * This methods sends an IP6 datagram through the NCP.
+     * This method sends an IP6 datagram through the NCP.
      *
      * @param[in] aData      A pointer to the beginning of the IP6 datagram.
      * @param[in] aLength    The length of the datagram.
@@ -196,7 +196,15 @@ public:
      * @retval OTBR_ERROR_NONE  The datagram is sent to NCP successfully.
      * @retval OTBR_ERROR_BUSY  NcpSpinel is busy with other requests.
      */
-    otbrError Ip6Send(const uint8_t *aData, uint16_t aLength) override;
+    otbrError Ip6Send(const uint8_t *aData, uint16_t aLength);
+
+    /**
+     * This method updates the multicast address subscription on NCP.
+     *
+     * @param[in] aAddress  A reference to the multicast address to update subscription.
+     * @param[in] aIsAdded  `true` to subscribe and `false` to unsubscribe.
+     */
+    otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded);
 
     /**
      * This method enableds/disables the Thread network on the NCP.
@@ -337,8 +345,6 @@ private:
                                           spinel_prop_key_t aKey,
                                           const uint8_t    *aData,
                                           uint16_t          aLength);
-
-    otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded) override;
 
     spinel_tid_t GetNextTid(void);
     void         FreeTidTableItem(spinel_tid_t aTid);

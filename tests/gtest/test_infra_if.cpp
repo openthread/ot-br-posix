@@ -91,8 +91,8 @@ TEST(InfraIf, DepsSetInfraIfInvokedCorrectly_AfterSpecifyingInfraIf)
 
     // Utilize the Netif module to create a network interface as the fake infrastructure interface.
     otbr::Netif::Dependencies defaultNetifDep;
-    otbr::Netif               netif(defaultNetifDep);
-    EXPECT_EQ(netif.Init(fakeInfraIf), OTBR_ERROR_NONE);
+    otbr::Netif               netif(fakeInfraIf, defaultNetifDep);
+    EXPECT_EQ(netif.Init(), OTBR_ERROR_NONE);
 
     const otIp6Address kTestAddr = {
         {0xfd, 0x35, 0x7a, 0x7d, 0x0f, 0x16, 0xe7, 0xe3, 0x73, 0xf3, 0x09, 0x00, 0x8e, 0xbe, 0x1b, 0x65}};
@@ -120,8 +120,8 @@ TEST(InfraIf, DepsUpdateInfraIfStateInvokedCorrectly_AfterInfraIfStateChange)
 
     // Utilize the Netif module to create a network interface as the fake infrastructure interface.
     otbr::Netif::Dependencies defaultNetifDep;
-    otbr::Netif               netif(defaultNetifDep);
-    EXPECT_EQ(netif.Init(fakeInfraIf), OTBR_ERROR_NONE);
+    otbr::Netif               netif(fakeInfraIf, defaultNetifDep);
+    EXPECT_EQ(netif.Init(), OTBR_ERROR_NONE);
 
     const otIp6Address kTestAddr1 = {
         {0xfd, 0x35, 0x7a, 0x7d, 0x0f, 0x16, 0xe7, 0xe3, 0x73, 0xf3, 0x09, 0x00, 0x8e, 0xbe, 0x1b, 0x65}};
@@ -199,8 +199,8 @@ TEST(InfraIf, DepsHandleIcmp6NdInvokedCorrectly_AfterInfraIfReceivesIcmp6Nd)
 
     // Utilize the Netif module to create a network interface as the fake infrastructure interface.
     otbr::Netif::Dependencies defaultNetifDep;
-    otbr::Netif               netif(defaultNetifDep);
-    EXPECT_EQ(netif.Init(fakeInfraIf), OTBR_ERROR_NONE);
+    otbr::Netif               netif(fakeInfraIf, defaultNetifDep);
+    EXPECT_EQ(netif.Init(), OTBR_ERROR_NONE);
 
     const otIp6Address kLinkLocalAddr = {
         {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa8, 0xa5, 0x42, 0xb7, 0x91, 0x80, 0xc3, 0xf8}};
