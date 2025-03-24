@@ -273,6 +273,8 @@ void CheckEphemeralKey(ThreadApiDBus *aApi)
     TEST_ASSERT(enabled == true);
 }
 
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+
 void CheckBorderAgentInfo(const threadnetwork::TelemetryData_BorderAgentInfo &aBorderAgentInfo)
 {
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_activations() == 0);
@@ -293,7 +295,6 @@ void CheckBorderAgentInfo(const threadnetwork::TelemetryData_BorderAgentInfo &aB
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().mgmt_pending_get_reqs() == 0);
 }
 
-#if OTBR_ENABLE_TELEMETRY_DATA_API
 void CheckTelemetryData(ThreadApiDBus *aApi)
 {
     std::vector<uint8_t>         responseTelemetryDataBytes;

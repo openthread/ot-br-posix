@@ -74,7 +74,8 @@ private:
 
 class NcpHost : public MainloopProcessor,
                 public ThreadHost,
-                public NcpNetworkProperties
+                public NcpNetworkProperties,
+                public Netif::Dependencies
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     ,
                 public Mdns::StateObserver
@@ -132,16 +133,20 @@ public:
     void SetMdnsPublisher(Mdns::Publisher *aPublisher);
 #endif
 
+    void InitNetifCallbacks(Netif &aNetif);
+
 private:
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     void HandleMdnsState(Mdns::Publisher::State aState) override;
 #endif
 
+    otbrError Ip6Send(const uint8_t *aData, uint16_t aLength) override;
+    otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded) override;
+
     ot::Spinel::SpinelDriver &mSpinelDriver;
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;
     TaskRunner                mTaskRunner;
-    Netif                     mNetif;
     InfraIf                   mInfraIf;
 };
 
