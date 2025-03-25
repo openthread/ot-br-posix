@@ -97,6 +97,7 @@ public:
     using NetifStateChangedCallback        = std::function<void(bool)>;
     using Ip6ReceiveCallback               = std::function<void(const uint8_t *, uint16_t)>;
     using InfraIfSendIcmp6NdCallback = std::function<void(uint32_t, const otIp6Address &, const uint8_t *, uint16_t)>;
+    using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
 
     /**
      * Constructor.
@@ -290,6 +291,14 @@ public:
     }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
+    /**
+     * This method sets a callback that will be invoked when there are any changes on the MeshCoP service from
+     * Thread core.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    void SetBorderAgentMeshCoPServiceChangedCallback(const BorderAgentMeshCoPServiceChangedCallback &aCallback);
+
 private:
     using FailureHandler = std::function<void(otError)>;
 
@@ -331,6 +340,10 @@ private:
     void      HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength);
     void      HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength);
     void      HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength);
+    otbrError HandleResponseForPropGet(spinel_tid_t      aTid,
+                                       spinel_prop_key_t aKey,
+                                       const uint8_t    *aData,
+                                       uint16_t          aLength);
     otbrError HandleResponseForPropSet(spinel_tid_t      aTid,
                                        spinel_prop_key_t aKey,
                                        const uint8_t    *aData,
@@ -351,6 +364,7 @@ private:
 
     using EncodingFunc = std::function<otError(ot::Spinel::Encoder &aEncoder)>;
     otError SendCommand(spinel_command_t aCmd, spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
+    otError GetProperty(spinel_prop_key_t aKey);
     otError SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
     otError InsertProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
     otError RemoveProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
@@ -405,11 +419,12 @@ private:
     AsyncTaskPtr mThreadDetachGracefullyTask;
     AsyncTaskPtr mThreadErasePersistentInfoTask;
 
-    Ip6AddressTableCallback          mIp6AddressTableCallback;
-    Ip6MulticastAddressTableCallback mIp6MulticastAddressTableCallback;
-    Ip6ReceiveCallback               mIp6ReceiveCallback;
-    NetifStateChangedCallback        mNetifStateChangedCallback;
-    InfraIfSendIcmp6NdCallback       mInfraIfIcmp6NdCallback;
+    Ip6AddressTableCallback                  mIp6AddressTableCallback;
+    Ip6MulticastAddressTableCallback         mIp6MulticastAddressTableCallback;
+    Ip6ReceiveCallback                       mIp6ReceiveCallback;
+    NetifStateChangedCallback                mNetifStateChangedCallback;
+    InfraIfSendIcmp6NdCallback               mInfraIfIcmp6NdCallback;
+    BorderAgentMeshCoPServiceChangedCallback mBorderAgentMeshCoPServiceChangedCallback;
 };
 
 } // namespace Host

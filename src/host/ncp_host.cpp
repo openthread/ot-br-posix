@@ -245,7 +245,7 @@ void NcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aC
 
 void NcpHost::SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aCallback);
+    mNcpSpinel.SetBorderAgentMeshCoPServiceChangedCallback(aCallback);
 }
 
 void NcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback)

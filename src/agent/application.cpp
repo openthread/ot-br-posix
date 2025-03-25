@@ -67,6 +67,9 @@ Application::Application(Host::ThreadHost  &aHost,
 #if OTBR_ENABLE_DNSSD_PLAT
     , mDnssdPlatform(*mPublisher)
 #endif
+#if OTBR_ENABLE_BORDER_AGENT
+    , mBorderAgent(*mPublisher)
+#endif
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
     , mDBusAgent(MakeUnique<DBus::DBusAgent>(mHost, *mPublisher))
 #endif
@@ -205,9 +208,6 @@ void Application::HandleSignal(int aSignal)
 void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort)
 {
     otbr::Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
-#if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent = MakeUnique<BorderAgent>(*mPublisher);
-#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent = MakeUnique<BackboneRouter::BackboneAgent>(rcpHost, mInterfaceName, mBackboneInterfaceName);
 #endif
@@ -240,7 +240,7 @@ void Application::InitRcpMode(void)
     OTBR_UNUSED_VARIABLE(rcpHost);
 
 #if OTBR_ENABLE_BORDER_AGENT
-    mMdnsStateSubject.AddObserver(*mBorderAgent);
+    mMdnsStateSubject.AddObserver(mBorderAgent);
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mMdnsStateSubject.AddObserver(*mAdvertisingProxy);
@@ -265,19 +265,13 @@ void Application::InitRcpMode(void)
 #if OTBR_ENABLE_BORDER_AGENT
     mHost.SetBorderAgentMeshCoPServiceChangedCallback(
         [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
-            mBorderAgent->HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
-                                                                 std::vector<uint8_t>(aTxtData, aTxtData + aLength));
+            mBorderAgent.HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
+                                                                std::vector<uint8_t>(aTxtData, aTxtData + aLength));
         });
     mHost.AddEphemeralKeyStateChangedCallback([this](otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort) {
-        mBorderAgent->HandleEpskcStateChanged(aEpskcState, aPort);
+        mBorderAgent.HandleEpskcStateChanged(aEpskcState, aPort);
     });
-// This is for delaying publishing the MeshCoP service until the correct
-// vendor name and OUI etc. are correctly set by BorderAgent::SetMeshCopServiceValues()
-#if OTBR_STOP_BORDER_AGENT_ON_INIT
-    mBorderAgent->SetEnabled(false);
-#else
-    mBorderAgent->SetEnabled(true);
-#endif
+    SetBorderAgentOnInitState();
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent->Init();
@@ -295,7 +289,7 @@ void Application::InitRcpMode(void)
     mRestWebServer->Init();
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent->Init(*mBorderAgent);
+    mDBusAgent->Init(mBorderAgent);
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer->Init();
@@ -317,8 +311,8 @@ void Application::DeinitRcpMode(void)
     mDiscoveryProxy->SetEnabled(false);
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent->SetEnabled(false);
-    mBorderAgent->Deinit();
+    mBorderAgent.SetEnabled(false);
+    mBorderAgent.Deinit();
 #endif
 #if OTBR_ENABLE_MDNS
     mMdnsStateSubject.Clear();
@@ -345,16 +339,41 @@ void Application::InitNcpMode(void)
     mPublisher->Start();
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent->Init(*mBorderAgent);
+    mDBusAgent->Init(mBorderAgent);
+#endif
+#if OTBR_ENABLE_BORDER_AGENT
+    mHost.SetBorderAgentMeshCoPServiceChangedCallback(
+        [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
+            mBorderAgent.HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
+                                                                std::vector<uint8_t>(aTxtData, aTxtData + aLength));
+        });
+    SetBorderAgentOnInitState();
 #endif
 }
 
 void Application::DeinitNcpMode(void)
 {
+#if OTBR_ENABLE_BORDER_AGENT
+    mBorderAgent.SetEnabled(false);
+    mBorderAgent.Deinit();
+#endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mPublisher->Stop();
 #endif
     mNetif->Deinit();
 }
+
+#if OTBR_ENABLE_BORDER_AGENT
+void Application::SetBorderAgentOnInitState(void)
+{
+    // This is for delaying publishing the MeshCoP service until the correct
+    // vendor name and OUI etc. are correctly set by BorderAgent::SetMeshCopServiceValues()
+#if OTBR_STOP_BORDER_AGENT_ON_INIT
+    mBorderAgent.SetEnabled(false);
+#else
+    mBorderAgent.SetEnabled(true);
+#endif
+}
+#endif
 
 } // namespace otbr
