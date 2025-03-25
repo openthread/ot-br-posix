@@ -53,4 +53,13 @@
 #define OTBR_SRP_SERVER_AUTO_ENABLE (OTBR_ENABLE_SRP_SERVER && OTBR_BORDER_ROUTING)
 #endif
 
+/**
+ * @def OTBR_CONFIG_CLI_MAX_LINE_LENGTH
+ *
+ * Defines the maximum length of a line in the CLI.
+ */
+#ifndef OTBR_CONFIG_CLI_MAX_LINE_LENGTH
+#define OTBR_CONFIG_CLI_MAX_LINE_LENGTH 640
+#endif
+
 #endif // OTBR_CONFIG_H_
