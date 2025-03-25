@@ -49,7 +49,7 @@ public:
     public:
         virtual ~Dependencies(void) = default;
 
-        virtual otbrError InputCommandLine(const uint8_t *aBuf, uint16_t aLength);
+        virtual otbrError InputCommandLine(const char *aLine);
     };
 
     explicit CliDaemon(Dependencies &aDependencies);
@@ -57,6 +57,7 @@ public:
     otbrError Init(const std::string &aNetIfName);
     void      Deinit(void);
 
+    void HandleCommandOutput(const char *aOutput);
     void Process(const MainloopContext &aContext);
     void UpdateFdSet(MainloopContext &aContext);
 

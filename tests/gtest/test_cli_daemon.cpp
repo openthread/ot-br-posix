@@ -96,9 +96,9 @@ public:
     {
     }
 
-    otbrError InputCommandLine(const uint8_t *aData, uint16_t aLength) override
+    otbrError InputCommandLine(const char *aLine) override
     {
-        mReceivedCommand = std::string(reinterpret_cast<const char *>(aData), aLength);
+        mReceivedCommand = std::string(aLine);
         mReceived        = true;
         return OTBR_ERROR_NONE;
     }

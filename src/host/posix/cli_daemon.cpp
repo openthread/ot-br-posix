@@ -45,10 +45,9 @@
 
 namespace otbr {
 
-otbrError CliDaemon::Dependencies::InputCommandLine(const uint8_t *aBuf, uint16_t aLength)
+otbrError CliDaemon::Dependencies::InputCommandLine(const char *aLine)
 {
-    OTBR_UNUSED_VARIABLE(aBuf);
-    OTBR_UNUSED_VARIABLE(aLength);
+    OTBR_UNUSED_VARIABLE(aLine);
 
     return OTBR_ERROR_NONE;
 }
@@ -57,6 +56,7 @@ static constexpr char kDefaultNetIfName[] = "wpan0";
 static constexpr char kSocketBaseName[]   = "/run/openthread-";
 static constexpr char kSocketSuffix[]     = ".sock";
 static constexpr char kSocketLockSuffix[] = ".lock";
+static constexpr char kTruncatedMsg[]     = "(truncated ...)";
 
 static constexpr size_t kMaxSocketFilenameLength = sizeof(sockaddr_un::sun_path) - 1;
 
@@ -69,6 +69,39 @@ std::string CliDaemon::GetSocketFilename(const std::string &aNetIfName, const ch
     VerifyOrDie(fileName.size() <= kMaxSocketFilenameLength, otbrErrorString(OTBR_ERROR_INVALID_ARGS));
 
     return fileName;
+}
+
+void CliDaemon::HandleCommandOutput(const char *aOutput)
+{
+    int    ret;
+    size_t length = strlen(aOutput);
+
+    static_assert(sizeof(kTruncatedMsg) < kCliMaxLineLength, "OTBR_CONFIG_CLI_MAX_LINE_LENGTH is too short!");
+
+    if (length >= kCliMaxLineLength)
+    {
+        length = kCliMaxLineLength - 1;
+        memcpy(const_cast<char *>(aOutput) + kCliMaxLineLength - sizeof(kTruncatedMsg), kTruncatedMsg,
+               sizeof(kTruncatedMsg));
+    }
+
+    VerifyOrExit(mSessionSocket != -1);
+
+#ifdef __linux__
+    // Don't die on SIGPIPE
+    ret = send(mSessionSocket, aOutput, length, MSG_NOSIGNAL);
+#else
+    ret = static_cast<int>(write(mSessionSocket, aOutput, length));
+#endif
+
+    if (ret < 0)
+    {
+        otbrLogWarning("Failed to write CLI output: %s", strerror(errno));
+        Clear();
+    }
+
+exit:
+    return;
 }
 
 CliDaemon::CliDaemon(Dependencies &aDependencies)
@@ -221,11 +254,13 @@ void CliDaemon::Process(const MainloopContext &aContext)
         otbrError error = OTBR_ERROR_NONE;
         ssize_t   received;
 
-        received = read(mSessionSocket, buffer, sizeof(buffer));
+        // leave 1 byte for the null terminator
+        received = read(mSessionSocket, buffer, sizeof(buffer) - 1);
 
         if (received > 0)
         {
-            error = mDeps.InputCommandLine(buffer, received);
+            buffer[received] = '\0';
+            error            = mDeps.InputCommandLine(reinterpret_cast<char *>(buffer));
 
             if (error != OTBR_ERROR_NONE)
             {

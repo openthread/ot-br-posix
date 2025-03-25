@@ -173,6 +173,17 @@ exit:
     return error;
 }
 
+otbrError NcpSpinel::InputCommandLine(const char *aLine)
+{
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [aLine](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteUtf8(aLine); };
+
+    SuccessOrExit(SetProperty(SPINEL_PROP_STREAM_CLI, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    return error;
+}
+
 void NcpSpinel::ThreadSetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)
 {
     otError      error        = OT_ERROR_NONE;
@@ -481,6 +492,15 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_STREAM_CLI:
+    {
+        const char *output;
+
+        SuccessOrExit(ParseStreamCliOutput(aBuffer, aLength, output), error = OTBR_ERROR_PARSE);
+        SafeInvoke(mCliDaemonOutputCallback, output);
+        break;
+    }
+
     case SPINEL_PROP_INFRA_IF_SEND_ICMP6:
     {
         uint32_t            infraIfIndex;
@@ -734,6 +754,9 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
         break;
 
     case SPINEL_PROP_STREAM_NET:
+        break;
+
+    case SPINEL_PROP_STREAM_CLI:
         break;
 
     case SPINEL_PROP_INFRA_IF_STATE:
@@ -1004,6 +1027,20 @@ otError NcpSpinel::ParseIp6StreamNet(const uint8_t *aBuf, uint16_t aLen, const u
 
     decoder.Init(aBuf, aLen);
     error = decoder.ReadDataWithLen(aData, aDataLen);
+
+exit:
+    return error;
+}
+
+otError NcpSpinel::ParseStreamCliOutput(const uint8_t *aBuf, uint16_t aLen, const char *&aOutput)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuf != nullptr, error = OT_ERROR_INVALID_ARGS);
+
+    decoder.Init(aBuf, aLen);
+    error = decoder.ReadUtf8(aOutput);
 
 exit:
     return error;
