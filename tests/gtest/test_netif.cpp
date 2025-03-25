@@ -46,6 +46,7 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <thread>
 #include <vector>
 
 #ifdef __linux__
@@ -465,6 +466,14 @@ TEST(Netif, WpanIfStateChangesCorrectly_AfterSettingNetifState)
     netif.Deinit();
 }
 
+void receiveTask(int aSockFd, uint8_t *aRecvBuf, struct sockaddr_in6 *aListenAddr)
+{
+    socklen_t   len = sizeof(*aListenAddr);
+    int         n = recvfrom(aSockFd, (char *)aRecvBuf, kMaxIp6Size, MSG_WAITALL, (struct sockaddr *)aListenAddr, &len);
+    std::string udpPayload(reinterpret_cast<const char *>(aRecvBuf), n);
+    EXPECT_EQ(udpPayload, "Hello Otbr Netif!");
+}
+
 TEST(Netif, WpanIfRecvIp6PacketCorrectly_AfterReceivingFromNetif)
 {
     otbr::Netif netif("wpan0", sDefaultNetifDependencies);
@@ -512,13 +521,12 @@ TEST(Netif, WpanIfRecvIp6PacketCorrectly_AfterReceivingFromNetif)
                                  0xc3, 0x0c, 0x87, 0xd3, 0x00, 0x01, 0xed, 0x1c, 0x0c, 0x91, 0xcc, 0xb6, 0x57,
                                  0x8b, 0xe7, 0x08, 0x30, 0x39, 0x00, 0x19, 0x36, 0x81, 0x48, 0x65, 0x6c, 0x6c,
                                  0x6f, 0x20, 0x4f, 0x74, 0x62, 0x72, 0x20, 0x4e, 0x65, 0x74, 0x69, 0x66, 0x21};
+
+    std::thread recvThread(receiveTask, sockFd, recvBuf, &listenAddr);
+
     netif.Ip6Receive(udpPacket, sizeof(udpPacket));
 
-    socklen_t   len = sizeof(listenAddr);
-    int         n   = recvfrom(sockFd, (char *)recvBuf, kMaxIp6Size, MSG_WAITALL, (struct sockaddr *)&listenAddr, &len);
-    std::string udpPayload(reinterpret_cast<const char *>(recvBuf), n);
-    EXPECT_EQ(udpPayload, "Hello Otbr Netif!");
-
+    recvThread.join();
     close(sockFd);
     netif.Deinit();
 }
