@@ -1,0 +1,4 @@
+OT_LOG_LEVEL=7
+OT_RCP_DEVICE=spinel+hdlc+uart:///dev/ttyACM0?uart-baudrate=1000000
+OT_INFRA_IF=wlan0
+OT_THREAD_IF=wpan0
