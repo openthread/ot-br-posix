@@ -142,16 +142,8 @@ public:
     {
         UniqueDBusMessage reply{nullptr};
 
-        if (aError == OT_ERROR_NONE)
-        {
-            otbrLogInfo("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
-                        dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
-        }
-        else
-        {
-            otbrLogErr("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
-                       dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
-        }
+        otbrLogInfo("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
+                    dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
 
         if (aError == OT_ERROR_NONE)
         {
