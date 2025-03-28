@@ -248,7 +248,7 @@ public:
      */
     DBus::DBusAgent &GetDBusAgent(void)
     {
-        return *mDBusAgent;
+        return mDBusAgent;
     }
 #endif
 
@@ -268,6 +268,9 @@ private:
 
 #if OTBR_ENABLE_BORDER_AGENT
     void SetBorderAgentOnInitState(void);
+#endif
+#if OTBR_ENABLE_DBUS_SERVER
+    DBus::DependentComponents MakeDBusDependentComponents(void);
 #endif
 
     std::string            mInterfaceName;
@@ -304,7 +307,7 @@ private:
     std::unique_ptr<rest::RestWebServer> mRestWebServer;
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    std::unique_ptr<DBus::DBusAgent> mDBusAgent;
+    DBus::DBusAgent mDBusAgent;
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     std::shared_ptr<vendor::VendorServer> mVendorServer;

@@ -47,6 +47,7 @@
 
 #include <dbus/dbus.h>
 
+#include "border_agent/border_agent.hpp"
 #include "common/code_utils.hpp"
 #include "common/types.hpp"
 #include "dbus/common/constants.hpp"
@@ -54,9 +55,21 @@
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
 #include "dbus/server/dbus_request.hpp"
+#include "host/thread_host.hpp"
+#include "mdns/mdns.hpp"
 
 namespace otbr {
 namespace DBus {
+
+class DependentComponents
+{
+public:
+    Host::ThreadHost &mHost;
+    Mdns::Publisher  &mPublisher;
+#if OTBR_ENABLE_BORDER_AGENT
+    otbr::BorderAgent &mBorderAgent;
+#endif
+};
 
 /**
  * This class is a base class for implementing a d-bus object.

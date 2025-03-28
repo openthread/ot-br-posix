@@ -41,11 +41,11 @@ using std::placeholders::_2;
 namespace otbr {
 namespace DBus {
 
-DBusThreadObjectNcp::DBusThreadObjectNcp(DBusConnection      &aConnection,
-                                         const std::string   &aInterfaceName,
-                                         otbr::Host::NcpHost &aHost)
+DBusThreadObjectNcp::DBusThreadObjectNcp(DBusConnection            &aConnection,
+                                         const std::string         &aInterfaceName,
+                                         const DependentComponents &aDeps)
     : DBusObject(&aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
-    , mHost(aHost)
+    , mHost(static_cast<Host::NcpHost &>(aDeps.mHost))
 {
 }
 
