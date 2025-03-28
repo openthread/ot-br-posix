@@ -152,7 +152,7 @@ jobs:
         # This should be fixed by enhancing the test script to handle SRP server situations properly.
         otbr_options="${{ matrix.otbr_options }}"
         otbr_image_name="otbr-ot12-backbone-ci"
-        docker build -t "${otbr_image_name}" -f etc/docker/Dockerfile . \
+        docker build -t "${otbr_image_name}" -f etc/docker/test/Dockerfile . \
           --build-arg BORDER_ROUTING=${{ matrix.border_routing }} \
           --build-arg INFRA_IF_NAME=eth0 \
           --build-arg BACKBONE_ROUTER=1 \

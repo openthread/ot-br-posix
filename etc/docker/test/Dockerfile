@@ -115,6 +115,6 @@ RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
     && rm -rf /tmp/* \
   ))
 
-ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
+ENTRYPOINT ["/app/etc/docker/test/docker_entrypoint.sh"]
 
 EXPOSE 80
