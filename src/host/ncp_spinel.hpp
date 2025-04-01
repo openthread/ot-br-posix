@@ -98,6 +98,7 @@ public:
     using Ip6ReceiveCallback               = std::function<void(const uint8_t *, uint16_t)>;
     using InfraIfSendIcmp6NdCallback = std::function<void(uint32_t, const otIp6Address &, const uint8_t *, uint16_t)>;
     using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
+    using UdpForwardSendCallback = std::function<void(const uint8_t *, uint16_t, const otIp6Address &, uint16_t)>;
 
     /**
      * Constructor.
@@ -299,6 +300,31 @@ public:
      */
     void SetBorderAgentMeshCoPServiceChangedCallback(const BorderAgentMeshCoPServiceChangedCallback &aCallback);
 
+    /**
+     * This method forwards a UDP packet to the NCP.
+     *
+     * @param[in] aUdpPayload    The UDP payload.
+     * @param[in] aLength        The length of the UDP payload.
+     * @param[in] aRemoteAddr    The IPv6 address of the remote side.
+     * @param[in] aRemotePort    The UDP port of the remote side.
+     * @param[in] aLocalPort     The UDP port of the local side (in NCP).
+     */
+    otbrError UdpForward(const uint8_t      *aUdpPayload,
+                         uint16_t            aLength,
+                         const otIp6Address &aRemoteAddr,
+                         uint16_t            aRemotePort,
+                         uint16_t            aLocalPort);
+
+    /**
+     * This method sets a callback to send UDP packet received from the NCP side to the remote side.
+     *
+     * @param[in] aCallback    The callback to send the UDP packet to the remote side.
+     */
+    void SetUdpForwardSendCallback(UdpForwardSendCallback aCallback)
+    {
+        mUdpForwardSendCallback = aCallback;
+    }
+
 private:
     using FailureHandler = std::function<void(otError)>;
 
@@ -381,6 +407,13 @@ private:
                                 const otIp6Address *&aAddr,
                                 const uint8_t      *&aData,
                                 uint16_t            &aDataLen);
+    otError ParseUdpForwardStream(const uint8_t       *aBuf,
+                                  uint16_t             aLen,
+                                  const uint8_t      *&aUdpPayload,
+                                  uint16_t            &aUdpPayloadLen,
+                                  const otIp6Address *&aPeerAddr,
+                                  uint16_t            &aPeerPort,
+                                  uint16_t            &aLocalPort);
     otError SendDnssdResult(otPlatDnssdRequestId aRequestId, const std::vector<uint8_t> &aCallbackData, otError aError);
 
     otbrError SetInfraIf(uint32_t                       aInfraIfIndex,
@@ -425,6 +458,7 @@ private:
     NetifStateChangedCallback                mNetifStateChangedCallback;
     InfraIfSendIcmp6NdCallback               mInfraIfIcmp6NdCallback;
     BorderAgentMeshCoPServiceChangedCallback mBorderAgentMeshCoPServiceChangedCallback;
+    UdpForwardSendCallback                   mUdpForwardSendCallback;
 };
 
 } // namespace Host

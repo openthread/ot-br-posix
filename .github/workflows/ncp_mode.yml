@@ -76,6 +76,6 @@ jobs:
             --build-arg OTBR_OPTIONS="${OTBR_OPTIONS}"
     - name: Run
       run: |
-        top_builddir="./build/temp" tests/scripts/ncp_mode build_ot_sim expect
+        top_builddir="./build/temp" tests/scripts/ncp_mode build_ot_sim build_ot_commissioner expect
     - name: Codecov
       uses: codecov/codecov-action@v5

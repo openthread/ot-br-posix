@@ -281,6 +281,20 @@ void NcpHost::HandleMdnsState(Mdns::Publisher::State aState)
 }
 #endif
 
+otbrError NcpHost::UdpForward(const uint8_t      *aUdpPayload,
+                              uint16_t            aLength,
+                              const otIp6Address &aRemoteAddr,
+                              uint16_t            aRemotePort,
+                              const UdpProxy     &aUdpProxy)
+{
+    return mNcpSpinel.UdpForward(aUdpPayload, aLength, aRemoteAddr, aRemotePort, aUdpProxy.GetThreadPort());
+}
+
+void NcpHost::SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback)
+{
+    mNcpSpinel.SetUdpForwardSendCallback(aCallback);
+}
+
 void NcpHost::InitNetifCallbacks(Netif &aNetif)
 {
     mNcpSpinel.Ip6SetAddressCallback(

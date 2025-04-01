@@ -118,6 +118,10 @@ readonly OTBR_DBUS_CONF
 OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_AGENT_PATH
 
+# External commissioner
+OT_COMMISSIONER_PATH=${ABS_TOP_OT_BUILDDIR}/ot-commissioner/build/src/app/cli/commissioner-cli
+readonly OT_COMMISSIONER_PATH
+
 # The node ids
 LEADER_NODE_ID=1
 readonly LEADER_NODE_ID
@@ -143,6 +147,23 @@ do_build_ot_simulation()
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF \
         -DOT_BORDER_ROUTING=OFF \
         -DBUILD_TESTING=OFF
+}
+
+do_build_ot_commissioner()
+{
+    if [[ -x ${OT_COMMISSIONER_PATH} ]]; then
+        return 0
+    fi
+
+    (mkdir -p "${ABS_TOP_OT_BUILDDIR}/ot-commissioner" \
+        && cd "${ABS_TOP_OT_BUILDDIR}/ot-commissioner" \
+        && (git --git-dir=.git rev-parse --is-inside-work-tree || git --git-dir=.git init .) \
+        && git fetch --depth 1 https://github.com/openthread/ot-commissioner.git main \
+        && git checkout FETCH_HEAD \
+        && ./script/bootstrap.sh \
+        && mkdir build && cd build \
+        && cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release .. \
+        && ninja)
 }
 
 do_build_otbr_docker()
@@ -316,6 +337,7 @@ main()
     export EXP_TUN_NAME="${TUN_NAME}"
     export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
     export EXP_OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE}"
+    export EXP_OT_COMMISSIONER_PATH="${OT_COMMISSIONER_PATH}"
 
     while [[ $# != 0 ]]; do
         case "$1" in
@@ -324,6 +346,9 @@ main()
                 ;;
             build_otbr_docker)
                 do_build_otbr_docker
+                ;;
+            build_ot_commissioner)
+                do_build_ot_commissioner
                 ;;
             expect)
                 shift

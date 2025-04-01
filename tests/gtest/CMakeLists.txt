@@ -102,6 +102,7 @@ target_link_libraries(otbr-gtest-host-api
     mbedtls
     otbr-common
     otbr-utils
+    otbr-posix
     GTest::gmock_main
 )
 gtest_discover_tests(otbr-gtest-host-api)
