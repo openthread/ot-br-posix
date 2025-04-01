@@ -141,8 +141,6 @@ jobs:
       run: |
         tests/scripts/bootstrap.sh
         sudo pip3 install -U scikit-build
-        sudo pip3 install -U cmake==3.10.3
-        cmake --version | grep 3.10.3
     - name: Build
       run: script/test package
 

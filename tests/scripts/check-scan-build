@@ -35,6 +35,7 @@ main()
     (mkdir -p scan-build \
         && cd scan-build \
         && scan-build cmake -GNinja \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DBUILD_TESTING=OFF \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \

@@ -75,7 +75,7 @@ main()
     (
         cd "${builddir}" || die "Failed to enter ${builddir}"
 
-        cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${OTBR_TOP_SRCDIR}" "$@"
+        cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${OTBR_TOP_SRCDIR}" "$@"
 
         if [[ -n ${OTBR_TARGET[*]} ]]; then
             ninja "${OTBR_TARGET[@]}"
