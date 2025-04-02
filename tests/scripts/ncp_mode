@@ -158,7 +158,7 @@ do_build_otbr_docker()
         "-DOTBR_BORDER_AGENT=ON"
     )
     sudo docker build -t "${OTBR_DOCKER_IMAGE}" \
-        -f ./etc/docker/Dockerfile . \
+        -f ./etc/docker/test/Dockerfile . \
         --build-arg NAT64=0 \
         --build-arg NAT64_SERVICE=0 \
         --build-arg DNS64=0 \

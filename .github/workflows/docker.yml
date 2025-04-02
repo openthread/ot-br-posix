@@ -117,7 +117,7 @@ jobs:
           --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
           --build-arg VCS_REF=${GITHUB_SHA::8} \
           ${{ matrix.build_args }} \
-          ${TAGS} --file etc/docker/Dockerfile ." >> $GITHUB_OUTPUT
+          ${TAGS} --file etc/docker/test/Dockerfile ." >> $GITHUB_OUTPUT
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
