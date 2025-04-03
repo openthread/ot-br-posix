@@ -69,6 +69,7 @@ Application::Application(Host::ThreadHost  &aHost,
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
     , mBorderAgent(*mPublisher)
+    , mBorderAgentUdpProxy(mHost)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
     , mDBusAgent(MakeDBusDependentComponents())
@@ -343,8 +344,20 @@ void Application::InitNcpMode(void)
 #if OTBR_ENABLE_BORDER_AGENT
     mHost.SetBorderAgentMeshCoPServiceChangedCallback(
         [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
-            mBorderAgent.HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
+            if (!aIsActive)
+            {
+                mBorderAgentUdpProxy.Stop();
+            }
+            else
+            {
+                mBorderAgentUdpProxy.Start(aPort);
+            }
+            mBorderAgent.HandleBorderAgentMeshCoPServiceChanged(aIsActive, mBorderAgentUdpProxy.GetHostPort(),
                                                                 std::vector<uint8_t>(aTxtData, aTxtData + aLength));
+        });
+    mHost.SetUdpForwardToHostCallback(
+        [this](const uint8_t *aUdpPayload, uint16_t aLength, const otIp6Address &aPeerAddr, uint16_t aPeerPort) {
+            mBorderAgentUdpProxy.SendToPeer(aUdpPayload, aLength, aPeerAddr, aPeerPort);
         });
     SetBorderAgentOnInitState();
 #endif
@@ -355,6 +368,7 @@ void Application::DeinitNcpMode(void)
 #if OTBR_ENABLE_BORDER_AGENT
     mBorderAgent.SetEnabled(false);
     mBorderAgent.Deinit();
+    mBorderAgentUdpProxy.Stop();
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mPublisher->Stop();

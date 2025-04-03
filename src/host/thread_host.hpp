@@ -45,6 +45,7 @@
 #include "lib/spinel/coprocessor_type.h"
 
 #include "common/logging.hpp"
+#include "posix/udp_proxy.hpp"
 
 namespace otbr {
 namespace Host {
@@ -113,7 +114,7 @@ enum ThreadEnabledState
  *
  * The APIs are unified for both NCP and RCP cases.
  */
-class ThreadHost : virtual public NetworkProperties
+class ThreadHost : virtual public NetworkProperties, public UdpProxy::Dependencies
 {
 public:
     using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
@@ -124,6 +125,7 @@ public:
     using ThreadEnabledStateCallback               = std::function<void(ThreadEnabledState)>;
     using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
     using EphemeralKeyStateChangedCallback         = std::function<void(otBorderAgentEphemeralKeyState, uint16_t)>;
+    using UdpForwardToHostCallback = std::function<void(const uint8_t *, uint16_t, const otIp6Address &, uint16_t)>;
 
     struct ChannelMaxPower
     {
@@ -266,6 +268,13 @@ public:
      * @param[in] aCallback  The callback function.
      */
     virtual void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) = 0;
+
+    /**
+     * This methods a callback for the Thread stack to forward UDP packet to the host.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    virtual void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) = 0;
 
     /**
      * Returns the co-processor type.

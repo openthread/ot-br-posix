@@ -841,9 +841,29 @@ void RcpHost::HandleEpskcStateChanged(void)
     }
 }
 
+otbrError RcpHost::UdpForward(const uint8_t      *aUdpPayload,
+                              uint16_t            aLength,
+                              const otIp6Address &aRemoteAddr,
+                              uint16_t            aRemotePort,
+                              const UdpProxy     &aUdpProxy)
+{
+    OTBR_UNUSED_VARIABLE(aUdpPayload);
+    OTBR_UNUSED_VARIABLE(aLength);
+    OTBR_UNUSED_VARIABLE(aRemoteAddr);
+    OTBR_UNUSED_VARIABLE(aRemotePort);
+    OTBR_UNUSED_VARIABLE(aUdpProxy);
+
+    return OTBR_ERROR_NOT_IMPLEMENTED;
+}
+
 void RcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback)
 {
     mEphemeralKeyStateChangedCallbacks.push_back(aCallback);
+}
+
+void RcpHost::SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback)
+{
+    OTBR_UNUSED_VARIABLE(aCallback);
 }
 
 /*

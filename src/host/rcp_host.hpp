@@ -213,6 +213,7 @@ public:
     void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
     void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) override;
     void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
+    void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
@@ -260,6 +261,12 @@ private:
     void        HandleMeshCoPServiceChanged(void);
     static void HandleEpskcStateChanged(void *aContext);
     void        HandleEpskcStateChanged(void);
+
+    otbrError UdpForward(const uint8_t      *aUdpPayload,
+                         uint16_t            aLength,
+                         const otIp6Address &aRemoteAddr,
+                         uint16_t            aRemotePort,
+                         const UdpProxy     &aUdpProxy) override;
 
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
