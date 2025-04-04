@@ -30,14 +30,6 @@
 #       This script manipulates nat64 configuration.
 #
 
-NAT64_SERVICE="${NAT64_SERVICE:-openthread}"
-TAYGA_DEFAULT=/etc/default/tayga
-TAYGA_CONF=/etc/tayga.conf
-TAYGA_IPV4_ADDR=192.168.255.1
-TAYGA_IPV6_ADDR=fdaa:bb:1::1
-TAYGA_TUN_V6_ADDR=fdaa:bb:1::2
-NAT64_PREFIX=64:ff9b::/96
-DYNAMIC_POOL="${NAT64_DYNAMIC_POOL:-192.168.255.0/24}"
 NAT44_SERVICE=/etc/init.d/otbr-nat44
 WLAN_IFNAMES="${INFRA_IF_NAME:-eth0}"
 THREAD_IF="${THREAD_IF:-wpan0}"
@@ -45,60 +37,6 @@ THREAD_IF="${THREAD_IF:-wpan0}"
 # Currently solution was verified only on raspbian and ubuntu.
 #
 #without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "nat64 is not tested under $PLATFORM."
-
-tayga_install()
-{
-    test -f $TAYGA_DEFAULT -a -f $TAYGA_CONF || die 'Cannot find tayga configuration file!'
-    sudo sed -i 's/^RUN="no"/RUN="yes"/' $TAYGA_DEFAULT
-    sudo sed -i 's/^IPV4_TUN_ADDR=""/IPV4_TUN_ADDR="'$TAYGA_IPV4_ADDR'"/' $TAYGA_DEFAULT
-    sudo sed -i 's/^IPV6_TUN_ADDR=""/IPV6_TUN_ADDR="'$TAYGA_TUN_V6_ADDR'"/' $TAYGA_DEFAULT
-    sudo sed -i 's/^prefix /##prefix /' $TAYGA_CONF
-    sudo sed -i '/^##prefix /a prefix '$NAT64_PREFIX $TAYGA_CONF
-    sudo sed -i '/^#ipv6-addr/a ipv6-addr '$TAYGA_IPV6_ADDR $TAYGA_CONF
-    sudo sed -i 's/^dynamic-pool /##dynamic-pool /' $TAYGA_CONF
-    sudo sed -i '/^##dynamic-pool /a dynamic-pool '"$DYNAMIC_POOL" $TAYGA_CONF
-
-    if have systemctl; then
-        sudo systemctl restart tayga || die 'Unable to restart taga service!'
-        sudo systemctl enable tayga || die 'Unable to enable taga service!'
-    fi
-}
-
-tayga_uninstall()
-{
-    sudo sed -i 's/^RUN="yes"/RUN="no"/' $TAYGA_DEFAULT
-    sudo sed -i 's/^IPV4_TUN_ADDR="'$TAYGA_IPV4_ADDR'"/IPV4_TUN_ADDR=""/' $TAYGA_DEFAULT
-    sudo sed -i '/^prefix /d' $TAYGA_CONF
-    if grep "##prefix " $TAYGA_CONF; then
-        sudo sed -i 's/^##prefix /prefix /' $TAYGA_CONF
-    else
-        sudo sed -i 's/^# prefix /prefix /' $TAYGA_CONF
-    fi
-    sudo sed -i '/^ipv6-addr '$TAYGA_IPV6_ADDR'/d' $TAYGA_CONF
-    if grep "##dynamic-pool " $TAYGA_CONF; then
-        sudo sed -i '/^dynamic-pool /d' $TAYGA_CONF
-        sudo sed -i 's/^##dynamic-pool /dynamic-pool /' $TAYGA_CONF
-    fi
-}
-
-tayga_start()
-{
-    if with DOCKER; then
-        service tayga start || die 'Failed to start tayga'
-    elif have systemctl; then
-        sudo systemctl start tayga || die 'Failed to start tayga!'
-        sudo systemctl enable tayga || die 'Failed to enable tayga!'
-    fi
-}
-
-tayga_stop()
-{
-    if with DOCKER; then
-        service tayga stop || true
-    elif have systemctl; then
-        sudo systemctl stop tayga || true
-    fi
-}
 
 nat44_install()
 {
@@ -150,21 +88,13 @@ nat44_install()
 case "\$1" in
     start)
 EOF
-    if [ "$NAT64_SERVICE" = tayga ]; then
-        # Although Tayga itself also configures a NAT44 iptables route, this iptables route is used with Tayga
-        # due to some history reason. It might be removed when native NAT64 service is ready.
-        for IFNAME in $WLAN_IFNAMES; do
-            echo "        iptables -t nat -A POSTROUTING -o $IFNAME -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
-        done
-    else
-        # Just a random fwmark bits.
-        echo "        iptables -t mangle -A PREROUTING -i $THREAD_IF -j MARK --set-mark 0x1001" | sudo tee -a $NAT44_SERVICE
-        echo "        iptables -t nat -A POSTROUTING -m mark --mark 0x1001 -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
-        for IFNAME in $WLAN_IFNAMES; do
-            echo "        iptables -t filter -A FORWARD -o $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
-            echo "        iptables -t filter -A FORWARD -i $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
-        done
-    fi
+    # Just a random fwmark bits.
+    echo "        iptables -t mangle -A PREROUTING -i $THREAD_IF -j MARK --set-mark 0x1001" | sudo tee -a $NAT44_SERVICE
+    echo "        iptables -t nat -A POSTROUTING -m mark --mark 0x1001 -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
+    for IFNAME in $WLAN_IFNAMES; do
+        echo "        iptables -t filter -A FORWARD -o $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
+        echo "        iptables -t filter -A FORWARD -i $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
+    done
     sudo tee -a $NAT44_SERVICE <<EOF
         ;;
     restart|reload|force-reload)
@@ -222,10 +152,6 @@ nat64_install()
 {
     with NAT64 || return 0
 
-    if [ "$NAT64_SERVICE" = tayga ]; then
-        tayga_install
-    fi
-
     nat44_install
 }
 
@@ -234,11 +160,6 @@ nat64_uninstall()
     with NAT64 || return 0
 
     nat64_stop
-
-    if [ "$NAT64_SERVICE" = tayga ]; then
-        tayga_uninstall
-    fi
-
     nat44_uninstall
 }
 
@@ -246,20 +167,12 @@ nat64_start()
 {
     with NAT64 || return 0
 
-    if [ "$NAT64_SERVICE" = tayga ]; then
-        tayga_start
-    fi
-
     nat44_start
 }
 
 nat64_stop()
 {
     with NAT64 || return 0
-
-    if [ "$NAT64_SERVICE" = tayga ]; then
-        tayga_stop
-    fi
 
     nat44_stop
 }
