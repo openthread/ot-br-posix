@@ -159,7 +159,6 @@ jobs:
           --build-arg REFERENCE_DEVICE=1 \
           --build-arg OT_BACKBONE_CI=1 \
           --build-arg NAT64="${{ matrix.internet }}" \
-          --build-arg NAT64_SERVICE=openthread \
           --build-arg DNS64="${{ matrix.internet }}" \
           --build-arg MDNS="${{ matrix.otbr_mdns }}" \
           --build-arg OT_SRP_ADV_PROXY="${{ matrix.ot_srp_adv_proxy }}" \
