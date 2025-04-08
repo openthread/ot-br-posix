@@ -79,6 +79,8 @@ public:
                           const uint8_t      *aBuffer,
                           uint16_t            aBufferLength);
 
+    unsigned int GetIfIndex(void) const { return mInfraIfIndex; }
+
 private:
     static int              CreateIcmp6Socket(const char *aInfraIfName);
     bool                    IsRunning(const std::vector<Ip6Address> &aAddrs) const;

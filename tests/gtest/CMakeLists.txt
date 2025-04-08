@@ -75,10 +75,19 @@ if(OTBR_MDNS)
 endif()
 
 add_executable(otbr-posix-gtest-unit
+    ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
+    fake_posix_platform.cpp
+    test_backbone_multicast_routing.cpp
     test_cli_daemon.cpp
     test_infra_if.cpp
     test_netif.cpp
     test_udp_proxy.cpp
+)
+target_include_directories(otbr-posix-gtest-unit
+    PRIVATE
+        ${OTBR_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src/core
+        ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest
 )
 target_link_libraries(otbr-posix-gtest-unit
     otbr-posix

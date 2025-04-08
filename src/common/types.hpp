@@ -109,6 +109,18 @@ static constexpr char kLinkLocalAllNodesMulticastAddress[] = "ff02::01";
 class Ip6Address
 {
 public:
+    // IPv6 Address Scopes
+    static constexpr uint8_t kNodeLocalScope      = 0;  ///< Node-Local scope
+    static constexpr uint8_t kInterfaceLocalScope = 1;  ///< Interface-Local scope
+    static constexpr uint8_t kLinkLocalScope      = 2;  ///< Link-Local scope
+    static constexpr uint8_t kRealmLocalScope     = 3;  ///< Realm-Local scope
+    static constexpr uint8_t kAdminLocalScope     = 4;  ///< Admin-Local scope
+    static constexpr uint8_t kSiteLocalScope      = 5;  ///< Site-Local scope
+    static constexpr uint8_t kOrgLocalScope       = 8;  ///< Organization-Local scope
+    static constexpr uint8_t kGlobalScope         = 14; ///< Global scope
+
+    static constexpr uint8_t kBitsPerByte = 8;
+
     /**
      * Default constructor.
      */
@@ -230,6 +242,13 @@ public:
      * @retval FALSE  If the Ip6 address is not the Loopback Address.
      */
     bool IsLoopback(void) const { return (m32[0] == 0 && m32[1] == 0 && m32[2] == 0 && m32[3] == htobe32(1)); }
+
+    /**
+     * Returns the IPv6 address scope.
+     *
+     * @returns The IPv6 address scope.
+     */
+    uint8_t GetScope(void) const;
 
     /**
      * This function returns the wellknown Link Local All Nodes Multicast Address (ff02::1).
