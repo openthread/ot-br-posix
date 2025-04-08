@@ -76,6 +76,8 @@ void CliDaemon::HandleCommandOutput(const char *aOutput)
     int    ret;
     size_t length = strlen(aOutput);
 
+    VerifyOrExit(mSessionSocket != -1);
+
     static_assert(sizeof(kTruncatedMsg) < kCliMaxLineLength, "OTBR_CONFIG_CLI_MAX_LINE_LENGTH is too short!");
 
     if (length >= kCliMaxLineLength)
@@ -85,10 +87,8 @@ void CliDaemon::HandleCommandOutput(const char *aOutput)
                sizeof(kTruncatedMsg));
     }
 
-    VerifyOrExit(mSessionSocket != -1);
-
 #ifdef __linux__
-    // Don't die on SIGPIPE
+    // MSG_NOSIGNAL prevents read() from sending a SIGPIPE in the case of a broken pipe.
     ret = send(mSessionSocket, aOutput, length, MSG_NOSIGNAL);
 #else
     ret = static_cast<int>(write(mSessionSocket, aOutput, length));

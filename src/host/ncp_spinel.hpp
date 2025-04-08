@@ -272,9 +272,9 @@ public:
     }
 
     /**
-     * This method sets the function to send an Icmp6 ND message on the infrastructure link.
+     * This method sets the function to receive the CLI output from the NCP.
      *
-     * @param[in] aCallback  The callback to send an Icmp6 ND message on the infrastructure link.
+     * @param[in] aCallback  The callback to receive the CLI output from the NCP.
      */
     void CliDaemonSetOutputCallback(const CliDaemonOutputCallback &aCallback) { mCliDaemonOutputCallback = aCallback; }
 

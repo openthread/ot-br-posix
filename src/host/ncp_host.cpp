@@ -259,7 +259,6 @@ void NcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallba
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
-
     mCliDaemon.Process(aMainloop);
 }
 

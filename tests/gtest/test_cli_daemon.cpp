@@ -55,6 +55,8 @@
 
 using otbr::CliDaemon;
 
+static constexpr size_t kCliMaxLineLength = 640;
+
 TEST(CliDaemon, InitSocketCreationWithFullNetIfName)
 {
     const char *netIfName  = "tun0";
@@ -156,6 +158,56 @@ TEST(CliDaemon, InputCommandLineCorrectly_AfterReveivingOnSessionSocket)
     }
 
     EXPECT_STREQ(receivedCommand.c_str(), command);
+
+    cliDaemon.Deinit();
+}
+
+TEST(CliDaemon, HandleCommandOutputCorrectly)
+{
+    const char *output     = "sample output";
+    const char *netIfName  = "tun0";
+    const char *socketFile = "/run/openthread-tun0.sock";
+
+    CliDaemon::Dependencies sDefaultCliDaemonDependencies;
+    CliDaemon               cliDaemon(sDefaultCliDaemonDependencies);
+    otbr::MainloopContext   context;
+
+    cliDaemon.Init(netIfName);
+
+    {
+        int                clientSocket;
+        struct sockaddr_un serverAddr;
+
+        clientSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+        ASSERT_GE(clientSocket, 0) << "socket creation failed: " << strerror(errno);
+
+        memset(&serverAddr, 0, sizeof(serverAddr));
+        serverAddr.sun_family = AF_UNIX;
+        strncpy(serverAddr.sun_path, socketFile, sizeof(serverAddr.sun_path) - 1);
+        ASSERT_EQ(connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)), 0);
+
+        context.mMaxFd   = -1;
+        context.mTimeout = {100, 0};
+        FD_ZERO(&context.mReadFdSet);
+        FD_ZERO(&context.mWriteFdSet);
+        FD_ZERO(&context.mErrorFdSet);
+
+        cliDaemon.UpdateFdSet(context);
+        int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
+                          &context.mTimeout);
+        ASSERT_GE(rval, 0) << "select failed, error: " << strerror(errno);
+
+        cliDaemon.Process(context);
+        cliDaemon.HandleCommandOutput(output);
+
+        char recvBuf[kCliMaxLineLength];
+        rval = recv(clientSocket, recvBuf, kCliMaxLineLength, 0);
+        ASSERT_GE(rval, 0) << "Error receiving command output: " << strerror(errno);
+        std::string recvStr(recvBuf, rval);
+        EXPECT_STREQ(recvStr.c_str(), output);
+
+        close(clientSocket);
+    }
 
     cliDaemon.Deinit();
 }
