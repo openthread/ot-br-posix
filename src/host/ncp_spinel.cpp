@@ -84,6 +84,7 @@ void NcpSpinel::Deinit(void)
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mPublisher = nullptr;
 #endif
+    mUdpForwardSendCallback = nullptr;
 }
 
 otbrError NcpSpinel::SpinelDataUnpack(const uint8_t *aDataIn, spinel_size_t aDataLen, const char *aPackFormat, ...)
@@ -540,6 +541,21 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
         SuccessOrExit(decoder.ReadData(data, dataLen), error = OTBR_ERROR_PARSE);
         SafeInvoke(mBorderAgentMeshCoPServiceChangedCallback, isActive, port, data, dataLen);
+        break;
+    }
+
+    case SPINEL_PROP_THREAD_UDP_FORWARD_STREAM:
+    {
+        const uint8_t      *udpPayload;
+        uint16_t            length;
+        const otIp6Address *peerAddress;
+        uint16_t            peerPort;
+        uint16_t            localPort;
+
+        SuccessOrExit(ParseUdpForwardStream(aBuffer, aLength, udpPayload, length, peerAddress, peerPort, localPort),
+                      error = OTBR_ERROR_PARSE);
+        SafeInvoke(mUdpForwardSendCallback, udpPayload, length, *peerAddress, peerPort);
+
         break;
     }
 
@@ -1159,6 +1175,28 @@ exit:
     return error;
 }
 
+otError NcpSpinel::ParseUdpForwardStream(const uint8_t       *aBuf,
+                                         uint16_t             aLen,
+                                         const uint8_t      *&aUdpPayload,
+                                         uint16_t            &aUdpPayloadLen,
+                                         const otIp6Address *&aPeerAddr,
+                                         uint16_t            &aPeerPort,
+                                         uint16_t            &aLocalPort)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuf != nullptr, error = OT_ERROR_INVALID_ARGS);
+    decoder.Init(aBuf, aLen);
+    SuccessOrExit(error = decoder.ReadDataWithLen(aUdpPayload, aUdpPayloadLen));
+    SuccessOrExit(error = decoder.ReadUint16(aPeerPort));
+    SuccessOrExit(error = decoder.ReadIp6Address(aPeerAddr));
+    SuccessOrExit(error = decoder.ReadUint16(aLocalPort));
+
+exit:
+    return error;
+}
+
 otError NcpSpinel::SendDnssdResult(otPlatDnssdRequestId        aRequestId,
                                    const std::vector<uint8_t> &aCallbackData,
                                    otError                     aError)
@@ -1227,6 +1265,36 @@ exit:
     if (error != OTBR_ERROR_NONE)
     {
         otbrLogWarning("Failed to passthrough ICMP6 ND to NCP, %s", otbrErrorString(error));
+    }
+    return error;
+}
+
+otbrError NcpSpinel::UdpForward(const uint8_t      *aUdpPayload,
+                                uint16_t            aLength,
+                                const otIp6Address &aRemoteAddr,
+                                uint16_t            aRemotePort,
+                                uint16_t            aLocalPort)
+{
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [aUdpPayload, aLength, &aRemoteAddr, aRemotePort,
+                                 aLocalPort](ot::Spinel::Encoder &aEncoder) {
+        otError error = OT_ERROR_NONE;
+
+        SuccessOrExit(error = aEncoder.WriteDataWithLen(aUdpPayload, aLength));
+        SuccessOrExit(error = aEncoder.WriteUint16(aRemotePort));
+        SuccessOrExit(error = aEncoder.WriteIp6Address(aRemoteAddr));
+        SuccessOrExit(error = aEncoder.WriteUint16(aLocalPort));
+
+    exit:
+        return error;
+    };
+
+    SuccessOrExit(SetProperty(SPINEL_PROP_THREAD_UDP_FORWARD_STREAM, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to do UDP forwarding to NCP, %s", otbrErrorString(error));
     }
     return error;
 }

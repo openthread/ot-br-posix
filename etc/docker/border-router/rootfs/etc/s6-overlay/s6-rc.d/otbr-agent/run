@@ -1,0 +1,84 @@
+#!/command/with-contenv bash
+#
+#  Copyright (c) 2025, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+OT_LOG_LEVEL="${OT_LOG_LEVEL:-7}"
+readonly OT_LOG_LEVEL
+
+OT_RCP_DEVICE="${OT_RCP_DEVICE:-spinel+hdlc+uart:///dev/ttyACM0?uart-baudrate=1000000}"
+readonly OT_RCP_DEVICE
+
+OT_INFRA_IF="${OT_INFRA_IF:-wlan0}"
+readonly OT_INFRA_IF
+
+OT_THREAD_IF="${OT_THREAD_IF:-wpan0}"
+readonly OT_THREAD_IF
+
+OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
+readonly OT_FORWARD_INGRESS_CHAIN
+
+die()
+{
+    echo >&2 "ERROR: $*"
+    exit 1
+}
+
+mkdir -p /data/thread && ln -sft /var/lib /data/thread || die "Could not create directory /var/lib/thread to store Thread data."
+
+echo "Configuring OpenThread firewall..."
+
+ipset create -exist otbr-ingress-deny-src hash:net family inet6
+ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6
+ipset create -exist otbr-ingress-allow-dst hash:net family inet6
+ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6
+
+ip6tables -N "${OT_FORWARD_INGRESS_CHAIN}"
+ip6tables -I FORWARD 1 -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
+
+ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -i "${OT_THREAD_IF}" -j DROP
+ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-deny-src src -j DROP
+ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
+ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -j DROP
+ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -j ACCEPT
+
+echo "Configuring OpenThread NAT64..."
+
+iptables -t mangle -A PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
+iptables -t nat -A POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
+iptables -t filter -A FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
+iptables -t filter -A FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
+
+echo "Starting otbr-agent..."
+
+exec s6-notifyoncheck -d -s 300 -w 300 -n 0 stdbuf -oL \
+     "/usr/sbin/otbr-agent" \
+        -d"${OT_LOG_LEVEL}" -v -s \
+        -I "${OT_THREAD_IF}" \
+        -B "${OT_INFRA_IF}" \
+	"${OT_RCP_DEVICE}" \
+        "trel://${OT_INFRA_IF}"

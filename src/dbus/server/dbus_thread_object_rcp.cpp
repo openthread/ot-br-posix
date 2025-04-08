@@ -101,15 +101,15 @@ static std::string GetNat64StateName(otNat64State aState)
 namespace otbr {
 namespace DBus {
 
-DBusThreadObjectRcp::DBusThreadObjectRcp(DBusConnection      &aConnection,
-                                         const std::string   &aInterfaceName,
-                                         otbr::Host::RcpHost &aHost,
-                                         Mdns::Publisher     *aPublisher,
-                                         otbr::BorderAgent   &aBorderAgent)
+DBusThreadObjectRcp::DBusThreadObjectRcp(DBusConnection            &aConnection,
+                                         const std::string         &aInterfaceName,
+                                         const DependentComponents &aDeps)
     : DBusObject(&aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
-    , mHost(aHost)
-    , mPublisher(aPublisher)
-    , mBorderAgent(aBorderAgent)
+    , mHost(static_cast<Host::RcpHost &>(aDeps.mHost))
+    , mPublisher(&aDeps.mPublisher)
+#if OTBR_ENABLE_BORDER_AGENT
+    , mBorderAgent(aDeps.mBorderAgent)
+#endif
 {
 }
 
@@ -155,8 +155,10 @@ otbrError DBusThreadObjectRcp::Init(void)
                    std::bind(&DBusThreadObjectRcp::RemoveExternalRouteHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD,
                    std::bind(&DBusThreadObjectRcp::AttachAllNodesToHandler, this, _1));
+#if OTBR_ENABLE_BORDER_AGENT
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_VENDOR_MESHCOP_TXT_METHOD,
                    std::bind(&DBusThreadObjectRcp::UpdateMeshCopTxtHandler, this, _1));
+#endif
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_GET_PROPERTIES_METHOD,
                    std::bind(&DBusThreadObjectRcp::GetPropertiesHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_THREAD_ENABLED_METHOD,
@@ -167,11 +169,12 @@ otbrError DBusThreadObjectRcp::Init(void)
                    std::bind(&DBusThreadObjectRcp::LeaveNetworkHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_NAT64_ENABLED_METHOD,
                    std::bind(&DBusThreadObjectRcp::SetNat64Enabled, this, _1));
+#if OTBR_ENABLE_BORDER_AGENT
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ACTIVATE_EPHEMERAL_KEY_MODE_METHOD,
                    std::bind(&DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DEACTIVATE_EPHEMERAL_KEY_MODE_METHOD,
                    std::bind(&DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler, this, _1));
-
+#endif
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObjectRcp::IntrospectHandler, this, _1));
 
@@ -189,8 +192,10 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::SetDnsUpstreamQueryState, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
                                std::bind(&DBusThreadObjectRcp::SetNat64Cidr, this, _1));
+#if OTBR_ENABLE_BORDER_AGENT
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED,
                                std::bind(&DBusThreadObjectRcp::SetEphemeralKeyEnabled, this, _1));
+#endif
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObjectRcp::GetLinkModeHandler, this, _1));
@@ -295,8 +300,10 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::GetNat64ErrorCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
                                std::bind(&DBusThreadObjectRcp::GetNat64Cidr, this, _1));
+#if OTBR_ENABLE_BORDER_AGENT
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED,
                                std::bind(&DBusThreadObjectRcp::GetEphemeralKeyEnabled, this, _1));
+#endif
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INFRA_LINK_INFO,
                                std::bind(&DBusThreadObjectRcp::GetInfraLinkInfo, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TREL_INFO,
@@ -1302,6 +1309,7 @@ exit:
     return error;
 }
 
+#if OTBR_ENABLE_BORDER_AGENT
 void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
 {
     otError                                     error = OT_ERROR_NONE;
@@ -1323,6 +1331,7 @@ void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
 exit:
     aRequest.ReplyOtResult(error);
 }
+#endif // OTBR_ENABLE_BORDER_AGENT
 
 otError DBusThreadObjectRcp::GetRadioRegionHandler(DBusMessageIter &aIter)
 {
@@ -2030,6 +2039,7 @@ otError DBusThreadObjectRcp::SetNat64Cidr(DBusMessageIter &aIter)
 }
 #endif // OTBR_ENABLE_NAT64
 
+#if OTBR_ENABLE_BORDER_AGENT
 otError DBusThreadObjectRcp::GetEphemeralKeyEnabled(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
@@ -2117,6 +2127,7 @@ exit:
         aRequest.ReplyOtResult(error);
     }
 }
+#endif // OTBR_ENABLE_BORDER_AGENT
 
 otError DBusThreadObjectRcp::GetInfraLinkInfo(DBusMessageIter &aIter)
 {

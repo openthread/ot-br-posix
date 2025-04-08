@@ -113,6 +113,7 @@ public:
     void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
     void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) override;
     void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
+    void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
@@ -140,6 +141,11 @@ private:
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     void HandleMdnsState(Mdns::Publisher::State aState) override;
 #endif
+    otbrError UdpForward(const uint8_t      *aUdpPayload,
+                         uint16_t            aLength,
+                         const otIp6Address &aRemoteAddr,
+                         uint16_t            aRemotePort,
+                         const UdpProxy     &aUdpProxy) override;
 
     otbrError Ip6Send(const uint8_t *aData, uint16_t aLength) override;
     otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded) override;

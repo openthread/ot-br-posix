@@ -36,6 +36,7 @@ set container "otbr-ncp"
 set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
 set dataset_dbus "0x0e,0x08,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x03,0x00,0x00,0x14,0x35,0x06,0x00,0x04,0x00,0x1f,0xff,0xe0,0x02,0x08,0x7d,0x61,0xeb,0x42,0xcd,0xc4,0x8d,0x6a,0x07,0x08,0xfd,0x0d,0x07,0xfc,0xa1,0xb9,0xf0,0x50,0x05,0x10,0xba,0x08,0x8f,0xc2,0xbd,0x6c,0x3b,0x38,0x97,0xf7,0xa1,0x0f,0x58,0x26,0x3f,0xf3,0x03,0x0f,0x4f,0x70,0x65,0x6e,0x54,0x68,0x72,0x65,0x61,0x64,0x2d,0x35,0x32,0x34,0x66,0x01,0x02,0x52,0x4f,0x04,0x10,0x9d,0xc0,0x23,0xcc,0xd4,0x47,0xb1,0x2b,0x50,0x99,0x7e,0xf6,0x80,0x20,0xf1,0x9e,0x0c,0x04,0x02,0xa0,0xf7,0xf8"
 set pskc "9dc023ccd447b12b50997ef68020f19e"
+set joiner_pwd "J01NU5"
 
 proc clean_up {container} {
     puts "Performing cleanup..."
@@ -79,6 +80,39 @@ try {
     check_common_txt $mdns_browse_result
     check_string_contains $mdns_browse_result "pt="
     check_string_contains $mdns_browse_result "at="
+
+    # Get the Border Agent Service IP address and port from mdns record
+    set regex {([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+);([0-9]+);}
+    puts "$mdns_browse_result"
+    if {[regexp $regex $mdns_browse_result match ip_address port]} {
+        puts "IP Address: $ip_address"
+        puts "Port: $port"
+    } else {
+        puts "No IP address and port is found in the mDNS entry!"
+        exit 1
+    }
+
+    # Start commissioner
+    spawn_node 4 commissioner $::env(EXP_OT_COMMISSIONER_PATH)
+    send "config set pskc ${pskc}\n"
+    expect "done"
+    send "active\n"
+    expect "false"
+    expect "done"
+    send "start $ip_address $port\n"
+    expect "done"
+    send "active\n"
+    expect "true"
+    send "joiner enableall meshcop $joiner_pwd\n"
+    expect "done"
+
+    # Join a cli node
+    spawn_node 5 cli $::env(EXP_OT_CLI_PATH)
+    send "ifconfig up\r\n"
+    expect_line "Done"
+    send "joiner start $joiner_pwd\r\n"
+    expect_line "Done"    
+    expect_line "Join success"
 
     clean_up $container
 

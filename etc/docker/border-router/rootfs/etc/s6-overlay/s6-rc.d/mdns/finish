@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-#  Copyright (c) 2021, The OpenThread Authors.
+#  Copyright (c) 2025, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,62 +27,4 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-#
-#  This script calls cmake and ninja to compile otbr-agent.
-#
-#  Compile with default build options:
-#
-#      script/cmake-build
-#
-#  Compile with the specified build option enabled:
-#
-#      script/cmake-build -D${option}=ON
-#
-#  Compile with the specified ninja build target:
-#
-#      OTBR_TARGET="${target}" script/cmake-build
-#
-#  Compile with the specified build directory:
-#
-#      OTBR_BUILD_DIR="./build/temp" script/cmake-build
-#
-#  Examples:
-#
-#      script/cmake-build
-#
-#      script/cmake-build -DOTBR_DBUS=ON
-#
-#      OTBR_BUILD_DIR="./build/temp" OTBR_TARGET="otbr-agent" script/cmake-build -DOTBR_DBUS=ON
-#
-
-# shellcheck source=script/_initrc
-. "$(dirname "$0")"/_initrc
-
-OTBR_TOP_SRCDIR="$PWD"
-readonly OTBR_TOP_SRCDIR
-
-OTBR_TOP_BUILD_DIR="${BUILD_DIR}/otbr"
-readonly OTBR_TOP_BUILD_DIR
-
-OTBR_TARGET=${OTBR_TARGET-}
-
-main()
-{
-    local builddir="${OTBR_BUILD_DIR:-${OTBR_TOP_BUILD_DIR}}"
-
-    mkdir -p "${builddir}"
-
-    (
-        cd "${builddir}" || die "Failed to enter ${builddir}"
-
-        cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${OTBR_TOP_SRCDIR}" "$@"
-
-        if [[ -n ${OTBR_TARGET[*]} ]]; then
-            ninja "${OTBR_TARGET[@]}"
-        else
-            ninja
-        fi
-    )
-}
-
-main "$@"
+echo "mDNS ended with exit code ${1} (signal ${2})..."

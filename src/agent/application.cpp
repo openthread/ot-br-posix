@@ -69,9 +69,10 @@ Application::Application(Host::ThreadHost  &aHost,
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
     , mBorderAgent(*mPublisher)
+    , mBorderAgentUdpProxy(mHost)
 #endif
-#if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
-    , mDBusAgent(MakeUnique<DBus::DBusAgent>(mHost, *mPublisher))
+#if OTBR_ENABLE_DBUS_SERVER
+    , mDBusAgent(MakeDBusDependentComponents())
 #endif
 {
     if (mHost.GetCoprocessorType() == OT_COPROCESSOR_RCP)
@@ -104,6 +105,10 @@ void Application::Init(void)
         DieNow("Unknown coprocessor type!");
         break;
     }
+
+#if OTBR_ENABLE_DBUS_SERVER
+    mDBusAgent.Init();
+#endif
 
     otbrLogInfo("Co-processor version: %s", mHost.GetCoprocessorVersion());
 }
@@ -230,8 +235,9 @@ void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRest
     mVendorServer = vendor::VendorServer::newInstance(*this);
 #endif
 
-    OT_UNUSED_VARIABLE(aRestListenAddress);
-    OT_UNUSED_VARIABLE(aRestListenPort);
+    OTBR_UNUSED_VARIABLE(rcpHost);
+    OTBR_UNUSED_VARIABLE(aRestListenAddress);
+    OTBR_UNUSED_VARIABLE(aRestListenPort);
 }
 
 void Application::InitRcpMode(void)
@@ -288,9 +294,6 @@ void Application::InitRcpMode(void)
 #if OTBR_ENABLE_REST_SERVER
     mRestWebServer->Init();
 #endif
-#if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent->Init(mBorderAgent);
-#endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer->Init();
 #endif
@@ -338,14 +341,23 @@ void Application::InitNcpMode(void)
     mMdnsStateSubject.AddObserver(ncpHost);
     mPublisher->Start();
 #endif
-#if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent->Init(mBorderAgent);
-#endif
 #if OTBR_ENABLE_BORDER_AGENT
     mHost.SetBorderAgentMeshCoPServiceChangedCallback(
         [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
-            mBorderAgent.HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
+            if (!aIsActive)
+            {
+                mBorderAgentUdpProxy.Stop();
+            }
+            else
+            {
+                mBorderAgentUdpProxy.Start(aPort);
+            }
+            mBorderAgent.HandleBorderAgentMeshCoPServiceChanged(aIsActive, mBorderAgentUdpProxy.GetHostPort(),
                                                                 std::vector<uint8_t>(aTxtData, aTxtData + aLength));
+        });
+    mHost.SetUdpForwardToHostCallback(
+        [this](const uint8_t *aUdpPayload, uint16_t aLength, const otIp6Address &aPeerAddr, uint16_t aPeerPort) {
+            mBorderAgentUdpProxy.SendToPeer(aUdpPayload, aLength, aPeerAddr, aPeerPort);
         });
     SetBorderAgentOnInitState();
 #endif
@@ -356,6 +368,7 @@ void Application::DeinitNcpMode(void)
 #if OTBR_ENABLE_BORDER_AGENT
     mBorderAgent.SetEnabled(false);
     mBorderAgent.Deinit();
+    mBorderAgentUdpProxy.Stop();
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mPublisher->Stop();
@@ -373,6 +386,19 @@ void Application::SetBorderAgentOnInitState(void)
 #else
     mBorderAgent.SetEnabled(true);
 #endif
+}
+#endif
+
+#if OTBR_ENABLE_DBUS_SERVER
+DBus::DependentComponents Application::MakeDBusDependentComponents(void)
+{
+    return DBus::DependentComponents
+    {
+        mHost, *mPublisher,
+#if OTBR_ENABLE_BORDER_AGENT
+            mBorderAgent
+#endif
+    };
 }
 #endif
 

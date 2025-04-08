@@ -55,7 +55,7 @@ namespace Web {
 std::string WpanService::HandleGetQRCodeRequest()
 {
     Json::Value                 root, networkInfo;
-    Json::FastWriter            jsonWriter;
+    Json::StreamWriterBuilder   writerBuilder;
     std::string                 response;
     int                         ret = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
@@ -81,29 +81,31 @@ exit:
         otbrLogErr("Wpan service error: %d", ret);
     }
 
-    response = jsonWriter.write(root);
+    response = Json::writeString(writerBuilder, root);
     return response;
 }
 
 std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinRequest)
 {
-    Json::Value                 root;
-    Json::Reader                reader;
-    Json::FastWriter            jsonWriter;
-    std::string                 response;
-    int                         index;
-    std::string                 credentialType;
-    std::string                 networkKey;
-    std::string                 pskd;
-    std::string                 prefix;
-    bool                        defaultRoute;
-    int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client(mIfName);
-    char                       *rval;
+    Json::Value                       root;
+    Json::CharReaderBuilder           readerBuilder;
+    std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
+    Json::StreamWriterBuilder         writerBuilder;
+    std::string                       response;
+    int                               index;
+    std::string                       credentialType;
+    std::string                       networkKey;
+    std::string                       pskd;
+    std::string                       prefix;
+    bool                              defaultRoute;
+    int                               ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient       client(mIfName);
+    char                             *rval;
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
-    VerifyOrExit(reader.parse(aJoinRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
+    VerifyOrExit(reader->parse(aJoinRequest.c_str(), aJoinRequest.c_str() + aJoinRequest.size(), &root, nullptr),
+                 ret = kWpanStatus_ParseRequestFailed);
     index          = root["index"].asUInt();
     credentialType = root["credentialType"].asString();
     networkKey     = root["networkKey"].asString();
@@ -177,34 +179,36 @@ exit:
         root["message"] = "Please make sure the provided PSKd matches the one given to the commissioner.";
     }
 
-    response = jsonWriter.write(root);
+    response = Json::writeString(writerBuilder, root);
     return response;
 }
 
 std::string WpanService::HandleFormNetworkRequest(const std::string &aFormRequest)
 {
-    Json::Value                 root;
-    Json::FastWriter            jsonWriter;
-    Json::Reader                reader;
-    std::string                 response;
-    otbr::Psk::Pskc             psk;
-    char                        pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1];
-    uint8_t                     extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
-    std::string                 networkKey;
-    std::string                 prefix;
-    uint16_t                    channel;
-    std::string                 networkName;
-    std::string                 passphrase;
-    uint16_t                    panId;
-    uint64_t                    extPanId;
-    bool                        defaultRoute;
-    int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client(mIfName);
+    Json::Value                       root;
+    Json::StreamWriterBuilder         writerBuilder;
+    Json::CharReaderBuilder           readerBuilder;
+    std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
+    std::string                       response;
+    otbr::Psk::Pskc                   psk;
+    char                              pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1];
+    uint8_t                           extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
+    std::string                       networkKey;
+    std::string                       prefix;
+    uint16_t                          channel;
+    std::string                       networkName;
+    std::string                       passphrase;
+    uint16_t                          panId;
+    uint64_t                          extPanId;
+    bool                              defaultRoute;
+    int                               ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient       client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
     pskcStr[OT_PSKC_MAX_LENGTH * 2] = '\0'; // for manipulating with strlen
-    VerifyOrExit(reader.parse(aFormRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
+    VerifyOrExit(reader->parse(aFormRequest.c_str(), aFormRequest.c_str() + aFormRequest.size(), &root, nullptr),
+                 ret = kWpanStatus_ParseRequestFailed);
     networkKey  = root["networkKey"].asString();
     prefix      = root["prefix"].asString();
     channel     = root["channel"].asUInt();
@@ -242,24 +246,27 @@ exit:
         otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
-    response = jsonWriter.write(root);
+    response = Json::writeString(writerBuilder, root);
     return response;
 }
 
 std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixRequest)
 {
-    Json::Value                 root;
-    Json::FastWriter            jsonWriter;
-    Json::Reader                reader;
-    std::string                 response;
-    std::string                 prefix;
-    bool                        defaultRoute;
-    int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client(mIfName);
+    Json::Value                       root;
+    Json::StreamWriterBuilder         writerBuilder;
+    Json::CharReaderBuilder           readerBuilder;
+    std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
+    std::string                       response;
+    std::string                       prefix;
+    bool                              defaultRoute;
+    int                               ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient       client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
-    VerifyOrExit(reader.parse(aAddPrefixRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
+    VerifyOrExit(
+        reader->parse(aAddPrefixRequest.c_str(), aAddPrefixRequest.c_str() + aAddPrefixRequest.size(), &root, nullptr),
+        ret = kWpanStatus_ParseRequestFailed);
     prefix       = root["prefix"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
@@ -282,23 +289,25 @@ exit:
         otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
-    response = jsonWriter.write(root);
+    response = Json::writeString(writerBuilder, root);
     return response;
 }
 
 std::string WpanService::HandleDeletePrefixRequest(const std::string &aDeleteRequest)
 {
-    Json::Value                 root;
-    Json::FastWriter            jsonWriter;
-    Json::Reader                reader;
-    std::string                 response;
-    std::string                 prefix;
-    int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client(mIfName);
+    Json::Value                       root;
+    Json::StreamWriterBuilder         writerBuilder;
+    Json::CharReaderBuilder           readerBuilder;
+    std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
+    std::string                       response;
+    std::string                       prefix;
+    int                               ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient       client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
-    VerifyOrExit(reader.parse(aDeleteRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
+    VerifyOrExit(reader->parse(aDeleteRequest.c_str(), aDeleteRequest.c_str() + aDeleteRequest.size(), &root, nullptr),
+                 ret = kWpanStatus_ParseRequestFailed);
     prefix = root["prefix"].asString();
 
     if (prefix.find('/') == std::string::npos)
@@ -319,14 +328,14 @@ exit:
         otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
-    response = jsonWriter.write(root);
+    response = Json::writeString(writerBuilder, root);
     return response;
 }
 
 std::string WpanService::HandleStatusRequest()
 {
     Json::Value                 root, networkInfo;
-    Json::FastWriter            jsonWriter;
+    Json::StreamWriterBuilder   writerBuilder;
     std::string                 response, networkName, extPanId, propertyValue;
     int                         ret = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
@@ -462,14 +471,14 @@ exit:
         otbrLogErr("Wpan service error: %d", ret);
     }
     root["error"] = ret;
-    response      = jsonWriter.write(root);
+    response      = Json::writeString(writerBuilder, root);
     return response;
 }
 
 std::string WpanService::HandleAvailableNetworkRequest()
 {
     Json::Value                 root, networks, networkInfo;
-    Json::FastWriter            jsonWriter;
+    Json::StreamWriterBuilder   writerBuilder;
     std::string                 response;
     int                         ret = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
@@ -497,7 +506,7 @@ exit:
         otbrLogErr("Error is %d", ret);
     }
     root["error"] = ret;
-    response      = jsonWriter.write(root);
+    response      = Json::writeString(writerBuilder, root);
     return response;
 }
 
@@ -536,15 +545,18 @@ exit:
 
 std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
 {
-    Json::Value      root;
-    Json::Reader     reader;
-    Json::FastWriter jsonWriter;
-    int              ret = kWpanStatus_Ok;
-    std::string      pskd;
-    std::string      response;
-    const char      *rval;
+    Json::Value                       root;
+    Json::CharReaderBuilder           readerBuilder;
+    std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
+    Json::StreamWriterBuilder         writerBuilder;
+    int                               ret = kWpanStatus_Ok;
+    std::string                       pskd;
+    std::string                       response;
+    const char                       *rval;
 
-    VerifyOrExit(reader.parse(aCommissionRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
+    VerifyOrExit(reader->parse(aCommissionRequest.c_str(), aCommissionRequest.c_str() + aCommissionRequest.size(),
+                               &root, nullptr),
+                 ret = kWpanStatus_ParseRequestFailed);
     pskd = root["pskd"].asString();
 
     {
@@ -587,7 +599,7 @@ exit:
         root["result"] = WPAN_RESPONSE_FAILURE;
         otbrLogErr("error: %d", ret);
     }
-    response = jsonWriter.write(root);
+    response = Json::writeString(writerBuilder, root);
 
     return response;
 }
