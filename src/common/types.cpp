@@ -67,6 +67,30 @@ Ip6Address Ip6Address::ToSolicitedNodeMulticastAddress(void) const
     return ma;
 }
 
+uint8_t Ip6Address::GetScope(void) const
+{
+    uint8_t rval;
+
+    if (IsMulticast())
+    {
+        rval = m8[1] & 0xf;
+    }
+    else if (IsLinkLocal())
+    {
+        rval = kLinkLocalScope;
+    }
+    else if (IsLoopback())
+    {
+        rval = kNodeLocalScope;
+    }
+    else
+    {
+        rval = kGlobalScope;
+    }
+
+    return rval;
+}
+
 void Ip6Address::CopyTo(struct sockaddr_in6 &aSockAddr) const
 {
     memset(&aSockAddr, 0, sizeof(aSockAddr));

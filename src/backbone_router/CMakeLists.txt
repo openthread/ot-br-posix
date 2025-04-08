@@ -29,6 +29,7 @@
 add_library(otbr-backbone-router
     backbone_agent.cpp
     dua_routing_manager.cpp
+    multicast_routing_manager.cpp
     nd_proxy.cpp
 )
 
