@@ -211,7 +211,7 @@ public:
     otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded);
 
     /**
-     * This method sends a command line input to the NCP.
+     * This method sends a cli command line to the NCP.
      *
      * @param[in] aLine  The string of the command line to be input.
      *

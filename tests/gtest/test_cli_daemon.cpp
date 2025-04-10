@@ -56,6 +56,7 @@
 using otbr::CliDaemon;
 
 static constexpr size_t kCliMaxLineLength = 640;
+static const char      *kTestOutput       = "sample output";
 
 TEST(CliDaemon, InitSocketCreationWithFullNetIfName)
 {
@@ -89,10 +90,10 @@ TEST(CliDaemon, InitSocketCreationWithEmptyNetIfName)
     EXPECT_EQ(stat(lockFile, &st), 0);
 }
 
-class CliDaemonTest : public otbr::CliDaemon::Dependencies
+class CliDaemonTestInput : public otbr::CliDaemon::Dependencies
 {
 public:
-    CliDaemonTest(bool &aReceived, std::string &aReceivedCommand)
+    CliDaemonTestInput(bool &aReceived, std::string &aReceivedCommand)
         : mReceived(aReceived)
         , mReceivedCommand(aReceivedCommand)
     {
@@ -111,9 +112,9 @@ public:
 
 TEST(CliDaemon, InputCommandLineCorrectly_AfterReveivingOnSessionSocket)
 {
-    bool          received = false;
-    std::string   receivedCommand;
-    CliDaemonTest cliDependency(received, receivedCommand);
+    bool               received = false;
+    std::string        receivedCommand;
+    CliDaemonTestInput cliDependency(received, receivedCommand);
 
     const char *command    = "test command";
     const char *netIfName  = "tun0";
@@ -162,23 +163,43 @@ TEST(CliDaemon, InputCommandLineCorrectly_AfterReveivingOnSessionSocket)
     cliDaemon.Deinit();
 }
 
-TEST(CliDaemon, HandleCommandOutputCorrectly)
+class CliDaemonTestOutput : public otbr::CliDaemon::Dependencies
 {
-    const char *output     = "sample output";
+public:
+    // Store a pointer to the CliDaemon to call HandleCommandOutput
+    CliDaemon *mCliDaemonInstance = nullptr;
+
+    otbrError InputCommandLine(const char *aLine) override
+    {
+        OTBR_UNUSED_VARIABLE(aLine);
+
+        if (mCliDaemonInstance != nullptr)
+        {
+            mCliDaemonInstance->HandleCommandOutput(kTestOutput);
+        }
+        return OTBR_ERROR_NONE;
+    }
+};
+
+TEST(CliDaemon, HandleCommandOutputCorrectly_AfterReveivingOnSessionSocket)
+{
+    const char *command    = "test command";
     const char *netIfName  = "tun0";
     const char *socketFile = "/run/openthread-tun0.sock";
 
-    CliDaemon::Dependencies sDefaultCliDaemonDependencies;
-    CliDaemon               cliDaemon(sDefaultCliDaemonDependencies);
-    otbr::MainloopContext   context;
+    CliDaemonTestOutput cliDependency;
+    CliDaemon           cliDaemon(cliDependency);
+    cliDependency.mCliDaemonInstance = &cliDaemon;
 
-    cliDaemon.Init(netIfName);
+    otbr::MainloopContext context;
 
+    EXPECT_EQ(cliDaemon.Init(netIfName), OT_ERROR_NONE);
+
+    int clientSocket = -1;
     {
-        int                clientSocket;
         struct sockaddr_un serverAddr;
 
-        clientSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+        clientSocket = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
         ASSERT_GE(clientSocket, 0) << "socket creation failed: " << strerror(errno);
 
         memset(&serverAddr, 0, sizeof(serverAddr));
@@ -186,6 +207,15 @@ TEST(CliDaemon, HandleCommandOutputCorrectly)
         strncpy(serverAddr.sun_path, socketFile, sizeof(serverAddr.sun_path) - 1);
         ASSERT_EQ(connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)), 0);
 
+        int rval = send(clientSocket, command, strlen(command), 0);
+        ASSERT_GE(rval, 0) << "Error sending command: " << strerror(errno);
+    }
+
+    char recvBuf[kCliMaxLineLength];
+    bool outputReceived = false;
+
+    while (!outputReceived)
+    {
         context.mMaxFd   = -1;
         context.mTimeout = {100, 0};
         FD_ZERO(&context.mReadFdSet);
@@ -193,21 +223,27 @@ TEST(CliDaemon, HandleCommandOutputCorrectly)
         FD_ZERO(&context.mErrorFdSet);
 
         cliDaemon.UpdateFdSet(context);
+
+        FD_SET(clientSocket, &context.mReadFdSet);
+        context.mMaxFd = std::max(context.mMaxFd, clientSocket);
+
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         ASSERT_GE(rval, 0) << "select failed, error: " << strerror(errno);
 
         cliDaemon.Process(context);
-        cliDaemon.HandleCommandOutput(output);
 
-        char recvBuf[kCliMaxLineLength];
-        rval = recv(clientSocket, recvBuf, kCliMaxLineLength, 0);
-        ASSERT_GE(rval, 0) << "Error receiving command output: " << strerror(errno);
-        std::string recvStr(recvBuf, rval);
-        EXPECT_STREQ(recvStr.c_str(), output);
+        if (FD_ISSET(clientSocket, &context.mReadFdSet))
+        {
+            int rval = read(clientSocket, recvBuf, kCliMaxLineLength - 1);
+            ASSERT_GE(rval, 0) << "Error receiving cli output: " << strerror(errno);
 
-        close(clientSocket);
+            recvBuf[rval]  = '\0';
+            outputReceived = true;
+        }
     }
+
+    EXPECT_STREQ(recvBuf, kTestOutput);
 
     cliDaemon.Deinit();
 }
