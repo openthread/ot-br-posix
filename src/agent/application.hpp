@@ -273,10 +273,11 @@ private:
     DBus::DependentComponents MakeDBusDependentComponents(void);
 #endif
 
-    std::string            mInterfaceName;
-    const char            *mBackboneInterfaceName;
-    Host::ThreadHost      &mHost;
-    std::unique_ptr<Netif> mNetif;
+    std::string              mInterfaceName;
+    const char              *mBackboneInterfaceName;
+    Host::ThreadHost        &mHost;
+    std::unique_ptr<Netif>   mNetif;
+    std::unique_ptr<InfraIf> mInfraIf;
 
 #if OTBR_ENABLE_MDNS
     Mdns::StateSubject               mMdnsStateSubject;

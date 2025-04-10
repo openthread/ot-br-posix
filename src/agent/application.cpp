@@ -327,7 +327,8 @@ void Application::CreateNcpMode(void)
 {
     otbr::Host::NcpHost &ncpHost = static_cast<otbr::Host::NcpHost &>(mHost);
 
-    mNetif = MakeUnique<Netif>(mInterfaceName, ncpHost);
+    mNetif   = MakeUnique<Netif>(mInterfaceName, ncpHost);
+    mInfraIf = MakeUnique<InfraIf>(ncpHost);
 }
 
 void Application::InitNcpMode(void)
@@ -336,6 +337,14 @@ void Application::InitNcpMode(void)
 
     SuccessOrDie(mNetif->Init(), "Failed to initialize the Netif!");
     ncpHost.InitNetifCallbacks(*mNetif);
+
+    mInfraIf->Init();
+    if (mBackboneInterfaceName != nullptr && strlen(mBackboneInterfaceName) > 0)
+    {
+        mInfraIf->SetInfraIf(mBackboneInterfaceName);
+    }
+    ncpHost.InitInfraIfCallbacks(*mInfraIf);
+
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     ncpHost.SetMdnsPublisher(mPublisher.get());
     mMdnsStateSubject.AddObserver(ncpHost);
@@ -374,6 +383,7 @@ void Application::DeinitNcpMode(void)
     mPublisher->Stop();
 #endif
     mNetif->Deinit();
+    mInfraIf->Deinit();
 }
 
 #if OTBR_ENABLE_BORDER_AGENT

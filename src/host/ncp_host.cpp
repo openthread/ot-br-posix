@@ -95,7 +95,6 @@ void NcpNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aData
 
 NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
-    , mInfraIf(mNcpSpinel)
 {
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.mInterfaceName         = aInterfaceName;
@@ -113,17 +112,6 @@ void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
     mNcpSpinel.Init(mSpinelDriver, *this);
-    mInfraIf.Init();
-
-    mNcpSpinel.InfraIfSetIcmp6NdSendCallback(
-        [this](uint32_t aInfraIfIndex, const otIp6Address &aAddr, const uint8_t *aData, uint16_t aDataLen) {
-            OTBR_UNUSED_VARIABLE(mInfraIf.SendIcmp6Nd(aInfraIfIndex, aAddr, aData, aDataLen));
-        });
-
-    if (mConfig.mBackboneInterfaceName != nullptr && strlen(mConfig.mBackboneInterfaceName) > 0)
-    {
-        mInfraIf.SetInfraIf(mConfig.mBackboneInterfaceName);
-    }
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
@@ -306,6 +294,14 @@ void NcpHost::InitNetifCallbacks(Netif &aNetif)
         [&aNetif](const uint8_t *aData, uint16_t aLength) { aNetif.Ip6Receive(aData, aLength); });
 }
 
+void NcpHost::InitInfraIfCallbacks(InfraIf &aInfraIf)
+{
+    mNcpSpinel.InfraIfSetIcmp6NdSendCallback(
+        [&aInfraIf](uint32_t aInfraIfIndex, const otIp6Address &aAddr, const uint8_t *aData, uint16_t aDataLen) {
+            OTBR_UNUSED_VARIABLE(aInfraIf.SendIcmp6Nd(aInfraIfIndex, aAddr, aData, aDataLen));
+        });
+}
+
 otbrError NcpHost::Ip6Send(const uint8_t *aData, uint16_t aLength)
 {
     return mNcpSpinel.Ip6Send(aData, aLength);
@@ -314,6 +310,19 @@ otbrError NcpHost::Ip6Send(const uint8_t *aData, uint16_t aLength)
 otbrError NcpHost::Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded)
 {
     return mNcpSpinel.Ip6MulAddrUpdateSubscription(aAddress, aIsAdded);
+}
+
+otbrError NcpHost::SetInfraIf(uint32_t aInfraIfIndex, bool aIsRunning, const std::vector<Ip6Address> &aIp6Addresses)
+{
+    return mNcpSpinel.SetInfraIf(aInfraIfIndex, aIsRunning, aIp6Addresses);
+}
+
+otbrError NcpHost::HandleIcmp6Nd(uint32_t          aInfraIfIndex,
+                                 const Ip6Address &aIp6Address,
+                                 const uint8_t    *aData,
+                                 uint16_t          aDataLen)
+{
+    return mNcpSpinel.HandleIcmp6Nd(aInfraIfIndex, aIp6Address, aData, aDataLen);
 }
 
 } // namespace Host

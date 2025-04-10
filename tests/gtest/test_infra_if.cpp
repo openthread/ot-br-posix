@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "common/mainloop_manager.hpp"
 #include "host/posix/infra_if.hpp"
 #include "host/posix/netif.hpp"
 
@@ -152,7 +153,7 @@ TEST(InfraIf, DepsUpdateInfraIfStateInvokedCorrectly_AfterInfraIfStateChange)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        infraIf.UpdateFdSet(context);
+        otbr::MainloopManager::GetInstance().Update(context);
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         if (rval < 0)
@@ -160,7 +161,7 @@ TEST(InfraIf, DepsUpdateInfraIfStateInvokedCorrectly_AfterInfraIfStateChange)
             perror("select failed");
             exit(EXIT_FAILURE);
         }
-        infraIf.Process(context);
+        otbr::MainloopManager::GetInstance().Process(context);
     }
     EXPECT_EQ(testInfraIfDep.mIsRunning, true);
 
@@ -175,7 +176,7 @@ TEST(InfraIf, DepsUpdateInfraIfStateInvokedCorrectly_AfterInfraIfStateChange)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        infraIf.UpdateFdSet(context);
+        otbr::MainloopManager::GetInstance().Update(context);
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         if (rval < 0)
@@ -183,7 +184,7 @@ TEST(InfraIf, DepsUpdateInfraIfStateInvokedCorrectly_AfterInfraIfStateChange)
             perror("select failed");
             exit(EXIT_FAILURE);
         }
-        infraIf.Process(context);
+        otbr::MainloopManager::GetInstance().Process(context);
     }
     EXPECT_EQ(testInfraIfDep.mIp6Addresses.size(), 0);
     EXPECT_EQ(testInfraIfDep.mIsRunning, false);
@@ -238,7 +239,7 @@ TEST(InfraIf, DepsHandleIcmp6NdInvokedCorrectly_AfterInfraIfReceivesIcmp6Nd)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        infraIf.UpdateFdSet(context);
+        otbr::MainloopManager::GetInstance().Update(context);
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         if (rval < 0)
@@ -246,7 +247,7 @@ TEST(InfraIf, DepsHandleIcmp6NdInvokedCorrectly_AfterInfraIfReceivesIcmp6Nd)
             perror("select failed");
             exit(EXIT_FAILURE);
         }
-        infraIf.Process(context);
+        otbr::MainloopManager::GetInstance().Process(context);
     }
     EXPECT_EQ(testInfraIfDep.mIcmp6NdSrcAddress, otbr::Ip6Address(kPeerLinkLocalAddr));
     EXPECT_EQ(testInfraIfDep.mIcmp6NdDataLen, kTestMsgBodySize);
