@@ -40,6 +40,7 @@
 #include "common/mainloop.hpp"
 #include "host/ncp_spinel.hpp"
 #include "host/thread_host.hpp"
+#include "posix/cli_daemon.hpp"
 #include "posix/netif.hpp"
 
 namespace otbr {
@@ -154,6 +155,7 @@ private:
     NcpSpinel                 mNcpSpinel;
     TaskRunner                mTaskRunner;
     InfraIf                   mInfraIf;
+    CliDaemon                 mCliDaemon;
 };
 
 } // namespace Host
