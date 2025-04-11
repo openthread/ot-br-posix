@@ -86,6 +86,16 @@ target_link_libraries(otbr-posix-gtest-unit
 )
 gtest_discover_tests(otbr-posix-gtest-unit PROPERTIES LABELS "sudo")
 
+add_executable(otbr-bbr-gtest-unit
+    test_backbone_multicast_routing.cpp
+)
+target_link_libraries(otbr-bbr-gtest-unit
+    otbr-backbone-router
+    otbr-posix
+    GTest::gmock_main
+)
+gtest_discover_tests(otbr-bbr-gtest-unit PROPERTIES LABELS "sudo")
+
 add_executable(otbr-gtest-host-api
     ${OTBR_PROJECT_DIRECTORY}/src/host/rcp_host.cpp
     ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
