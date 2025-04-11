@@ -273,8 +273,8 @@ private:
     DBus::DependentComponents MakeDBusDependentComponents(void);
 #endif
 
-    std::string              mInterfaceName;
-    const char              *mBackboneInterfaceName;
+    const std::string        mInterfaceName;
+    const std::string        mBackboneInterfaceName;
     Host::ThreadHost        &mHost;
     std::unique_ptr<Netif>   mNetif;
     std::unique_ptr<InfraIf> mInfraIf;
