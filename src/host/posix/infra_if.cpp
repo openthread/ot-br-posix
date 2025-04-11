@@ -143,7 +143,7 @@ exit:
     return;
 }
 
-void InfraIf::UpdateFdSet(MainloopContext &aContext)
+void InfraIf::Update(MainloopContext &aContext)
 {
     VerifyOrExit(mInfraIfIcmp6Socket != -1);
 #ifdef __linux__
