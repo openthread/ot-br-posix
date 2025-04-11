@@ -58,7 +58,7 @@ Application::Application(Host::ThreadHost  &aHost,
                          const std::string &aRestListenAddress,
                          int                aRestListenPort)
     : mInterfaceName(aInterfaceName)
-    , mBackboneInterfaceName(aBackboneInterfaceName.c_str())
+    , mBackboneInterfaceName(aBackboneInterfaceName)
     , mHost(aHost)
 #if OTBR_ENABLE_MDNS
     , mPublisher(
@@ -339,7 +339,7 @@ void Application::InitNcpMode(void)
     ncpHost.InitNetifCallbacks(*mNetif);
 
     mInfraIf->Init();
-    if (mBackboneInterfaceName != nullptr && strlen(mBackboneInterfaceName) > 0)
+    if (!mBackboneInterfaceName.empty())
     {
         mInfraIf->SetInfraIf(mBackboneInterfaceName);
     }
