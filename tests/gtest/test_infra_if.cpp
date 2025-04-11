@@ -104,7 +104,7 @@ TEST(InfraIf, DepsSetInfraIfInvokedCorrectly_AfterSpecifyingInfraIf)
 
     InfraIfDependencyTest testInfraIfDep;
     otbr::InfraIf         infraIf(testInfraIfDep);
-    EXPECT_EQ(infraIf.SetInfraIf(fakeInfraIf.c_str()), OTBR_ERROR_NONE);
+    EXPECT_EQ(infraIf.SetInfraIf(fakeInfraIf), OTBR_ERROR_NONE);
 
     EXPECT_NE(testInfraIfDep.mInfraIfIndex, 0);
     EXPECT_EQ(testInfraIfDep.mIsRunning, false);
@@ -137,7 +137,7 @@ TEST(InfraIf, DepsUpdateInfraIfStateInvokedCorrectly_AfterInfraIfStateChange)
     InfraIfDependencyTest testInfraIfDep;
     otbr::InfraIf         infraIf(testInfraIfDep);
     infraIf.Init();
-    EXPECT_EQ(infraIf.SetInfraIf(fakeInfraIf.c_str()), OTBR_ERROR_NONE);
+    EXPECT_EQ(infraIf.SetInfraIf(fakeInfraIf), OTBR_ERROR_NONE);
 
     EXPECT_EQ(testInfraIfDep.mIsRunning, false);
     EXPECT_EQ(testInfraIfDep.mIp6Addresses.size(), 2);
@@ -213,7 +213,7 @@ TEST(InfraIf, DepsHandleIcmp6NdInvokedCorrectly_AfterInfraIfReceivesIcmp6Nd)
     InfraIfDependencyTest testInfraIfDep;
     otbr::InfraIf         infraIf(testInfraIfDep);
     infraIf.Init();
-    EXPECT_EQ(infraIf.SetInfraIf(fakeInfraIf.c_str()), OTBR_ERROR_NONE);
+    EXPECT_EQ(infraIf.SetInfraIf(fakeInfraIf), OTBR_ERROR_NONE);
     netif.SetNetifState(true);
 
     // Let the fake infrastructure interface receive a fake Icmp6 Nd message

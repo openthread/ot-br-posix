@@ -73,7 +73,7 @@ public:
 
     void      Init(void);
     void      Deinit(void);
-    otbrError SetInfraIf(const char *aIfName);
+    otbrError SetInfraIf(std::string aInfraIfName);
     otbrError SendIcmp6Nd(uint32_t            aInfraIfIndex,
                           const otIp6Address &aDestAddress,
                           const uint8_t      *aBuffer,
@@ -94,7 +94,7 @@ private:
     void Update(MainloopContext &aContext) override;
 
     Dependencies &mDeps;
-    char          mInfraIfName[IFNAMSIZ];
+    std::string   mInfraIfName;
     unsigned int  mInfraIfIndex;
 #ifdef __linux__
     int mNetlinkSocket;
