@@ -40,6 +40,7 @@
 
 #include <openthread/ip6.h>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
 
@@ -51,7 +52,7 @@ namespace otbr {
  * The infrastructure network interface MUST be explicitly set by `SetInfraIf` before the InfraIf module can work.
  *
  */
-class InfraIf
+class InfraIf : public MainloopProcessor, private NonCopyable
 {
 public:
     class Dependencies
@@ -72,9 +73,7 @@ public:
 
     void      Init(void);
     void      Deinit(void);
-    void      Process(const MainloopContext &aContext);
-    void      UpdateFdSet(MainloopContext &aContext);
-    otbrError SetInfraIf(const char *aIfName);
+    otbrError SetInfraIf(std::string aInfraIfName);
     otbrError SendIcmp6Nd(uint32_t            aInfraIfIndex,
                           const otIp6Address &aDestAddress,
                           const uint8_t      *aBuffer,
@@ -91,8 +90,11 @@ private:
     void ReceiveNetlinkMessage(void);
 #endif
 
+    void Process(const MainloopContext &aContext) override;
+    void Update(MainloopContext &aContext) override;
+
     Dependencies &mDeps;
-    char          mInfraIfName[IFNAMSIZ];
+    std::string   mInfraIfName;
     unsigned int  mInfraIfIndex;
 #ifdef __linux__
     int mNetlinkSocket;

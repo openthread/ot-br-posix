@@ -90,7 +90,7 @@ public:
 /**
  * The class provides methods for controlling the Thread stack on the network co-processor (NCP).
  */
-class NcpSpinel : public InfraIf::Dependencies, public CliDaemon::Dependencies
+class NcpSpinel : public CliDaemon::Dependencies
 {
 public:
     using Ip6AddressTableCallback          = std::function<void(const std::vector<Ip6AddressInfo> &)>;
@@ -219,6 +219,34 @@ public:
      * @retval OTBR_ERROR_BUSY  NcpSpinel is busy with other requests.
      */
     otbrError InputCommandLine(const char *aLine) override;
+
+    /**
+     * This method sets the infrastructure link interface information on NCP.
+     *
+     * @param[in] aInfraIfIndex  The index of the infrastructure link interface.
+     * @param[in] aIsRunning     Whether the infrastructure link is running.
+     * @param[in] aIp6Addresses  The IPv6 addresses on of the infrastructure link interface.
+     *
+     * @retval OTBR_ERROR_NONE  The infrastructure link interface is set successfully.
+     * @retval OTBR_ERROR_OPENTHREAD  Failed to encode the spinel message.
+     */
+    otbrError SetInfraIf(uint32_t aInfraIfIndex, bool aIsRunning, const std::vector<Ip6Address> &aIp6Addresses);
+
+    /**
+     * This method passes the recevied ICMPv6 ND message to the NCP.
+     *
+     * @param[in] aInfraIfIndex  The index of the infrastructure link interface.
+     * @param[in] aIp6Address    The source IPv6 address of the received ICMPv6 message.
+     * @param[in] aData          The data payload of the received ICMPv6 message.
+     * @param[in] aDatalen       The length of the data payload.
+     *
+     * @retval OTBR_ERROR_NONE  The infrastructure link interface is set successfully.
+     * @retval OTBR_ERROR_OPENTHREAD  Failed to encode the spinel message.
+     */
+    otbrError HandleIcmp6Nd(uint32_t          aInfraIfIndex,
+                            const Ip6Address &aIp6Address,
+                            const uint8_t    *aData,
+                            uint16_t          aDataLen);
 
     /**
      * This method enableds/disables the Thread network on the NCP.
@@ -435,14 +463,6 @@ private:
                                   uint16_t            &aPeerPort,
                                   uint16_t            &aLocalPort);
     otError SendDnssdResult(otPlatDnssdRequestId aRequestId, const std::vector<uint8_t> &aCallbackData, otError aError);
-
-    otbrError SetInfraIf(uint32_t                       aInfraIfIndex,
-                         bool                           aIsRunning,
-                         const std::vector<Ip6Address> &aIp6Addresses) override;
-    otbrError HandleIcmp6Nd(uint32_t          aInfraIfIndex,
-                            const Ip6Address &aIp6Address,
-                            const uint8_t    *aData,
-                            uint16_t          aDataLen) override;
 
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
