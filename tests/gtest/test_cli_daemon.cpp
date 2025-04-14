@@ -224,8 +224,7 @@ TEST(CliDaemon, HandleCommandOutputCorrectly_AfterReveivingOnSessionSocket)
 
         cliDaemon.UpdateFdSet(context);
 
-        FD_SET(clientSocket, &context.mReadFdSet);
-        context.mMaxFd = std::max(context.mMaxFd, clientSocket);
+        context.AddFdToReadSet(clientSocket);
 
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
