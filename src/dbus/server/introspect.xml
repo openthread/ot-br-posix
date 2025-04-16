@@ -960,6 +960,25 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- TrelInfo: Information about the TREL link
+    <literallayout>
+        struct {
+          bool   enabled          // Whether TREL is enabled.
+          uint16 num_trel_peers   // The number of TREL peers.
+          struct {
+            uint64 tx_packets     // Number of packets transmitted through TREL.
+            uint64 tx_bytes       // Sum of size of packets transmitted through TREL.
+            uint64 tx_failure     // Number of packet transmission failures through TREL.
+            uint64 rx_packets     // Number of packets received through TREL.
+            uint64 rx_bytes       // Sum of size of packets received through TREL.
+          }
+        }
+    </literallayout>
+    -->
+    <property name="TrelInfo" type="(bq(ttttt))" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- DnsUpstreamQueryState: Whether the server will / should forward DNS queries platform
     specified upstream DNS servers. -->
     <property name="DnsUpstreamQueryState" type="b" access="readwrite">
