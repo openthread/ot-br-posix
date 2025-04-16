@@ -112,6 +112,11 @@ void OtNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatas
     }
 }
 
+const otMeshLocalPrefix *OtNetworkProperties::GetMeshLocalPrefix(void) const
+{
+    return otThreadGetMeshLocalPrefix(mInstance);
+}
+
 void OtNetworkProperties::SetInstance(otInstance *aInstance)
 {
     mInstance = aInstance;
