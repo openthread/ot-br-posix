@@ -95,6 +95,13 @@ public:
     virtual void GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
 
     /**
+     * Returns the meshlocal prefix.
+     *
+     * @returns The mesh local prefix.
+     */
+    virtual const otMeshLocalPrefix *GetMeshLocalPrefix(void) const = 0;
+
+    /**
      * The destructor.
      */
     virtual ~NetworkProperties(void) = default;

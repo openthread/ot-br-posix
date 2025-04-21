@@ -45,10 +45,15 @@ namespace Host {
 
 // =============================== NcpNetworkProperties ===============================
 
+constexpr otMeshLocalPrefix kMeshLocalPrefixInit = {
+    {0xfd, 0xde, 0xad, 0x00, 0xbe, 0xef, 0x00, 0x00},
+};
+
 NcpNetworkProperties::NcpNetworkProperties(void)
     : mDeviceRole(OT_DEVICE_ROLE_DISABLED)
 {
     memset(&mDatasetActiveTlvs, 0, sizeof(mDatasetActiveTlvs));
+    SetMeshLocalPrefix(kMeshLocalPrefixInit);
 }
 
 otDeviceRole NcpNetworkProperties::GetDeviceRole(void) const
@@ -89,6 +94,16 @@ void NcpNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aData
 {
     // TODO: Implement the method under NCP mode.
     OTBR_UNUSED_VARIABLE(aDatasetTlvs);
+}
+
+void NcpNetworkProperties::SetMeshLocalPrefix(const otMeshLocalPrefix &aMeshLocalPrefix)
+{
+    memcpy(mMeshLocalPrefix.m8, aMeshLocalPrefix.m8, sizeof(mMeshLocalPrefix.m8));
+}
+
+const otMeshLocalPrefix *NcpNetworkProperties::GetMeshLocalPrefix(void) const
+{
+    return &mMeshLocalPrefix;
 }
 
 // ===================================== NcpHost ======================================

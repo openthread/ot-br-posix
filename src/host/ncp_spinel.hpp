@@ -81,6 +81,13 @@ public:
     virtual void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs) = 0;
 
     /**
+     * Updates the mesh local prefix.
+     *
+     * @param[in] aMeshLocalPrefix  The mesh local prefix.
+     */
+    virtual void SetMeshLocalPrefix(const otIp6NetworkPrefix &aMeshLocalPrefix) = 0;
+
+    /**
      * The destructor.
      */
     virtual ~PropsObserver(void) = default;
