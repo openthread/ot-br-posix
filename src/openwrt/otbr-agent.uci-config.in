@@ -2,4 +2,4 @@ config otbr-agent 'service'
 	option thread_if_name "wpan0"
 	option infra_if_name "eth0"
 	option uart_device "/dev/ttyACM0"
-	option uart_baudrate 115200
+	option uart_baudrate 460800
