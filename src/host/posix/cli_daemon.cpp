@@ -74,24 +74,26 @@ std::string CliDaemon::GetSocketFilename(const std::string &aNetIfName, const ch
 void CliDaemon::HandleCommandOutput(const char *aOutput)
 {
     int    ret;
+    char   buf[kCliMaxLineLength];
     size_t length = strlen(aOutput);
 
     VerifyOrExit(mSessionSocket != -1);
 
     static_assert(sizeof(kTruncatedMsg) < kCliMaxLineLength, "OTBR_CONFIG_CLI_MAX_LINE_LENGTH is too short!");
 
+    strncpy(buf, aOutput, kCliMaxLineLength);
+
     if (length >= kCliMaxLineLength)
     {
         length = kCliMaxLineLength - 1;
-        memcpy(const_cast<char *>(aOutput) + kCliMaxLineLength - sizeof(kTruncatedMsg), kTruncatedMsg,
-               sizeof(kTruncatedMsg));
+        memcpy(buf + kCliMaxLineLength - sizeof(kTruncatedMsg), kTruncatedMsg, sizeof(kTruncatedMsg));
     }
 
 #ifdef __linux__
     // MSG_NOSIGNAL prevents read() from sending a SIGPIPE in the case of a broken pipe.
-    ret = send(mSessionSocket, aOutput, length, MSG_NOSIGNAL);
+    ret = send(mSessionSocket, buf, length, MSG_NOSIGNAL);
 #else
-    ret = static_cast<int>(write(mSessionSocket, aOutput, length));
+    ret = static_cast<int>(write(mSessionSocket, buf, length));
 #endif
 
     if (ret < 0)
