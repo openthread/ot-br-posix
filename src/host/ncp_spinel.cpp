@@ -496,6 +496,19 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
     case SPINEL_PROP_IPV6_LL_ADDR:
         break;
 
+    case SPINEL_PROP_IPV6_ML_ADDR:
+    {
+        const otIp6Address *addr;
+        ot::Spinel::Decoder decoder;
+        otIp6NetworkPrefix  meshLocalPrefix;
+
+        decoder.Init(aBuffer, aLength);
+        SuccessOrExit(decoder.ReadIp6Address(addr), error = OTBR_ERROR_PARSE);
+        memcpy(meshLocalPrefix.m8, addr->mFields.m8, sizeof(meshLocalPrefix.m8));
+        mPropsObserver->SetMeshLocalPrefix(meshLocalPrefix);
+        break;
+    }
+
     case SPINEL_PROP_STREAM_NET:
     {
         const uint8_t *data;

@@ -61,8 +61,8 @@ NOTES:
 Start otbr-agent manually:
 
 ```bash
-# Assuming that ttyACM0 is a RCP with baudrate 115200.
-/usr/sbin/otbr-agent -I wpan0 'spinel+hdlc+uart:///dev/ttyACM0?uart-baudrate=115200'
+# Assuming that ttyACM0 is a RCP with baudrate 460800.
+/usr/sbin/otbr-agent -I wpan0 'spinel+hdlc+uart:///dev/ttyACM0?uart-baudrate=460800'
 ```
 
 Edit the service file `/etc/init.d/otbr-agent` if RCP device is not `/dev/ttyACM0` and then start with:

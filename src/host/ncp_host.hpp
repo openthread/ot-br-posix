@@ -59,19 +59,22 @@ public:
     explicit NcpNetworkProperties(void);
 
     // NetworkProperties methods
-    otDeviceRole GetDeviceRole(void) const override;
-    bool         Ip6IsEnabled(void) const override;
-    uint32_t     GetPartitionId(void) const override;
-    void         GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
-    void         GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
+    otDeviceRole             GetDeviceRole(void) const override;
+    bool                     Ip6IsEnabled(void) const override;
+    uint32_t                 GetPartitionId(void) const override;
+    void                     GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
+    void                     GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
+    const otMeshLocalPrefix *GetMeshLocalPrefix(void) const override;
 
 private:
     // PropsObserver methods
     void SetDeviceRole(otDeviceRole aRole) override;
     void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs) override;
+    void SetMeshLocalPrefix(const otMeshLocalPrefix &aMeshLocalPrefix) override;
 
     otDeviceRole             mDeviceRole;
     otOperationalDatasetTlvs mDatasetActiveTlvs;
+    otMeshLocalPrefix        mMeshLocalPrefix;
 };
 
 class NcpHost : public MainloopProcessor,
