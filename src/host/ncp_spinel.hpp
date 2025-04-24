@@ -53,6 +53,7 @@
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
 #include "host/async_task.hpp"
+#include "host/posix/cli_daemon.hpp"
 #include "host/posix/infra_if.hpp"
 #include "host/posix/netif.hpp"
 #include "mdns/mdns.hpp"
@@ -96,7 +97,7 @@ public:
 /**
  * The class provides methods for controlling the Thread stack on the network co-processor (NCP).
  */
-class NcpSpinel
+class NcpSpinel : public CliDaemon::Dependencies
 {
 public:
     using Ip6AddressTableCallback          = std::function<void(const std::vector<Ip6AddressInfo> &)>;
@@ -105,6 +106,7 @@ public:
     using Ip6ReceiveCallback               = std::function<void(const uint8_t *, uint16_t)>;
     using InfraIfSendIcmp6NdCallback = std::function<void(uint32_t, const otIp6Address &, const uint8_t *, uint16_t)>;
     using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
+    using CliDaemonOutputCallback                  = std::function<void(const char *)>;
     using UdpForwardSendCallback = std::function<void(const uint8_t *, uint16_t, const otIp6Address &, uint16_t)>;
 
     /**
@@ -216,6 +218,16 @@ public:
     otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded);
 
     /**
+     * This method sends a CLI command line to the NCP.
+     *
+     * @param[in] aLine  The string of the command line to be input.
+     *
+     * @retval OTBR_ERROR_NONE  The datagram is sent to NCP successfully.
+     * @retval OTBR_ERROR_BUSY  NcpSpinel is busy with other requests.
+     */
+    otbrError InputCommandLine(const char *aLine) override;
+
+    /**
      * This method sets the infrastructure link interface information on NCP.
      *
      * @param[in] aInfraIfIndex  The index of the infrastructure link interface.
@@ -293,6 +305,13 @@ public:
     {
         mInfraIfIcmp6NdCallback = aCallback;
     }
+
+    /**
+     * This method sets the function to receive the CLI output from the NCP.
+     *
+     * @param[in] aCallback  The callback to receive the CLI output from the NCP.
+     */
+    void CliDaemonSetOutputCallback(const CliDaemonOutputCallback &aCallback) { mCliDaemonOutputCallback = aCallback; }
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     /**
@@ -435,6 +454,7 @@ private:
     otError ParseIp6AddressTable(const uint8_t *aBuf, uint16_t aLength, std::vector<Ip6AddressInfo> &aAddressTable);
     otError ParseIp6MulticastAddresses(const uint8_t *aBuf, uint16_t aLen, std::vector<Ip6Address> &aAddressList);
     otError ParseIp6StreamNet(const uint8_t *aBuf, uint16_t aLen, const uint8_t *&aData, uint16_t &aDataLen);
+    otError ParseStreamCliOutput(const uint8_t *aBuf, uint16_t aLen, const char *&aOutput);
     otError ParseOperationalDatasetTlvs(const uint8_t *aBuf, uint16_t aLen, otOperationalDatasetTlvs &aDatasetTlvs);
     otError ParseInfraIfIcmp6Nd(const uint8_t       *aBuf,
                                 uint8_t              aLen,
@@ -485,6 +505,7 @@ private:
     NetifStateChangedCallback                mNetifStateChangedCallback;
     InfraIfSendIcmp6NdCallback               mInfraIfIcmp6NdCallback;
     BorderAgentMeshCoPServiceChangedCallback mBorderAgentMeshCoPServiceChangedCallback;
+    CliDaemonOutputCallback                  mCliDaemonOutputCallback;
     UdpForwardSendCallback                   mUdpForwardSendCallback;
 };
 

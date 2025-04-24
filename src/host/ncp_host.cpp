@@ -110,6 +110,7 @@ const otMeshLocalPrefix *NcpNetworkProperties::GetMeshLocalPrefix(void) const
 
 NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
+    , mCliDaemon(mNcpSpinel)
 {
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.mInterfaceName         = aInterfaceName;
@@ -127,6 +128,9 @@ void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
     mNcpSpinel.Init(mSpinelDriver, *this);
+    mCliDaemon.Init(mConfig.mInterfaceName);
+
+    mNcpSpinel.CliDaemonSetOutputCallback([this](const char *aOutput) { mCliDaemon.HandleCommandOutput(aOutput); });
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
@@ -259,6 +263,7 @@ void NcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallba
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
+    mCliDaemon.Process(aMainloop);
 }
 
 void NcpHost::Update(MainloopContext &aMainloop)
@@ -270,6 +275,8 @@ void NcpHost::Update(MainloopContext &aMainloop)
         aMainloop.mTimeout.tv_sec  = 0;
         aMainloop.mTimeout.tv_usec = 0;
     }
+
+    mCliDaemon.UpdateFdSet(aMainloop);
 }
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY

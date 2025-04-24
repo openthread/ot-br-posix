@@ -40,6 +40,7 @@
 #include "common/mainloop.hpp"
 #include "host/ncp_spinel.hpp"
 #include "host/thread_host.hpp"
+#include "posix/cli_daemon.hpp"
 #include "posix/infra_if.hpp"
 #include "posix/netif.hpp"
 
@@ -166,6 +167,7 @@ private:
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;
     TaskRunner                mTaskRunner;
+    CliDaemon                 mCliDaemon;
 };
 
 } // namespace Host
