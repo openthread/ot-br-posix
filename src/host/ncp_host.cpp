@@ -305,6 +305,11 @@ void NcpHost::SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback)
     mNcpSpinel.SetUdpForwardSendCallback(aCallback);
 }
 
+const otMeshLocalPrefix *NcpHost::GetMeshLocalPrefix(void) const
+{
+    return NcpNetworkProperties::GetMeshLocalPrefix();
+}
+
 void NcpHost::InitNetifCallbacks(Netif &aNetif)
 {
     mNcpSpinel.Ip6SetAddressCallback(
