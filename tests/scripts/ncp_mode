@@ -61,6 +61,9 @@ readonly ABS_TOP_OT_SRCDIR
 ABS_TOP_OT_BUILDDIR="${ABS_TOP_BUILDDIR}/../simulation"
 readonly ABS_TOP_BUILDDIR
 
+OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
+readonly OT_CTL
+
 OTBR_COLOR_PASS='\033[0;32m'
 readonly OTBR_COLOR_PASS
 
@@ -141,7 +144,7 @@ do_build_ot_simulation()
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF \
         -DOT_BORDER_ROUTING=ON -DOT_NCP_INFRA_IF=ON -DOT_SIMULATION_INFRA_IF=OFF \
         -DOT_SRP_SERVER=ON -DOT_SRP_ADV_PROXY=ON -DOT_PLATFORM_DNSSD=ON -DOT_SIMULATION_DNSSD=OFF -DOT_NCP_DNSSD=ON \
-        -DOT_BORDER_AGENT=ON \
+        -DOT_BORDER_AGENT=ON -DOT_NCP_CLI_STREAM=ON \
         -DBUILD_TESTING=OFF
     OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation \
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF \
@@ -203,6 +206,7 @@ setup_infraif()
 test_setup()
 {
     executable_or_die "${OTBR_AGENT_PATH}"
+    executable_or_die "${OT_CTL}"
 
     # Remove flashes
     sudo rm -vrf "${TEST_BASE}/tmp"
@@ -215,6 +219,7 @@ test_setup()
     executable_or_die "${ot_ncp}"
 
     export EXP_OTBR_AGENT_PATH="${OTBR_AGENT_PATH}"
+    export EXP_OT_CTL_PATH="${OT_CTL}"
     export EXP_OT_CLI_PATH="${ot_cli}"
     export EXP_OT_NCP_PATH="${ot_ncp}"
 
@@ -246,6 +251,7 @@ test_teardown()
     write_syslog "EXIT ${EXIT_CODE} - output logs"
 
     sudo pkill -f "${OTBR_AGENT}" || true
+    sudo pkill -f "${OT_CTL}" || true
     sudo pkill -f "${OT_CLI}" || true
     sudo pkill -f "${OT_NCP}" || true
     wait
