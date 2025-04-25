@@ -181,6 +181,18 @@ void otPlatDnssdStopIp4AddressResolver(otInstance *aInstance, const otPlatDnssdA
     OTBR_UNUSED_VARIABLE(aResolver);
 }
 
+void otPlatDnssdStartRecordQuerier(otInstance *aInstance, const otPlatDnssdRecordQuerier *aQuerier)
+{
+    OTBR_UNUSED_VARIABLE(aInstance);
+    OTBR_UNUSED_VARIABLE(aQuerier);
+}
+
+void otPlatDnssdStopRecordQuerier(otInstance *aInstance, const otPlatDnssdRecordQuerier *aQuerier)
+{
+    OTBR_UNUSED_VARIABLE(aInstance);
+    OTBR_UNUSED_VARIABLE(aQuerier);
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 
 namespace otbr {
