@@ -30,10 +30,10 @@ FROM ubuntu:24.04
 
 ARG GITHUB_REPO="openthread/ot-br-posix"
 ARG GIT_COMMIT="HEAD"
+ARG TARGETARCH
 
 ENV MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-1790.80.10
 ENV S6_OVERLAY_VERSION=3.2.0.2
-ENV S6_ARCH=aarch64
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -52,6 +52,11 @@ RUN set -x \
            ninja-build \
            wget \
     \
+    && case "${TARGETARCH}" in \
+         amd64) S6_ARCH="x86_64" ;; \
+         arm64) S6_ARCH="aarch64" ;; \
+         *) echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+       esac \
     && curl -L -f -s "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" \
         | tar Jxvf - -C / \
     && curl -L -f -s "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz" \
