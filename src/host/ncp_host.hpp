@@ -119,6 +119,7 @@ public:
     void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) override;
     void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
     void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;
+    const otMeshLocalPrefix *GetMeshLocalPrefix(void) const override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
