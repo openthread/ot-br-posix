@@ -212,6 +212,11 @@ public:
 #endif
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
     void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    void SetBackboneRouterEnabled(bool aEnabled) override;
+    void SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback) override;
+    void SetBackboneRouterStateChangedCallback(BackboneRouterStateChangedCallback aCallback) override;
+#endif // OTBR_ENABLE_BACKBONE_ROUTER
     void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) override;
     void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
     void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;

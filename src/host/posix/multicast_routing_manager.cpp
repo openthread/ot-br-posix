@@ -124,6 +124,7 @@ exit:
 void MulticastRoutingManager::Enable(void)
 {
     VerifyOrExit(!IsEnabled());
+    VerifyOrExit(mInfraIf.GetIfIndex() != 0); // Only enable the MulticastRoutingManager when the Infra If has been set.
 
     InitMulticastRouterSock();
 
