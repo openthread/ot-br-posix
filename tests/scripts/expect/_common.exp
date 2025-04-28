@@ -88,6 +88,16 @@ proc spawn_node {id type sim_app} {
             spawn $sim_app
             expect ">"
         }
+        ctl {
+            spawn $sim_app
+            send "factoryreset\n"
+            wait_for "state" "disabled"
+            expect "Done"
+
+            expect_after {
+                timeout { fail "Timed out" }
+            }
+        }
         otbr-docker {
             spawn docker exec -it $sim_app bash
             expect "app#"
