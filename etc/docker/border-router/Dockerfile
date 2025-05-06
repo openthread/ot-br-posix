@@ -102,7 +102,7 @@ RUN set -x \
            -DOT_FIREWALL=ON \
     && ninja \
     && ninja install \
-    && cp -r etc/docker/border-router/rootfs / \
+    && cp -r etc/docker/border-router/rootfs/. / \
     && apt-get purge -y --auto-remove \
            build-essential \
            ca-certificates \
