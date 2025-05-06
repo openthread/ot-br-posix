@@ -102,6 +102,7 @@ RUN set -x \
            -DOT_FIREWALL=ON \
     && ninja \
     && ninja install \
+    && cp -r etc/docker/border-router/rootfs / \
     && apt-get purge -y --auto-remove \
            build-essential \
            ca-certificates \
@@ -112,7 +113,5 @@ RUN set -x \
            wget \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/src/*
-
-COPY etc/docker/border-router/rootfs /
 
 ENTRYPOINT ["/init"]
