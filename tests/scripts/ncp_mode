@@ -185,7 +185,6 @@ do_build_otbr_docker()
     sudo docker build -t "${OTBR_DOCKER_IMAGE}" \
         -f ./etc/docker/test/Dockerfile . \
         --build-arg NAT64=0 \
-        --build-arg DNS64=0 \
         --build-arg WEB_GUI=0 \
         --build-arg REST_API=0 \
         --build-arg FIREWALL=0 \
