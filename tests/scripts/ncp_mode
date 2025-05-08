@@ -196,12 +196,13 @@ setup_infraif()
 {
     if ! ip link show backbone1 >/dev/null 2>&1; then
         echo "Creating backbone1 with Docker..."
-        docker network create --driver bridge -o "com.docker.network.bridge.name"="backbone1" backbone1
+        docker network create --driver bridge --ipv6 --subnet 9101::/64 -o "com.docker.network.bridge.name"="backbone1" backbone1
     else
         echo "backbone1 already exists."
     fi
     sudo sysctl -w net.ipv6.conf.backbone1.accept_ra=2
     sudo sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
+    sudo ip addr del 9101::1/64 dev backbone1
 }
 
 test_setup()
