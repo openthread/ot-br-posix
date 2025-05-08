@@ -39,6 +39,7 @@
 
 #include <vector>
 
+#include <openthread/backbone_router_ftd.h>
 #include <openthread/dataset.h>
 #include <openthread/error.h>
 #include <openthread/link.h>
@@ -108,6 +109,9 @@ public:
     using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
     using CliDaemonOutputCallback                  = std::function<void(const char *)>;
     using UdpForwardSendCallback = std::function<void(const uint8_t *, uint16_t, const otIp6Address &, uint16_t)>;
+    using BackboneRouterMulticastListenerCallback =
+        std::function<void(otBackboneRouterMulticastListenerEvent, Ip6Address)>;
+    using BackboneRouterStateChangedCallback = std::function<void(otBackboneRouterState)>;
 
     /**
      * Constructor.
@@ -379,6 +383,33 @@ public:
         mUdpForwardSendCallback = aCallback;
     }
 
+    /**
+     * This method enables/disables the Backbone Router.
+     *
+     * @param[in] aEnabled  Whether to enable or disable the Backbone router.
+     */
+    void SetBackboneRouterEnabled(bool aEnabled);
+
+    /**
+     * This method sets the Backbone Router Multicast Listener callback.
+     *
+     * @param[in] aCallback  The Multicast Listener callback.
+     */
+    void SetBackboneRouterStateChangedCallback(const BackboneRouterStateChangedCallback &aCallback)
+    {
+        mBackboneRouterStateChangedCallback = aCallback;
+    }
+
+    /**
+     * This method sets the Backbone Router state change callback.
+     *
+     * @param[in] aCallback  The Backbone Router state change callback.
+     */
+    void SetBackboneRouterMulticastListenerCallback(const BackboneRouterMulticastListenerCallback &aCallback)
+    {
+        mBackboneRouterMulticastListenerCallback = aCallback;
+    }
+
 private:
     using FailureHandler = std::function<void(otError)>;
 
@@ -507,6 +538,8 @@ private:
     BorderAgentMeshCoPServiceChangedCallback mBorderAgentMeshCoPServiceChangedCallback;
     CliDaemonOutputCallback                  mCliDaemonOutputCallback;
     UdpForwardSendCallback                   mUdpForwardSendCallback;
+    BackboneRouterStateChangedCallback       mBackboneRouterStateChangedCallback;
+    BackboneRouterMulticastListenerCallback  mBackboneRouterMulticastListenerCallback;
 };
 
 } // namespace Host

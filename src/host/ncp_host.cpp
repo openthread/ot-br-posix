@@ -250,6 +250,23 @@ void NcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aC
     OT_UNUSED_VARIABLE(aCallback);
 }
 
+#if OTBR_ENABLE_BACKBONE_ROUTER
+void NcpHost::SetBackboneRouterEnabled(bool aEnabled)
+{
+    mNcpSpinel.SetBackboneRouterEnabled(aEnabled);
+}
+
+void NcpHost::SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback)
+{
+    mNcpSpinel.SetBackboneRouterMulticastListenerCallback(std::move(aCallback));
+}
+
+void NcpHost::SetBackboneRouterStateChangedCallback(BackboneRouterStateChangedCallback aCallback)
+{
+    mNcpSpinel.SetBackboneRouterStateChangedCallback(std::move(aCallback));
+}
+#endif
+
 void NcpHost::SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback)
 {
     mNcpSpinel.SetBorderAgentMeshCoPServiceChangedCallback(aCallback);

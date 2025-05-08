@@ -34,6 +34,7 @@
 
 #include <algorithm>
 
+#include <openthread/backbone_router_ftd.h>
 #include <openthread/dataset.h>
 #include <openthread/thread.h>
 #include <openthread/platform/dnssd.h>
@@ -541,6 +542,15 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_BACKBONE_ROUTER_STATE:
+    {
+        uint8_t backboneRouterState;
+
+        SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_UINT8_S, &backboneRouterState));
+        SafeInvoke(mBackboneRouterStateChangedCallback, static_cast<otBackboneRouterState>(backboneRouterState));
+        break;
+    }
+
     case SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE:
     {
         bool                isActive;
@@ -676,6 +686,15 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         break;
     }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    case SPINEL_PROP_BACKBONE_ROUTER_MULTICAST_LISTENER:
+    {
+        const otIp6Address *addr;
+
+        VerifyOrExit(decoder.ReadIp6Address(addr) == OT_ERROR_NONE, error = OTBR_ERROR_PARSE);
+        SafeInvoke(mBackboneRouterMulticastListenerCallback, OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED,
+                   Ip6Address(*addr));
+        break;
+    }
     default:
         error = OTBR_ERROR_DROPPED;
         break;
@@ -750,6 +769,15 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         break;
     }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    case SPINEL_PROP_BACKBONE_ROUTER_MULTICAST_LISTENER:
+    {
+        const otIp6Address *addr;
+
+        VerifyOrExit(decoder.ReadIp6Address(addr) == OT_ERROR_NONE, error = OTBR_ERROR_PARSE);
+        SafeInvoke(mBackboneRouterMulticastListenerCallback, OT_BACKBONE_ROUTER_MULTICAST_LISTENER_REMOVED,
+                   Ip6Address(*addr));
+        break;
+    }
     default:
         error = OTBR_ERROR_DROPPED;
         break;
@@ -1310,6 +1338,18 @@ exit:
         otbrLogWarning("Failed to do UDP forwarding to NCP, %s", otbrErrorString(error));
     }
     return error;
+}
+
+void NcpSpinel::SetBackboneRouterEnabled(bool aEnabled)
+{
+    otError      error;
+    EncodingFunc encodingFunc = [aEnabled](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnabled); };
+
+    error = SetProperty(SPINEL_PROP_BACKBONE_ROUTER_ENABLE, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to call BackboneRouterSetEnabled, %s", otThreadErrorToString(error));
+    }
 }
 
 otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)

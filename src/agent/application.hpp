@@ -64,6 +64,7 @@
 #if OTBR_ENABLE_DNSSD_PLAT
 #include "host/posix/dnssd.hpp"
 #endif
+#include "host/posix/multicast_routing_manager.hpp"
 #include "host/posix/netif.hpp"
 #include "utils/infra_link_selector.hpp"
 
@@ -292,6 +293,7 @@ private:
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
+    std::unique_ptr<MulticastRoutingManager>       mMulticastRoutingManager;
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     std::unique_ptr<AdvertisingProxy> mAdvertisingProxy;

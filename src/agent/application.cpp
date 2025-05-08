@@ -329,6 +329,9 @@ void Application::CreateNcpMode(void)
 
     mNetif   = MakeUnique<Netif>(mInterfaceName, ncpHost);
     mInfraIf = MakeUnique<InfraIf>(ncpHost);
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mMulticastRoutingManager = MakeUnique<MulticastRoutingManager>(*mNetif, *mInfraIf, ncpHost);
+#endif
 }
 
 void Application::InitNcpMode(void)
@@ -369,6 +372,17 @@ void Application::InitNcpMode(void)
             mBorderAgentUdpProxy.SendToPeer(aUdpPayload, aLength, aPeerAddr, aPeerPort);
         });
     SetBorderAgentOnInitState();
+#endif
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mHost.SetBackboneRouterStateChangedCallback(
+        [this](otBackboneRouterState aState) { mMulticastRoutingManager->HandleStateChange(aState); });
+    mHost.SetBackboneRouterMulticastListenerCallback(
+        [this](otBackboneRouterMulticastListenerEvent aEvent, const Ip6Address &aAddress) {
+            mMulticastRoutingManager->HandleBackboneMulticastListenerEvent(aEvent, aAddress);
+        });
+#if OTBR_ENABLE_BACKBONE_ROUTER_ON_INIT
+    mHost.SetBackboneRouterEnabled(true);
+#endif
 #endif
 }
 
