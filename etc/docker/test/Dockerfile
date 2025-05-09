@@ -33,7 +33,6 @@ ARG BORDER_ROUTING
 ARG BACKBONE_ROUTER
 ARG OT_BACKBONE_CI
 ARG OTBR_OPTIONS
-ARG DNS64
 ARG NAT64
 ARG NAT64_DYNAMIC_POOL
 ARG REFERENCE_DEVICE
@@ -56,7 +55,6 @@ ENV REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
 ENV RELEASE=${RELEASE:-1}
 ENV NAT64=${NAT64:-1}
 ENV NAT64_DYNAMIC_POOL=${NAT64_DYNAMIC_POOL:-192.168.255.0/24}
-ENV DNS64=${DNS64:-0}
 ENV WEB_GUI=${WEB_GUI:-1}
 ENV REST_API=${REST_API:-1}
 ENV FIREWALL=${FIREWALL:-1}
@@ -99,8 +97,7 @@ RUN ./script/bootstrap
 COPY . .
 RUN ./script/setup
 
-RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
-  && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
+RUN ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
     mv ./script /tmp \
     && mv ./etc /tmp \
     && find . -delete \

@@ -88,19 +88,7 @@ install_packages_apt()
         sudo apt-get install --no-install-recommends -y iptables
     }
 
-    # dns64
-    without DNS64 || {
-        if [ "$PLATFORM" = "beagleboneblack" ]; then
-            # dnsmasq needs to be stopped before bind9 is installed
-            sudo systemctl disable dnsmasq
-            sudo systemctl stop dnsmasq
-        fi
-        sudo apt-get install --no-install-recommends -y bind9
-        # Resolvconf cannot be installed inside docker environment
-        if without DOCKER; then
-            sudo apt-get install --no-install-recommends -y resolvconf
-        fi
-    }
+    sudo apt-get install --no-install-recommends -y bind9
 
     # dhcpv6-pd
     without DHCPV6_PD_REF || {
