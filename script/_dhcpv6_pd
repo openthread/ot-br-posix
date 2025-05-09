@@ -114,7 +114,7 @@ ia_pd 3/::/63 $WPAN_INTERFACE/1
 
 EOF
 
-    if [ "$PLATFORM" = "raspbian" ] || with NETWORK_MANAGER_WIFI; then
+    if [ "$PLATFORM" = "raspbian" ]; then
         sudo tee -a ${DHCPCD_CONF} <<EOF
 interface $WLAN_INTERFACE
 iaid 4

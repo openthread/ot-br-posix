@@ -38,7 +38,6 @@
 . script/_nat64
 . script/_dhcpv6_pd
 . script/_dhcpv6_pd_ref
-. script/_network_manager
 . script/_rt_tables
 . script/_swapfile
 . script/_sudo_extend
@@ -54,7 +53,6 @@ main()
     disable_services
     otbr_uninstall
     border_routing_uninstall
-    network_manager_uninstall
     dhcpv6_pd_uninstall
     dhcpv6_pd_ref_uninstall
     nat64_uninstall
@@ -66,7 +64,6 @@ main()
     ipforward_install
     rt_tables_install
     nat64_install
-    network_manager_install
     dhcpv6_pd_install
     dhcpv6_pd_ref_install
     border_routing_install

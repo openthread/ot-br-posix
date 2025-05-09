@@ -104,9 +104,6 @@ EOF
         sudo apt-get install --no-install-recommends -y radvd
     }
 
-    # network-manager
-    without NETWORK_MANAGER || sudo apt-get install --no-install-recommends -y dnsmasq network-manager
-
     # dhcpcd5
     without DHCPV6_PD || sudo apt-get install --no-install-recommends -y dhcpcd5
 
