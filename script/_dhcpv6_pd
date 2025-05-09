@@ -53,7 +53,7 @@ NCP_STATE_NOTIFIER_SERVICE="/etc/systemd/system/${NCP_STATE_NOTIFIER_SERVICE_NAM
 
 DHCPCD_RELOADER="${NCP_STATE_DISPATCHER}/dhcpcd_reloader"
 
-without DHCPV6_PD || test "$PLATFORM" = beagleboneblack || test "$PLATFORM" = raspbian || test "$PLATFORM" = ubuntu || die "DHCPv6-PD is not tested under $PLATFORM."
+without DHCPV6_PD || test "$PLATFORM" = raspbian || test "$PLATFORM" = ubuntu || die "DHCPv6-PD is not tested under $PLATFORM."
 
 create_dhcpcd_conf_with_dhcpv6_pd()
 {
