@@ -42,7 +42,6 @@
 . script/_rt_tables
 . script/_swapfile
 . script/_sudo_extend
-. script/_disable_services
 . script/_firewall
 
 main()
@@ -51,7 +50,6 @@ main()
     . "$BEFORE_HOOK"
     extend_sudo_timeout
     setup_swapfile
-    disable_services
     otbr_uninstall
     border_routing_uninstall
     network_manager_uninstall
