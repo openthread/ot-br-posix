@@ -36,6 +36,8 @@
 
 #include "openthread-br/config.h"
 
+#if OTBR_ENABLE_DNSSD_PLAT
+
 #include <functional>
 #include <string>
 
@@ -132,5 +134,7 @@ private:
 };
 
 } // namespace otbr
+
+#endif // OTBR_ENABLE_DNSSD_PLAT
 
 #endif // OTBR_AGENT_POSIX_DNSSD_HPP_
