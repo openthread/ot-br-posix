@@ -119,21 +119,15 @@ stop_service()
 # Platform information is needed to load hooks and default settings.
 
 if [[ ! ${PLATFORM+x} ]]; then
-    # BeagleBone Black debian distribution does not support "lsb_release"
-    if grep -s "BeagleBone Black" /sys/firmware/devicetree/base/model; then
-        # Note: 'model' is a binary file with no newline
-        PLATFORM=beagleboneblack
-    else
-        case "${OSTYPE}" in
-            darwin*)
-                PLATFORM=macOS
-                ;;
-            *)
-                have_or_die lsb_release
-                PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
-                ;;
-        esac
-    fi
+    case "${OSTYPE}" in
+        darwin*)
+            PLATFORM=macOS
+            ;;
+        *)
+            have_or_die lsb_release
+            PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+            ;;
+    esac
 fi
 echo "Current platform is $PLATFORM"
 
