@@ -36,6 +36,11 @@ if (OTBR_BORDER_AGENT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_AGENT=1)
 endif()
 
+option(OTBR_BORDER_AGENT_MESHCOP_SERVICE "Enable Border Agent to register MeshCoP mDNS service" ${OTBR_BORDER_AGENT})
+if (OTBR_BORDER_AGENT_MESHCOP_SERVICE)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE=1)
+endif()
+
 option(OTBR_BACKBONE_ROUTER "Enable Backbone Router" OFF)
 if (OTBR_BACKBONE_ROUTER)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BACKBONE_ROUTER=1)
