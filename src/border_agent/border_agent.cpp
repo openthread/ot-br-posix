@@ -256,7 +256,7 @@ void BorderAgent::Start(void)
 {
     otbrLogInfo("Start Thread Border Agent");
 
-    mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
+    mServiceInstanceName = GetServiceInstanceName();
     UpdateMeshCoPService();
 }
 
@@ -372,7 +372,7 @@ void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool                   
             {
                 memcpy(mExtAddress.m8, entry.mValue.data(), sizeof(mExtAddress.m8));
 
-                mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
+                mServiceInstanceName = GetServiceInstanceName();
                 mIsInitialized       = true;
                 break;
             }
@@ -546,18 +546,18 @@ void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std:
 }
 #endif
 
-std::string BorderAgent::GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const
+std::string BorderAgent::GetServiceInstanceName(void) const
 {
     std::stringstream ss;
 
-    ss << aServiceInstanceName << " #";
+    ss << mBaseServiceInstanceName << " #";
     ss << std::uppercase << std::hex << std::setfill('0');
     ss << std::setw(2) << static_cast<int>(mExtAddress.m8[6]);
     ss << std::setw(2) << static_cast<int>(mExtAddress.m8[7]);
     return ss.str();
 }
 
-std::string BorderAgent::GetAlternativeServiceInstanceName() const
+std::string BorderAgent::GetAlternativeServiceInstanceName(void) const
 {
     std::random_device                      r;
     std::default_random_engine              engine(r());
@@ -565,7 +565,7 @@ std::string BorderAgent::GetAlternativeServiceInstanceName() const
     uint16_t                                rand = uniform_dist(engine);
     std::stringstream                       ss;
 
-    ss << GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName) << " (" << rand << ")";
+    ss << GetServiceInstanceName() << " (" << rand << ")";
     return ss.str();
 }
 
