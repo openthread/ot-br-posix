@@ -1,0 +1,77 @@
+meta {
+  name: Get NetworkDiagnostics Items SparseFields
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/diagnostics?fields[networkDiagnostics]=extAddress
+  body: none
+  auth: none
+}
+
+query {
+  fields[networkDiagnostics]: extAddress
+}
+
+headers {
+  Accept: application/vnd.api+json
+  ~Accept: application/json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].type: neq ""
+  res.body.data[0].attributes.created: isDefined
+}
+
+tests {
+  test("Data contains fields requested", function() {
+    const data = res.getBody().data;
+    const size = res.getBody().meta.collection.total;
+    expect(data).to.be.an.instanceOf(Array);
+    expect(data.length).to.equal(1)
+
+    for (let i=0; i < 1; i++){
+      item = data[i];
+      expect(item).to.have.property("id");
+      expect(item).to.have.property("type");
+      expect(item).to.have.property("attributes");
+      expect(item.attributes).to.have.property("created");
+      expect(item.attributes).to.have.property("extAddress");
+
+      expect(item.attributes).to.not.have.property("eui64");
+      expect(item.attributes).to.not.have.property("macCounters");
+      expect(item.attributes).to.not.have.property("mleCounters");
+      expect(item.attributes).to.not.have.property("children");
+      expect(item.attributes).to.not.have.property("rloc16");
+      expect(item.attributes).to.not.have.property("routerId");
+      expect(item.attributes).to.not.have.property("leaderData");
+      expect(item.attributes).to.not.have.property("ip6Addresses");
+      expect(item.attributes).to.not.have.property("channelPages");
+      expect(item.attributes).to.not.have.property("version");
+      expect(item.attributes).to.not.have.property("vendorName");
+      expect(item.attributes).to.not.have.property("vendorModel");
+      expect(item.attributes).to.not.have.property("vendorSwVersion");
+      expect(item.attributes).to.not.have.property("threadStackVersion");
+      expect(item.attributes).to.not.have.property("childrenIp6");
+      expect(item.attributes).to.not.have.property("neighbors");
+      expect(item.attributes).to.not.have.property("brCounters");
+      expect(item.attributes).to.not.have.property("isLeader");
+      expect(item.attributes).to.not.have.property("hostsService");
+      expect(item.attributes).to.not.have.property("isPrimaryBBR");
+      expect(item.attributes).to.not.have.property("isBorderRouter");
+    }
+  });
+  
+}
+
+docs {
+  Return filtered items stored in the Diagnostics Collection.
+}
