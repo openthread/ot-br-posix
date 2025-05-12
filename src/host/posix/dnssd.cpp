@@ -35,6 +35,8 @@
 
 #include "host/posix/dnssd.hpp"
 
+#if OTBR_ENABLE_DNSSD_PLAT
+
 #include <string>
 
 #include <openthread/platform/dnssd.h>
@@ -350,3 +352,5 @@ void DnssdPlatform::HandleMdnsState(Mdns::Publisher::State aState)
 }
 
 } // namespace otbr
+
+#endif // OTBR_ENABLE_DNSSD_PLAT
