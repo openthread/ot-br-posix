@@ -127,24 +127,23 @@ otbrError BorderAgent::SetMeshCoPServiceValues(const std::string              &a
                                                const std::vector<uint8_t>     &aVendorOui,
                                                const Mdns::Publisher::TxtList &aNonStandardTxtEntries)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    otbrError        error = OTBR_ERROR_NONE;
+    VendorTxtEntries vendorEntries;
 
     VerifyOrExit(aProductName.size() <= kMaxProductNameLength, error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(aVendorName.size() <= kMaxVendorNameLength, error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(aVendorOui.empty() || aVendorOui.size() == kVendorOuiLength, error = OTBR_ERROR_INVALID_ARGS);
+
     for (const auto &txtEntry : aNonStandardTxtEntries)
     {
         VerifyOrExit(!txtEntry.mKey.empty() && txtEntry.mKey.front() == 'v', error = OTBR_ERROR_INVALID_ARGS);
+        vendorEntries[txtEntry.mKey] = txtEntry.mValue;
     }
 
     mProductName = aProductName;
     mVendorName  = aVendorName;
     mVendorOui   = aVendorOui;
-    mMeshCoPTxtUpdate.clear();
-    for (const auto &txtEntry : aNonStandardTxtEntries)
-    {
-        mMeshCoPTxtUpdate[txtEntry.mKey] = txtEntry.mValue;
-    }
+    EncodeVendorTxtData(vendorEntries);
 
     mBaseServiceInstanceName = aServiceInstanceName;
 
@@ -170,11 +169,13 @@ exit:
 
 void BorderAgent::ClearState(void)
 {
+    VendorTxtEntries emptyTxtEntries;
+
     mIsEnabled = false;
-    mMeshCoPTxtUpdate.clear();
     mVendorOui.clear();
-    mVendorName              = OTBR_VENDOR_NAME;
-    mProductName             = OTBR_PRODUCT_NAME;
+    mVendorName  = OTBR_VENDOR_NAME;
+    mProductName = OTBR_PRODUCT_NAME;
+    EncodeVendorTxtData(emptyTxtEntries);
     mBaseServiceInstanceName = OTBR_MESHCOP_SERVICE_INSTANCE_NAME;
     mServiceInstanceName.clear();
 }
@@ -273,7 +274,7 @@ exit:
 
 void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool                        aIsActive,
                                                          uint16_t                    aPort,
-                                                         const std::vector<uint8_t> &aOtMeshCoPTxtValues)
+                                                         const std::vector<uint8_t> &aOtTxtData)
 {
     if (aIsActive != mBaIsActive || aPort != mMeshCoPUdpPort)
     {
@@ -281,14 +282,13 @@ void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool                   
         mMeshCoPUdpPort = aPort;
     }
 
-    mOtMeshCoPTxtValues.assign(aOtMeshCoPTxtValues.begin(), aOtMeshCoPTxtValues.end());
+    mOtTxtData.assign(aOtTxtData.begin(), aOtTxtData.end());
 
     // Parse extended address from the encoded data for the first time
     if (!mIsInitialized)
     {
         Mdns::Publisher::TxtList txtList;
-        otbrError                error =
-            Mdns::Publisher::DecodeTxtData(txtList, mOtMeshCoPTxtValues.data(), mOtMeshCoPTxtValues.size());
+        otbrError                error = Mdns::Publisher::DecodeTxtData(txtList, mOtTxtData.data(), mOtTxtData.size());
 
         otbrLogResult(error, "Result of decoding MeshCoP TXT data from OT");
         SuccessOrExit(error);
@@ -310,57 +310,65 @@ exit:
     UpdateMeshCoPService();
 }
 
-void AppendVendorTxtEntries(const std::map<std::string, std::vector<uint8_t>> &aVendorEntries,
-                            Mdns::Publisher::TxtList                          &aTxtList)
-{
-    for (const auto &entry : aVendorEntries)
-    {
-        const std::string          &key   = entry.first;
-        const std::vector<uint8_t> &value = entry.second;
-        bool                        found = false;
-
-        for (auto &addedEntry : aTxtList)
-        {
-            if (addedEntry.mKey == key)
-            {
-                addedEntry.mValue              = value;
-                addedEntry.mIsBooleanAttribute = false;
-                found                          = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            aTxtList.emplace_back(key.c_str(), value.data(), value.size());
-        }
-    }
-}
-
-void BorderAgent::PublishMeshCoPService(void)
+void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
 {
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
-    Mdns::Publisher::TxtData txtData;
-    int                      port;
-    otbrError                error;
-
-    OTBR_UNUSED_VARIABLE(error);
-
-    otbrLogInfo("Publish meshcop service %s.%s.local.", mServiceInstanceName.c_str(), kBorderAgentServiceType);
 
     if (!mVendorOui.empty())
     {
         txtList.emplace_back("vo", mVendorOui.data(), mVendorOui.size());
     }
+
     if (!mVendorName.empty())
     {
         txtList.emplace_back("vn", mVendorName.c_str());
     }
+
     if (!mProductName.empty())
     {
         txtList.emplace_back("mn", mProductName.c_str());
     }
 
-    AppendVendorTxtEntries(mMeshCoPTxtUpdate, txtList);
+    for (const auto &vendorEntry : aVendorEntries)
+    {
+        const std::string          &key   = vendorEntry.first;
+        const std::vector<uint8_t> &value = vendorEntry.second;
+        bool                        found = false;
+
+        for (Mdns::Publisher::TxtEntry &txtEntry : txtList)
+        {
+            if (txtEntry.mKey == key)
+            {
+                txtEntry.mValue              = value;
+                txtEntry.mIsBooleanAttribute = false;
+                found                        = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            txtList.emplace_back(key.c_str(), value.data(), value.size());
+        }
+    }
+
+    mVendorTxtData.clear();
+
+    if (!txtList.empty())
+    {
+        otbrError error = Mdns::Publisher::EncodeTxtData(txtList, mVendorTxtData);
+
+        assert(error == OTBR_ERROR_NONE);
+        OTBR_UNUSED_VARIABLE(error);
+    }
+}
+
+void BorderAgent::PublishMeshCoPService(void)
+{
+    Mdns::Publisher::TxtData txtData;
+    int                      port;
+
+    otbrLogInfo("Publish meshcop service %s.%s.local.", mServiceInstanceName.c_str(), kBorderAgentServiceType);
 
     // When thread interface is not active, the border agent is not started, thus it's not listening to any port and
     // not handling requests. In such situation, we use a dummy port number for publishing the MeshCoP service to
@@ -368,13 +376,8 @@ void BorderAgent::PublishMeshCoPService(void)
     // doesn't have to send requests to the dummy port when border agent is not running.
     port = mBaIsActive ? mMeshCoPUdpPort : kBorderAgentServiceDummyPort;
 
-    if (!txtList.empty())
-    {
-        error = Mdns::Publisher::EncodeTxtData(txtList, txtData);
-        assert(error == OTBR_ERROR_NONE);
-    }
-
-    txtData.insert(txtData.end(), mOtMeshCoPTxtValues.begin(), mOtMeshCoPTxtValues.end());
+    txtData.insert(txtData.end(), mVendorTxtData.begin(), mVendorTxtData.end());
+    txtData.insert(txtData.end(), mOtTxtData.begin(), mOtTxtData.end());
 
     mPublisher.PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentServiceType,
                               Mdns::Publisher::SubTypeList{}, port, txtData, [this](otbrError aError) {
@@ -425,9 +428,9 @@ exit:
 }
 
 #if OTBR_ENABLE_DBUS_SERVER
-void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate)
+void BorderAgent::UpdateVendorMeshCoPTxtEntries(const VendorTxtEntries &aVendorEntries)
 {
-    mMeshCoPTxtUpdate = std::move(aUpdate);
+    EncodeVendorTxtData(aVendorEntries);
     UpdateMeshCoPService();
 }
 #endif

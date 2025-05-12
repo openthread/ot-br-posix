@@ -1326,7 +1326,7 @@ void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     {
         VerifyOrExit(!update.count(reservedKey), error = OT_ERROR_INVALID_ARGS);
     }
-    mBorderAgent.HandleUpdateVendorMeshCoPTxtEntries(std::move(update));
+    mBorderAgent.UpdateVendorMeshCoPTxtEntries(update);
 
 exit:
     aRequest.ReplyOtResult(error);
