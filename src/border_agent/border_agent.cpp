@@ -81,81 +81,6 @@ static const char    kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Bo
 static constexpr int kBorderAgentServiceDummyPort   = 49152;
 static constexpr int kEpskcRandomGenLen             = 8;
 
-/**
- * Locators
- */
-enum
-{
-    kAloc16Leader   = 0xfc00, ///< leader anycast locator.
-    kInvalidLocator = 0xffff, ///< invalid locator.
-};
-
-enum : uint8_t
-{
-    kConnectionModeDisabled = 0,
-    kConnectionModePskc     = 1,
-    kConnectionModePskd     = 2,
-    kConnectionModeVendor   = 3,
-    kConnectionModeX509     = 4,
-};
-
-enum : uint8_t
-{
-    kThreadIfStatusNotInitialized = 0,
-    kThreadIfStatusInitialized    = 1,
-    kThreadIfStatusActive         = 2,
-};
-
-enum : uint8_t
-{
-    kThreadRoleDisabledOrDetached = 0,
-    kThreadRoleChild              = 1,
-    kThreadRoleRouter             = 2,
-    kThreadRoleLeader             = 3,
-};
-
-enum : uint8_t
-{
-    kAvailabilityInfrequent = 0,
-    kAvailabilityHigh       = 1,
-};
-
-struct StateBitmap
-{
-    uint32_t mConnectionMode : 3;
-    uint32_t mThreadIfStatus : 2;
-    uint32_t mAvailability : 2;
-    uint32_t mBbrIsActive : 1;
-    uint32_t mBbrIsPrimary : 1;
-    uint32_t mThreadRole : 2;
-    uint32_t mEpskcSupported : 1;
-
-    StateBitmap(void)
-        : mConnectionMode(0)
-        , mThreadIfStatus(0)
-        , mAvailability(0)
-        , mBbrIsActive(0)
-        , mBbrIsPrimary(0)
-        , mThreadRole(kThreadRoleDisabledOrDetached)
-        , mEpskcSupported(0)
-    {
-    }
-
-    uint32_t ToUint32(void) const
-    {
-        uint32_t bitmap = 0;
-
-        bitmap |= mConnectionMode << 0;
-        bitmap |= mThreadIfStatus << 3;
-        bitmap |= mAvailability << 5;
-        bitmap |= mBbrIsActive << 7;
-        bitmap |= mBbrIsPrimary << 8;
-        bitmap |= mThreadRole << 9;
-        bitmap |= mEpskcSupported << 11;
-        return bitmap;
-    }
-};
-
 BorderAgent::BorderAgent(Mdns::Publisher &aPublisher)
     : mPublisher(aPublisher)
 {
@@ -381,47 +306,6 @@ void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool                   
 
 exit:
     UpdateMeshCoPService();
-}
-
-StateBitmap GetStateBitmap(otInstance &aInstance)
-{
-    StateBitmap state;
-
-    state.mConnectionMode = kConnectionModePskc;
-    state.mAvailability   = kAvailabilityHigh;
-
-    switch (otThreadGetDeviceRole(&aInstance))
-    {
-    case OT_DEVICE_ROLE_DISABLED:
-        state.mThreadIfStatus = kThreadIfStatusNotInitialized;
-        state.mThreadRole     = kThreadRoleDisabledOrDetached;
-        break;
-    case OT_DEVICE_ROLE_DETACHED:
-        state.mThreadIfStatus = kThreadIfStatusInitialized;
-        state.mThreadRole     = kThreadRoleDisabledOrDetached;
-        break;
-    case OT_DEVICE_ROLE_CHILD:
-        state.mThreadIfStatus = kThreadIfStatusActive;
-        state.mThreadRole     = kThreadRoleChild;
-        break;
-    case OT_DEVICE_ROLE_ROUTER:
-        state.mThreadIfStatus = kThreadIfStatusActive;
-        state.mThreadRole     = kThreadRoleRouter;
-        break;
-    case OT_DEVICE_ROLE_LEADER:
-        state.mThreadIfStatus = kThreadIfStatusActive;
-        state.mThreadRole     = kThreadRoleLeader;
-        break;
-    }
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    state.mBbrIsActive = state.mThreadIfStatus == kThreadIfStatusActive &&
-                         otBackboneRouterGetState(&aInstance) != OT_BACKBONE_ROUTER_STATE_DISABLED;
-    state.mBbrIsPrimary = state.mThreadIfStatus == kThreadIfStatusActive &&
-                          otBackboneRouterGetState(&aInstance) == OT_BACKBONE_ROUTER_STATE_PRIMARY;
-#endif
-
-    return state;
 }
 
 void AppendVendorTxtEntries(const std::map<std::string, std::vector<uint8_t>> &aVendorEntries,
