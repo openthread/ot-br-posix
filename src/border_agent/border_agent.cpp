@@ -35,6 +35,8 @@
 
 #include "border_agent/border_agent.hpp"
 
+#if OTBR_ENABLE_BORDER_AGENT
+
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
@@ -454,3 +456,5 @@ std::string BorderAgent::GetAlternativeServiceInstanceName() const
 }
 
 } // namespace otbr
+
+#endif // OTBR_ENABLE_BORDER_AGENT

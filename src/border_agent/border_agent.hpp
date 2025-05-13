@@ -36,6 +36,8 @@
 
 #include "openthread-br/config.h"
 
+#if OTBR_ENABLE_BORDER_AGENT
+
 #include <vector>
 
 #include <stdint.h>
@@ -225,5 +227,7 @@ private:
  */
 
 } // namespace otbr
+
+#endif // OTBR_ENABLE_BORDER_AGENT
 
 #endif // OTBR_AGENT_BORDER_AGENT_HPP_
