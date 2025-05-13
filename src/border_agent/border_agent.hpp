@@ -186,8 +186,8 @@ private:
     void UpdateMeshCoPService(void);
     void UnpublishMeshCoPService(void);
 
-    std::string GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const;
-    std::string GetAlternativeServiceInstanceName() const;
+    std::string GetServiceInstanceName(void) const;
+    std::string GetAlternativeServiceInstanceName(void) const;
 
     void PublishEpskcService(uint16_t aPort);
     void UnpublishEpskcService(void);
