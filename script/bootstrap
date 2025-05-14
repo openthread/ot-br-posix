@@ -68,18 +68,12 @@ install_packages_apt()
         sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
     fi
 
-    (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-1790.80.10 \
-        && MDNS_RESPONDER_PATCH_PATH=$(realpath "$(dirname "$0")"/../third_party/mDNSResponder) \
+    (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \
         && cd /tmp \
         && wget --no-check-certificate https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
         && mkdir -p $MDNS_RESPONDER_SOURCE_NAME \
         && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz -C $MDNS_RESPONDER_SOURCE_NAME --strip-components=1 \
         && cd /tmp/"$MDNS_RESPONDER_SOURCE_NAME" \
-        && (
-            for patch in "$MDNS_RESPONDER_PATCH_PATH"/*.patch; do
-                patch -p1 <"$patch"
-            done
-        ) \
         && cd mDNSPosix \
         && make os=linux tls=no && sudo make install os=linux tls=no)
 
