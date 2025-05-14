@@ -77,7 +77,11 @@ namespace otbr {
 /**
  * This class implements Thread border agent functionality.
  */
-class BorderAgent : public Mdns::StateObserver, private NonCopyable
+class BorderAgent : private NonCopyable
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+    ,
+                    public Mdns::StateObserver
+#endif
 {
 public:
     typedef std::map<std::string, std::vector<uint8_t>> VendorTxtEntries; ///< Vendor TXT entry map.
@@ -130,6 +134,8 @@ public:
      */
     void SetEnabled(bool aIsEnabled);
 
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+
     /**
      * This method handles mDNS publisher's state changes.
      *
@@ -153,6 +159,8 @@ public:
      * @param[in] aPort          The UDP port of the Epskc service if it's active.
      */
     void HandleEpskcStateChanged(otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort);
+
+#endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
     /**
      * This method creates ephemeral key in the Border Agent.
@@ -182,17 +190,20 @@ private:
     {
         return mIsEnabled;
     }
+
+    void EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries);
+
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     void PublishMeshCoPService(void);
     void UpdateMeshCoPService(void);
     void UnpublishMeshCoPService(void);
-
-    void EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries);
 
     std::string GetServiceInstanceName(void) const;
     std::string GetAlternativeServiceInstanceName(void) const;
 
     void PublishEpskcService(uint16_t aPort);
     void UnpublishEpskcService(void);
+#endif
 
     Mdns::Publisher &mPublisher;
     bool             mIsEnabled;
@@ -203,13 +214,17 @@ private:
     std::string mProductName;
 
     std::vector<uint8_t> mVendorTxtData; // Encoded vendor-specific TXT data.
-    std::vector<uint8_t> mOtTxtData;     // Encoded TXT data from OpenThread core Border Agent module
+
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+    std::vector<uint8_t> mOtTxtData; // Encoded TXT data from OpenThread core Border Agent module
+#endif
 
     // The base service instance name typically consists of the vendor and product name. But it can
     // also be overridden by `OTBR_MESHCOP_SERVICE_INSTANCE_NAME` or method `SetMeshCoPServiceValues()`.
     // For example, this value can be "OpenThread Border Router".
     std::string mBaseServiceInstanceName;
 
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     // The actual instance name advertised in the mDNS service. This is usually the value of
     // `mBaseServiceInstanceName` plus the Extended Address and optional random number for avoiding
     // conflicts. For example, this value can be "OpenThread Border Router #7AC3" or
@@ -220,6 +235,7 @@ private:
     otExtAddress mExtAddress;
     uint16_t     mMeshCoPUdpPort;
     bool         mBaIsActive;
+#endif
 };
 
 /**

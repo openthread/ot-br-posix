@@ -72,16 +72,21 @@
 #include "common/types.hpp"
 #include "utils/hex.hpp"
 
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 #if !(OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO)
-#error "Border Agent feature requires at least one `OTBR_MDNS` implementation"
+#error "Border Agent meshcop service feature requires at least one `OTBR_MDNS` implementation"
+#endif
 #endif
 
 namespace otbr {
 
-static const char    kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Border agent service type of mDNS
-static const char    kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Border agent ePSKc service
-static constexpr int kBorderAgentServiceDummyPort   = 49152;
-static constexpr int kEpskcRandomGenLen             = 8;
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+static const char kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Border agent service type of mDNS
+static const char kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Border agent ePSKc service
+#endif
+
+static constexpr int kBorderAgentServiceDummyPort = 49152;
+static constexpr int kEpskcRandomGenLen           = 8;
 
 BorderAgent::BorderAgent(Mdns::Publisher &aPublisher)
     : mPublisher(aPublisher)
@@ -177,22 +182,30 @@ void BorderAgent::ClearState(void)
     mProductName = OTBR_PRODUCT_NAME;
     EncodeVendorTxtData(emptyTxtEntries);
     mBaseServiceInstanceName = OTBR_MESHCOP_SERVICE_INSTANCE_NAME;
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mServiceInstanceName.clear();
+#endif
 }
 
 void BorderAgent::Start(void)
 {
     otbrLogInfo("Start Thread Border Agent");
 
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mServiceInstanceName = GetServiceInstanceName();
     UpdateMeshCoPService();
+#endif
 }
 
 void BorderAgent::Stop(void)
 {
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     otbrLogInfo("Stop Thread Border Agent");
     UnpublishMeshCoPService();
+#endif
 }
+
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
 void BorderAgent::HandleEpskcStateChanged(otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort)
 {
@@ -310,6 +323,8 @@ exit:
     UpdateMeshCoPService();
 }
 
+#endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+
 void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
 {
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
@@ -362,6 +377,8 @@ void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
         OTBR_UNUSED_VARIABLE(error);
     }
 }
+
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
 void BorderAgent::PublishMeshCoPService(void)
 {
@@ -427,13 +444,19 @@ exit:
     return;
 }
 
+#endif
+
 #if OTBR_ENABLE_DBUS_SERVER
 void BorderAgent::UpdateVendorMeshCoPTxtEntries(const VendorTxtEntries &aVendorEntries)
 {
     EncodeVendorTxtData(aVendorEntries);
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     UpdateMeshCoPService();
+#endif
 }
 #endif
+
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
 std::string BorderAgent::GetServiceInstanceName(void) const
 {
@@ -457,6 +480,8 @@ std::string BorderAgent::GetAlternativeServiceInstanceName(void) const
     ss << GetServiceInstanceName() << " (" << rand << ")";
     return ss.str();
 }
+
+#endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
 } // namespace otbr
 
