@@ -32,7 +32,7 @@ ARG GITHUB_REPO="openthread/ot-br-posix"
 ARG GIT_COMMIT="HEAD"
 ARG TARGETARCH
 
-ENV MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-1790.80.10
+ENV MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147
 ENV S6_OVERLAY_VERSION=3.2.0.2
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -68,16 +68,6 @@ RUN set -x \
         && mkdir -p $MDNS_RESPONDER_SOURCE_NAME \
         && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz -C $MDNS_RESPONDER_SOURCE_NAME --strip-components=1 \
         && cd $MDNS_RESPONDER_SOURCE_NAME \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0001-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0002-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0003-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0004-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0005-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0006-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0007-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0008-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0009-*.patch \
-        && patch -p1 < /usr/src/ot-br-posix/third_party/mDNSResponder/0010-*.patch \
         && cd mDNSPosix \
         && make os=linux tls=no \
         && make install os=linux tls=no) \
