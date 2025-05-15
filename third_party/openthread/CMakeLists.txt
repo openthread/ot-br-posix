@@ -79,6 +79,12 @@ if (OTBR_DNSSD_PLAT)
     set(OT_BORDER_AGENT_SERVICE_NAME ${OTBR_MESHCOP_SERVICE_INSTANCE_NAME} CACHE STRING "set the border agent service base name" FORCE)
 endif()
 
+if (OTBR_BORDER_AGENT_MESHCOP_SERVICE)
+    set(OT_BORDER_AGENT_MESHCOP_SERVICE OFF CACHE STRING "border agent meshcop service" FORCE)
+else()
+    set(OT_BORDER_AGENT_MESHCOP_SERVICE ON CACHE STRING "border agent meshcop service" FORCE)
+endif()
+
 if (OTBR_OT_SRP_ADV_PROXY OR OTBR_SRP_ADVERTISING_PROXY)
     set(OT_SRP_SERVER ON CACHE STRING "enable SRP server" FORCE)
     set(OT_EXTERNAL_HEAP ON CACHE STRING "enable external heap" FORCE)
