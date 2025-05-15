@@ -327,7 +327,7 @@ exit:
 
 void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
 {
-    Mdns::Publisher::TxtList txtList{{"rv", "1"}};
+    Mdns::Publisher::TxtList txtList;
 
     if (!mVendorOui.empty())
     {
