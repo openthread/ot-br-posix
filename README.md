@@ -1,4 +1,4 @@
-[![Build Status][ot-gh-action-build-svg]][ot-gh-action-build] [![Docker Status][ot-gh-action-docker-svg]][ot-gh-action-docker] [![Build Status][otbr-travis-svg]][otbr-travis] [![Coverage Status][otbr-codecov-svg]][otbr-codecov]
+[![Build Status][ot-gh-action-build-svg]][ot-gh-action-build] [![Docker Status][ot-gh-action-docker-svg]][ot-gh-action-docker] [![Build Status][otbr-travis-svg]][otbr-travis] [![Coverage Status][otbr-codecov-svg]][otbr-codecov] [![Ask DeepWiki][deepwiki-svg]][deepwiki]
 
 ---
 
@@ -35,6 +35,8 @@ More information about Thread can be found at [threadgroup.org](http://threadgro
 [otbr-travis-svg]: https://travis-ci.org/openthread/ot-br-posix.svg?branch=main
 [otbr-codecov]: https://codecov.io/gh/openthread/ot-br-posix
 [otbr-codecov-svg]: https://codecov.io/gh/openthread/ot-br-posix/branch/main/graph/badge.svg
+[deepwiki]: https://deepwiki.com/openthread/ot-br-posix
+[deepwiki-svg]: https://deepwiki.com/badge.svg
 
 ## Getting started
 
