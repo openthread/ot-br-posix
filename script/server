@@ -33,7 +33,6 @@
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 . script/_nat64
-. script/_dns64
 . script/_firewall
 
 OTBR_MDNS="${OTBR_MDNS:-mDNSResponder}"
@@ -46,7 +45,6 @@ startup()
     . "$BEFORE_HOOK"
     sudo sysctl --system
     nat64_start || die 'Failed to start NAT64!'
-    dns64_start || die 'Failed to start DNS64!'
     firewall_start || die 'Failed to start firewall'
 
     start_service rsyslog
@@ -70,7 +68,6 @@ startup()
 shutdown()
 {
     nat64_stop || echo 'Failed to stop NAT64!'
-    dns64_stop || echo 'Failed to stop DNS64!'
     firewall_stop || echo 'Failed to stop firewall'
 
     stop_service rsyslog

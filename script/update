@@ -37,7 +37,6 @@
 . script/_otbr
 . script/_ipforward
 . script/_nat64
-. script/_dns64
 . script/_dhcpv6_pd
 
 main()
@@ -49,14 +48,12 @@ main()
     otbr_uninstall
     dhcpv6_pd_uninstall
     nat64_uninstall
-    dns64_uninstall
     ipforward_uninstall
     border_routing_uninstall
 
     border_routing_install
     ipforward_install
     nat64_install
-    dns64_install
     dhcpv6_pd_install
     otbr_update
     # shellcheck source=/dev/null

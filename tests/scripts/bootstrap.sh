@@ -32,8 +32,6 @@ set -euxo pipefail
 TOOLS_HOME="$HOME"/.cache/tools
 [[ -d $TOOLS_HOME ]] || mkdir -p "$TOOLS_HOME"
 
-MDNSRESPONDER_PATCH_PATH=$(realpath "$(dirname "$0")"/../../third_party/mDNSResponder)
-
 disable_install_recommends()
 {
     OTBR_APT_CONF_FILE=/etc/apt/apt.conf
@@ -123,16 +121,11 @@ case "$(uname)" in
         fi
 
         if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
-            SOURCE_NAME=mDNSResponder-1790.80.10
+            SOURCE_NAME=mDNSResponder-2600.100.147
             wget https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$SOURCE_NAME.tar.gz \
                 && mkdir -p $SOURCE_NAME \
                 && tar xvf $SOURCE_NAME.tar.gz -C $SOURCE_NAME --strip-components=1 \
                 && cd "$SOURCE_NAME" \
-                && (
-                    for patch in "$MDNSRESPONDER_PATCH_PATH"/*.patch; do
-                        patch -p1 <"$patch"
-                    done
-                ) \
                 && cd mDNSPosix \
                 && make os=linux tls=no && sudo make install os=linux tls=no
         fi

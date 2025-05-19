@@ -189,7 +189,7 @@ static otbrLogLevel GetDefaultLogLevel(void)
     property_get("ro.build.type", value, "user");
     if (!strcmp(value, "user"))
     {
-        level = OTBR_LOG_WARNING;
+        level = OTBR_LOG_NOTICE;
     }
 #else
     otbrLogLevel level = OTBR_LOG_INFO;

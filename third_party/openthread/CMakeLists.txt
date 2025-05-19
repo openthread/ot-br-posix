@@ -75,6 +75,18 @@ set(OT_TREL ${OTBR_TREL} CACHE STRING "enable TREL" FORCE)
 set(OT_UDP_FORWARD OFF CACHE STRING "disable udp forward" FORCE)
 set(OT_UPTIME ON CACHE STRING "enable uptime" FORCE)
 
+if (OTBR_DNSSD_PLAT)
+    set(OT_BORDER_AGENT_SERVICE_NAME ${OTBR_MESHCOP_SERVICE_INSTANCE_NAME} CACHE STRING "set the border agent service base name" FORCE)
+endif()
+
+if (OTBR_BORDER_AGENT)
+    if (OTBR_BORDER_AGENT_MESHCOP_SERVICE)
+        set(OT_BORDER_AGENT_MESHCOP_SERVICE OFF CACHE STRING "border agent meshcop service" FORCE)
+    else()
+        set(OT_BORDER_AGENT_MESHCOP_SERVICE ON CACHE STRING "border agent meshcop service" FORCE)
+    endif()
+endif()
+
 if (OTBR_OT_SRP_ADV_PROXY OR OTBR_SRP_ADVERTISING_PROXY)
     set(OT_SRP_SERVER ON CACHE STRING "enable SRP server" FORCE)
     set(OT_EXTERNAL_HEAP ON CACHE STRING "enable external heap" FORCE)
