@@ -51,6 +51,8 @@ install_packages_apt()
         libreadline-dev \
         libncurses-dev
 
+    sudo apt-get install libgmock-dev libgtest-dev || echo 'WARNING: failed to install gtest and gmock!'
+
     sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
 
     sudo apt-get install --no-install-recommends -y rsyslog
@@ -169,7 +171,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    brew install cmake dbus jsoncpp ninja
+    brew install cmake dbus jsoncpp ninja googletest
 }
 
 install_packages_source()

@@ -59,6 +59,8 @@ install_common_dependencies()
         net-tools \
         libavahi-common-dev \
         libavahi-client-dev \
+        libgmock-dev \
+        libgtest-dev \
         libreadline-dev \
         libncurses-dev \
         libjsoncpp-dev \
