@@ -1509,7 +1509,8 @@ otbrError StringDiscerner2Discerner(char *aString, otJoinerDiscerner &aDiscerner
     }
 
     *separator = '\0';
-    byteLength = Hex2BytesJsonString(std::string(aString), byteSwapBuffer, OT_JOINER_MAX_DISCERNER_LENGTH);
+    byteLength =
+        Hex2BytesJsonString(std::string(aString), byteSwapBuffer, OT_JOINER_MAX_DISCERNER_LENGTH / BITS_PER_BYTE);
     VerifyOrExit(byteLength <= (1 + ((aDiscerner.mLength - 1) / BITS_PER_BYTE)), error = OTBR_ERROR_INVALID_ARGS);
 
     // The discerner is expected to be big endian
@@ -1531,7 +1532,7 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
     memset(&aJoinerInfo.mSharedId.mEui64, 0, sizeof(aJoinerInfo.mSharedId.mEui64));
     memset(&aJoinerInfo.mPskd.m8, 0, sizeof(aJoinerInfo.mPskd.m8));
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Pskd");
+    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "pskd");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(value->valuestring != nullptr);
@@ -1565,7 +1566,7 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
         }
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Discerner");
+    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "discerner");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY);
@@ -1578,7 +1579,7 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
         }
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Eui64");
+    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "eui");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY);
@@ -1592,7 +1593,7 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
     }
 
     aJoinerInfo.mExpirationTime = 60;
-    value                       = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Timeout");
+    value                       = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "timeout");
     if (cJSON_IsNumber(value))
     {
         aJoinerInfo.mExpirationTime = value->valueint;
