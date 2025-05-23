@@ -43,20 +43,21 @@ CommissionerManager::~CommissionerManager()
     }
 }
 
-otError CommissionerManager::AddJoiner(const otExtAddress &aEui64, uint32_t aTimeout, const char *aPskd)
+otError CommissionerManager::AddJoiner(const otJoinerInfo &aJoiner, uint32_t aTimeout)
 {
     otError error = OT_ERROR_NONE;
 
 #ifndef OPENTHREAD_COMMISSIONER_ALLOW_ANY_JOINER
-    VerifyOrExit(!IsEui64Null(aEui64), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aJoiner.mType != OT_JOINER_INFO_TYPE_ANY, error = OT_ERROR_INVALID_ARGS);
 #endif
 
     for (const JoinerEntry &joiner : mJoiners)
     {
-        VerifyOrExit(!joiner.MatchesEui64(aEui64), error = OT_ERROR_ALREADY);
+        // We may instead ignore existing joiners and overwrite the timeout
+        VerifyOrExit(!joiner.MatchesEui64(aJoiner.mSharedId.mEui64), error = OT_ERROR_ALREADY);
     }
 
-    mJoiners.emplace_back(JoinerEntry(aEui64, aTimeout, aPskd));
+    mJoiners.emplace_back(JoinerEntry(aJoiner, aTimeout));
 
     if (mState == OT_COMMISSIONER_STATE_ACTIVE)
     {
@@ -71,16 +72,16 @@ exit:
     return error;
 }
 
-void CommissionerManager::RemoveJoiner(const otExtAddress &aEui64)
+void CommissionerManager::RemoveJoiner(const otJoinerInfo &aJoiner)
 {
     for (auto it = mJoiners.begin(); it < mJoiners.end(); ++it)
     {
-        if (it->MatchesEui64(aEui64))
+        if ((aJoiner.mType == OT_JOINER_INFO_TYPE_EUI64) && (it->MatchesEui64(aJoiner.mSharedId.mEui64)))
         {
             if (mState == OT_COMMISSIONER_STATE_ACTIVE)
             {
-                const otExtAddress *addrPtr = &aEui64;
-                if (IsEui64Null(aEui64))
+                const otExtAddress *addrPtr = &aJoiner.mSharedId.mEui64;
+                if (IsEui64Null(aJoiner.mSharedId.mEui64))
                 {
                     addrPtr = nullptr;
                 }
@@ -92,6 +93,22 @@ void CommissionerManager::RemoveJoiner(const otExtAddress &aEui64)
 
             break;
         }
+
+        if (aJoiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
+        {
+            if (it->mJoiner.mSharedId.mDiscerner.mValue == aJoiner.mSharedId.mDiscerner.mValue &&
+                it->mJoiner.mSharedId.mDiscerner.mLength == aJoiner.mSharedId.mDiscerner.mLength)
+            {
+                if (mState == OT_COMMISSIONER_STATE_ACTIVE)
+                {
+                    IgnoreError(otCommissionerRemoveJoinerWithDiscerner(mInstance, &aJoiner.mSharedId.mDiscerner));
+                }
+
+                mJoiners.erase(it);
+
+                break;
+            }
+        }
     }
 }
 
@@ -101,28 +118,48 @@ void CommissionerManager::RemoveAllJoiners(void)
     {
         for (const JoinerEntry &joiner : mJoiners)
         {
-            const otExtAddress *addrPtr = &joiner.mEui64;
-            if (IsEui64Null(joiner.mEui64))
+            if (joiner.mJoiner.mType == OT_JOINER_INFO_TYPE_EUI64)
             {
-                addrPtr = nullptr;
+                IgnoreError(otCommissionerRemoveJoiner(mInstance, &joiner.mJoiner.mSharedId.mEui64));
             }
-
-            IgnoreError(otCommissionerRemoveJoiner(mInstance, addrPtr));
+            else if (joiner.mJoiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
+            {
+                IgnoreError(otCommissionerRemoveJoinerWithDiscerner(mInstance, &joiner.mJoiner.mSharedId.mDiscerner));
+            }
+            else
+            {
+                // Joiner type is ANY
+                IgnoreError(otCommissionerRemoveJoiner(mInstance, nullptr));
+            }
         }
     }
 
     mJoiners.clear();
 }
 
-const CommissionerManager::JoinerEntry *CommissionerManager::FindJoiner(const otExtAddress &aEui64)
+const CommissionerManager::JoinerEntry *CommissionerManager::FindJoiner(const otJoinerInfo &aJoiner)
 {
     const JoinerEntry *entry = nullptr;
 
     for (JoinerEntry &joiner : mJoiners)
     {
-        if (joiner.MatchesEui64(aEui64))
+        if ((aJoiner.mType == OT_JOINER_INFO_TYPE_EUI64) && (joiner.MatchesEui64(aJoiner.mSharedId.mEui64)))
         {
             entry = &joiner;
+            break;
+        }
+        else if ((aJoiner.mType == OT_JOINER_INFO_TYPE_DISCERNER) &&
+                 (joiner.mJoiner.mSharedId.mDiscerner.mValue == aJoiner.mSharedId.mDiscerner.mValue) &&
+                 (joiner.mJoiner.mSharedId.mDiscerner.mLength == aJoiner.mSharedId.mDiscerner.mLength))
+        {
+            entry = &joiner;
+            break;
+        }
+        else if ((aJoiner.mType == OT_JOINER_INFO_TYPE_ANY) && (joiner.mJoiner.mType == OT_JOINER_INFO_TYPE_ANY))
+        {
+            // there can only be one joiner entry with type ANY in the joiner table
+            entry = &joiner;
+            break;
         }
     }
 
@@ -143,14 +180,14 @@ void CommissionerManager::Process(void)
     }
 }
 
-CommissionerManager::JoinerEntry::JoinerEntry(const otExtAddress &aEui64, uint32_t aTimeout, const char *aPskd)
-    : mEui64{aEui64}
+CommissionerManager::JoinerEntry::JoinerEntry(const otJoinerInfo &aJoiner, uint32_t aTimeout)
+    : mJoiner{}
     , mState{kJoinerStatePending}
-    , mPskd{}
     , mTimeout{Clock::now() + Seconds(aTimeout)}
 {
-    strncpy(&mPskd.m8[0], aPskd, OT_JOINER_MAX_PSKD_LENGTH);
-    mPskd.m8[OT_JOINER_MAX_PSKD_LENGTH] = 0;
+    mJoiner.mType = aJoiner.mType;
+    memcpy(&mJoiner.mSharedId, &aJoiner.mSharedId, sizeof(mJoiner.mSharedId));
+    memcpy(mJoiner.mPskd.m8, aJoiner.mPskd.m8, sizeof(mJoiner.mPskd.m8));
 }
 
 bool CommissionerManager::JoinerEntry::MatchesEui64(const otExtAddress &aEui64) const
@@ -159,11 +196,27 @@ bool CommissionerManager::JoinerEntry::MatchesEui64(const otExtAddress &aEui64) 
 
     for (uint32_t i = 0; i < OT_EXT_ADDRESS_SIZE; i++)
     {
-        if (mEui64.m8[i] != aEui64.m8[i])
+        if (mJoiner.mSharedId.mEui64.m8[i] != aEui64.m8[i])
         {
             matches = false;
             break;
         }
+    }
+
+    return matches;
+}
+
+bool CommissionerManager::JoinerEntry::MatchesDiscerner(const otJoinerDiscerner &aDiscerner) const
+{
+    bool matches = true;
+
+    if (mJoiner.mSharedId.mDiscerner.mLength != aDiscerner.mLength)
+    {
+        matches = false;
+    }
+    if (mJoiner.mSharedId.mDiscerner.mValue != aDiscerner.mValue)
+    {
+        matches = false;
     }
 
     return matches;
@@ -174,7 +227,7 @@ otError CommissionerManager::JoinerEntry::Register(otInstance *aInstance)
     otError             error = OT_ERROR_NONE;
     Timepoint           now   = Clock::now();
     uint32_t            timeout;
-    const otExtAddress *addrPtr = &mEui64;
+    const otExtAddress *addrPtr = &mJoiner.mSharedId.mEui64;
 
     VerifyOrExit(IsPending(), error = OT_ERROR_INVALID_STATE);
 
@@ -184,13 +237,21 @@ otError CommissionerManager::JoinerEntry::Register(otInstance *aInstance)
         ExitNow(error = OT_ERROR_INVALID_STATE);
     }
 
-    if (CommissionerManager::IsEui64Null(mEui64))
+    if (CommissionerManager::IsEui64Null(mJoiner.mSharedId.mEui64))
     {
         addrPtr = nullptr;
     }
 
     timeout = std::chrono::duration_cast<Seconds>(mTimeout - now).count();
-    error   = otCommissionerAddJoiner(aInstance, addrPtr, &mPskd.m8[0], timeout);
+    if (mJoiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
+    {
+        error =
+            otCommissionerAddJoinerWithDiscerner(aInstance, &mJoiner.mSharedId.mDiscerner, mJoiner.mPskd.m8, timeout);
+    }
+    else
+    {
+        error = otCommissionerAddJoiner(aInstance, addrPtr, mJoiner.mPskd.m8, timeout);
+    }
 
     if (error == OT_ERROR_NONE && mState == kJoinerStateWaiting)
     {
@@ -258,6 +319,17 @@ void CommissionerManager::HandleCommissionerJoinerCallback(otCommissionerJoinerE
             }
         }
     }
+    if (aJoinerInfo->mType == OT_JOINER_INFO_TYPE_DISCERNER)
+    {
+        for (JoinerEntry &listEntry : mJoiners)
+        {
+            if (listEntry.MatchesDiscerner(aJoinerInfo->mSharedId.mDiscerner))
+            {
+                entry = &listEntry;
+                break;
+            }
+        }
+    }
 #ifdef OPENTHREAD_COMMISSIONER_ALLOW_ANY_JOINER
     else if (aJoinerInfo->mType == OT_JOINER_INFO_TYPE_ANY)
     {
@@ -273,7 +345,7 @@ void CommissionerManager::HandleCommissionerJoinerCallback(otCommissionerJoinerE
 #endif
 
     VerifyOrExit(entry != nullptr);
-
+    // TODO: for discerners or wildcards, we may count the number of events
     switch (aEvent)
     {
     case OT_COMMISSIONER_JOINER_START:

@@ -99,8 +99,8 @@ public:
     static bool Validate(const cJSON &aJson);
 
 private:
-    otExtAddress mEui64;
     const char  *mPskd; ///< Pointer to pskd string in mJson
+    otJoinerInfo mJoiner;
 
     const char *mStateString;
 };

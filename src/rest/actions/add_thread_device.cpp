@@ -47,23 +47,67 @@ namespace actions {
 // AddDeviceAction class implementation
 AddThreadDevice::AddThreadDevice(const cJSON &aJson, Services &aServices)
     : BasicActions(aJson, aServices)
-    , mEui64{0}
     , mPskd{nullptr}
     , mStateString{nullptr}
 {
-    cJSON *eui  = cJSON_GetObjectItemCaseSensitive(mJson, "eui");
-    cJSON *pskd = cJSON_GetObjectItemCaseSensitive(mJson, "pskd");
+    // Guaranteed that Validate has run already
+    cJSON *value;
 
-    // Were guaranteed that Validate has run already
-    IgnoreError(str_to_m8(mEui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE));
-    mPskd = pskd->valuestring;
+    mJoiner.mType = OT_JOINER_INFO_TYPE_ANY;
+    memset(&mJoiner.mSharedId.mEui64, 0, sizeof(mJoiner.mSharedId.mEui64));
+    memset(&mJoiner.mPskd.m8, 0, sizeof(mJoiner.mPskd.m8));
 
-    if (mServices.GetCommissionerManager().AddJoiner(mEui64, static_cast<uint32_t>(mTimeout.count()), mPskd) ==
-        OT_ERROR_NONE)
+    value = cJSON_GetObjectItemCaseSensitive(mJson, "pskd");
+    strncpy(mJoiner.mPskd.m8, value->valuestring, OT_JOINER_MAX_PSKD_LENGTH);
+    mPskd = value->valuestring;
+
+    value = cJSON_GetObjectItemCaseSensitive(mJson, "joinerId");
+    if (cJSON_IsString(value))
     {
-        mStateString = aServices.GetCommissionerManager().FindJoiner(mEui64)->GetStateString();
-        mStatus      = kActionStatusActive;
+        if (strncmp(value->valuestring, "*", 1) != 0)
+        {
+            otbrError err = Json::StringDiscerner2Discerner(value->valuestring, mJoiner.mSharedId.mDiscerner);
+            if (err == OTBR_ERROR_NOT_FOUND)
+            {
+                VerifyOrExit(Json::Hex2BytesJsonString(std::string(value->valuestring), mJoiner.mSharedId.mEui64.m8,
+                                                       OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE);
+                mJoiner.mType = OT_JOINER_INFO_TYPE_EUI64;
+            }
+            else
+            {
+                VerifyOrExit(err == OTBR_ERROR_NONE);
+                mJoiner.mType = OT_JOINER_INFO_TYPE_DISCERNER;
+            }
+        }
     }
+
+    value = cJSON_GetObjectItemCaseSensitive(mJson, "discerner");
+    if (cJSON_IsString(value))
+    {
+        if (strncmp(value->valuestring, "*", 1) != 0)
+        {
+            VerifyOrExit(Json::StringDiscerner2Discerner(value->valuestring, mJoiner.mSharedId.mDiscerner) ==
+                         OTBR_ERROR_NONE);
+            mJoiner.mType = OT_JOINER_INFO_TYPE_DISCERNER;
+        }
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(mJson, "eui");
+    if (cJSON_IsString(value))
+    {
+        if (strncmp(value->valuestring, "*", 1) != 0)
+        {
+            VerifyOrExit(Json::Hex2BytesJsonString(std::string(value->valuestring), mJoiner.mSharedId.mEui64.m8,
+                                                   OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE);
+            mJoiner.mType = OT_JOINER_INFO_TYPE_EUI64;
+        }
+    }
+
+    // timeout is from the parent class
+
+exit:
+    mStatus = kActionStatusPending;
+    Update();
 }
 
 AddThreadDevice::~AddThreadDevice()
@@ -80,12 +124,13 @@ std::string AddThreadDevice::GetTypeName() const
 void AddThreadDevice::Update(void)
 {
     const CommissionerManager::JoinerEntry *joiner;
+    otError                                 error;
 
     switch (mStatus)
     {
     case kActionStatusPending:
-        if (mServices.GetCommissionerManager().AddJoiner(mEui64, static_cast<uint32_t>(mTimeout.count()), mPskd) !=
-            OT_ERROR_NONE)
+        error = mServices.GetCommissionerManager().AddJoiner(mJoiner, static_cast<uint32_t>(mTimeout.count()));
+        if (error != OT_ERROR_NONE)
         {
             break;
         }
@@ -93,7 +138,7 @@ void AddThreadDevice::Update(void)
         OT_FALL_THROUGH;
 
     case kActionStatusActive:
-        joiner = mServices.GetCommissionerManager().FindJoiner(mEui64);
+        joiner = mServices.GetCommissionerManager().FindJoiner(mJoiner);
         if (joiner == nullptr)
         {
             mStatus = kActionStatusFailed;
@@ -121,7 +166,7 @@ void AddThreadDevice::Update(void)
 
         if (!IsPendingOrActive())
         {
-            mServices.GetCommissionerManager().RemoveJoiner(mEui64);
+            mServices.GetCommissionerManager().RemoveJoiner(mJoiner);
         }
         break;
 
@@ -139,7 +184,7 @@ void AddThreadDevice::Stop(void)
         break;
 
     case kActionStatusActive:
-        mServices.GetCommissionerManager().RemoveJoiner(mEui64);
+        mServices.GetCommissionerManager().RemoveJoiner(mJoiner);
         mStatus = kActionStatusStopped;
         break;
 
@@ -151,10 +196,27 @@ void AddThreadDevice::Stop(void)
 cJSON *AddThreadDevice::Jsonify(void)
 {
     cJSON      *attributes = cJSON_CreateObject();
-    std::string eui        = Json::Bytes2HexJsonString(mEui64.m8, OT_EXT_ADDRESS_SIZE);
     const char *status     = GetStatusString();
 
-    cJSON_AddItemToObject(attributes, "eui", cJSON_Parse(eui.c_str()));
+    if (mJoiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
+    {
+        char hexValue[((OT_JOINER_MAX_DISCERNER_LENGTH / 8) * 2) + 1]                              = {0};
+        char string[sizeof("0x") + ((OT_JOINER_MAX_DISCERNER_LENGTH / 8) * 2) + sizeof("/xx") + 1] = {0};
+
+        otbr::Utils::Long2Hex(mJoiner.mSharedId.mDiscerner.mValue, hexValue);
+        snprintf(string, sizeof(string), "0x%s/%d", hexValue, mJoiner.mSharedId.mDiscerner.mLength);
+        cJSON_AddItemToObject(attributes, "discerner", cJSON_CreateString(string));
+    }
+    else if (mJoiner.mType == OT_JOINER_INFO_TYPE_EUI64)
+    {
+        std::string eui = Json::Bytes2HexJsonString(mJoiner.mSharedId.mEui64.m8, OT_EXT_ADDRESS_SIZE);
+        cJSON_AddItemToObject(attributes, "eui", cJSON_Parse(eui.c_str()));
+    }
+    else
+    {
+        cJSON_AddItemToObject(attributes, "joinerId", cJSON_CreateString("*"));
+    }
+
     cJSON_AddItemToObject(attributes, "pskd", cJSON_CreateString(mPskd));
 
     if (IsPendingOrActive())
@@ -179,16 +241,34 @@ bool AddThreadDevice::Validate(const cJSON &aJson)
     const char  *pskdStr;
     uint32_t     pskdLen;
 
-    cJSON  *eui  = cJSON_GetObjectItemCaseSensitive(&aJson, "eui");
-    cJSON  *pskd = cJSON_GetObjectItemCaseSensitive(&aJson, "pskd");
+    cJSON  *eui       = cJSON_GetObjectItemCaseSensitive(&aJson, "eui");
+    cJSON  *discerner = cJSON_GetObjectItemCaseSensitive(&aJson, "discerner");
+    cJSON  *joinerId  = cJSON_GetObjectItemCaseSensitive(&aJson, "joinerId");
+    cJSON  *pskd      = cJSON_GetObjectItemCaseSensitive(&aJson, "pskd");
     Seconds timeout;
 
     SuccessOrExit(ReadTimeout(&aJson, timeout));
 
-    VerifyOrExit(eui != nullptr, errormsg = "eui missing");
-    VerifyOrExit(cJSON_IsString(eui), errormsg = "eui not a string");
-    VerifyOrExit(strlen(eui->valuestring) == 16, errormsg = "eui length invalid");
-    SuccessOrExit(str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE), errormsg = "eui invalid");
+    VerifyOrExit(((eui != nullptr) || (discerner != nullptr) || (joinerId != nullptr)),
+                 errormsg = "No exclusive eui/discerner/joinerId");
+    if (eui != nullptr)
+    {
+        VerifyOrExit(discerner == nullptr, errormsg = "eui and discerner are exclusive");
+        VerifyOrExit(joinerId == nullptr, errormsg = "eui and joinerId are exclusive");
+        VerifyOrExit(cJSON_IsString(eui), errormsg = "eui not a string");
+        VerifyOrExit(strlen(eui->valuestring) == 16, errormsg = "eui length invalid");
+        SuccessOrExit(str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE), errormsg = "eui invalid");
+    }
+    else if (discerner != nullptr)
+    {
+        VerifyOrExit(joinerId == nullptr, errormsg = "discerner and joinerId are exclusive");
+        VerifyOrExit(cJSON_IsString(discerner), errormsg = "discerner not a string");
+    }
+    else if (joinerId != nullptr)
+    {
+        VerifyOrExit(discerner == nullptr, errormsg = "joinerId and discerner are exclusive");
+        VerifyOrExit(cJSON_IsString(joinerId), errormsg = "joinerId not a string");
+    }
 
     VerifyOrExit(pskd != nullptr, errormsg = "pskd missing");
     VerifyOrExit(cJSON_IsString(pskd), errormsg = "pskd not a string");

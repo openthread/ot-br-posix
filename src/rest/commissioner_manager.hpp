@@ -66,16 +66,20 @@ public:
         /**
          * Constructor for a JoinerEntry.
          *
-         * @param[in] aEui64   The EUI64 of the joiner.
+         * @param[in] aJoiner  The joinerInfo of the joiner.
          * @param[in] aTimeout The timeout of the joiner.
-         * @param[in] aPskd    The PSKd of the joiner.
          */
-        JoinerEntry(const otExtAddress &aEui64, uint32_t aTimeout, const char *aPskd);
+        JoinerEntry(const otJoinerInfo &aJoiner, uint32_t aTimeout);
 
         /**
          * Checks if the joiner matches the given EUI64.
          */
         bool MatchesEui64(const otExtAddress &aEui64) const;
+
+        /**
+         * Checks if the joiner matches the given Discerner.
+         */
+        bool MatchesDiscerner(const otJoinerDiscerner &aDiscerner) const;
 
         /**
          * Checks if the joiner is joined.
@@ -116,9 +120,8 @@ public:
          */
         otError Register(otInstance *aInstance);
 
-        otExtAddress mEui64;
+        otJoinerInfo mJoiner; // Duplicated here to enable reading the joiner after loosing the commissioner
         JoinerState  mState;
-        otJoinerPskd mPskd;    // Duplicated here to enable readding the joiner after lossing the commissioner
         Timepoint    mTimeout; // Duplicated here to enable readding the joiner after lossing the commissioner
     };
 
@@ -142,22 +145,21 @@ public:
     /**
      * Adds a joiner.
      *
-     * @param[in] aEui64   The EUI64 of the joiner.
+     * @param[in] aJoiner  The joinerInfo of the joiner.
      * @param[in] aTimeout The timeout of the joiner.
-     * @param[in] aPskd    The PSKd of the joiner.
      *
      * @retval OT_ERROR_NONE          Successfully added.
      * @retval OT_ERROR_ALREADY       The joiner is already added.
      * @retval OT_ERROR_INVALID_ARGS  The joiner is invalid.
      */
-    otError AddJoiner(const otExtAddress &aEui64, uint32_t aTimeout, const char *aPskd);
+    otError AddJoiner(const otJoinerInfo &aJoiner, uint32_t aTimeout);
 
     /**
      * Removes a joiner.
      *
      * @param[in] aEui64 The EUI64 of the joiner.
      */
-    void RemoveJoiner(const otExtAddress &aEui64);
+    void RemoveJoiner(const otJoinerInfo &aJoiner);
 
     /**
      * Removes all joiners.
@@ -172,6 +174,7 @@ public:
      * @returns The joiner entry if found, nullptr otherwise.
      */
     const JoinerEntry *FindJoiner(const otExtAddress &aEui64);
+    const JoinerEntry *FindJoiner(const otJoinerInfo &aJoiner);
 
     /**
      * Processes the commissioner manager.
