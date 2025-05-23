@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <openthread/backbone_router_ftd.h>
+#include <openthread/border_agent.h>
 #include <openthread/border_routing.h>
 #include <openthread/dataset.h>
 #include <openthread/dnssd_server.h>
@@ -109,6 +110,11 @@ void OtNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatas
         aDatasetTlvs.mLength = 0;
         memset(aDatasetTlvs.mTlvs, 0, sizeof(aDatasetTlvs.mTlvs));
     }
+}
+
+const otMeshLocalPrefix *OtNetworkProperties::GetMeshLocalPrefix(void) const
+{
+    return otThreadGetMeshLocalPrefix(mInstance);
 }
 
 void OtNetworkProperties::SetInstance(otInstance *aInstance)
@@ -256,6 +262,7 @@ void RcpHost::Init(void)
     "OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE and OTBR_ENABLE_SRP_SERVER_ON_INIT shouldn't be enabled at the same time"
 #endif
 
+#if OTBR_ENABLE_SRP_SERVER
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
     // Let SRP server use auto-enable mode. The auto-enable mode delegates the control of SRP server to the Border
     // Routing Manager. SRP server automatically starts when bi-directional connectivity is ready.
@@ -264,6 +271,7 @@ void RcpHost::Init(void)
 
 #if OTBR_ENABLE_SRP_SERVER_ON_INIT
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
+#endif
 #endif
 
 #if !OTBR_ENABLE_FEATURE_FLAGS
@@ -278,6 +286,9 @@ void RcpHost::Init(void)
     otBorderRoutingDhcp6PdSetEnabled(mInstance, /* aEnabled */ true);
 #endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
+
+    otBorderAgentSetMeshCoPServiceChangedCallback(mInstance, RcpHost::HandleMeshCoPServiceChanged, this);
+    otBorderAgentEphemeralKeySetCallback(mInstance, RcpHost::HandleEpskcStateChanged, this);
 
     mThreadHelper = MakeUnique<otbr::agent::ThreadHelper>(mInstance, this);
 
@@ -340,6 +351,8 @@ void RcpHost::Deinit(void)
     mSetThreadEnabledReceiver  = nullptr;
     mScheduleMigrationReceiver = nullptr;
     mDetachGracefullyCallbacks.clear();
+    mBorderAgentMeshCoPServiceChangedCallback = nullptr;
+    mEphemeralKeyStateChangedCallbacks.clear();
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -409,6 +422,26 @@ void RcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aC
 {
     mThreadEnabledStateChangedCallbacks.push_back(aCallback);
 }
+
+#if OTBR_ENABLE_BACKBONE_ROUTER
+void RcpHost::SetBackboneRouterEnabled(bool aEnabled)
+{
+    // TODO: Implement this in RCP mode.
+    OTBR_UNUSED_VARIABLE(aEnabled);
+}
+
+void RcpHost::SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback)
+{
+    // TODO: Implement this in RCP mode.
+    OTBR_UNUSED_VARIABLE(aCallback);
+}
+
+void RcpHost::SetBackboneRouterStateChangedCallback(BackboneRouterStateChangedCallback aCallback)
+{
+    // TODO: Implement this in RCP mode.
+    OTBR_UNUSED_VARIABLE(aCallback);
+}
+#endif
 
 void RcpHost::Reset(void)
 {
@@ -785,6 +818,77 @@ void RcpHost::UpdateThreadEnabledState(ThreadEnabledState aState)
     {
         callback(mThreadEnabledState);
     }
+}
+
+void RcpHost::HandleMeshCoPServiceChanged(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->HandleMeshCoPServiceChanged();
+}
+
+void RcpHost::HandleMeshCoPServiceChanged(void)
+{
+    otBorderAgentMeshCoPServiceTxtData txtData;
+
+    VerifyOrExit(mBorderAgentMeshCoPServiceChangedCallback != nullptr);
+
+    if (otBorderAgentGetMeshCoPServiceTxtData(mInstance, &txtData) != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to read MeshCoP Service TXT Data");
+    }
+    else
+    {
+        mBorderAgentMeshCoPServiceChangedCallback(otBorderAgentIsActive(mInstance), otBorderAgentGetUdpPort(mInstance),
+                                                  txtData.mData, txtData.mLength);
+    }
+
+exit:
+    return;
+}
+
+void RcpHost::SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback)
+{
+    mBorderAgentMeshCoPServiceChangedCallback = std::move(aCallback);
+}
+
+void RcpHost::HandleEpskcStateChanged(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->HandleEpskcStateChanged();
+}
+
+void RcpHost::HandleEpskcStateChanged(void)
+{
+    otBorderAgentEphemeralKeyState epskcState = otBorderAgentEphemeralKeyGetState(mInstance);
+    uint16_t                       port       = otBorderAgentEphemeralKeyGetUdpPort(mInstance);
+
+    for (auto callback : mEphemeralKeyStateChangedCallbacks)
+    {
+        callback(epskcState, port);
+    }
+}
+
+otbrError RcpHost::UdpForward(const uint8_t      *aUdpPayload,
+                              uint16_t            aLength,
+                              const otIp6Address &aRemoteAddr,
+                              uint16_t            aRemotePort,
+                              const UdpProxy     &aUdpProxy)
+{
+    OTBR_UNUSED_VARIABLE(aUdpPayload);
+    OTBR_UNUSED_VARIABLE(aLength);
+    OTBR_UNUSED_VARIABLE(aRemoteAddr);
+    OTBR_UNUSED_VARIABLE(aRemotePort);
+    OTBR_UNUSED_VARIABLE(aUdpProxy);
+
+    return OTBR_ERROR_NOT_IMPLEMENTED;
+}
+
+void RcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback)
+{
+    mEphemeralKeyStateChangedCallbacks.push_back(aCallback);
+}
+
+void RcpHost::SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback)
+{
+    OTBR_UNUSED_VARIABLE(aCallback);
 }
 
 /*

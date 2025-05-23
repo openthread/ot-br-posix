@@ -143,7 +143,7 @@ exit:
     return;
 }
 
-void InfraIf::UpdateFdSet(MainloopContext &aContext)
+void InfraIf::Update(MainloopContext &aContext)
 {
     VerifyOrExit(mInfraIfIcmp6Socket != -1);
 #ifdef __linux__
@@ -161,23 +161,23 @@ exit:
     return;
 }
 
-otbrError InfraIf::SetInfraIf(const char *aIfName)
+otbrError InfraIf::SetInfraIf(std::string aInfraIfName)
 {
     otbrError               error = OTBR_ERROR_NONE;
     std::vector<Ip6Address> addresses;
 
-    VerifyOrExit(aIfName != nullptr && strlen(aIfName) > 0, error = OTBR_ERROR_INVALID_ARGS);
-    VerifyOrExit(strnlen(aIfName, IFNAMSIZ) < IFNAMSIZ, error = OTBR_ERROR_INVALID_ARGS);
-    strcpy(mInfraIfName, aIfName);
+    VerifyOrExit(!aInfraIfName.empty(), error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aInfraIfName.size() < IFNAMSIZ, error = OTBR_ERROR_INVALID_ARGS);
+    mInfraIfName = std::move(aInfraIfName);
 
-    mInfraIfIndex = if_nametoindex(aIfName);
+    mInfraIfIndex = if_nametoindex(mInfraIfName.c_str());
     VerifyOrExit(mInfraIfIndex != 0, error = OTBR_ERROR_INVALID_STATE);
 
     if (mInfraIfIcmp6Socket != -1)
     {
         close(mInfraIfIcmp6Socket);
     }
-    mInfraIfIcmp6Socket = CreateIcmp6Socket(aIfName);
+    mInfraIfIcmp6Socket = CreateIcmp6Socket(mInfraIfName.c_str());
     VerifyOrDie(mInfraIfIcmp6Socket != -1, "Failed to create Icmp6 socket!");
 
     addresses = GetAddresses();
@@ -331,11 +331,11 @@ short InfraIf::GetFlags(void) const
     VerifyOrDie(sock != -1, otbrErrorString(OTBR_ERROR_ERRNO));
 
     memset(&ifReq, 0, sizeof(ifReq));
-    strcpy(ifReq.ifr_name, mInfraIfName);
+    strcpy(ifReq.ifr_name, mInfraIfName.c_str());
 
     if (ioctl(sock, SIOCGIFFLAGS, &ifReq) == -1)
     {
-        otbrLogCrit("The infra link %s may be lost. Exiting.", mInfraIfName);
+        otbrLogCrit("The infra link %s may be lost. Exiting.", mInfraIfName.c_str());
         DieNow(otbrErrorString(OTBR_ERROR_ERRNO));
     }
 
@@ -359,8 +359,7 @@ std::vector<Ip6Address> InfraIf::GetAddresses(void)
     {
         struct sockaddr_in6 *ip6Addr;
 
-        if (strncmp(addr->ifa_name, mInfraIfName, sizeof(mInfraIfName)) != 0 || addr->ifa_addr == nullptr ||
-            addr->ifa_addr->sa_family != AF_INET6)
+        if (mInfraIfName != addr->ifa_name || addr->ifa_addr == nullptr || addr->ifa_addr->sa_family != AF_INET6)
         {
             continue;
         }

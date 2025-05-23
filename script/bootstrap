@@ -33,8 +33,6 @@
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
-NAT64_SERVICE="${NAT64_SERVICE:-openthread}"
-
 FIREWALL="${FIREWALL:-1}"
 
 OTBR_MDNS="${OTBR_MDNS:-mDNSResponder}"
@@ -72,40 +70,21 @@ install_packages_apt()
         sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
     fi
 
-    (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-1790.80.10 \
-        && MDNS_RESPONDER_PATCH_PATH=$(realpath "$(dirname "$0")"/../third_party/mDNSResponder) \
+    (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \
         && cd /tmp \
         && wget --no-check-certificate https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
         && mkdir -p $MDNS_RESPONDER_SOURCE_NAME \
         && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz -C $MDNS_RESPONDER_SOURCE_NAME --strip-components=1 \
         && cd /tmp/"$MDNS_RESPONDER_SOURCE_NAME" \
-        && (
-            for patch in "$MDNS_RESPONDER_PATCH_PATH"/*.patch; do
-                patch -p1 <"$patch"
-            done
-        ) \
         && cd mDNSPosix \
         && make os=linux tls=no && sudo make install os=linux tls=no)
 
     # nat64
     without NAT64 || {
-        [ "$NAT64_SERVICE" != "tayga" ] || sudo apt-get install --no-install-recommends -y tayga
         sudo apt-get install --no-install-recommends -y iptables
     }
 
-    # dns64
-    without DNS64 || {
-        if [ "$PLATFORM" = "beagleboneblack" ]; then
-            # dnsmasq needs to be stopped before bind9 is installed
-            sudo systemctl disable dnsmasq
-            sudo systemctl stop dnsmasq
-        fi
-        sudo apt-get install --no-install-recommends -y bind9
-        # Resolvconf cannot be installed inside docker environment
-        if without DOCKER; then
-            sudo apt-get install --no-install-recommends -y resolvconf
-        fi
-    }
+    sudo apt-get install --no-install-recommends -y bind9
 
     # dhcpv6-pd
     without DHCPV6_PD_REF || {
@@ -121,9 +100,6 @@ EOF
         sudo apt-get install --no-install-recommends -y radvd
     }
 
-    # network-manager
-    without NETWORK_MANAGER || sudo apt-get install --no-install-recommends -y dnsmasq network-manager
-
     # dhcpcd5
     without DHCPV6_PD || sudo apt-get install --no-install-recommends -y dhcpcd5
 
@@ -131,7 +107,7 @@ EOF
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 
     # reference device
-    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils avahi-utils iperf3
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils avahi-utils iperf3 ndisc6
 
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y libnetfilter-queue1 libnetfilter-queue-dev
@@ -162,7 +138,6 @@ install_packages_rpm()
     with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
-    [ "$NAT64_SERVICE" != "tayga" ] || sudo $PM install -y tayga
     sudo $PM install -y iptables
     sudo $PM install -y jsoncpp-devel
     sudo $PM install -y wget

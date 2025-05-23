@@ -41,12 +41,13 @@
 
 #include <openthread/ip6.h>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
 
-class Netif
+class Netif : public MainloopProcessor, private NonCopyable
 {
 public:
     class Dependencies
@@ -58,18 +59,18 @@ public:
         virtual otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded);
     };
 
-    Netif(Dependencies &aDependencies);
+    Netif(const std::string &aInterfaceName, Dependencies &aDependencies);
 
-    otbrError Init(const std::string &aInterfaceName);
+    otbrError Init(void);
     void      Deinit(void);
 
-    void      Process(const MainloopContext *aContext);
-    void      UpdateFdSet(MainloopContext *aContext);
     void      UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos);
     otbrError UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
     void      SetNetifState(bool aState);
 
     void Ip6Receive(const uint8_t *aBuf, uint16_t aLen);
+
+    unsigned int GetIfIndex(void) const { return mNetifIndex; }
 
 private:
     // TODO: Retrieve the Maximum Ip6 size from the coprocessor.
@@ -87,6 +88,9 @@ private:
     otbrError ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded);
     void      ProcessIp6Send(void);
     void      ProcessMldEvent(void);
+
+    void Update(MainloopContext &aContext) override;
+    void Process(const MainloopContext &aContext) override;
 
     int      mTunFd;           ///< Used to exchange IPv6 packets.
     int      mIpFd;            ///< Used to manage IPv6 stack on the network interface.

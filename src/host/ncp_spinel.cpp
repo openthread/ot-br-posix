@@ -34,6 +34,7 @@
 
 #include <algorithm>
 
+#include <openthread/backbone_router_ftd.h>
 #include <openthread/dataset.h>
 #include <openthread/thread.h>
 #include <openthread/platform/dnssd.h>
@@ -84,6 +85,7 @@ void NcpSpinel::Deinit(void)
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mPublisher = nullptr;
 #endif
+    mUdpForwardSendCallback = nullptr;
 }
 
 otbrError NcpSpinel::SpinelDataUnpack(const uint8_t *aDataIn, spinel_size_t aDataLen, const char *aPackFormat, ...)
@@ -168,6 +170,17 @@ otbrError NcpSpinel::Ip6Send(const uint8_t *aData, uint16_t aLength)
     };
 
     SuccessOrExit(SetProperty(SPINEL_PROP_STREAM_NET, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    return error;
+}
+
+otbrError NcpSpinel::InputCommandLine(const char *aLine)
+{
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [aLine](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteUtf8(aLine); };
+
+    SuccessOrExit(SetProperty(SPINEL_PROP_STREAM_CLI, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
 
 exit:
     return error;
@@ -271,6 +284,14 @@ void NcpSpinel::DnssdSetState(Mdns::Publisher::State aState)
 }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
+void NcpSpinel::SetBorderAgentMeshCoPServiceChangedCallback(const BorderAgentMeshCoPServiceChangedCallback &aCallback)
+{
+    mBorderAgentMeshCoPServiceChangedCallback = aCallback;
+
+    // Get the MeshCoP service state to have an initial value.
+    SuccessOrDie(GetProperty(SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE), "Failed to get MeshCoP Service State");
+}
+
 void NcpSpinel::HandleReceivedFrame(const uint8_t *aFrame,
                                     uint16_t       aLength,
                                     uint8_t        aHeader,
@@ -351,6 +372,11 @@ void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_
 
     switch (mCmdTable[aTid])
     {
+    case SPINEL_CMD_PROP_VALUE_GET:
+    {
+        error = HandleResponseForPropGet(aTid, key, data, len);
+        break;
+    }
     case SPINEL_CMD_PROP_VALUE_SET:
     {
         error = HandleResponseForPropSet(aTid, key, data, len);
@@ -471,6 +497,19 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
     case SPINEL_PROP_IPV6_LL_ADDR:
         break;
 
+    case SPINEL_PROP_IPV6_ML_ADDR:
+    {
+        const otIp6Address *addr;
+        ot::Spinel::Decoder decoder;
+        otIp6NetworkPrefix  meshLocalPrefix;
+
+        decoder.Init(aBuffer, aLength);
+        SuccessOrExit(decoder.ReadIp6Address(addr), error = OTBR_ERROR_PARSE);
+        memcpy(meshLocalPrefix.m8, addr->mFields.m8, sizeof(meshLocalPrefix.m8));
+        mPropsObserver->SetMeshLocalPrefix(meshLocalPrefix);
+        break;
+    }
+
     case SPINEL_PROP_STREAM_NET:
     {
         const uint8_t *data;
@@ -478,6 +517,15 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
 
         SuccessOrExit(ParseIp6StreamNet(aBuffer, aLength, data, dataLen), error = OTBR_ERROR_PARSE);
         SafeInvoke(mIp6ReceiveCallback, data, dataLen);
+        break;
+    }
+
+    case SPINEL_PROP_STREAM_CLI:
+    {
+        const char *output;
+
+        SuccessOrExit(ParseStreamCliOutput(aBuffer, aLength, output), error = OTBR_ERROR_PARSE);
+        SafeInvoke(mCliDaemonOutputCallback, output);
         break;
     }
 
@@ -491,6 +539,46 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         SuccessOrExit(ParseInfraIfIcmp6Nd(aBuffer, aLength, infraIfIndex, destAddress, data, dataLen),
                       error = OTBR_ERROR_PARSE);
         SafeInvoke(mInfraIfIcmp6NdCallback, infraIfIndex, *destAddress, data, dataLen);
+        break;
+    }
+
+    case SPINEL_PROP_BACKBONE_ROUTER_STATE:
+    {
+        uint8_t backboneRouterState;
+
+        SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_UINT8_S, &backboneRouterState));
+        SafeInvoke(mBackboneRouterStateChangedCallback, static_cast<otBackboneRouterState>(backboneRouterState));
+        break;
+    }
+
+    case SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE:
+    {
+        bool                isActive;
+        uint16_t            port;
+        const uint8_t      *data;
+        uint16_t            dataLen;
+        ot::Spinel::Decoder decoder;
+
+        decoder.Init(aBuffer, aLength);
+        SuccessOrExit(decoder.ReadBool(isActive), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadData(data, dataLen), error = OTBR_ERROR_PARSE);
+        SafeInvoke(mBorderAgentMeshCoPServiceChangedCallback, isActive, port, data, dataLen);
+        break;
+    }
+
+    case SPINEL_PROP_THREAD_UDP_FORWARD_STREAM:
+    {
+        const uint8_t      *udpPayload;
+        uint16_t            length;
+        const otIp6Address *peerAddress;
+        uint16_t            peerPort;
+        uint16_t            localPort;
+
+        SuccessOrExit(ParseUdpForwardStream(aBuffer, aLength, udpPayload, length, peerAddress, peerPort, localPort),
+                      error = OTBR_ERROR_PARSE);
+        SafeInvoke(mUdpForwardSendCallback, udpPayload, length, *peerAddress, peerPort);
+
         break;
     }
 
@@ -598,6 +686,15 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         break;
     }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    case SPINEL_PROP_BACKBONE_ROUTER_MULTICAST_LISTENER:
+    {
+        const otIp6Address *addr;
+
+        VerifyOrExit(decoder.ReadIp6Address(addr) == OT_ERROR_NONE, error = OTBR_ERROR_PARSE);
+        SafeInvoke(mBackboneRouterMulticastListenerCallback, OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED,
+                   Ip6Address(*addr));
+        break;
+    }
     default:
         error = OTBR_ERROR_DROPPED;
         break;
@@ -672,6 +769,15 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         break;
     }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    case SPINEL_PROP_BACKBONE_ROUTER_MULTICAST_LISTENER:
+    {
+        const otIp6Address *addr;
+
+        VerifyOrExit(decoder.ReadIp6Address(addr) == OT_ERROR_NONE, error = OTBR_ERROR_PARSE);
+        SafeInvoke(mBackboneRouterMulticastListenerCallback, OT_BACKBONE_ROUTER_MULTICAST_LISTENER_REMOVED,
+                   Ip6Address(*addr));
+        break;
+    }
     default:
         error = OTBR_ERROR_DROPPED;
         break;
@@ -680,6 +786,41 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
 exit:
     otbrLogResult(error, "HandleValueRemoved, key:%u", aKey);
     return;
+}
+
+otbrError NcpSpinel::HandleResponseForPropGet(spinel_tid_t      aTid,
+                                              spinel_prop_key_t aKey,
+                                              const uint8_t    *aData,
+                                              uint16_t          aLength)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    switch (mWaitingKeyTable[aTid])
+    {
+    case SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE:
+    {
+        bool                isActive;
+        uint16_t            port;
+        const uint8_t      *data;
+        uint16_t            dataLen;
+        ot::Spinel::Decoder decoder;
+
+        decoder.Init(aData, aLength);
+        SuccessOrExit(decoder.ReadBool(isActive), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadData(data, dataLen), error = OTBR_ERROR_PARSE);
+
+        SafeInvoke(mBorderAgentMeshCoPServiceChangedCallback, isActive, port, data, dataLen);
+        break;
+    }
+
+    default:
+        VerifyOrExit(aKey == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
+        break;
+    }
+
+exit:
+    return error;
 }
 
 otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
@@ -734,6 +875,9 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
         break;
 
     case SPINEL_PROP_STREAM_NET:
+        break;
+
+    case SPINEL_PROP_STREAM_CLI:
         break;
 
     case SPINEL_PROP_INFRA_IF_STATE:
@@ -905,6 +1049,14 @@ exit:
     return error;
 }
 
+otError NcpSpinel::GetProperty(spinel_prop_key_t aKey)
+{
+    return SendCommand(SPINEL_CMD_PROP_VALUE_GET, aKey, [](ot::Spinel::Encoder &aEncoder) {
+        OTBR_UNUSED_VARIABLE(aEncoder);
+        return OT_ERROR_NONE;
+    });
+}
+
 otError NcpSpinel::SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
 {
     return SendCommand(SPINEL_CMD_PROP_VALUE_SET, aKey, aEncodingFunc);
@@ -1009,6 +1161,20 @@ exit:
     return error;
 }
 
+otError NcpSpinel::ParseStreamCliOutput(const uint8_t *aBuf, uint16_t aLen, const char *&aOutput)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuf != nullptr, error = OT_ERROR_INVALID_ARGS);
+
+    decoder.Init(aBuf, aLen);
+    error = decoder.ReadUtf8(aOutput);
+
+exit:
+    return error;
+}
+
 otError NcpSpinel::ParseOperationalDatasetTlvs(const uint8_t            *aBuf,
                                                uint16_t                  aLen,
                                                otOperationalDatasetTlvs &aDatasetTlvs)
@@ -1045,6 +1211,28 @@ otError NcpSpinel::ParseInfraIfIcmp6Nd(const uint8_t       *aBuf,
     SuccessOrExit(error = decoder.ReadUint32(aInfraIfIndex));
     SuccessOrExit(error = decoder.ReadIp6Address(aAddr));
     SuccessOrExit(error = decoder.ReadDataWithLen(aData, aDataLen));
+
+exit:
+    return error;
+}
+
+otError NcpSpinel::ParseUdpForwardStream(const uint8_t       *aBuf,
+                                         uint16_t             aLen,
+                                         const uint8_t      *&aUdpPayload,
+                                         uint16_t            &aUdpPayloadLen,
+                                         const otIp6Address *&aPeerAddr,
+                                         uint16_t            &aPeerPort,
+                                         uint16_t            &aLocalPort)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuf != nullptr, error = OT_ERROR_INVALID_ARGS);
+    decoder.Init(aBuf, aLen);
+    SuccessOrExit(error = decoder.ReadDataWithLen(aUdpPayload, aUdpPayloadLen));
+    SuccessOrExit(error = decoder.ReadUint16(aPeerPort));
+    SuccessOrExit(error = decoder.ReadIp6Address(aPeerAddr));
+    SuccessOrExit(error = decoder.ReadUint16(aLocalPort));
 
 exit:
     return error;
@@ -1120,6 +1308,48 @@ exit:
         otbrLogWarning("Failed to passthrough ICMP6 ND to NCP, %s", otbrErrorString(error));
     }
     return error;
+}
+
+otbrError NcpSpinel::UdpForward(const uint8_t      *aUdpPayload,
+                                uint16_t            aLength,
+                                const otIp6Address &aRemoteAddr,
+                                uint16_t            aRemotePort,
+                                uint16_t            aLocalPort)
+{
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [aUdpPayload, aLength, &aRemoteAddr, aRemotePort,
+                                 aLocalPort](ot::Spinel::Encoder &aEncoder) {
+        otError error = OT_ERROR_NONE;
+
+        SuccessOrExit(error = aEncoder.WriteDataWithLen(aUdpPayload, aLength));
+        SuccessOrExit(error = aEncoder.WriteUint16(aRemotePort));
+        SuccessOrExit(error = aEncoder.WriteIp6Address(aRemoteAddr));
+        SuccessOrExit(error = aEncoder.WriteUint16(aLocalPort));
+
+    exit:
+        return error;
+    };
+
+    SuccessOrExit(SetProperty(SPINEL_PROP_THREAD_UDP_FORWARD_STREAM, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to do UDP forwarding to NCP, %s", otbrErrorString(error));
+    }
+    return error;
+}
+
+void NcpSpinel::SetBackboneRouterEnabled(bool aEnabled)
+{
+    otError      error;
+    EncodingFunc encodingFunc = [aEnabled](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnabled); };
+
+    error = SetProperty(SPINEL_PROP_BACKBONE_ROUTER_ENABLE, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to call BackboneRouterSetEnabled, %s", otThreadErrorToString(error));
+    }
 }
 
 otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)

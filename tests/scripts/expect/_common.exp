@@ -84,6 +84,20 @@ proc spawn_node {id type sim_app} {
                 timeout { fail "Timed out" }
             }
         }
+        commissioner {
+            spawn $sim_app
+            expect ">"
+        }
+        ctl {
+            spawn $sim_app
+            send "factoryreset\n"
+            wait_for "state" "disabled"
+            expect "Done"
+
+            expect_after {
+                timeout { fail "Timed out" }
+            }
+        }
         otbr-docker {
             spawn docker exec -it $sim_app bash
             expect "app#"
@@ -175,4 +189,11 @@ proc get_omr_addr {} {
     send "ipaddr -v\r\n"
     expect -re {(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}(?= origin:slaac)}
     return $expect_out(0,string)
+}
+
+proc check_string_contains {haystack needle} {
+    if {![regexp $needle $haystack]} {
+        puts "Error: '$needle' not found."
+        exit 1
+    }
 }

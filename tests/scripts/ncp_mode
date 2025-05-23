@@ -61,6 +61,9 @@ readonly ABS_TOP_OT_SRCDIR
 ABS_TOP_OT_BUILDDIR="${ABS_TOP_BUILDDIR}/../simulation"
 readonly ABS_TOP_BUILDDIR
 
+OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
+readonly OT_CTL
+
 OTBR_COLOR_PASS='\033[0;32m'
 readonly OTBR_COLOR_PASS
 
@@ -118,6 +121,10 @@ readonly OTBR_DBUS_CONF
 OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_AGENT_PATH
 
+# External commissioner
+OT_COMMISSIONER_PATH=${ABS_TOP_OT_BUILDDIR}/ot-commissioner/build/src/app/cli/commissioner-cli
+readonly OT_COMMISSIONER_PATH
+
 # The node ids
 LEADER_NODE_ID=1
 readonly LEADER_NODE_ID
@@ -137,11 +144,30 @@ do_build_ot_simulation()
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF \
         -DOT_BORDER_ROUTING=ON -DOT_NCP_INFRA_IF=ON -DOT_SIMULATION_INFRA_IF=OFF \
         -DOT_SRP_SERVER=ON -DOT_SRP_ADV_PROXY=ON -DOT_PLATFORM_DNSSD=ON -DOT_SIMULATION_DNSSD=OFF -DOT_NCP_DNSSD=ON \
+        -DOT_BORDER_AGENT=ON -DOT_BORDER_AGENT_MESHCOP_SERVICE=OFF \
+        -DOT_NCP_CLI_STREAM=ON -DOT_BACKBONE_ROUTER=ON -DOT_BACKBONE_ROUTER_MULTICAST_ROUTING=ON \
         -DBUILD_TESTING=OFF
     OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation \
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF \
-        -DOT_BORDER_ROUTING=OFF \
+        -DOT_BORDER_ROUTING=OFF -DOT_MLR=ON \
         -DBUILD_TESTING=OFF
+}
+
+do_build_ot_commissioner()
+{
+    if [[ -x ${OT_COMMISSIONER_PATH} ]]; then
+        return 0
+    fi
+
+    (mkdir -p "${ABS_TOP_OT_BUILDDIR}/ot-commissioner" \
+        && cd "${ABS_TOP_OT_BUILDDIR}/ot-commissioner" \
+        && (git --git-dir=.git rev-parse --is-inside-work-tree || git --git-dir=.git init .) \
+        && git fetch --depth 1 https://github.com/openthread/ot-commissioner.git main \
+        && git checkout FETCH_HEAD \
+        && ./script/bootstrap.sh \
+        && mkdir build && cd build \
+        && cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release .. \
+        && ninja)
 }
 
 do_build_otbr_docker()
@@ -154,12 +180,12 @@ do_build_otbr_docker()
         "-DOTBR_TREL=ON"
         "-DOTBR_LINK_METRICS_TELEMETRY=ON"
         "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+        "-DOTBR_BORDER_AGENT=ON"
+        "-DOTBR_BACKBONE_ROUTER=ON"
     )
     sudo docker build -t "${OTBR_DOCKER_IMAGE}" \
-        -f ./etc/docker/Dockerfile . \
+        -f ./etc/docker/test/Dockerfile . \
         --build-arg NAT64=0 \
-        --build-arg NAT64_SERVICE=0 \
-        --build-arg DNS64=0 \
         --build-arg WEB_GUI=0 \
         --build-arg REST_API=0 \
         --build-arg FIREWALL=0 \
@@ -176,11 +202,14 @@ setup_infraif()
     fi
     sudo sysctl -w net.ipv6.conf.backbone1.accept_ra=2
     sudo sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
+    # Delete the 9101::1/ address to ensure ping through backbone1 use an on-link address.
+    sudo ip addr del 9101::1/64 dev backbone1
 }
 
 test_setup()
 {
     executable_or_die "${OTBR_AGENT_PATH}"
+    executable_or_die "${OT_CTL}"
 
     # Remove flashes
     sudo rm -vrf "${TEST_BASE}/tmp"
@@ -193,6 +222,7 @@ test_setup()
     executable_or_die "${ot_ncp}"
 
     export EXP_OTBR_AGENT_PATH="${OTBR_AGENT_PATH}"
+    export EXP_OT_CTL_PATH="${OT_CTL}"
     export EXP_OT_CLI_PATH="${ot_cli}"
     export EXP_OT_NCP_PATH="${ot_ncp}"
 
@@ -224,6 +254,7 @@ test_teardown()
     write_syslog "EXIT ${EXIT_CODE} - output logs"
 
     sudo pkill -f "${OTBR_AGENT}" || true
+    sudo pkill -f "${OT_CTL}" || true
     sudo pkill -f "${OT_CLI}" || true
     sudo pkill -f "${OT_NCP}" || true
     wait
@@ -236,6 +267,13 @@ test_teardown()
     exit_message="Test teardown"
     echo "EXIT ${EXIT_CODE}: MESSAGE: ${exit_message}"
     exit ${EXIT_CODE}
+}
+
+restart_avahi_daemon()
+{
+    # Restart the avahi-daemon on the host to remove stale records from previous test runs.
+    sudo service avahi-daemon restart
+    sleep 1
 }
 
 otbr_exec_expect_script()
@@ -252,6 +290,7 @@ otbr_exec_expect_script()
         sudo killall ot-ncp-mtd || true
         sudo rm -rf tmp
         mkdir tmp
+        restart_avahi_daemon
         {
             sudo -E expect -df "${script}" 2>"${log_file}"
         } || {
@@ -306,6 +345,7 @@ main()
     export EXP_TUN_NAME="${TUN_NAME}"
     export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
     export EXP_OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE}"
+    export EXP_OT_COMMISSIONER_PATH="${OT_COMMISSIONER_PATH}"
 
     while [[ $# != 0 ]]; do
         case "$1" in
@@ -314,6 +354,9 @@ main()
                 ;;
             build_otbr_docker)
                 do_build_otbr_docker
+                ;;
+            build_ot_commissioner)
+                do_build_ot_commissioner
                 ;;
             expect)
                 shift

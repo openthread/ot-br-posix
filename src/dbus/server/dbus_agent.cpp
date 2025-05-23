@@ -46,14 +46,13 @@ namespace DBus {
 const struct timeval           DBusAgent::kPollTimeout = {0, 0};
 constexpr std::chrono::seconds DBusAgent::kDBusWaitAllowance;
 
-DBusAgent::DBusAgent(otbr::Host::ThreadHost &aHost, Mdns::Publisher &aPublisher)
-    : mInterfaceName(aHost.GetInterfaceName())
-    , mHost(aHost)
-    , mPublisher(aPublisher)
+DBusAgent::DBusAgent(const DependentComponents &aDeps)
+    : mInterfaceName(aDeps.mHost.GetInterfaceName())
+    , mDeps(aDeps)
 {
 }
 
-void DBusAgent::Init(otbr::BorderAgent &aBorderAgent)
+void DBusAgent::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -67,16 +66,14 @@ void DBusAgent::Init(otbr::BorderAgent &aBorderAgent)
 
     VerifyOrDie(mConnection != nullptr, "Failed to get DBus connection");
 
-    switch (mHost.GetCoprocessorType())
+    switch (mDeps.mHost.GetCoprocessorType())
     {
     case OT_COPROCESSOR_RCP:
-        mThreadObject = MakeUnique<DBusThreadObjectRcp>(*mConnection, mInterfaceName,
-                                                        static_cast<Host::RcpHost &>(mHost), &mPublisher, aBorderAgent);
+        mThreadObject = MakeUnique<DBusThreadObjectRcp>(*mConnection, mInterfaceName, mDeps);
         break;
 
     case OT_COPROCESSOR_NCP:
-        mThreadObject =
-            MakeUnique<DBusThreadObjectNcp>(*mConnection, mInterfaceName, static_cast<Host::NcpHost &>(mHost));
+        mThreadObject = MakeUnique<DBusThreadObjectNcp>(*mConnection, mInterfaceName, mDeps);
         break;
 
     default:

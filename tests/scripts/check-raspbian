@@ -65,7 +65,7 @@ pip3 install scikit-build
 pip3 install cmake==3.10.3
 cmake --version
 
-su -c 'RELEASE=1 NETWORK_MANAGER=0 script/setup' pi
+su -c 'RELEASE=1 script/setup' pi
 EOF
 
     (

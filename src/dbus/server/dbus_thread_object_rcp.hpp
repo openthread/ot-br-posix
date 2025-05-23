@@ -65,15 +65,11 @@ public:
      *
      * @param[in] aConnection     The dbus connection.
      * @param[in] aInterfaceName  The dbus interface name.
-     * @param[in] aHost           The Thread controller
-     * @param[in] aPublisher      The Mdns::Publisher
-     * @param[in] aBorderAgent    The Border Agent
+     * @param[in] aDeps           The dependent components.
      */
-    DBusThreadObjectRcp(DBusConnection      &aConnection,
-                        const std::string   &aInterfaceName,
-                        otbr::Host::RcpHost &aHost,
-                        Mdns::Publisher     *aPublisher,
-                        otbr::BorderAgent   &aBorderAgent);
+    DBusThreadObjectRcp(DBusConnection            &aConnection,
+                        const std::string         &aInterfaceName,
+                        const DependentComponents &aDeps);
 
     otbrError Init(void) override;
 
@@ -102,14 +98,18 @@ private:
     void RemoveOnMeshPrefixHandler(DBusRequest &aRequest);
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
+#if OTBR_ENABLE_BORDER_AGENT
     void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
+#endif
     void SetThreadEnabledHandler(DBusRequest &aRequest);
     void JoinHandler(DBusRequest &aRequest);
     void GetPropertiesHandler(DBusRequest &aRequest);
     void LeaveNetworkHandler(DBusRequest &aRequest);
     void SetNat64Enabled(DBusRequest &aRequest);
+#if OTBR_ENABLE_BORDER_AGENT
     void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
     void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
+#endif
 
     void IntrospectHandler(DBusRequest &aRequest);
 
@@ -121,7 +121,9 @@ private:
     otError SetRadioRegionHandler(DBusMessageIter &aIter);
     otError SetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError SetNat64Cidr(DBusMessageIter &aIter);
+#if OTBR_ENABLE_BORDER_AGENT
     otError SetEphemeralKeyEnabled(DBusMessageIter &aIter);
+#endif
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
@@ -174,7 +176,9 @@ private:
     otError GetNat64Mappings(DBusMessageIter &aIter);
     otError GetNat64ProtocolCounters(DBusMessageIter &aIter);
     otError GetNat64ErrorCounters(DBusMessageIter &aIter);
+#if OTBR_ENABLE_BORDER_AGENT
     otError GetEphemeralKeyEnabled(DBusMessageIter &aIter);
+#endif
     otError GetInfraLinkInfo(DBusMessageIter &aIter);
     otError GetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError GetTelemetryDataHandler(DBusMessageIter &aIter);
@@ -186,7 +190,9 @@ private:
     otbr::Host::RcpHost                                 &mHost;
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
     otbr::Mdns::Publisher                               *mPublisher;
-    otbr::BorderAgent                                   &mBorderAgent;
+#if OTBR_ENABLE_BORDER_AGENT
+    otbr::BorderAgent &mBorderAgent;
+#endif
 };
 
 /**

@@ -52,13 +52,13 @@ on_exit()
 main()
 {
     sudo modprobe ip6table_filter
-    docker build -t otbr \
+    docker build -t otbr-test \
         --build-arg OTBR_OPTIONS=-DOT_POSIX_RCP_SPI_BUS=ON \
         --build-arg BACKBONE_ROUTER=0 \
-        -f etc/docker/Dockerfile .
+        -f etc/docker/test/Dockerfile .
 
     # SPI simulation is not available yet, so just verify the binary runs
-    docker run --rm -t --entrypoint otbr-agent otbr -h | grep 'spi://'
+    docker run --rm -t --entrypoint otbr-agent otbr-test -h | grep 'spi://'
 
     local -r SOCAT_OUTPUT=/tmp/ot-socat
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 2>&1 | tee $SOCAT_OUTPUT &
@@ -80,7 +80,7 @@ main()
     OTBR_DOCKER_PID=$(
         docker run -d -e HTTP_PORT=10080 \
             --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
-            --privileged -p 8080:10080 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr --backbone-interface eth0
+            --privileged -p 8080:10080 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr-test --backbone-interface eth0
     )
     readonly OTBR_DOCKER_PID
     sleep 10

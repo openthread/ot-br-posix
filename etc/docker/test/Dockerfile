@@ -33,9 +33,7 @@ ARG BORDER_ROUTING
 ARG BACKBONE_ROUTER
 ARG OT_BACKBONE_CI
 ARG OTBR_OPTIONS
-ARG DNS64
 ARG NAT64
-ARG NAT64_SERVICE
 ARG NAT64_DYNAMIC_POOL
 ARG REFERENCE_DEVICE
 ARG RELEASE
@@ -43,7 +41,7 @@ ARG REST_API
 ARG WEB_GUI
 ARG MDNS
 ARG FIREWALL
-ARG DNSSD_PLAT
+ARG OT_SRP_ADV_PROXY
 
 ENV INFRA_IF_NAME=${INFRA_IF_NAME:-eth0}
 ENV BORDER_ROUTING=${BORDER_ROUTING:-1}
@@ -56,13 +54,11 @@ ENV PLATFORM ubuntu
 ENV REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
 ENV RELEASE=${RELEASE:-1}
 ENV NAT64=${NAT64:-1}
-ENV NAT64_SERVICE=${NAT64_SERVICE:-openthread}
 ENV NAT64_DYNAMIC_POOL=${NAT64_DYNAMIC_POOL:-192.168.255.0/24}
-ENV DNS64=${DNS64:-0}
 ENV WEB_GUI=${WEB_GUI:-1}
 ENV REST_API=${REST_API:-1}
 ENV FIREWALL=${FIREWALL:-1}
-ENV DNSSD_PLAT=${DNSSD_PLAT:-0}
+ENV OT_SRP_ADV_PROXY=${OT_SRP_ADV_PROXY:-0}
 ENV DOCKER 1
 
 RUN env
@@ -94,15 +90,13 @@ RUN apt-get update \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime
 
 COPY ./script /app/script
-COPY ./third_party/mDNSResponder /app/third_party/mDNSResponder
 WORKDIR /app
 
 RUN ./script/bootstrap
 COPY . .
 RUN ./script/setup
 
-RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
-  && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
+RUN ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
     mv ./script /tmp \
     && mv ./etc /tmp \
     && find . -delete \
@@ -115,6 +109,6 @@ RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
     && rm -rf /tmp/* \
   ))
 
-ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
+ENTRYPOINT ["/app/etc/docker/test/docker_entrypoint.sh"]
 
 EXPOSE 80

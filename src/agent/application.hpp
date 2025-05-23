@@ -64,6 +64,8 @@
 #if OTBR_ENABLE_DNSSD_PLAT
 #include "host/posix/dnssd.hpp"
 #endif
+#include "host/posix/multicast_routing_manager.hpp"
+#include "host/posix/netif.hpp"
 #include "utils/infra_link_selector.hpp"
 
 namespace otbr {
@@ -163,7 +165,7 @@ public:
      */
     BorderAgent &GetBorderAgent(void)
     {
-        return *mBorderAgent;
+        return mBorderAgent;
     }
 #endif
 
@@ -247,7 +249,7 @@ public:
      */
     DBus::DBusAgent &GetDBusAgent(void)
     {
-        return *mDBusAgent;
+        return mDBusAgent;
     }
 #endif
 
@@ -261,12 +263,23 @@ private:
     void InitRcpMode(void);
     void DeinitRcpMode(void);
 
+    void CreateNcpMode(void);
     void InitNcpMode(void);
     void DeinitNcpMode(void);
 
-    std::string       mInterfaceName;
-    const char       *mBackboneInterfaceName;
-    Host::ThreadHost &mHost;
+#if OTBR_ENABLE_BORDER_AGENT
+    void SetBorderAgentOnInitState(void);
+#endif
+#if OTBR_ENABLE_DBUS_SERVER
+    DBus::DependentComponents MakeDBusDependentComponents(void);
+#endif
+
+    const std::string        mInterfaceName;
+    const std::string        mBackboneInterfaceName;
+    Host::ThreadHost        &mHost;
+    std::unique_ptr<Netif>   mNetif;
+    std::unique_ptr<InfraIf> mInfraIf;
+
 #if OTBR_ENABLE_MDNS
     Mdns::StateSubject               mMdnsStateSubject;
     std::unique_ptr<Mdns::Publisher> mPublisher;
@@ -275,10 +288,12 @@ private:
     DnssdPlatform mDnssdPlatform;
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    std::unique_ptr<BorderAgent> mBorderAgent;
+    BorderAgent mBorderAgent;
+    UdpProxy    mBorderAgentUdpProxy;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
+    std::unique_ptr<MulticastRoutingManager>       mMulticastRoutingManager;
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     std::unique_ptr<AdvertisingProxy> mAdvertisingProxy;
@@ -296,7 +311,7 @@ private:
     std::unique_ptr<rest::RestWebServer> mRestWebServer;
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    std::unique_ptr<DBus::DBusAgent> mDBusAgent;
+    DBus::DBusAgent mDBusAgent;
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     std::shared_ptr<vendor::VendorServer> mVendorServer;

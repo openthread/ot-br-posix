@@ -37,6 +37,8 @@
 #include <functional>
 #include <memory>
 
+#include <openthread/backbone_router_ftd.h>
+#include <openthread/border_agent.h>
 #include <openthread/dataset.h>
 #include <openthread/error.h>
 #include <openthread/thread.h>
@@ -44,6 +46,7 @@
 #include "lib/spinel/coprocessor_type.h"
 
 #include "common/logging.hpp"
+#include "posix/udp_proxy.hpp"
 
 namespace otbr {
 namespace Host {
@@ -93,6 +96,13 @@ public:
     virtual void GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
 
     /**
+     * Returns the meshlocal prefix.
+     *
+     * @returns The mesh local prefix.
+     */
+    virtual const otMeshLocalPrefix *GetMeshLocalPrefix(void) const = 0;
+
+    /**
      * The destructor.
      */
     virtual ~NetworkProperties(void) = default;
@@ -112,15 +122,21 @@ enum ThreadEnabledState
  *
  * The APIs are unified for both NCP and RCP cases.
  */
-class ThreadHost : virtual public NetworkProperties
+class ThreadHost : virtual public NetworkProperties, public UdpProxy::Dependencies
 {
 public:
     using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
     using ChannelMasksReceiver =
         std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
-    using DeviceRoleHandler          = std::function<void(otError, otDeviceRole)>;
-    using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
-    using ThreadEnabledStateCallback = std::function<void(ThreadEnabledState aState)>;
+    using DeviceRoleHandler                        = std::function<void(otError, otDeviceRole)>;
+    using ThreadStateChangedCallback               = std::function<void(otChangedFlags)>;
+    using ThreadEnabledStateCallback               = std::function<void(ThreadEnabledState)>;
+    using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
+    using EphemeralKeyStateChangedCallback         = std::function<void(otBorderAgentEphemeralKeyState, uint16_t)>;
+    using UdpForwardToHostCallback = std::function<void(const uint8_t *, uint16_t, const otIp6Address &, uint16_t)>;
+    using BackboneRouterMulticastListenerCallback =
+        std::function<void(otBackboneRouterMulticastListenerEvent, Ip6Address)>;
+    using BackboneRouterStateChangedCallback = std::function<void(otBackboneRouterState)>;
 
     struct ChannelMaxPower
     {
@@ -248,6 +264,51 @@ public:
      * @param[in] aCallback  The callback to receive Thread Enabled state changed events.
      */
     virtual void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) = 0;
+
+    /**
+     * This method sets a callback that will be invoked when there are any changes on the MeshCoP service from
+     * Thread core.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    virtual void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) = 0;
+
+    /**
+     * This method adds a callback that will be invoked when there are any changes related to the ephemeral key.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    virtual void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) = 0;
+
+    /**
+     * This methods a callback for the Thread stack to forward UDP packet to the host.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    virtual void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) = 0;
+
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    /**
+     * This method enables/disables the Backbone Router.
+     *
+     * @param[in] aEnabled  Whether to enable or disable the Backbone router.
+     */
+    virtual void SetBackboneRouterEnabled(bool aEnabled) = 0;
+
+    /**
+     * This method sets the Backbone Router Multicast Listener callback.
+     *
+     * @param[in] aCallback  The Multicast Listener callback.
+     */
+    virtual void SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback) = 0;
+
+    /**
+     * This method sets the Backbone Router state change callback.
+     *
+     * @param[in] aCallback  The Backbone Router state change callback.
+     */
+    virtual void SetBackboneRouterStateChangedCallback(BackboneRouterStateChangedCallback aCallback) = 0;
+#endif // OTBR_ENABLE_BACKBONE_ROUTER
 
     /**
      * Returns the co-processor type.

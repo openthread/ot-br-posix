@@ -72,11 +72,12 @@ public:
     explicit OtNetworkProperties(void);
 
     // NetworkProperties methods
-    otDeviceRole GetDeviceRole(void) const override;
-    bool         Ip6IsEnabled(void) const override;
-    uint32_t     GetPartitionId(void) const override;
-    void         GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
-    void         GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
+    otDeviceRole             GetDeviceRole(void) const override;
+    bool                     Ip6IsEnabled(void) const override;
+    uint32_t                 GetPartitionId(void) const override;
+    void                     GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
+    void                     GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
+    const otMeshLocalPrefix *GetMeshLocalPrefix(void) const override;
 
     // Set the otInstance
     void SetInstance(otInstance *aInstance);
@@ -211,6 +212,14 @@ public:
 #endif
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
     void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    void SetBackboneRouterEnabled(bool aEnabled) override;
+    void SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback) override;
+    void SetBackboneRouterStateChangedCallback(BackboneRouterStateChangedCallback aCallback) override;
+#endif // OTBR_ENABLE_BACKBONE_ROUTER
+    void SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback) override;
+    void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
+    void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
@@ -254,6 +263,17 @@ private:
     static void SendMgmtPendingSetCallback(otError aError, void *aContext);
     void        SendMgmtPendingSetCallback(otError aError);
 
+    static void HandleMeshCoPServiceChanged(void *aContext);
+    void        HandleMeshCoPServiceChanged(void);
+    static void HandleEpskcStateChanged(void *aContext);
+    void        HandleEpskcStateChanged(void);
+
+    otbrError UdpForward(const uint8_t      *aUdpPayload,
+                         uint16_t            aLength,
+                         const otIp6Address &aRemoteAddr,
+                         uint16_t            aRemotePort,
+                         const UdpProxy     &aUdpProxy) override;
+
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
 
@@ -270,14 +290,16 @@ private:
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;
 
-    std::vector<ThreadStateChangedCallback> mThreadStateChangedCallbacks;
-    std::vector<ThreadEnabledStateCallback> mThreadEnabledStateChangedCallbacks;
-    bool                                    mEnableAutoAttach = false;
-    ThreadEnabledState                      mThreadEnabledState;
-    AsyncResultReceiver                     mJoinReceiver;
-    AsyncResultReceiver                     mSetThreadEnabledReceiver;
-    AsyncResultReceiver                     mScheduleMigrationReceiver;
-    std::vector<DetachGracefullyCallback>   mDetachGracefullyCallbacks;
+    std::vector<ThreadStateChangedCallback>       mThreadStateChangedCallbacks;
+    std::vector<ThreadEnabledStateCallback>       mThreadEnabledStateChangedCallbacks;
+    bool                                          mEnableAutoAttach = false;
+    ThreadEnabledState                            mThreadEnabledState;
+    AsyncResultReceiver                           mJoinReceiver;
+    AsyncResultReceiver                           mSetThreadEnabledReceiver;
+    AsyncResultReceiver                           mScheduleMigrationReceiver;
+    std::vector<DetachGracefullyCallback>         mDetachGracefullyCallbacks;
+    BorderAgentMeshCoPServiceChangedCallback      mBorderAgentMeshCoPServiceChangedCallback;
+    std::vector<EphemeralKeyStateChangedCallback> mEphemeralKeyStateChangedCallbacks;
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.

@@ -119,30 +119,21 @@ stop_service()
 # Platform information is needed to load hooks and default settings.
 
 if [[ ! ${PLATFORM+x} ]]; then
-    # BeagleBone Black debian distribution does not support "lsb_release"
-    if grep -s "BeagleBone Black" /sys/firmware/devicetree/base/model; then
-        # Note: 'model' is a binary file with no newline
-        PLATFORM=beagleboneblack
-    else
-        case "${OSTYPE}" in
-            darwin*)
-                PLATFORM=macOS
-                ;;
-            *)
-                have_or_die lsb_release
-                PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
-                ;;
-        esac
-    fi
+    case "${OSTYPE}" in
+        darwin*)
+            PLATFORM=macOS
+            ;;
+        *)
+            have_or_die lsb_release
+            PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+            ;;
+    esac
 fi
 echo "Current platform is $PLATFORM"
 
 # The DHCPV6_PD feature requires IPv6 features in dhcpcd but RIO
 # is not supported within dhcpcd.
 with BORDER_ROUTING && with DHCPV6_PD && die "BORDER_ROUTING and DHCPV6_PD cannot coexist!"
-
-# OTBR cannot receive RS messages when NETWORK_MANAGER is enabled.
-with BORDER_ROUTING && with NETWORK_MANAGER && die "BORDER_ROUTING and NETWORK_MANAGER cannot coexist!"
 
 STAGE_DIR=$PWD/stage
 BUILD_DIR=$PWD/build

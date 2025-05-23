@@ -65,9 +65,11 @@ public:
      *
      * @param[in] aConnection     The dbus connection.
      * @param[in] aInterfaceName  The dbus interface name.
-     * @param[in] aHost           The Thread controller.
+     * @param[in] aDeps           The dependent components.
      */
-    DBusThreadObjectNcp(DBusConnection &aConnection, const std::string &aInterfaceName, otbr::Host::NcpHost &aHost);
+    DBusThreadObjectNcp(DBusConnection            &aConnection,
+                        const std::string         &aInterfaceName,
+                        const DependentComponents &aDeps);
 
     /**
      * This method initializes the dbus thread object.

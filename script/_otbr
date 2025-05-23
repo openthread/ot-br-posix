@@ -80,9 +80,9 @@ otbr_install()
         "${otbr_options[@]}"
     )
 
-    if with DNSSD_PLAT; then
+    if with OT_SRP_ADV_PROXY; then
         otbr_options+=(
-            "-DOTBR_DNSSD_PLAT=ON"
+            "-DOTBR_OT_SRP_ADV_PROXY=ON"
         )
     else
         otbr_options+=(
@@ -130,7 +130,7 @@ otbr_install()
         )
     fi
 
-    if with NAT64 && [[ ${NAT64_SERVICE-} == "openthread" ]]; then
+    if with NAT64; then
         otbr_options+=(
             "-DOTBR_NAT64=ON"
             "-DOT_POSIX_NAT64_CIDR=${NAT64_DYNAMIC_POOL:-192.168.255.0/24}"

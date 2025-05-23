@@ -53,11 +53,6 @@ function parse_args()
                 shift
                 shift
                 ;;
-            --nat64-prefix)
-                NAT64_PREFIX=$2
-                shift
-                shift
-                ;;
             --debug-level)
                 DEBUG_LEVEL=$2
                 shift
@@ -85,7 +80,6 @@ parse_args "$@"
 [ -n "$TREL_URL" ] || TREL_URL=""
 [ -n "$TUN_INTERFACE_NAME" ] || TUN_INTERFACE_NAME="wpan0"
 [ -n "$BACKBONE_INTERFACE" ] || BACKBONE_INTERFACE="eth0"
-[ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
 [ -n "$DEBUG_LEVEL" ] || DEBUG_LEVEL="7"
 [ -n "$HTTP_PORT" ] || HTTP_PORT=80
 
@@ -93,15 +87,8 @@ echo "RADIO_URL:" $RADIO_URL
 echo "TREL_URL:" "$TREL_URL"
 echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME
 echo "BACKBONE_INTERFACE: $BACKBONE_INTERFACE"
-echo "NAT64_PREFIX:" $NAT64_PREFIX
 echo "DEBUG_LEVEL:" $DEBUG_LEVEL
 
-NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
-TAYGA_CONF=/etc/tayga.conf
-BIND_CONF_OPTIONS=/etc/bind/named.conf.options
-
-! test -f $TAYGA_CONF || sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" $TAYGA_CONF
-! test -f $BIND_CONF_OPTIONS || sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" $BIND_CONF_OPTIONS
 sed -i "s/$INFRA_IF_NAME/$BACKBONE_INTERFACE/" /etc/sysctl.d/60-otbr-accept-ra.conf
 
 echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -B $BACKBONE_INTERFACE -d${DEBUG_LEVEL} $RADIO_URL $TREL_URL\"" >/etc/default/otbr-agent

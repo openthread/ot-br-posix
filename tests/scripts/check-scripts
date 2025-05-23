@@ -105,7 +105,6 @@ main()
     kill "${SERVICES_PID}"
     sudo killall otbr-web || true
     sudo killall otbr-agent || true
-    sudo service tayga stop || true
     killall ot-rcp
     killall socat
     jobs
