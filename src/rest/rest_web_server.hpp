@@ -42,6 +42,7 @@
 
 #include "common/mainloop.hpp"
 #include "rest/connection.hpp"
+#include "rest/resource.hpp"
 
 using otbr::Host::RcpHost;
 using std::chrono::steady_clock;
