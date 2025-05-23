@@ -1591,7 +1591,6 @@ components:
   ### Schemas #################################################################
   #############################################################################
   schemas:
-
     ### Actions #################################################################
     Actions_addThreadDeviceTask:
       type: object
@@ -1600,18 +1599,66 @@ components:
           enum: [addThreadDeviceTask]
         attributes:
           type: object
-          properties:
-            eui:
-              type: string
-              pattern: ^[0-9a-fA-F]{16}$
-            pskd:
-              type: string
-              pattern: ^[0-9ABCDEFGHJKLMNPRSTUVWXY]{7,32}$
-            timeout:
-              type: integer
-              unit: seconds
-              minimum: 0
-              default: 86400
+          oneOf:
+            - $ref: "#/components/schemas/Actions_JoinerDataEui"
+            - $ref: "#/components/schemas/Actions_JoinerDataDiscerner"
+            - $ref: "#/components/schemas/Actions_JoinerDataJoinerId"
+
+    Actions_JoinerDataEui:
+      type: object
+      properties:
+        pskd:
+          $ref: "#/components/schemas/pskd"
+        eui:
+          type: string
+          description: A string of the EUI-64, mutually exclusive with `joinerId` and `discerner`.
+          pattern: ^[0-9a-fA-F]{16}$
+          example: "0123456789abcdef"
+        timeout:
+          type: integer
+          description: Timeout in seconds
+          default: 900
+      required:
+        - pskd
+        - eui
+
+    Actions_JoinerDataDiscerner:
+      type: object
+      properties:
+        pskd:
+          $ref: "#/components/schemas/pskd"
+        discerner:
+          type: string
+          description: |- 
+            A discerner in the form of the discerner hex value (optionally with leading 0x) 
+            and bit length separated by a '/'.
+            Field is mutually exclusive with `joinerId` and `eui`.
+          pattern: ^0x[0-9a-fA-F]{1,16}/[0-9]{1,2}$
+          example: "0xabc/12"
+        timeout:
+          type: integer
+          description: Timeout in seconds
+          default: 900
+      required:
+        - pskd
+        - discerner
+
+    Actions_JoinerDataJoinerId:
+      type: object
+      properties:
+        pskd: 
+          $ref: "#/components/schemas/pskd"
+        joinerId:
+          type: string
+          description: A string of the EUI-64, Discerner, or "*", mutually exclusive with `eui` and `discerner`.
+          default: "*"
+        timeout:
+          type: integer
+          description: Timeout in seconds
+          default: 900
+      required:
+        - pskd
+        - joinerId
 
     Actions_destination:
       description: | 
@@ -1937,10 +1984,20 @@ components:
           properties:
             attributes:
               type: object
+              status: 
+                type: string
+                enum:
+                  - pending
+                  - active
+                  - completed
+                  - stopped
+                  - failed
+                  - undiscovered
+                  - attempted
               required:
-                - eui
-                - timeout
                 - pskd
+                - timeout
+                - status
 
     ActionsServer_getNetworkDiagnosticTask:
       allOf:
@@ -2035,6 +2092,12 @@ components:
       description: The ML-EID Interface Identifier.
       type: string
       pattern: ^(0x)?[0-9a-fA-F]{16}$
+
+    pskd:
+      description: Joining device's pre-shared key
+      type: string
+      pattern: ^[0-9ABCDEFGHJKLMNPRSTUVWXY]{6,32}$
+      example: J01NME
 
     Channel:
       type: integer
@@ -2219,10 +2282,8 @@ components:
     JoinerData:
       type: object
       properties:
-        pksd:
-          type: string
-          description: Joining device's pre-shared key
-          example: J01N
+        pskd:
+          $ref: "#/components/schemas/pskd"
         joinerId:
           type: string
           description: A string of the EUI-64, Discerner, or "*", mutually exclusive with Eui64 and Discerner
