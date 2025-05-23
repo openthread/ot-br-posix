@@ -132,21 +132,7 @@ paths:
         content:
           application/vnd.api+json:
             schema:
-              type: object
-              properties:
-                data:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                        enum: [addThreadDeviceTask]
-                        description: Type of task
-                      attributes:
-                        type: object
-              required:
-                - data
+              $ref:  "#/components/schemas/ActionsClient"
             examples:
               addThreadDeviceTask:
                 summary: Add new Thread Device to the Network
@@ -597,6 +583,209 @@ paths:
 
 components:
   schemas:
+    ### Actions #################################################################
+    Actions_addThreadDeviceTask:
+      type: object
+      properties:
+        type:
+          enum: [addThreadDeviceTask]
+        attributes:
+          type: object
+          oneOf:
+            - $ref: "#/components/schemas/Actions_JoinerDataEui"
+            - $ref: "#/components/schemas/Actions_JoinerDataDiscerner"
+            - $ref: "#/components/schemas/Actions_JoinerDataJoinerId"
+
+    Actions_JoinerDataEui:
+      type: object
+      properties:
+        pskd:
+          $ref: "#/components/schemas/pskd"
+        eui:
+          type: string
+          description: A string of the EUI-64, mutually exclusive with `joinerId` and `discerner`.
+          pattern: ^[0-9a-fA-F]{16}$
+          example: "0123456789abcdef"
+        timeout:
+          type: integer
+          description: Timeout in seconds
+          default: 900
+      required:
+        - pskd
+        - eui
+
+    Actions_JoinerDataDiscerner:
+      type: object
+      properties:
+        pskd:
+          $ref: "#/components/schemas/pskd"
+        discerner:
+          type: string
+          description: |- 
+            A discerner in the form of the discerner hex value (optionally with leading 0x) 
+            and bit length separated by a '/'.
+            Field is mutually exclusive with `joinerId` and `eui`.
+          pattern: ^0x[0-9a-fA-F]{1,16}/[0-9]{1,2}$
+          example: "0xabc/12"
+        timeout:
+          type: integer
+          description: Timeout in seconds
+          default: 900
+      required:
+        - pskd
+        - discerner
+
+    Actions_JoinerDataJoinerId:
+      type: object
+      properties:
+        pskd: 
+          $ref: "#/components/schemas/pskd"
+        joinerId:
+          type: string
+          description: A string of the EUI-64, Discerner, or "*", mutually exclusive with `eui` and `discerner`.
+          default: "*"
+        timeout:
+          type: integer
+          description: Timeout in seconds
+          default: 900
+      required:
+        - pskd
+        - joinerId
+
+    ### Actions Requests ########################################################
+    ActionsClient:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          minItems: 1
+          items:
+            anyOf:
+              - $ref: "#/components/schemas/ActionsClient_addThreadDeviceTask"
+      additionalProperties: false
+
+    ActionsClient_addThreadDeviceTask:
+      allOf:
+        - $ref: "#/components/schemas/Actions_addThreadDeviceTask"
+        - type: object
+          required:
+            - type
+            - attributes
+
+    ### Actions Responses #######################################################
+    Meta:
+      type: object
+      required:
+        - collection
+      properties:
+        collection:
+          type: object
+          required:
+            - offset
+            - limit
+            - total
+          properties:
+            offset:
+              type: integer
+              minimum: 0
+              default: 0
+              description: Number of items skipped in the response (related to `page[offset]` query parameter, `page[offset]` not implemented).
+            limit:
+              type: integer
+              minimum: 0
+              description: Number of items included in the response, starting from offset; calculated default equal to total (related to `page[limit]` query parameter, `page[limit]` not implemented) or max collection items supported.
+            total:
+              type: integer
+              minimum: 0
+              description: Total number of items in the collection.
+            pending:
+              type: integer
+              minimum: 0
+              description: Number of pending items in the collection, only for *Actions* collection.
+          description: Collection pagination metadata.
+
+    ActionsCollection:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          type: array
+          items:
+            anyOf:
+              - $ref: "#/components/schemas/ActionsServer_addThreadDeviceTask"
+
+    ActionItem:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          anyOf:
+            - $ref: "#/components/schemas/ActionsServer_addThreadDeviceTask"
+
+    ActionsServer:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        attributes:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              enum:
+                - pending
+                - active
+                - completed
+                - stopped
+                - failed
+                - undiscovered
+                - attempted
+
+    ActionsServer_addThreadDeviceTask:
+      allOf:
+        - $ref: "#/components/schemas/ActionsServer"
+        - $ref: "#/components/schemas/Actions_addThreadDeviceTask"
+        - type: object
+          properties:
+            attributes:
+              type: object
+              status: 
+                type: string
+                enum:
+                  - pending
+                  - active
+                  - completed
+                  - stopped
+                  - failed
+                  - undiscovered
+                  - attempted
+              required:
+                - pskd
+                - timeout
+                - status
+
+    pskd:
+      description: Joining device's pre-shared key
+      type: string
+      pattern: ^[0-9ABCDEFGHJKLMNPRSTUVWXY]{6,32}$
+      example: J01NME
+
     LeaderData:
       type: object
       properties:
@@ -769,10 +958,8 @@ components:
     JoinerData:
       type: object
       properties:
-        Pksd:
-          type: string
-          description: Joining device's pre-shared key
-          example: J01N
+        pskd:
+          $ref: "#/components/schemas/pskd"
         JoinerId:
           type: string
           description: A string of the EUI-64, Discerner, or "*", mutually exclusive with Eui64 and Discerner
