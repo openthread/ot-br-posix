@@ -237,13 +237,25 @@ Detailed request examples are provided in the test folder as a "Bruno Request Co
 
   Implements the action collection, derived from `BasicCollection`
 
-- `add_thread_device.cpp`, `add_thread_device.hpp`
+- `commissioner_manager.cpp`, `commissioner_manager.hpp`
 
-  Implements the action item stored in action collection. The action item is derived from `BasicActions` class, which is derived from `BasicCollectionItem`.
+  Handles starting and stopping the on-mesh commissioner as needed by the specific queued action items.
+
+- `network_diag_handler.cpp`, `network_diag_handler.hpp`
+
+  Handles collecting network diagnostic TLVs on top of OT core `netdiag` and `meshdiag` API
+
+- `rest/actions/*`
+
+  Implement the action item stored in action collection. The action item is derived from `BasicActions` class, which is derived from `BasicCollectionItem`.
 
 - `rest_generic_collection.cpp`, `rest_generic_collection.hpp`
 
   Implements the `BasicCollectionItem` and `BasicCollection` classes.
+
+- `rest_*_coll.cpp`, `rest_*_coll.hpp`
+
+  Implements the specific `devices` and `diagnostics` collection classes derived from `BasicCollection` class.
 
 - `uuid.cpp`,`uuid.hpp`
 
