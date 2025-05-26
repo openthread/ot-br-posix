@@ -1662,10 +1662,10 @@ components:
 
     Actions_destination:
       description: | 
-        Accepts the value of a 'deviceId' (equal to 'ExtendedAddress'), 'Rloc16' or 'ML-EID IID'. The TBR expands the given destination to 
-        the Mesh-Local IPv6 address or Rloc16 address. 'deviceId' must be a member of *Devices* collection where it is looked-up
+        Accepts the value of a `deviceId` (equal to 'ExtendedAddress'), `rloc16` or `mlEidIid`. The TBR expands the given destination to 
+        the Mesh-Local IPv6 address or Rloc16 address. `deviceId` must be a member of *Devices* collection where it is looked-up
         to find the ML-EID IID, which is then expanded to the Mesh-Local IPv6 address.
-        A ML-EID IID needs additional attribute 'destinationType':'mleid'.
+        A ML-EID IID needs additional attribute `destinationType`:'mleid'.
       oneOf:
         - $ref: "#/components/schemas/LongAddr"
         - $ref: "#/components/schemas/ShortAddr"
@@ -1835,13 +1835,7 @@ components:
           required:
             - type
             - attributes
-          properties:
-            attributes:
-              type: object
-              required:
-                - eui
-                - pskd
-    
+
     ActionsClient_getNetworkDiagnosticTask:
       allOf:
         - $ref: "#/components/schemas/Actions_getNetworkDiagnosticTask"
