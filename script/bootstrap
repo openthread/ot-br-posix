@@ -70,10 +70,12 @@ install_packages_apt()
 
     (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \
         && cd /tmp \
-        && wget --no-check-certificate https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
-        && mkdir -p $MDNS_RESPONDER_SOURCE_NAME \
-        && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz -C $MDNS_RESPONDER_SOURCE_NAME --strip-components=1 \
-        && cd /tmp/"$MDNS_RESPONDER_SOURCE_NAME" \
+        && wget --no-check-certificate -O "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
+            "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
+        && rm -rf "$MDNS_RESPONDER_SOURCE_NAME" \
+        && mkdir -p "$MDNS_RESPONDER_SOURCE_NAME" \
+        && tar xvf "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" -C "$MDNS_RESPONDER_SOURCE_NAME" --overwrite --strip-components=1 \
+        && cd "$MDNS_RESPONDER_SOURCE_NAME" \
         && cd mDNSPosix \
         && make os=linux tls=no && sudo make install os=linux tls=no)
 
