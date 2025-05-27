@@ -49,7 +49,7 @@ install_packages_apt()
         libreadline-dev \
         libncurses-dev
 
-    sudo apt-get install libgmock-dev libgtest-dev || echo 'WARNING: failed to install gtest and gmock!'
+    sudo apt-get install -y libgmock-dev libgtest-dev || echo 'WARNING: failed to install gtest and gmock!'
 
     sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
 
