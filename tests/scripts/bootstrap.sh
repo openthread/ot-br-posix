@@ -57,6 +57,8 @@ install_common_dependencies()
         net-tools \
         libavahi-common-dev \
         libavahi-client-dev \
+        libgmock-dev \
+        libgtest-dev \
         libreadline-dev \
         libncurses-dev \
         libjsoncpp-dev \
@@ -122,9 +124,10 @@ case "$(uname)" in
 
         if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
             SOURCE_NAME=mDNSResponder-2600.100.147
-            wget -O "$SOURCE_NAME.tar.gz" \
-                "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$SOURCE_NAME.tar.gz" \
-                && rm -rf "$SOURCE_NAME" \
+            cd /tmp \
+                && wget --tries=3 --no-check-certificate -O "$SOURCE_NAME.tar.gz" \
+                    "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$SOURCE_NAME.tar.gz" \
+                && rm -rf "/tmp/$SOURCE_NAME" \
                 && mkdir -p "$SOURCE_NAME" \
                 && tar xvf "$SOURCE_NAME.tar.gz" -C "$SOURCE_NAME" --overwrite --strip-components=1 \
                 && cd "$SOURCE_NAME" \
