@@ -26,10 +26,17 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "rest/types.hpp"
 #define OTBR_LOG_TAG "REST"
 
+#include <httplib.h>
+
 #include "rest/resource.hpp"
+
 #include <openthread/commissioner.h>
+
+#include "common/api_strings.hpp"
+#include "rest/json.hpp"
 
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
@@ -74,6 +81,8 @@ using std::chrono::steady_clock;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+using namespace httplib;
+
 namespace otbr {
 namespace rest {
 
@@ -89,71 +98,69 @@ static const uint32_t kDiagResetTimeout = 3000000;
 // Timeout (in Microseconds) for collecting diagnostics
 static const uint32_t kDiagCollectTimeout = 2000000;
 
-static std::string GetHttpStatus(HttpStatusCode aErrorCode)
+#define VerifyOrReturn(aCondition, aReturn) \
+    do                                      \
+    {                                       \
+        if (!(aCondition))                  \
+        {                                   \
+            return (aReturn);               \
+        }                                   \
+    } while (false)
+
+Server::Handler Resource::MakeHandler(RequestHandler aHandler)
 {
-    std::string httpStatus;
-
-    switch (aErrorCode)
-    {
-    case HttpStatusCode::kStatusOk:
-        httpStatus = OT_REST_HTTP_STATUS_200;
-        break;
-    case HttpStatusCode::kStatusCreated:
-        httpStatus = OT_REST_HTTP_STATUS_201;
-        break;
-    case HttpStatusCode::kStatusNoContent:
-        httpStatus = OT_REST_HTTP_STATUS_204;
-        break;
-    case HttpStatusCode::kStatusBadRequest:
-        httpStatus = OT_REST_HTTP_STATUS_400;
-        break;
-    case HttpStatusCode::kStatusResourceNotFound:
-        httpStatus = OT_REST_HTTP_STATUS_404;
-        break;
-    case HttpStatusCode::kStatusMethodNotAllowed:
-        httpStatus = OT_REST_HTTP_STATUS_405;
-        break;
-    case HttpStatusCode::kStatusRequestTimeout:
-        httpStatus = OT_REST_HTTP_STATUS_408;
-        break;
-    case HttpStatusCode::kStatusConflict:
-        httpStatus = OT_REST_HTTP_STATUS_409;
-        break;
-    case HttpStatusCode::kStatusInternalServerError:
-        httpStatus = OT_REST_HTTP_STATUS_500;
-        break;
-    case HttpStatusCode::kStatusInsufficientStorage:
-        httpStatus = OT_REST_HTTP_STATUS_507;
-        break;
-    }
-
-    return httpStatus;
+    return std::bind(aHandler, this, std::placeholders::_1, std::placeholders::_2);
 }
 
-Resource::Resource(RcpHost *aHost)
+HttpMethod GetMethod(const Request &aRequest)
+{
+    if (aRequest.method == "GET")
+        return HttpMethod::kGet;
+    if (aRequest.method == "POST")
+        return HttpMethod::kPost;
+    if (aRequest.method == "PUT")
+        return HttpMethod::kPut;
+    if (aRequest.method == "DELETE")
+        return HttpMethod::kDelete;
+    if (aRequest.method == "OPTIONS")
+        return HttpMethod::kOptions;
+
+    return HttpMethod::kBadMethod;
+}
+
+Resource::Resource(Server &aServer, RcpHost *aHost)
     : mInstance(nullptr)
     , mHost(aHost)
 {
     // Resource Handler
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::Diagnostic);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE, &Resource::NodeInfo);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_BAID, &Resource::BaId);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_STATE, &Resource::State);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, &Resource::ExtendedAddr);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_NETWORKNAME, &Resource::NetworkName);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC16, &Resource::Rloc16);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_LEADERDATA, &Resource::LeaderData);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER, &Resource::NumOfRoute);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTPANID, &Resource::ExtendedPanId);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, &Resource::DatasetActive);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, &Resource::DatasetPending);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, &Resource::CommissionerState);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, &Resource::CommissionerJoiner);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, &Resource::CoprocessorVersion);
-
-    // Resource callback handler
-    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
+    aServer.Get(OT_REST_RESOURCE_PATH_DIAGNOSTICS, MakeHandler(&Resource::Diagnostic));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&Resource::NodeInfo));
+    aServer.Delete(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&Resource::NodeInfo));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_BAID, MakeHandler(&Resource::BaId));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&Resource::State));
+    aServer.Put(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&Resource::State));
+    aServer.Options(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&Resource::State));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, MakeHandler(&Resource::ExtendedAddr));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_NETWORKNAME, MakeHandler(&Resource::NetworkName));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_RLOC16, MakeHandler(&Resource::Rloc16));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_LEADERDATA, MakeHandler(&Resource::LeaderData));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER, MakeHandler(&Resource::NumOfRoute));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_EXTPANID, MakeHandler(&Resource::ExtendedPanId));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_RLOC, MakeHandler(&Resource::Rloc));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&Resource::DatasetActive));
+    aServer.Put(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&Resource::DatasetActive));
+    aServer.Options(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&Resource::DatasetActive));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&Resource::DatasetPending));
+    aServer.Put(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&Resource::DatasetPending));
+    aServer.Options(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&Resource::DatasetPending));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&Resource::CommissionerState));
+    aServer.Put(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&Resource::CommissionerState));
+    aServer.Options(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&Resource::CommissionerState));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&Resource::CommissionerJoiner));
+    aServer.Post(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&Resource::CommissionerJoiner));
+    aServer.Delete(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&Resource::CommissionerJoiner));
+    aServer.Options(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&Resource::CommissionerJoiner));
+    aServer.Get(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, MakeHandler(&Resource::CoprocessorVersion));
 }
 
 void Resource::Init(void)
@@ -161,111 +168,63 @@ void Resource::Init(void)
     mInstance = mHost->GetThreadHelper()->GetInstance();
 }
 
-void Resource::Handle(Request &aRequest, Response &aResponse) const
+void Resource::ErrorHandler(Response &aResponse, StatusCode aErrorCode) const
 {
-    std::string url = aRequest.GetUrl();
-    auto        it  = mResourceMap.find(url);
-
-    if (it != mResourceMap.end())
-    {
-        ResourceHandler resourceHandler = it->second;
-        (this->*resourceHandler)(aRequest, aResponse);
-    }
-    else
-    {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusResourceNotFound);
-    }
-}
-
-void Resource::HandleCallback(Request &aRequest, Response &aResponse)
-{
-    std::string url = aRequest.GetUrl();
-    auto        it  = mResourceCallbackMap.find(url);
-
-    if (it != mResourceCallbackMap.end())
-    {
-        ResourceCallbackHandler resourceHandler = it->second;
-        (this->*resourceHandler)(aRequest, aResponse);
-    }
-}
-
-void Resource::HandleDiagnosticCallback(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::vector<std::vector<otNetworkDiagTlv>> diagContentSet;
-    std::string                                body;
-    std::string                                errorCode;
-
-    auto duration = duration_cast<microseconds>(steady_clock::now() - aResponse.GetStartTime()).count();
-    if (duration >= kDiagCollectTimeout)
-    {
-        DeleteOutDatedDiagnostic();
-
-        for (auto it = mDiagSet.begin(); it != mDiagSet.end(); ++it)
-        {
-            diagContentSet.push_back(it->second.mDiagContent);
-        }
-
-        body      = Json::Diag2JsonString(diagContentSet);
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
-        aResponse.SetBody(body);
-        aResponse.SetComplete();
-    }
-}
-
-void Resource::ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const
-{
-    std::string errorMessage = GetHttpStatus(aErrorCode);
+    std::string errorMessage = status_message(aErrorCode);
     std::string body         = Json::Error2JsonString(aErrorCode, errorMessage);
 
-    aResponse.SetResponsCode(errorMessage);
-    aResponse.SetBody(body);
-    aResponse.SetComplete();
+    aResponse.status = aErrorCode;
+    aResponse.set_content(body, "application/json");
 }
 
 void Resource::GetNodeInfo(Response &aResponse) const
 {
-    otbrError       error = OTBR_ERROR_NONE;
-    struct NodeInfo node  = {};
-    otRouterInfo    routerInfo;
-    uint8_t         maxRouterId;
-    std::string     body;
-    std::string     errorCode;
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string body;
 
-    VerifyOrExit(otBorderAgentGetId(mInstance, &node.mBaId) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-    (void)otThreadGetLeaderData(mInstance, &node.mLeaderData);
+    SuccessOrExit(error = RunInMainLoop([this, &body]() -> otbrError {
+                      struct NodeInfo node = {};
+                      otRouterInfo    routerInfo;
+                      uint8_t         maxRouterId;
 
-    node.mNumOfRouter = 0;
-    maxRouterId       = otThreadGetMaxRouterId(mInstance);
-    for (uint8_t i = 0; i <= maxRouterId; ++i)
-    {
-        if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
-        {
-            continue;
-        }
-        ++node.mNumOfRouter;
-    }
+                      if (otBorderAgentGetId(mInstance, &node.mBaId) != OT_ERROR_NONE)
+                          return OTBR_ERROR_REST;
 
-    node.mRole        = GetDeviceRoleName(otThreadGetDeviceRole(mInstance));
-    node.mExtAddress  = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
-    node.mNetworkName = otThreadGetNetworkName(mInstance);
-    node.mRloc16      = otThreadGetRloc16(mInstance);
-    node.mExtPanId    = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
-    node.mRlocAddress = *otThreadGetRloc(mInstance);
+                      (void)otThreadGetLeaderData(mInstance, &node.mLeaderData);
 
-    body = Json::Node2JsonString(node);
-    aResponse.SetBody(body);
+                      node.mNumOfRouter = 0;
+                      maxRouterId       = otThreadGetMaxRouterId(mInstance);
+                      for (uint8_t i = 0; i <= maxRouterId; ++i)
+                      {
+                          if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
+                          {
+                              continue;
+                          }
+                          ++node.mNumOfRouter;
+                      }
+
+                      node.mRole        = GetDeviceRoleName(otThreadGetDeviceRole(mInstance));
+                      node.mExtAddress  = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
+                      node.mNetworkName = otThreadGetNetworkName(mInstance);
+                      node.mRloc16      = otThreadGetRloc16(mInstance);
+                      node.mExtPanId    = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
+                      node.mRlocAddress = *otThreadGetRloc(mInstance);
+
+                      body = Json::Node2JsonString(node);
+
+                      return OTBR_ERROR_NONE;
+                  }));
+
+    aResponse.set_content(body, "application/json");
 
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
@@ -275,22 +234,21 @@ void Resource::DeleteNodeInfo(Response &aResponse) const
     std::string errorCode;
 
     VerifyOrExit(mHost->GetThreadHelper()->Detach() == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
-    VerifyOrExit(otInstanceErasePersistentInfo(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    VerifyOrExit(RunInMainLoop(otInstanceErasePersistentInfo, mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
     mHost->Reset();
 
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
     }
     else if (error == OTBR_ERROR_INVALID_STATE)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        ErrorHandler(aResponse, StatusCode::Conflict_409);
     }
     else if (error != OTBR_ERROR_NONE)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
@@ -298,7 +256,7 @@ void Resource::NodeInfo(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    switch (aRequest.GetMethod())
+    switch (GetMethod(aRequest))
     {
     case HttpMethod::kGet:
         GetNodeInfo(aResponse);
@@ -307,7 +265,7 @@ void Resource::NodeInfo(const Request &aRequest, Response &aResponse) const
         DeleteNodeInfo(aResponse);
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
     }
 }
@@ -319,20 +277,19 @@ void Resource::GetDataBaId(Response &aResponse) const
     std::string     body;
     std::string     errorCode;
 
-    VerifyOrExit(otBorderAgentGetId(mInstance, &id) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    VerifyOrExit(RunInMainLoop(otBorderAgentGetId, mInstance, &id) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
 
     body = Json::Bytes2HexJsonString(id.mId, sizeof(id));
-    aResponse.SetBody(body);
+    aResponse.set_content(body, "application/json");
 
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
@@ -340,38 +297,36 @@ void Resource::BaId(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataBaId(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
 void Resource::GetDataExtendedAddr(Response &aResponse) const
 {
-    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
-    std::string    errorCode;
-    std::string    body = Json::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
+    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(RunInMainLoop(otLinkGetExtendedAddress, mInstance));
+    std::string    body       = Json::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
 
-    aResponse.SetBody(body);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(body, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::ExtendedAddr(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataExtendedAddr(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
@@ -381,11 +336,10 @@ void Resource::GetDataState(Response &aResponse) const
     std::string  errorCode;
     otDeviceRole role;
 
-    role  = otThreadGetDeviceRole(mInstance);
+    role  = RunInMainLoop(otThreadGetDeviceRole, mInstance);
     state = Json::String2JsonString(GetDeviceRoleName(role));
-    aResponse.SetBody(state);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(state, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
@@ -394,40 +348,43 @@ void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
     std::string errorCode;
     std::string body;
 
-    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
-    if (body == "enable")
-    {
-        if (!otIp6IsEnabled(mInstance))
-        {
-            VerifyOrExit(otIp6SetEnabled(mInstance, true) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
-        }
-        VerifyOrExit(otThreadSetEnabled(mInstance, true) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
-    }
-    else if (body == "disable")
-    {
-        VerifyOrExit(otThreadSetEnabled(mInstance, false) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
-        VerifyOrExit(otIp6SetEnabled(mInstance, false) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
-    }
-    else
-    {
-        ExitNow(error = OTBR_ERROR_INVALID_ARGS);
-    }
+    VerifyOrExit(Json::JsonString2String(aRequest.body, body), error = OTBR_ERROR_INVALID_ARGS);
+    SuccessOrExit(
+        error = RunInMainLoop([this, &body]() {
+            if (body == "enable")
+            {
+                if (!otIp6IsEnabled(mInstance))
+                {
+                    VerifyOrReturn(otIp6SetEnabled(mInstance, true) == OT_ERROR_NONE, OTBR_ERROR_INVALID_STATE);
+                }
+                VerifyOrReturn(otThreadSetEnabled(mInstance, true) == OT_ERROR_NONE, OTBR_ERROR_INVALID_STATE);
+            }
+            else if (body == "disable")
+            {
+                VerifyOrReturn(otThreadSetEnabled(mInstance, false) == OT_ERROR_NONE, OTBR_ERROR_INVALID_STATE);
+                VerifyOrReturn(otIp6SetEnabled(mInstance, false) == OT_ERROR_NONE, OTBR_ERROR_INVALID_STATE);
+            }
+            else
+            {
+                return OTBR_ERROR_INVALID_ARGS;
+            }
+            return OTBR_ERROR_NONE;
+        }));
 
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.status = StatusCode::OK_200;
 
 exit:
     if (error == OTBR_ERROR_INVALID_STATE)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        ErrorHandler(aResponse, StatusCode::Conflict_409);
     }
     if (error == OTBR_ERROR_INVALID_ARGS)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        ErrorHandler(aResponse, StatusCode::BadRequest_400);
     }
     else if (error != OTBR_ERROR_NONE)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
@@ -435,7 +392,7 @@ void Resource::State(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    switch (aRequest.GetMethod())
+    switch (GetMethod(aRequest))
     {
     case HttpMethod::kGet:
         GetDataState(aResponse);
@@ -444,12 +401,10 @@ void Resource::State(const Request &aRequest, Response &aResponse) const
         SetDataState(aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
-        aResponse.SetComplete();
+        aResponse.status = StatusCode::OK_200;
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
     }
 }
@@ -459,25 +414,24 @@ void Resource::GetDataNetworkName(Response &aResponse) const
     std::string networkName;
     std::string errorCode;
 
-    networkName = otThreadGetNetworkName(mInstance);
-    networkName = Json::String2JsonString(networkName);
+    networkName = RunInMainLoop(otThreadGetNetworkName, mInstance);
+    auto body   = Json::String2JsonString(networkName);
 
-    aResponse.SetBody(networkName);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(body, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::NetworkName(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataNetworkName(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
@@ -488,294 +442,298 @@ void Resource::GetDataLeaderData(Response &aResponse) const
     std::string  body;
     std::string  errorCode;
 
-    VerifyOrExit(otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    VerifyOrExit(RunInMainLoop(otThreadGetLeaderData, mInstance, &leaderData) == OT_ERROR_NONE,
+                 error = OTBR_ERROR_REST);
 
     body = Json::LeaderData2JsonString(leaderData);
 
-    aResponse.SetBody(body);
+    aResponse.set_content(body, "application/json");
 
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
 void Resource::LeaderData(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataLeaderData(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
 void Resource::GetDataNumOfRoute(Response &aResponse) const
 {
-    uint8_t      count = 0;
-    uint8_t      maxRouterId;
-    otRouterInfo routerInfo;
-    maxRouterId = otThreadGetMaxRouterId(mInstance);
-    std::string body;
-    std::string errorCode;
-
-    for (uint8_t i = 0; i <= maxRouterId; ++i)
-    {
-        if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
+    std::string body = RunInMainLoop([this]() {
+        uint8_t      count = 0;
+        uint8_t      maxRouterId;
+        otRouterInfo routerInfo;
+        maxRouterId = otThreadGetMaxRouterId(mInstance);
+        for (uint8_t i = 0; i <= maxRouterId; ++i)
         {
-            continue;
+            if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
+            {
+                continue;
+            }
+            ++count;
         }
-        ++count;
-    }
 
-    body = Json::Number2JsonString(count);
+        return Json::Number2JsonString(count);
+    });
 
-    aResponse.SetBody(body);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(body, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::NumOfRoute(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataNumOfRoute(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
 void Resource::GetDataRloc16(Response &aResponse) const
 {
-    uint16_t    rloc16 = otThreadGetRloc16(mInstance);
+    uint16_t    rloc16 = RunInMainLoop(otThreadGetRloc16, mInstance);
     std::string body;
-    std::string errorCode;
 
     body = Json::Number2JsonString(rloc16);
 
-    aResponse.SetBody(body);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(body, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::Rloc16(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataRloc16(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
 void Resource::GetDataExtendedPanId(Response &aResponse) const
 {
-    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
+    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(RunInMainLoop(otThreadGetExtendedPanId, mInstance));
     std::string    body     = Json::Bytes2HexJsonString(extPanId, OT_EXT_PAN_ID_SIZE);
     std::string    errorCode;
 
-    aResponse.SetBody(body);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(body, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::ExtendedPanId(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataExtendedPanId(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
 void Resource::GetDataRloc(Response &aResponse) const
 {
-    otIp6Address rlocAddress = *otThreadGetRloc(mInstance);
+    otIp6Address rlocAddress = *RunInMainLoop(otThreadGetRloc, mInstance);
     std::string  body;
-    std::string  errorCode;
 
     body = Json::IpAddr2JsonString(rlocAddress);
 
-    aResponse.SetBody(body);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(body, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::Rloc(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetDataRloc(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
 void Resource::GetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
-    otbrError                error = OTBR_ERROR_NONE;
-    struct NodeInfo          node;
-    std::string              body;
-    std::string              errorCode;
-    otOperationalDataset     dataset;
-    otOperationalDatasetTlvs datasetTlvs;
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string body;
+    std::string contentType = "application/json";
 
-    if (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER) == OT_REST_CONTENT_TYPE_PLAIN)
-    {
-        if (aDatasetType == DatasetType::kActive)
-        {
-            VerifyOrExit(otDatasetGetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE,
-                         error = OTBR_ERROR_NOT_FOUND);
-        }
-        else if (aDatasetType == DatasetType::kPending)
-        {
-            VerifyOrExit(otDatasetGetPendingTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE,
-                         error = OTBR_ERROR_NOT_FOUND);
-        }
+    SuccessOrExit(
+        error = RunInMainLoop([this, aDatasetType, &contentType, &aRequest, &body]() {
+            if (aRequest.get_header_value(OT_REST_ACCEPT_HEADER) == OT_REST_CONTENT_TYPE_PLAIN)
+            {
+                otOperationalDatasetTlvs datasetTlvs;
 
-        aResponse.SetContentType(OT_REST_CONTENT_TYPE_PLAIN);
-        body = Utils::Bytes2Hex(datasetTlvs.mTlvs, datasetTlvs.mLength);
-    }
-    else
-    {
-        if (aDatasetType == DatasetType::kActive)
-        {
-            VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
-            body = Json::ActiveDataset2JsonString(dataset);
-        }
-        else if (aDatasetType == DatasetType::kPending)
-        {
-            VerifyOrExit(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
-            body = Json::PendingDataset2JsonString(dataset);
-        }
-    }
+                if (aDatasetType == DatasetType::kActive)
+                {
+                    VerifyOrReturn(otDatasetGetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE,
+                                   OTBR_ERROR_NOT_FOUND);
+                }
+                else if (aDatasetType == DatasetType::kPending)
+                {
+                    VerifyOrReturn(otDatasetGetPendingTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE,
+                                   OTBR_ERROR_NOT_FOUND);
+                }
 
-    aResponse.SetBody(body);
+                contentType = OT_REST_CONTENT_TYPE_PLAIN;
+                body        = Utils::Bytes2Hex(datasetTlvs.mTlvs, datasetTlvs.mLength);
+            }
+            else
+            {
+                otOperationalDataset dataset;
+
+                if (aDatasetType == DatasetType::kActive)
+                {
+                    VerifyOrReturn(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, OTBR_ERROR_NOT_FOUND);
+                    body = Json::ActiveDataset2JsonString(dataset);
+                }
+                else if (aDatasetType == DatasetType::kPending)
+                {
+                    VerifyOrReturn(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, OTBR_ERROR_NOT_FOUND);
+                    body = Json::PendingDataset2JsonString(dataset);
+                }
+            }
+
+            return OTBR_ERROR_NONE;
+        }));
+
+    aResponse.set_content(body, contentType);
 
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
     }
     else if (error == OTBR_ERROR_NOT_FOUND)
     {
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::NoContent_204;
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
 void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
-    otError                  errorOt = OT_ERROR_NONE;
-    otbrError                error   = OTBR_ERROR_NONE;
-    struct NodeInfo          node;
-    std::string              body;
-    std::string              errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    otOperationalDataset     dataset   = {};
-    otOperationalDatasetTlvs datasetTlvs;
-    otOperationalDatasetTlvs datasetUpdateTlvs;
-    int                      ret;
-    bool                     isTlv;
+    otbrError       error = OTBR_ERROR_NONE;
+    struct NodeInfo node;
+    std::string     body;
+    StatusCode      errorCode = StatusCode::OK_200;
 
-    if (aDatasetType == DatasetType::kActive)
-    {
-        VerifyOrExit(otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED, error = OTBR_ERROR_INVALID_STATE);
-        errorOt = otDatasetGetActiveTlvs(mInstance, &datasetTlvs);
-    }
-    else if (aDatasetType == DatasetType::kPending)
-    {
-        errorOt = otDatasetGetPendingTlvs(mInstance, &datasetTlvs);
-    }
+    SuccessOrExit(
+        error = RunInMainLoop([this, aDatasetType, &errorCode, &aRequest]() {
+            bool                     isTlv;
+            otOperationalDataset     dataset = {};
+            otOperationalDatasetTlvs datasetTlvs;
+            otError                  errorOt = OT_ERROR_NONE;
 
-    // Create a new operational dataset if it doesn't exist.
-    if (errorOt == OT_ERROR_NOT_FOUND)
-    {
-        VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        otDatasetConvertToTlvs(&dataset, &datasetTlvs);
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusCreated);
-    }
+            if (aDatasetType == DatasetType::kActive)
+            {
+                VerifyOrReturn(otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED, OTBR_ERROR_INVALID_STATE);
+                errorOt = otDatasetGetActiveTlvs(mInstance, &datasetTlvs);
+            }
+            else if (aDatasetType == DatasetType::kPending)
+            {
+                errorOt = otDatasetGetPendingTlvs(mInstance, &datasetTlvs);
+            }
 
-    isTlv = aRequest.GetHeaderValue(OT_REST_CONTENT_TYPE_HEADER) == OT_REST_CONTENT_TYPE_PLAIN;
+            // Create a new operational dataset if it doesn't exist.
+            if (errorOt == OT_ERROR_NOT_FOUND)
+            {
+                VerifyOrReturn(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, OTBR_ERROR_REST);
+                otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+                errorCode = StatusCode::Created_201;
+            }
 
-    if (isTlv)
-    {
-        ret = Json::Hex2BytesJsonString(aRequest.GetBody(), datasetUpdateTlvs.mTlvs, OT_OPERATIONAL_DATASET_MAX_LENGTH);
-        VerifyOrExit(ret >= 0, error = OTBR_ERROR_INVALID_ARGS);
-        datasetUpdateTlvs.mLength = ret;
+            isTlv = aRequest.get_header_value(OT_REST_CONTENT_TYPE_HEADER) == OT_REST_CONTENT_TYPE_PLAIN;
 
-        VerifyOrExit(otDatasetParseTlvs(&datasetUpdateTlvs, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        VerifyOrExit(otDatasetUpdateTlvs(&dataset, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-    }
-    else
-    {
-        if (aDatasetType == DatasetType::kActive)
-        {
-            VerifyOrExit(Json::JsonActiveDatasetString2Dataset(aRequest.GetBody(), dataset),
-                         error = OTBR_ERROR_INVALID_ARGS);
-        }
-        else if (aDatasetType == DatasetType::kPending)
-        {
-            VerifyOrExit(Json::JsonPendingDatasetString2Dataset(aRequest.GetBody(), dataset),
-                         error = OTBR_ERROR_INVALID_ARGS);
-            VerifyOrExit(dataset.mComponents.mIsDelayPresent, error = OTBR_ERROR_INVALID_ARGS);
-        }
-        VerifyOrExit(otDatasetUpdateTlvs(&dataset, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-    }
+            if (isTlv)
+            {
+                int                      ret;
+                otOperationalDatasetTlvs datasetUpdateTlvs;
 
-    if (aDatasetType == DatasetType::kActive)
-    {
-        VerifyOrExit(otDatasetSetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-    }
-    else if (aDatasetType == DatasetType::kPending)
-    {
-        VerifyOrExit(otDatasetSetPendingTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-    }
+                ret = Json::Hex2BytesJsonString(aRequest.body, datasetUpdateTlvs.mTlvs,
+                                                OT_OPERATIONAL_DATASET_MAX_LENGTH);
+                VerifyOrReturn(ret >= 0, OTBR_ERROR_INVALID_ARGS);
+                datasetUpdateTlvs.mLength = ret;
 
-    aResponse.SetResponsCode(errorCode);
+                VerifyOrReturn(otDatasetParseTlvs(&datasetUpdateTlvs, &dataset) == OT_ERROR_NONE, OTBR_ERROR_REST);
+                VerifyOrReturn(otDatasetUpdateTlvs(&dataset, &datasetTlvs) == OT_ERROR_NONE, OTBR_ERROR_REST);
+            }
+            else
+            {
+                if (aDatasetType == DatasetType::kActive)
+                {
+                    VerifyOrReturn(Json::JsonActiveDatasetString2Dataset(aRequest.body, dataset),
+                                   OTBR_ERROR_INVALID_ARGS);
+                }
+                else if (aDatasetType == DatasetType::kPending)
+                {
+                    VerifyOrReturn(Json::JsonPendingDatasetString2Dataset(aRequest.body, dataset),
+                                   OTBR_ERROR_INVALID_ARGS);
+                    VerifyOrReturn(dataset.mComponents.mIsDelayPresent, OTBR_ERROR_INVALID_ARGS);
+                }
+                VerifyOrReturn(otDatasetUpdateTlvs(&dataset, &datasetTlvs) == OT_ERROR_NONE, OTBR_ERROR_REST);
+            }
+
+            if (aDatasetType == DatasetType::kActive)
+            {
+                VerifyOrReturn(otDatasetSetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, OTBR_ERROR_REST);
+            }
+            else if (aDatasetType == DatasetType::kPending)
+            {
+                VerifyOrReturn(otDatasetSetPendingTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, OTBR_ERROR_REST);
+            }
+            return OTBR_ERROR_NONE;
+        }));
+
+    aResponse.status = errorCode;
 
 exit:
     if (error == OTBR_ERROR_INVALID_ARGS)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        ErrorHandler(aResponse, StatusCode::BadRequest_400);
     }
     else if (error == OTBR_ERROR_INVALID_STATE)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        ErrorHandler(aResponse, StatusCode::Conflict_409);
     }
     else if (error != OTBR_ERROR_NONE)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
@@ -783,7 +741,7 @@ void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Respon
 {
     std::string errorCode;
 
-    switch (aRequest.GetMethod())
+    switch (GetMethod(aRequest))
     {
     case HttpMethod::kGet:
         GetDataset(aDatasetType, aRequest, aResponse);
@@ -792,12 +750,10 @@ void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Respon
         SetDataset(aDatasetType, aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
-        aResponse.SetComplete();
+        aResponse.status = StatusCode::OK_200;
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
     }
 }
@@ -815,63 +771,61 @@ void Resource::DatasetPending(const Request &aRequest, Response &aResponse) cons
 void Resource::GetCommissionerState(Response &aResponse) const
 {
     std::string         state;
-    std::string         errorCode;
     otCommissionerState stateCode;
 
-    stateCode = otCommissionerGetState(mInstance);
+    stateCode = RunInMainLoop(otCommissionerGetState, mInstance);
     state     = Json::String2JsonString(GetCommissionerStateName(stateCode));
-    aResponse.SetBody(state);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(state, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse) const
 {
     otbrError   error = OTBR_ERROR_NONE;
-    std::string errorCode;
     std::string body;
 
-    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
-    if (body == "enable")
-    {
-        VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_NONE);
-        VerifyOrExit(otCommissionerStart(mInstance, NULL, NULL, NULL) == OT_ERROR_NONE,
-                     error = OTBR_ERROR_INVALID_STATE);
-    }
-    else if (body == "disable")
-    {
-        VerifyOrExit(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_NONE);
-        VerifyOrExit(otCommissionerStop(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
-    }
-    else
-    {
-        ExitNow(error = OTBR_ERROR_INVALID_ARGS);
-    }
+    VerifyOrExit(Json::JsonString2String(aRequest.body, body), error = OTBR_ERROR_INVALID_ARGS);
+    SuccessOrExit(
+        error = RunInMainLoop([this, &body]() {
+            if (body == "enable")
+            {
+                VerifyOrReturn(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED, OTBR_ERROR_NONE);
+                VerifyOrReturn(otCommissionerStart(mInstance, NULL, NULL, NULL) == OT_ERROR_NONE,
+                               OTBR_ERROR_INVALID_STATE);
+            }
+            else if (body == "disable")
+            {
+                VerifyOrReturn(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED, OTBR_ERROR_NONE);
+                VerifyOrReturn(otCommissionerStop(mInstance) == OT_ERROR_NONE, OTBR_ERROR_INVALID_STATE);
+            }
+            else
+            {
+                return OTBR_ERROR_INVALID_ARGS;
+            }
+            return OTBR_ERROR_NONE;
+        }));
 
 exit:
     switch (error)
     {
     case OTBR_ERROR_NONE:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
         break;
     case OTBR_ERROR_INVALID_STATE:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        ErrorHandler(aResponse, StatusCode::Conflict_409);
         break;
     case OTBR_ERROR_INVALID_ARGS:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        ErrorHandler(aResponse, StatusCode::BadRequest_400);
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
         break;
     }
 }
 
 void Resource::CommissionerState(const Request &aRequest, Response &aResponse) const
 {
-    std::string errorCode;
-
-    switch (aRequest.GetMethod())
+    switch (GetMethod(aRequest))
     {
     case HttpMethod::kGet:
         GetCommissionerState(aResponse);
@@ -880,94 +834,97 @@ void Resource::CommissionerState(const Request &aRequest, Response &aResponse) c
         SetCommissionerState(aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
-        aResponse.SetComplete();
+        aResponse.status = StatusCode::OK_200;
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
     }
 }
 
 void Resource::GetJoiners(Response &aResponse) const
 {
-    uint16_t                  iter = 0;
-    otJoinerInfo              joinerInfo;
-    std::vector<otJoinerInfo> joinerTable;
-    std::string               joinerJson;
-    std::string               errorCode;
+    std::string body;
 
-    while (otCommissionerGetNextJoinerInfo(mInstance, &iter, &joinerInfo) == OT_ERROR_NONE)
-    {
-        joinerTable.push_back(joinerInfo);
-    }
+    body = RunInMainLoop([this]() {
+        std::vector<otJoinerInfo> joinerTable;
+        otJoinerInfo              joinerInfo;
+        uint16_t                  iter = 0;
 
-    joinerJson = Json::JoinerTable2JsonString(joinerTable);
-    aResponse.SetBody(joinerJson);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+        while (otCommissionerGetNextJoinerInfo(mInstance, &iter, &joinerInfo) == OT_ERROR_NONE)
+        {
+            joinerTable.push_back(joinerInfo);
+        }
+
+        return Json::JoinerTable2JsonString(joinerTable);
+    });
+
+    aResponse.set_content(body, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const
 {
-    otbrError           error   = OTBR_ERROR_NONE;
-    otError             errorOt = OT_ERROR_NONE;
-    std::string         errorCode;
-    otJoinerInfo        joiner;
-    const otExtAddress *addrPtr                         = nullptr;
-    const uint8_t       emptyArray[OT_EXT_ADDRESS_SIZE] = {0};
+    otbrError error   = OTBR_ERROR_NONE;
+    otError   errorOt = OT_ERROR_NONE;
 
-    VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_ACTIVE, error = OTBR_ERROR_INVALID_STATE);
+    SuccessOrExit(
+        error = RunInMainLoop([this, &errorOt, &aRequest]() {
+            otJoinerInfo        joiner;
+            const otExtAddress *addrPtr                         = nullptr;
+            const uint8_t       emptyArray[OT_EXT_ADDRESS_SIZE] = {0};
 
-    VerifyOrExit(Json::JsonJoinerInfoString2JoinerInfo(aRequest.GetBody(), joiner), error = OTBR_ERROR_INVALID_ARGS);
+            VerifyOrReturn(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_ACTIVE, OTBR_ERROR_INVALID_STATE);
 
-    addrPtr = &joiner.mSharedId.mEui64;
-    if (memcmp(&joiner.mSharedId.mEui64, emptyArray, OT_EXT_ADDRESS_SIZE) == 0)
-    {
-        addrPtr = nullptr;
-    }
+            VerifyOrReturn(Json::JsonJoinerInfoString2JoinerInfo(aRequest.body, joiner), OTBR_ERROR_INVALID_ARGS);
 
-    if (joiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
-    {
-        errorOt = otCommissionerAddJoinerWithDiscerner(mInstance, &joiner.mSharedId.mDiscerner, joiner.mPskd.m8,
-                                                       joiner.mExpirationTime);
-    }
-    else
-    {
-        errorOt = otCommissionerAddJoiner(mInstance, addrPtr, joiner.mPskd.m8, joiner.mExpirationTime);
-    }
-    VerifyOrExit(errorOt == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+            addrPtr = &joiner.mSharedId.mEui64;
+            if (memcmp(&joiner.mSharedId.mEui64, emptyArray, OT_EXT_ADDRESS_SIZE) == 0)
+            {
+                addrPtr = nullptr;
+            }
+
+            if (joiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
+            {
+                errorOt = otCommissionerAddJoinerWithDiscerner(mInstance, &joiner.mSharedId.mDiscerner, joiner.mPskd.m8,
+                                                               joiner.mExpirationTime);
+            }
+            else
+            {
+                errorOt = otCommissionerAddJoiner(mInstance, addrPtr, joiner.mPskd.m8, joiner.mExpirationTime);
+            }
+            VerifyOrReturn(errorOt == OT_ERROR_NONE, OTBR_ERROR_OPENTHREAD);
+            return OTBR_ERROR_NONE;
+        }));
 
 exit:
     switch (error)
     {
     case OTBR_ERROR_NONE:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
         break;
     case OTBR_ERROR_INVALID_STATE:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        ErrorHandler(aResponse, StatusCode::Conflict_409);
         break;
     case OTBR_ERROR_INVALID_ARGS:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        ErrorHandler(aResponse, StatusCode::BadRequest_400);
         break;
     case OTBR_ERROR_OPENTHREAD:
         switch (errorOt)
         {
         case OT_ERROR_INVALID_ARGS:
-            ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+            ErrorHandler(aResponse, StatusCode::BadRequest_400);
             break;
         case OT_ERROR_NO_BUFS:
-            ErrorHandler(aResponse, HttpStatusCode::kStatusInsufficientStorage);
+            ErrorHandler(aResponse, StatusCode::InsufficientStorage_507);
             break;
         default:
-            ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+            ErrorHandler(aResponse, StatusCode::InternalServerError_500);
             break;
         }
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
         break;
     }
 }
@@ -986,7 +943,7 @@ void Resource::RemoveJoiner(const Request &aRequest, Response &aResponse) const
 
     VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_ACTIVE, error = OTBR_ERROR_INVALID_STATE);
 
-    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(Json::JsonString2String(aRequest.body, body), error = OTBR_ERROR_INVALID_ARGS);
     if (body != "*")
     {
         error = Json::StringDiscerner2Discerner(const_cast<char *>(body.c_str()), discerner);
@@ -1017,17 +974,16 @@ exit:
     switch (error)
     {
     case OTBR_ERROR_NONE:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
+        aResponse.status = StatusCode::OK_200;
         break;
     case OTBR_ERROR_INVALID_STATE:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        ErrorHandler(aResponse, StatusCode::Conflict_409);
         break;
     case OTBR_ERROR_INVALID_ARGS:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        ErrorHandler(aResponse, StatusCode::BadRequest_400);
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
         break;
     }
 }
@@ -1036,7 +992,7 @@ void Resource::CommissionerJoiner(const Request &aRequest, Response &aResponse) 
 {
     std::string errorCode;
 
-    switch (aRequest.GetMethod())
+    switch (GetMethod(aRequest))
     {
     case HttpMethod::kGet:
         GetJoiners(aResponse);
@@ -1049,12 +1005,10 @@ void Resource::CommissionerJoiner(const Request &aRequest, Response &aResponse) 
         break;
 
     case HttpMethod::kOptions:
-        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-        aResponse.SetResponsCode(errorCode);
-        aResponse.SetComplete();
+        aResponse.status = StatusCode::OK_200;
         break;
     default:
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
     }
 }
@@ -1067,22 +1021,21 @@ void Resource::GetCoprocessorVersion(Response &aResponse) const
     coprocessorVersion = mHost->GetCoprocessorVersion();
     coprocessorVersion = Json::String2JsonString(coprocessorVersion);
 
-    aResponse.SetBody(coprocessorVersion);
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    aResponse.SetResponsCode(errorCode);
+    aResponse.set_content(coprocessorVersion, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 void Resource::CoprocessorVersion(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    if (GetMethod(aRequest) == HttpMethod::kGet)
     {
         GetCoprocessorVersion(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
     }
 }
 
@@ -1136,12 +1089,12 @@ exit:
 
     if (error == OTBR_ERROR_NONE)
     {
-        aResponse.SetStartTime(steady_clock::now());
-        aResponse.SetCallback();
+        // TODO aResponse.SetStartTime(steady_clock::now());
+        // aResponse.SetCallback();
     }
     else
     {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
 }
 
