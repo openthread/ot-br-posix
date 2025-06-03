@@ -53,6 +53,7 @@
 #include "mdns/mdns.hpp"
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #include "proto/thread_telemetry.pb.h"
+#include "utils/telemetry_retriever_border_agent.hpp"
 #endif
 
 namespace otbr {
@@ -349,9 +350,14 @@ private:
     Dhcp6PdStateCallback mDhcp6PdCallback;
 #endif
 
-#if OTBR_ENABLE_TELEMETRY_DATA_API && (OTBR_ENABLE_NAT64 || OTBR_ENABLE_DHCP6_PD)
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+#if (OTBR_ENABLE_NAT64 || OTBR_ENABLE_DHCP6_PD)
     static constexpr uint8_t kNat64PdCommonHashSaltLength = 16;
     uint8_t                  mNat64PdCommonSalt[kNat64PdCommonHashSaltLength];
+#endif
+#if OTBR_ENABLE_BORDER_AGENT
+    TelemetryRetriever::BorderAgent mTelemetryRetriverBorderAgent;
+#endif
 #endif
 };
 

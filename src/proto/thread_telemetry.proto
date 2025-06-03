@@ -563,9 +563,35 @@ message TelemetryData {
     optional uint32 mgmt_pending_get_reqs = 16;
   }
 
+  enum EpskcDeactivatedReason {
+      EPSKC_DEACTIVATED_REASON_UNKNOWN = 0;         ///< Deactivated for an unknown reason.
+      EPSKC_DEACTIVATED_REASON_LOCAL_CLOSE = 1;     ///< Deactivated by a call to the API.
+      EPSKC_DEACTIVATED_REASON_REMOTE_CLOSE = 2;    ///< Disconnected by the peer.
+      EPSKC_DEACTIVATED_REASON_SESSION_ERROR = 3;   ///< Disconnected due to some error.
+      EPSKC_DEACTIVATED_REASON_SESSION_TIMEOUT = 4; ///< Disconnected due to timeout.
+      EPSKC_DEACTIVATED_REASON_MAX_ATTEMPTS = 5;    ///< Max allowed attempts reached.
+      EPSKC_DEACTIVATED_REASON_EPSKC_TIMEOUT = 6;   ///< The ePSKc mode timed out.
+  }
+
+  message BorderAgentEpskcJourneyInfo {
+
+      // The timestamp of different events during the ePSKc journey.
+      optional uint32 activated_msec = 1;
+      optional uint32 connected_msec = 2;
+      optional uint32 petitioned_msec = 3;
+      optional uint32 retrieved_active_dataset_msec = 4;
+      optional uint32 retrieved_pending_dataset_msec = 5;
+      optional uint32 keep_alive_msec = 6;
+      optional uint32 deactivated_msec = 7;
+      optional EpskcDeactivatedReason deactivated_reason = 8;
+  }
+
   message BorderAgentInfo {
     // The border agent counters
     optional BorderAgentCounters border_agent_counters = 1;
+
+    // The border agent epskc journey info
+    repeated BorderAgentEpskcJourneyInfo border_agent_epskc_journey_info = 2;
   }
 
   message WpanBorderRouter {

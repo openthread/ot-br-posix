@@ -37,6 +37,7 @@ add_library(otbr-utils
     steering_data.cpp
     string_utils.cpp
     system_utils.cpp
+    telemetry_retriever_border_agent.cpp
     thread_helper.cpp
     thread_helper.hpp
 )
