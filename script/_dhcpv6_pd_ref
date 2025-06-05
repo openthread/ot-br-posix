@@ -32,6 +32,7 @@
 
 # TODO: set the upstream interface according to the environment variables of `script/setup`.
 UPSTREAM_INTERFACE="eth0"
+WPAN_INTERFACE="wpan0"
 
 DHCPCD_ENTER_HOOK="/etc/dhcpcd.enter-hook"
 DHCPCD_EXIT_HOOK="/etc/dhcpcd.exit-hook"
@@ -51,9 +52,20 @@ create_dhcpcd_conf_pd()
 {
     sudo tee ${DHCP_CONFIG_PD_PATH} >/dev/null <<EOF
 noipv6rs # disable router solicitation
+interface ${WPAN_INTERFACE}
+  # 'nolink' allows dhcpcd to configure the interface even if it
+  # doesn't detect a carrier (link up). This is necessary when dhcpcd
+  # starts before Thread installing ${WPAN_INTERFACE}
+  nolink
 interface ${UPSTREAM_INTERFACE}
   iaid 1
-  ia_pd 2/::/64 -
+  # This explicit delegation to ${WPAN_INTERFACE} makes dhcpcd manage the prefix,
+  # installing necessary routes and assigning an address. It prevents dhcpcd
+  # from installing a reject route for the prefix delegation. Such a reject route
+  # would conflict with the active route for the same /64 prefix on ${WPAN_INTERFACE}
+  # configured by OpenThread, as the kernel might prefer dhcpcd's unreachable route
+  # due to a lower metric.
+  ia_pd 2/::/64 ${WPAN_INTERFACE}/0/64/0
 release
 # Disable Router Solicitations (RS) again, specifically for ${UPSTREAM_INTERFACE}.
 # This ensures that accept_ra is prevented from being set to 0, allowing
