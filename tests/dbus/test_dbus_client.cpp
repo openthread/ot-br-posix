@@ -293,6 +293,7 @@ void CheckBorderAgentInfo(const threadnetwork::TelemetryData_BorderAgentInfo &aB
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().pskc_commissioner_petitions() == 0);
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().mgmt_active_get_reqs() == 0);
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().mgmt_pending_get_reqs() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_epskc_journey_info_size() == 0);
 }
 
 void CheckTelemetryData(ThreadApiDBus *aApi)

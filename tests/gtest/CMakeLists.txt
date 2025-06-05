@@ -108,3 +108,23 @@ target_link_libraries(otbr-gtest-host-api
     GTest::gmock_main
 )
 gtest_discover_tests(otbr-gtest-host-api)
+
+if(OTBR_TELEMETRY_DATA_API)
+    add_executable(otbr-gtest-telemetry
+        ${OTBR_PROJECT_DIRECTORY}/src/utils/telemetry_retriever_border_agent.cpp
+        test_telemetry.cpp
+    )
+    target_include_directories(otbr-gtest-telemetry
+        PRIVATE
+            ${OTBR_PROJECT_DIRECTORY}/include
+            ${OTBR_PROJECT_DIRECTORY}/src
+            ${OPENTHREAD_PROJECT_DIRECTORY}/include
+            ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest
+    )
+    target_link_libraries(otbr-gtest-telemetry
+        otbr-config
+        otbr-proto
+        GTest::gmock_main
+    )
+    gtest_discover_tests(otbr-gtest-telemetry)
+endif()

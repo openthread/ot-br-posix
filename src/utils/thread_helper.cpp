@@ -231,6 +231,9 @@ void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::T
 ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Host::RcpHost *aHost)
     : mInstance(aInstance)
     , mHost(aHost)
+#if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT
+    , mTelemetryRetriverBorderAgent(aInstance)
+#endif
 {
 #if OTBR_ENABLE_TELEMETRY_DATA_API && (OTBR_ENABLE_NAT64 || OTBR_ENABLE_DHCP6_PD)
     otError error;
@@ -1070,8 +1073,10 @@ void ThreadHelper::RetrieveBorderAgentInfo(threadnetwork::TelemetryData::BorderA
 
     baCounters->set_mgmt_active_get_reqs(otBorderAgentCounters.mMgmtActiveGets);
     baCounters->set_mgmt_pending_get_reqs(otBorderAgentCounters.mMgmtPendingGets);
+
+    mTelemetryRetriverBorderAgent.RetrieveEpskcJourneyInfo(aBorderAgentInfo);
 }
-#endif
+#endif // OTBR_ENABLE_BORDER_AGENT
 
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
