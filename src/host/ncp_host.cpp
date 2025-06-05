@@ -109,7 +109,8 @@ const otMeshLocalPrefix *NcpNetworkProperties::GetMeshLocalPrefix(void) const
 // ===================================== NcpHost ======================================
 
 NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun)
-    : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
+    : mIsInitialized(false)
+    , mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
     , mCliDaemon(mNcpSpinel)
 {
     memset(&mConfig, 0, sizeof(mConfig));
@@ -141,10 +142,12 @@ void NcpHost::Init(void)
     mNcpSpinel.SrpServerSetEnabled(/* aEnabled */ true);
 #endif
 #endif
+    mIsInitialized = true;
 }
 
 void NcpHost::Deinit(void)
 {
+    mIsInitialized = false;
     mNcpSpinel.Deinit();
     otSysDeinit();
 }

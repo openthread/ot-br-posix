@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_NCP_HOST_HPP_
 #define OTBR_AGENT_NCP_HOST_HPP_
 
+#include <atomic>
+
 #include "lib/spinel/coprocessor_type.h"
 #include "lib/spinel/spinel_driver.hpp"
 
@@ -137,6 +139,10 @@ public:
     }
     void Init(void) override;
     void Deinit(void) override;
+    bool IsInitialized(void) const override
+    {
+        return mIsInitialized;
+    }
 
     // MainloopProcessor methods
     void Update(MainloopContext &aMainloop) override;
@@ -169,6 +175,7 @@ private:
                             const uint8_t    *aData,
                             uint16_t          aDataLen) override;
 
+    std::atomic<bool>         mIsInitialized;
     ot::Spinel::SpinelDriver &mSpinelDriver;
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;
