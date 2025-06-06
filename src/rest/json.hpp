@@ -36,9 +36,11 @@
 
 #include "openthread-br/config.h"
 
-#include "openthread/dataset.h"
-#include "openthread/link.h"
-#include "openthread/thread_ftd.h"
+#include <httplib.h>
+
+#include <openthread/dataset.h>
+#include <openthread/link.h>
+#include <openthread/thread_ftd.h>
 
 #include "common/types.hpp"
 #include "rest/types.hpp"
@@ -208,7 +210,7 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
  *
  * @returns A string of serialized Json object.
  */
-std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage);
+std::string Error2JsonString(httplib::StatusCode aErrorCode, std::string aErrorMessage);
 
 /**
  * This method formats a Json object from an active dataset.
