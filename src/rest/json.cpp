@@ -349,6 +349,49 @@ static cJSON *LeaderData2Json(const otLeaderData &aLeaderData)
     return leaderData;
 }
 
+std::string NetifAddr2JsonString(const otNetifAddress *aAddress)
+{
+    std::string ret;
+    cJSON      *ipAddresses   = cJSON_CreateObject();
+    cJSON      *alocAddresses = cJSON_CreateArray();
+    cJSON      *omrAddresses  = cJSON_CreateArray();
+
+    for (const otNetifAddress *addr = aAddress; addr; addr = addr->mNext)
+    {
+        if (addr->mRloc)
+        {
+            cJSON_AddItemToObject(ipAddresses, "Rloc", IpAddr2Json(addr->mAddress));
+            continue;
+        }
+        if (addr->mMeshLocal)
+        {
+            if (addr->mAddress.mFields.m8[OT_IP6_ADDRESS_SIZE - 2] == 0xfc)
+            {
+                cJSON_AddItemToArray(alocAddresses, IpAddr2Json(addr->mAddress));
+            }
+            else
+            {
+                cJSON_AddItemToObject(ipAddresses, "Mleid", IpAddr2Json(addr->mAddress));
+            }
+            continue;
+        }
+        if (addr->mAddress.mFields.m16[0] == 0x80fe)
+        {
+            cJSON_AddItemToObject(ipAddresses, "LinkLocal", IpAddr2Json(addr->mAddress));
+            continue;
+        }
+        cJSON_AddItemToArray(omrAddresses, IpAddr2Json(addr->mAddress));
+    }
+
+    cJSON_AddItemToObject(ipAddresses, "Omr", omrAddresses);
+    cJSON_AddItemToObject(ipAddresses, "Aloc", alocAddresses);
+
+    ret = Json2String(ipAddresses);
+    cJSON_Delete(ipAddresses);
+
+    return ret;
+}
+
 std::string IpAddr2JsonString(const otIp6Address &aAddress)
 {
     std::string ret;
