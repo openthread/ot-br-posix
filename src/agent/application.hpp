@@ -49,6 +49,12 @@
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
 #endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#include "sdp_proxy/advertising_proxy.hpp"
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+#include "sdp_proxy/discovery_proxy.hpp"
+#endif
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
 #endif
