@@ -34,10 +34,20 @@ TOOLS_HOME=$HOME/.cache/tools
 
 main()
 {
-    IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
+    # Determine the image stem name based on IMAGE_URL suffix
+    if [[ ${IMAGE_URL} == *.zip ]]; then
+        IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
+    elif [[ ${IMAGE_URL} == *.img.xz ]]; then
+        IMAGE_NAME=$(basename "${IMAGE_URL}" .img.xz)
+    else
+        echo "Unsupported image archive format in IMAGE_URL: ${IMAGE_URL}" >&2
+        echo "Must end in .zip or .img.xz" >&2
+        exit 1
+    fi
+
     STAGE_DIR=/tmp/raspbian
     IMAGE_DIR=/media/rpi
-    IMAGE_FILE="$TOOLS_HOME"/images/"$IMAGE_NAME".img
+    IMAGE_FILE="$TOOLS_HOME/images/${IMAGE_NAME}.img"
 
     [ -d "$STAGE_DIR" ] || mkdir -p "$STAGE_DIR"
     cp -v "$IMAGE_FILE" "$STAGE_DIR"/raspbian.img
