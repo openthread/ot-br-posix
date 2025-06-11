@@ -136,6 +136,7 @@ public:
         return mThreadHelper.get();
     }
 
+    bool IsInitialized(void) const override { return mInstance != nullptr; }
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
 

@@ -137,6 +137,10 @@ public:
     }
     void Init(void) override;
     void Deinit(void) override;
+    bool IsInitialized(void) const override
+    {
+        return mIsInitialized;
+    }
 
     // MainloopProcessor methods
     void Update(MainloopContext &aMainloop) override;
@@ -169,6 +173,7 @@ private:
                             const uint8_t    *aData,
                             uint16_t          aDataLen) override;
 
+    bool                      mIsInitialized;
     ot::Spinel::SpinelDriver &mSpinelDriver;
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;

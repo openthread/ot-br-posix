@@ -338,6 +338,16 @@ public:
     virtual void Deinit(void) = 0;
 
     /**
+     * Whether the Thread controller has been initialized.
+     *
+     * All the functional APIs MUST be called when the Thread controller is initialized.
+     *
+     * @retval true   The Thread controller has been initialized.
+     * @retval false  The Thread controller hasn't been initialized.
+     */
+    virtual bool IsInitialized(void) const = 0;
+
+    /**
      * The destructor.
      */
     virtual ~ThreadHost(void) = default;
