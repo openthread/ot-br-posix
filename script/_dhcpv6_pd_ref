@@ -32,6 +32,8 @@
 
 # TODO: set the upstream interface according to the environment variables of `script/setup`.
 UPSTREAM_INTERFACE="eth0"
+WPAN_INTERFACE="wpan0"
+LARGE_METRIC="2048" # A high metric value for loopback to make its routes less preferred.
 
 DHCPCD_ENTER_HOOK="/etc/dhcpcd.enter-hook"
 DHCPCD_EXIT_HOOK="/etc/dhcpcd.exit-hook"
@@ -51,9 +53,16 @@ create_dhcpcd_conf_pd()
 {
     sudo tee ${DHCP_CONFIG_PD_PATH} >/dev/null <<EOF
 noipv6rs # disable router solicitation
+# The 'interface lo' block with a high 'metric' value ensures that dhcpcd's
+# default reject route for unassigned delegated prefixes on loopback interface,
+# are less preferred.
+# OpenThread will later install an active route for the delegated prefix on
+# ${WPAN_INTERFACE} with a standard (lower) metric, ensuring it takes precedence.
+interface lo
+  metric ${LARGE_METRIC}
 interface ${UPSTREAM_INTERFACE}
   iaid 1
-  ia_pd 2/::/64 -
+  ia_pd 2/::/64
 release
 # Disable Router Solicitations (RS) again, specifically for ${UPSTREAM_INTERFACE}.
 # This ensures that accept_ra is prevented from being set to 0, allowing
