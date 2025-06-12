@@ -156,6 +156,9 @@ dhcpv6_pd_ref_install()
     sudo cp ${DHCP_CONFIG_PD_PATH} ${DHCP_CONFIG_PATH}
 
     if have systemctl; then
+        sudo systemctl stop NetworkManager || true
+        sudo systemctl disable NetworkManager || true
+
         sudo systemctl daemon-reload
 
         # Restart dhcpcd only if it's running. This is unnecessary when the dhcp6_pd_daemon
