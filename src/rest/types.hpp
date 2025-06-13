@@ -63,7 +63,7 @@ enum class HttpMethod : std::uint8_t
     kPost    = 3, ///< POST
     kPut     = 4, ///< PUT
     kOptions = 6, ///< OPTIONS
-
+    kInvalidMethod,
 };
 
 enum class HttpStatusCode : std::uint16_t

@@ -112,14 +112,12 @@ public:
      */
     explicit Application(Host::ThreadHost  &aHost,
                          const std::string &aInterfaceName,
-                         const std::string &aBackboneInterfaceName,
-                         const std::string &aRestListenAddress,
-                         int                aRestListenPort);
+                         const std::string &aBackboneInterfaceName);
 
     /**
      * This method initializes the Application instance.
      */
-    void Init(void);
+    void Init(const std::string &aRestListenAddress, int aRestListenPort);
 
     /**
      * This method de-initializes the Application instance.
@@ -265,8 +263,8 @@ private:
 
     static void HandleSignal(int aSignal);
 
-    void CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort);
-    void InitRcpMode(void);
+    void CreateRcpMode(void);
+    void InitRcpMode(const std::string &aRestListenAddress, int aRestListenPort);
     void DeinitRcpMode(void);
 
     void CreateNcpMode(void);

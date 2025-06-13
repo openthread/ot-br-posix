@@ -613,7 +613,7 @@ std::string CString2JsonString(const char *aCString)
     return ret;
 }
 
-std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage)
+std::string Error2JsonString(httplib::StatusCode aErrorCode, std::string aErrorMessage)
 {
     std::string ret;
     cJSON      *error = cJSON_CreateObject();
