@@ -127,7 +127,7 @@ ActionsList::~ActionsList()
 
 size_t ActionsList::FreeCapacity(void) const
 {
-    return mCollection.size() - mMaxActions;
+    return mMaxActions > mCollection.size() ? mMaxActions - mCollection.size() : 0;
 }
 
 bool ActionsList::ValidateRequest(const cJSON *aJson)
