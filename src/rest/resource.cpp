@@ -55,6 +55,10 @@
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/networks/current"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/networks/current/prefix"
+#define OT_REST_RESOURCE_PATH_NODE_IPADDRESS "/node/ip-address"
+#define OT_REST_RESOURCE_PATH_NODE_IPADDRESS_MLEID "/node/ip-address/mleid"
+#define OT_REST_RESOURCE_PATH_NODE_IPADDRESS_RLOC "/node/ip-address/rloc"
+#define OT_REST_RESOURCE_PATH_NODE_IPADDRESS_OMR "/node/ip-address/omr"
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
 #define OT_REST_HTTP_STATUS_201 "201 Created"
@@ -148,6 +152,10 @@ Resource::Resource(RcpHost *aHost)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, &Resource::DatasetActive);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, &Resource::DatasetPending);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_IPADDRESS, &Resource::IpAddr);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_IPADDRESS_MLEID, &Resource::IpAddrMleid);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_IPADDRESS_RLOC, &Resource::IpAddrRloc);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_IPADDRESS_OMR, &Resource::IpAddrOmr);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, &Resource::CommissionerState);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, &Resource::CommissionerJoiner);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, &Resource::CoprocessorVersion);
@@ -1079,6 +1087,124 @@ void Resource::CoprocessorVersion(const Request &aRequest, Response &aResponse) 
     if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetCoprocessorVersion(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+    }
+}
+
+void Resource::GetIpAddr(Response &aResponse) const
+{
+    std::string           errorCode;
+    std::string           addrString;
+    const otNetifAddress *unicastAddrs = otIp6GetUnicastAddresses(mInstance);
+
+    addrString = Json::NetifAddr2JsonString(unicastAddrs);
+    aResponse.SetBody(addrString);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::IpAddr(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == HttpMethod::kGet)
+    {
+        GetIpAddr(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+    }
+}
+
+void Resource::GetIpAddrMleid(Response &aResponse) const
+{
+    std::string         errorCode;
+    std::string         mleidJsonString;
+    const otIp6Address *mleid;
+
+    mleid = otThreadGetMeshLocalEid(mInstance);
+
+    mleidJsonString = Json::IpAddr2JsonString(*mleid);
+    aResponse.SetBody(mleidJsonString);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::IpAddrMleid(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == HttpMethod::kGet)
+    {
+        GetIpAddrMleid(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+    }
+}
+
+void Resource::GetIpAddrRloc(Response &aResponse) const
+{
+    std::string         errorCode;
+    std::string         rlocJsonString;
+    const otIp6Address *rloc;
+
+    rloc = otThreadGetRloc(mInstance);
+
+    rlocJsonString = Json::IpAddr2JsonString(*rloc);
+    aResponse.SetBody(rlocJsonString);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::IpAddrRloc(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == HttpMethod::kGet)
+    {
+        GetIpAddrRloc(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+    }
+}
+
+void Resource::GetIpAddrOmr(Response &aResponse) const
+{
+    std::string           errorCode;
+    std::string           omrJsonString;
+    const otIp6Address   *omr;
+    const otNetifAddress *unicastAddrs = otIp6GetUnicastAddresses(mInstance);
+
+    for (const otNetifAddress *addr = unicastAddrs; addr; addr = addr->mNext)
+    {
+        if (addr->mMeshLocal || addr->mAddress.mFields.m16[0] == 0x80fe || !addr->mPreferred)
+        {
+            continue;
+        }
+        omr = &addr->mAddress;
+    }
+
+    omrJsonString = Json::IpAddr2JsonString(*omr);
+    aResponse.SetBody(omrJsonString);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::IpAddrOmr(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == HttpMethod::kGet)
+    {
+        GetIpAddrOmr(aResponse);
     }
     else
     {

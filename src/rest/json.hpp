@@ -129,6 +129,15 @@ std::string Node2JsonString(const NodeInfo &aNode);
 std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet);
 
 /**
+ * This method formats a NetifAddress to a Json object and serialize it to a string.
+ *
+ * @param[in] aAddress  A pointer to a NetifAddress object.
+ *
+ * @returns A string of serialized Json object.
+ */
+std::string NetifAddr2JsonString(const otNetifAddress *aAddress);
+
+/**
  * This method formats an Ipv6Address to a Json string and serialize it to a string.
  *
  * @param[in] aAddress  An Ip6Address object.
