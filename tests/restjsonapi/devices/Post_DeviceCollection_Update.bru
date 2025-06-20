@@ -1,0 +1,32 @@
+meta {
+  name: Post update DeviceCollection
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/devices
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: in [200, 408]
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].type: neq ""
+  res.body.data[0].attributes.created: isDefined
+  res.body.data[0].attributes.mlEidIid: neq ""
+}
+
+docs {
+  Update device collection.
+}

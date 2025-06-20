@@ -1,0 +1,38 @@
+meta {
+  name: Get Actions Collection (json)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.headers['content-type']: eq application/json
+  res.body: isJson
+  res.status: eq 200
+  res.body[0].status: isDefined
+}
+
+tests {
+  
+  test("Data contains fields requested", function() {
+    const data = res.getBody();
+    expect(data).to.be.an.instanceOf(Array);
+    for (let i=0; i < data.length; i++){
+      item = data[i];
+      expect(item).to.have.property("status");
+    }
+  });
+}
+
+docs {
+  Return all items stored in the Collection.
+}
