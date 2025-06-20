@@ -1,0 +1,32 @@
+meta {
+  name: Get NetworkDiagnostics Items
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/diagnostics?fields[networkDiagnostics]
+  body: json
+  auth: none
+}
+
+query {
+  fields[networkDiagnostics]: 
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.data: isDefined
+}
+
+docs {
+  Return all items of type NetworkDiagnostics stored in the Diagnostics Collection.
+}
