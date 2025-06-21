@@ -28,21 +28,19 @@
 
 add_library(otbr-rest
     rest_web_server.cpp
-    connection.cpp
-    resource.cpp
     json.cpp
-    parser.cpp
-    request.cpp
-    response.cpp
+)
+
+target_include_directories(otbr-rest PUBLIC
+    ${PROJECT_SOURCE_DIR}/third_party/cpp-httplib/repo
 )
 
 target_link_libraries(otbr-rest
-    PUBLIC
-        http_parser
     PRIVATE
         cjson
         otbr-config
         otbr-utils
         openthread-ftd
         openthread-posix
+        pthread
 )
