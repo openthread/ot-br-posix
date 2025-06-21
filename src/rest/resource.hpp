@@ -130,6 +130,10 @@ private:
     void Diagnostic(const Request &aRequest, Response &aResponse) const;
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
     void CoprocessorVersion(const Request &aRequest, Response &aResponse) const;
+    void IpAddr(const Request &aRequest, Response &aResponse) const;
+    void IpAddrMleid(const Request &aRequest, Response &aResponse) const;
+    void IpAddrRloc(const Request &aRequest, Response &aResponse) const;
+    void IpAddrOmr(const Request &aRequest, Response &aResponse) const;
 
     void GetNodeInfo(Response &aResponse) const;
     void DeleteNodeInfo(Response &aResponse) const;
@@ -151,6 +155,10 @@ private:
     void AddJoiner(const Request &aRequest, Response &aResponse) const;
     void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
     void GetCoprocessorVersion(Response &aResponse) const;
+    void GetIpAddr(Response &aResponse) const;
+    void GetIpAddrMleid(Response &aResponse) const;
+    void GetIpAddrRloc(Response &aResponse) const;
+    void GetIpAddrOmr(Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);

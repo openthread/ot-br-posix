@@ -404,6 +404,64 @@ paths:
                 type: string
                 description: Coprocessor version string
                 example: "OPENTHREAD/thread-reference-20200818-1740-g33cc75ed3; NRF52840; Jun  2 2022 14:25:49"
+  /node/ip-address:
+    get:
+      tags:
+        - node
+      summary: Get the MLEID ip address
+      description: Retrieves the border router mesh-local EID IP address.
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ip-address"
+  /node/ip-address/mleid:
+    get:
+      tags:
+        - node
+      summary: Get the MLEID ip address
+      description: Retrieves the border router mesh-local EID IP address.
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: string
+                description: mleid ip address
+                example: "fda7:fe3:24a2:dd92:2d48:2a40:b06:83c1"
+  /node/ip-address/rloc:
+    get:
+      tags:
+        - node
+      summary: Get the RLOC ip address
+      description: Retrieves the border router rloc IP address.
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: string
+                description: rloc ip address
+                example: "fda7:fe3:24a2:dd92:0:ff:fe00:5c00"
+  /node/ip-address/omr:
+    get:
+      tags:
+        - node
+      summary: Get the OMR ip address.
+      description: Retrieves the the preferred off-mesh-routable ip address of the border router.
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: string
+                description: omr ip address
+                example: "fd0a:901c:88d2:1:74e9:f7b8:f987:c4d5"
 
 components:
   schemas:
@@ -603,3 +661,31 @@ components:
           type: integer
           description: Joiner expiration time in milliseconds on response and seconds on request 
           default: 60 
+    ip-address:
+      type: object
+      properties:
+        Rloc:
+          type: string
+          description: Current RLOC IP address of the border router
+          example: "fde5:8dba:82e1:1::ff:fe00:1001"
+        Mleid: 
+          type: string
+          description: Current MLEID IP address of the border router
+          example: "fde5:8dba:82e1:1:416:993c:8399:35ab"
+        LinkLocal:
+          type: string
+          description: Current Link Local IP address of the border router
+          example: "fe80::54db:881c:3845:57f4"
+        Omr:
+          type: array
+          description: Off mesh routable IP addresses of the border router
+          items:
+            type: string
+            example: "2000::54db:881c:3845:57f4"
+        Aloc:
+          type: array
+          description: anycast locator IP addresses of the border router
+          items:
+            type: string
+            example: "fde5:8dba:82e1:1::ff:fe00:fc01"
+
