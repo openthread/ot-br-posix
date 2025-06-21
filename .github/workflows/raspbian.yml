@@ -44,8 +44,15 @@ jobs:
 
   raspbian-check:
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image_url: [
+          "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip",
+          "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2025-05-13/2025-05-13-raspios-bookworm-armhf-lite.img.xz"
+        ]
     env:
-      IMAGE_URL: https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip
+      IMAGE_URL: ${{ matrix.image_url }}
       BUILD_TARGET: raspbian-gcc
     steps:
     - uses: actions/checkout@v4

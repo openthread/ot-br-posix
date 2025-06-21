@@ -34,10 +34,20 @@ TOOLS_HOME=$HOME/.cache/tools
 
 main()
 {
-    IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
+    # Determine the image stem name based on IMAGE_URL suffix
+    if [[ ${IMAGE_URL} == *.zip ]]; then
+        IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
+    elif [[ ${IMAGE_URL} == *.img.xz ]]; then
+        IMAGE_NAME=$(basename "${IMAGE_URL}" .img.xz)
+    else
+        echo "Unsupported image archive format in IMAGE_URL: ${IMAGE_URL}" >&2
+        echo "Must end in .zip or .img.xz" >&2
+        exit 1
+    fi
+
     STAGE_DIR=/tmp/raspbian
     IMAGE_DIR=/media/rpi
-    IMAGE_FILE="$TOOLS_HOME"/images/"$IMAGE_NAME".img
+    IMAGE_FILE="$TOOLS_HOME/images/${IMAGE_NAME}.img"
 
     [ -d "$STAGE_DIR" ] || mkdir -p "$STAGE_DIR"
     cp -v "$IMAGE_FILE" "$STAGE_DIR"/raspbian.img
@@ -61,11 +71,17 @@ su -c 'RELEASE=1 script/bootstrap' pi
 # Pin CMake version to 3.10.3 for issue https://github.com/openthread/ot-br-posix/issues/728.
 # For more background, see https://gitlab.kitware.com/cmake/cmake/-/issues/20568.
 apt-get purge -y cmake
+apt-get install -y python3-venv
+TEMP_VENV_DIR=$(mktemp -d)
+python3 -m venv "\${TEMP_VENV_DIR}"
+source "\${TEMP_VENV_DIR}/bin/activate"
 pip3 install scikit-build
 pip3 install cmake==3.10.3
 cmake --version
 
 su -c 'RELEASE=1 script/setup' pi
+deactivate
+rm -rf "\${TEMP_VENV_DIR}"
 EOF
 
     (
