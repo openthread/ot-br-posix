@@ -121,6 +121,25 @@
     } while (false)
 
 /**
+ *  This checks for the specified condition, which is expected to
+ *  commonly be true, and return @a aReturn if the condition is false.
+ *
+ *  @param[in] aCondition  A Boolean expression to be evaluated.
+ *  @param[in] aReturn     The value to return.
+ */
+#define VerifyOrReturn(aCondition, aReturn) \
+    do                                      \
+    {                                       \
+        if (aCondition)                     \
+        {                                   \
+        }                                   \
+        else                                \
+        {                                   \
+            return (aReturn);               \
+        }                                   \
+    } while (false)
+
+/**
  * This macro checks for the specified condition, which is expected to commonly be true,
  * and both prints the message and terminates the program if the condition is false.
  *

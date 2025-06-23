@@ -31,40 +31,55 @@
 
 set -euxo pipefail
 
-on_exit()
-{
-    local status=$?
-
-    sudo killall otbr-agent || true
-    sudo killall expect || true
-    sudo killall ot-ctl || true
-    sudo killall ot-cli-ftd || true
-    sudo killall ot-cli-mtd || true
-
-    return "${status}"
-}
-
 main()
 {
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d 7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
-    sleep 1
-    sudo expect <<EOF &
-spawn ${CMAKE_BINARY_DIR}/third_party/openthread/repo/src/posix/ot-ctl
+    sudo expect <<EOF
+spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
+expect "Start Thread Border Agent"
+set otbr_agent \$spawn_id
+spawn "${CMAKE_BINARY_DIR}/third_party/openthread/repo/src/posix/ot-ctl"
+expect_after {
+    -i \$otbr_agent eof { error "unexpected exit" }
+}
 send "dataset init new\r\n"
 expect "Done"
 send "dataset commit active\r\n"
 expect "Done"
 send "ifconfig up\r\n"
 expect "Done"
+send "routerselectionjitter 1\r\n"
+expect "Done"
 send "thread start\r\n"
+expect "Done"
+send "state leader\r\n"
 expect "Done"
 send "srp server disable\r\n"
 expect "Done"
-wait
+expect {
+    -timeout 1 leader {
+        expect "Done"
+        send_user "waiting to become leader..\r\n"
+    }
+    timeout { send "state\r\n" }
+}
+send "\x04"
+expect eof
+
+spawn python3 "${CMAKE_CURRENT_SOURCE_DIR}/test_rest.py"
+expect {
+    eof {
+        lassign [wait] _ _ error status
+    }
+    -i \$otbr_agent eof { error "unexpected exit" }
+}
+
+if {\$error == 0} {
+    exit \$status
+} else {
+    system errno \$status
+    error "failed to run the test"
+}
 EOF
-    trap on_exit EXIT
-    sleep 12
-    sudo python3 "${CMAKE_CURRENT_SOURCE_DIR}"/test_rest.py
 }
 
 main "$@"

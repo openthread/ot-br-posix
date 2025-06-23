@@ -54,9 +54,7 @@ const struct timeval Application::kPollTimeout = {OTBR_MAINLOOP_POLL_TIMEOUT_SEC
 
 Application::Application(Host::ThreadHost  &aHost,
                          const std::string &aInterfaceName,
-                         const std::string &aBackboneInterfaceName,
-                         const std::string &aRestListenAddress,
-                         int                aRestListenPort)
+                         const std::string &aBackboneInterfaceName)
     : mInterfaceName(aInterfaceName)
     , mBackboneInterfaceName(aBackboneInterfaceName)
     , mHost(aHost)
@@ -77,7 +75,7 @@ Application::Application(Host::ThreadHost  &aHost,
 {
     if (mHost.GetCoprocessorType() == OT_COPROCESSOR_RCP)
     {
-        CreateRcpMode(aRestListenAddress, aRestListenPort);
+        CreateRcpMode();
     }
     else if (mHost.GetCoprocessorType() == OT_COPROCESSOR_NCP)
     {
@@ -89,14 +87,14 @@ Application::Application(Host::ThreadHost  &aHost,
     }
 }
 
-void Application::Init(void)
+void Application::Init(const std::string &aRestListenAddress, int aRestListenPort)
 {
     mHost.Init();
 
     switch (mHost.GetCoprocessorType())
     {
     case OT_COPROCESSOR_RCP:
-        InitRcpMode();
+        InitRcpMode(aRestListenAddress, aRestListenPort);
         break;
     case OT_COPROCESSOR_NCP:
         InitNcpMode();
@@ -210,7 +208,7 @@ void Application::HandleSignal(int aSignal)
     signal(aSignal, SIG_DFL);
 }
 
-void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort)
+void Application::CreateRcpMode(void)
 {
     otbr::Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
 #if OTBR_ENABLE_BACKBONE_ROUTER
@@ -229,21 +227,21 @@ void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRest
     mUbusAgent = MakeUnique<ubus::UBusAgent>(rcpHost);
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    mRestWebServer = MakeUnique<rest::RestWebServer>(rcpHost, aRestListenAddress, aRestListenPort);
+    mRestWebServer = MakeUnique<rest::RestWebServer>(rcpHost);
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer = vendor::VendorServer::newInstance(*this);
 #endif
 
     OTBR_UNUSED_VARIABLE(rcpHost);
-    OTBR_UNUSED_VARIABLE(aRestListenAddress);
-    OTBR_UNUSED_VARIABLE(aRestListenPort);
 }
 
-void Application::InitRcpMode(void)
+void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestListenPort)
 {
     Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
     OTBR_UNUSED_VARIABLE(rcpHost);
+    OTBR_UNUSED_VARIABLE(aRestListenAddress);
+    OTBR_UNUSED_VARIABLE(aRestListenPort);
 
 #if OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mMdnsStateSubject.AddObserver(mBorderAgent);
@@ -292,7 +290,7 @@ void Application::InitRcpMode(void)
     mUbusAgent->Init();
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    mRestWebServer->Init();
+    mRestWebServer->Init(aRestListenAddress, aRestListenPort);
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer->Init();

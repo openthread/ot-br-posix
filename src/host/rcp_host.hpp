@@ -148,6 +148,8 @@ public:
      */
     void PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask);
 
+    TaskRunner &GetTaskRunner(void) { return mTaskRunner; };
+
     /**
      * This method registers a reset handler.
      *
