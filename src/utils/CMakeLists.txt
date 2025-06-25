@@ -38,8 +38,6 @@ add_library(otbr-utils
     string_utils.cpp
     system_utils.cpp
     telemetry_retriever_border_agent.cpp
-    thread_helper.cpp
-    thread_helper.hpp
 )
 
 target_link_libraries(otbr-utils PUBLIC
