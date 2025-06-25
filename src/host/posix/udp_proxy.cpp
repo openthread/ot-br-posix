@@ -35,6 +35,7 @@
 #include "host/posix/udp_proxy.hpp"
 
 #include <assert.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <unistd.h>

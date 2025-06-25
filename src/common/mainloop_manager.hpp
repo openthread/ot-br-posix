@@ -42,7 +42,6 @@
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
-#include "host/rcp_host.hpp"
 
 namespace otbr {
 

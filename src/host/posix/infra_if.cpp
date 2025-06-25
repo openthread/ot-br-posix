@@ -43,6 +43,7 @@
 #include <netinet/in.h>
 #include <netinet/icmp6.h>
 // clang-format on
+#include <errno.h>
 #include <sys/ioctl.h>
 
 #include "utils/socket_utils.hpp"
