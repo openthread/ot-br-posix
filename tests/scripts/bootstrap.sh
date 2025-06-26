@@ -124,15 +124,15 @@ case "$(uname)" in
 
         if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
             SOURCE_NAME=mDNSResponder-2600.100.147
-            cd /tmp \
-                && wget --tries=3 --no-check-certificate -O "$SOURCE_NAME.tar.gz" \
+            (cd /tmp \
+                && wget -c --tries=3 --no-check-certificate -O "$SOURCE_NAME.tar.gz" \
                     "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$SOURCE_NAME.tar.gz" \
                 && rm -rf "/tmp/$SOURCE_NAME" \
                 && mkdir -p "$SOURCE_NAME" \
                 && tar xvf "$SOURCE_NAME.tar.gz" -C "$SOURCE_NAME" --overwrite --strip-components=1 \
                 && cd "$SOURCE_NAME" \
                 && cd mDNSPosix \
-                && make os=linux tls=no && sudo make install os=linux tls=no
+                && make os=linux tls=no && sudo make install os=linux tls=no)
         fi
 
         # Enable IPv6

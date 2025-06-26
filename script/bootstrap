@@ -72,7 +72,7 @@ install_packages_apt()
 
     (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \
         && cd /tmp \
-        && wget --tries=3 --no-check-certificate -O "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
+        && wget -c --tries=3 --no-check-certificate -O "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
             "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
         && rm -rf "/tmp/$MDNS_RESPONDER_SOURCE_NAME" \
         && mkdir -p "$MDNS_RESPONDER_SOURCE_NAME" \
