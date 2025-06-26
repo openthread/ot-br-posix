@@ -31,6 +31,7 @@
 #include <openthread-br/config.h>
 
 #include <algorithm>
+#include <new>
 #include <vector>
 
 #include <assert.h>
