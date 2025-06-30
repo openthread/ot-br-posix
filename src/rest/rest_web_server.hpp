@@ -52,8 +52,8 @@
 #include <openthread/netdiag.h>
 
 #include "host/rcp_host.hpp"
+#include "host/thread_helper.hpp"
 #include "rest/types.hpp"
-#include "utils/thread_helper.hpp"
 
 namespace otbr {
 namespace rest {

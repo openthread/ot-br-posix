@@ -33,7 +33,7 @@
 #include "common/code_utils.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
-#include "utils/thread_helper.hpp"
+#include "host/thread_helper.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
