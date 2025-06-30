@@ -35,6 +35,10 @@
 
 #if defined(OTBR_CONFIG_FILE)
 #include OTBR_CONFIG_FILE
+#elif defined(OTBR_USER_CONFIG_HEADER_ENABLE) && OTBR_USER_CONFIG_HEADER_ENABLE
+// This configuration header file should be provided by the user when
+// OTBR_USER_CONFIG_HEADER_ENABLE is defined to 1.
+#include "ot-br-posix-user-config.h"
 #endif
 
 /**
