@@ -49,8 +49,8 @@
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
+#include "host/thread_helper.hpp"
 #include "host/thread_host.hpp"
-#include "utils/thread_helper.hpp"
 
 namespace otbr {
 #if OTBR_ENABLE_FEATURE_FLAGS

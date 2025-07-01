@@ -26,9 +26,9 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define OTBR_LOG_TAG "UTILS"
+#define OTBR_LOG_TAG "HELPER"
 
-#include "utils/thread_helper.hpp"
+#include "host/thread_helper.hpp"
 
 #include <assert.h>
 #include <limits.h>

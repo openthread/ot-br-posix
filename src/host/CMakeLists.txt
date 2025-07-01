@@ -37,6 +37,8 @@ add_library(otbr-ncp
     ncp_spinel.hpp
     rcp_host.cpp
     rcp_host.hpp
+    thread_helper.cpp
+    thread_helper.hpp
     thread_host.cpp
     thread_host.hpp
 )
