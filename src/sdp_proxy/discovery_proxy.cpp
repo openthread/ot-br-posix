@@ -31,11 +31,11 @@
  *   The file implements the DNS-SD Discovery Proxy.
  */
 
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-
 #define OTBR_LOG_TAG "DPROXY"
 
 #include "sdp_proxy/discovery_proxy.hpp"
+
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 
 #include <algorithm>
 #include <string>
