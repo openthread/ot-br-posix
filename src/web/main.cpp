@@ -47,7 +47,7 @@
 #include "web/web-service/web_server.hpp"
 
 static const char kDefaultInterfaceName[] = "wpan0";
-static const char kDefaultListenAddr[]    = "::";
+static const char kDefaultListenAddr[]    = "127.0.0.1";
 
 std::unique_ptr<otbr::Web::WebServer> sServer(nullptr);
 

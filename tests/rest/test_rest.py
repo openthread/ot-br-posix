@@ -34,7 +34,7 @@ import json
 import re
 from threading import Thread
 
-rest_api_addr = "http://0.0.0.0:8081"
+rest_api_addr = "http://127.0.0.1:8081"
 
 
 def assert_is_ipv6_address(string):

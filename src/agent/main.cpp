@@ -158,7 +158,7 @@ static void PrintHelp(const char *aProgramName)
             "     -V, --version          Print the application's version and exit.\n"
             "     --radio-version        Print the radio coprocessor version and exit.\n"
             "     --auto-attach          Whether or not to automatically attach to the saved network (default: 1).\n"
-            "     --rest-listen-address  Network address to listen on for the REST API (default: [::]).\n"
+            "     --rest-listen-address  Network address to listen on for the REST API (default: 127.0.0.1).\n"
             "     --rest-listen-port     Network port to listen on for the REST API "
             "(default: " HELP_DEFAULT_REST_PORT_NUMBER ").\n"
             "\n",
@@ -227,7 +227,7 @@ static int realmain(int argc, char *argv[])
     bool                      syslogDisable     = false;
     bool                      printRadioVersion = false;
     bool                      enableAutoAttach  = true;
-    const char               *restListenAddress = "::";
+    const char               *restListenAddress = "127.0.0.1";
     int                       restListenPort    = kPortNumber;
     std::vector<const char *> radioUrls;
     std::vector<const char *> backboneInterfaceNames;
