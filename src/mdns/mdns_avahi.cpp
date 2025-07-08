@@ -676,7 +676,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         // with the new host name.
         otbrLogErr("Avahi client collision detected: %s", avahi_strerror(avahi_client_errno(aClient)));
 
-        // fall through
+        OT_FALL_THROUGH;
 
     case AVAHI_CLIENT_S_REGISTERING:
         // The server records are now being established. This might be
