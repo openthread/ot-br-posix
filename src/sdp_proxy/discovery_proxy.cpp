@@ -157,7 +157,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
 
     otbrLogInfo("Unsubscribe: %s", fullName.c_str());
 
-    if (GetServiceSubscriptionCount(nameInfo) == 1)
+    if (GetServiceSubscriptionCount(nameInfo) <= 1)
     {
         if (nameInfo.mHostName.empty())
         {
