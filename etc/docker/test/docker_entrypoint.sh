@@ -82,6 +82,8 @@ parse_args "$@"
 [ -n "$BACKBONE_INTERFACE" ] || BACKBONE_INTERFACE="eth0"
 [ -n "$DEBUG_LEVEL" ] || DEBUG_LEVEL="7"
 [ -n "$HTTP_PORT" ] || HTTP_PORT=80
+[ -n "$HTTP_HOST" ] || HTTP_HOST=127.0.0.1
+[ -n "$REST_HOST" ] || REST_HOST="$HTTP_HOST"
 
 echo "RADIO_URL:" $RADIO_URL
 echo "TREL_URL:" "$TREL_URL"
@@ -91,8 +93,8 @@ echo "DEBUG_LEVEL:" $DEBUG_LEVEL
 
 sed -i "s/$INFRA_IF_NAME/$BACKBONE_INTERFACE/" /etc/sysctl.d/60-otbr-accept-ra.conf
 
-echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -B $BACKBONE_INTERFACE -d${DEBUG_LEVEL} $RADIO_URL $TREL_URL\"" >/etc/default/otbr-agent
-echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d${DEBUG_LEVEL} -p $HTTP_PORT\"" >/etc/default/otbr-web
+echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -B $BACKBONE_INTERFACE -d${DEBUG_LEVEL} --rest-listen-address $REST_HOST $RADIO_URL $TREL_URL\"" >/etc/default/otbr-agent
+echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d${DEBUG_LEVEL} -a $HTTP_HOST -p $HTTP_PORT\"" >/etc/default/otbr-web
 
 /app/script/server
 
