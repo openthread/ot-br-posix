@@ -54,7 +54,7 @@ struct DnsNameInfo
      *
      * @returns Whether the DNS name is a service instance.
      */
-    bool IsServiceInstance(void) const { return !mInstanceName.empty(); };
+    bool IsServiceInstance(void) const { return !mInstanceName.empty(); }
 
     /**
      * This method returns if the DNS name is a service.
