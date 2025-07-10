@@ -49,6 +49,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: "Border Router (OT mDNS)"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_MDNS_USE_OT_CORE=ON -DOTBR_DNSSD_DISCOVERY_PROXY=OFF"
+            border_routing: 1
+            internet: 0
+            ot_srp_adv_proxy: 0
+            otbr_mdns: "mDNSResponder"
+            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
+            packet_verification: 1
           - name: "Border Router (mDNSResponder)"
             otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1

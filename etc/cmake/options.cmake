@@ -88,6 +88,8 @@ if(OTBR_REST)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_REST_SERVER=1)
 endif()
 
+option(OTBR_MDNS_USE_OT_CORE "Enable use of OpenThread's mDNS implementation" OFF)
+
 option(OTBR_SRP_ADVERTISING_PROXY "Enable Advertising Proxy" OFF)
 if (OTBR_SRP_ADVERTISING_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_ADVERTISING_PROXY=1)
