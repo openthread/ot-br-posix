@@ -36,17 +36,17 @@
 #include "host/posix/dnssd.hpp"
 
 #if OTBR_ENABLE_DNSSD_PLAT
-
 #include <string>
+#include <vector>
 
 #include <openthread/platform/dnssd.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#include "utils/dns_utils.hpp"
 
-static otbr::DnssdPlatform::RegisterCallback MakeRegisterCallback(otInstance                 *aInstance,
-                                                                  otPlatDnssdRegisterCallback aCallback)
+otbr::DnssdPlatform::RegisterCallback MakeRegisterCallback(otInstance *aInstance, otPlatDnssdRegisterCallback aCallback)
 {
     return [aInstance, aCallback](otPlatDnssdRequestId aRequestId, otError aError) {
         if (aCallback)
@@ -54,6 +54,11 @@ static otbr::DnssdPlatform::RegisterCallback MakeRegisterCallback(otInstance    
             aCallback(aInstance, aRequestId, aError);
         }
     };
+}
+
+template <typename T> otbr::DnssdPlatform::DiscoveryCallbackIdentifier ToDiscoveryCallbackId(T *aCallback)
+{
+    return reinterpret_cast<uint64_t>(aCallback);
 }
 
 extern "C" otPlatDnssdState otPlatDnssdGetState(otInstance *aInstance)
@@ -113,62 +118,82 @@ extern "C" void otPlatDnssdUnregisterKey(otInstance                 *aInstance,
 
 extern "C" void otPlatDnssdStartBrowser(otInstance *aInstance, const otPlatDnssdBrowser *aBrowser)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aBrowser);
+    otPlatDnssdBrowseCallback callback = aBrowser->mCallback;
+
+    otbr::DnssdPlatform::Get().StartServiceBrowser(
+        *aBrowser, ToDiscoveryCallbackId(callback),
+        [aInstance, callback](const otbr::DnssdPlatform::BrowseResult &aResult) { callback(aInstance, &aResult); });
 }
 
 extern "C" void otPlatDnssdStopBrowser(otInstance *aInstance, const otPlatDnssdBrowser *aBrowser)
 {
     OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aBrowser);
+
+    otbr::DnssdPlatform::Get().StopServiceBrowser(*aBrowser, ToDiscoveryCallbackId(aBrowser->mCallback));
 }
 
 extern "C" void otPlatDnssdStartSrvResolver(otInstance *aInstance, const otPlatDnssdSrvResolver *aResolver)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+    otPlatDnssdSrvCallback callback = aResolver->mCallback;
+
+    otbr::DnssdPlatform::Get().StartServiceResolver(
+        *aResolver, ToDiscoveryCallbackId(callback),
+        [aInstance, callback](otbr::DnssdPlatform::SrvResult &aResult) { callback(aInstance, &aResult); });
 }
 
 extern "C" void otPlatDnssdStopSrvResolver(otInstance *aInstance, const otPlatDnssdSrvResolver *aResolver)
 {
     OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+
+    otbr::DnssdPlatform::Get().StopServiceResolver(*aResolver, ToDiscoveryCallbackId(aResolver->mCallback));
 }
 
 extern "C" void otPlatDnssdStartTxtResolver(otInstance *aInstance, const otPlatDnssdTxtResolver *aResolver)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+    otPlatDnssdTxtCallback callback = aResolver->mCallback;
+
+    otbr::DnssdPlatform::Get().StartTxtResolver(
+        *aResolver, ToDiscoveryCallbackId(callback),
+        [aInstance, callback](otbr::DnssdPlatform::TxtResult &aResult) { callback(aInstance, &aResult); });
 }
 
 extern "C" void otPlatDnssdStopTxtResolver(otInstance *aInstance, const otPlatDnssdTxtResolver *aResolver)
 {
     OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+
+    otbr::DnssdPlatform::Get().StopTxtResolver(*aResolver, ToDiscoveryCallbackId(aResolver->mCallback));
 }
 
 extern "C" void otPlatDnssdStartIp6AddressResolver(otInstance *aInstance, const otPlatDnssdAddressResolver *aResolver)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+    otPlatDnssdAddressCallback callback = aResolver->mCallback;
+
+    otbr::DnssdPlatform::Get().StartIp6AddressResolver(
+        *aResolver, ToDiscoveryCallbackId(callback),
+        [aInstance, callback](otbr::DnssdPlatform::AddressResult &aResult) { callback(aInstance, &aResult); });
 }
 
 extern "C" void otPlatDnssdStopIp6AddressResolver(otInstance *aInstance, const otPlatDnssdAddressResolver *aResolver)
 {
     OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+
+    otbr::DnssdPlatform::Get().StopIp6AddressResolver(*aResolver, ToDiscoveryCallbackId(aResolver->mCallback));
 }
 
 void otPlatDnssdStartIp4AddressResolver(otInstance *aInstance, const otPlatDnssdAddressResolver *aResolver)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+    otPlatDnssdAddressCallback callback = aResolver->mCallback;
+
+    otbr::DnssdPlatform::Get().StartIp4AddressResolver(
+        *aResolver, ToDiscoveryCallbackId(callback),
+        [aInstance, callback](otbr::DnssdPlatform::AddressResult &aResult) { callback(aInstance, &aResult); });
 }
 
 void otPlatDnssdStopIp4AddressResolver(otInstance *aInstance, const otPlatDnssdAddressResolver *aResolver)
 {
     OTBR_UNUSED_VARIABLE(aInstance);
-    OTBR_UNUSED_VARIABLE(aResolver);
+
+    otbr::DnssdPlatform::Get().StopIp4AddressResolver(*aResolver, ToDiscoveryCallbackId(aResolver->mCallback));
 }
 
 void otPlatDnssdStartRecordQuerier(otInstance *aInstance, const otPlatDnssdRecordQuerier *aQuerier)
@@ -187,13 +212,16 @@ void otPlatDnssdStopRecordQuerier(otInstance *aInstance, const otPlatDnssdRecord
 
 namespace otbr {
 
-DnssdPlatform *DnssdPlatform::sDnssdPlatform = nullptr;
+DnssdPlatform            *DnssdPlatform::sDnssdPlatform = nullptr;
+static constexpr uint64_t kInvalidSubscriberId          = 0;
 
 DnssdPlatform::DnssdPlatform(Mdns::Publisher &aPublisher)
     : mPublisher(aPublisher)
     , mState(kStateStopped)
     , mRunning(false)
+    , mInvokingCallbacks(false)
     , mPublisherState(Mdns::Publisher::State::kIdle)
+    , mSubscriberId(kInvalidSubscriberId)
 {
     sDnssdPlatform = this;
 }
@@ -222,13 +250,15 @@ void DnssdPlatform::UpdateState(void)
     {
         VerifyOrExit(mState != kStateReady);
 
-        mState = kStateReady;
+        mState        = kStateReady;
+        mSubscriberId = mPublisher.AddSubscriptionCallbacks(HandleDiscoveredService, HandleDiscoveredHost);
     }
     else
     {
         VerifyOrExit(mState != kStateStopped);
 
         mState = kStateStopped;
+        mPublisher.RemoveSubscriptionCallbacks(mSubscriberId);
     }
 
     if (mStateChangeCallback)
@@ -330,6 +360,173 @@ void DnssdPlatform::UnregisterKey(const Key &aKey, RequestId aRequestId, Registe
     mPublisher.UnpublishKey(KeyNameFor(aKey), MakePublisherCallback(aRequestId, aCallback));
 }
 
+void DnssdPlatform::StartServiceBrowser(const Browser                     &aBrowser,
+                                        const DiscoveryCallbackIdentifier &aId,
+                                        const BrowseCallback              &aCallback)
+{
+    DnsServiceType fullServiceType(aBrowser.mServiceType, aBrowser.mSubTypeLabel);
+    auto          &callbackTable     = mServiceBrowsersTable[fullServiceType];
+    bool           needsSubscription = !callbackTable.HasAnyValidCallbacks(aBrowser.mInfraIfIndex);
+
+    VerifyOrExit(!mInvokingCallbacks);
+
+    callbackTable.Add(aBrowser.mInfraIfIndex, aId, aCallback);
+
+    if (needsSubscription)
+    {
+        mPublisher.SubscribeService(fullServiceType.ToString(), "");
+    }
+
+exit:
+    return;
+}
+
+void DnssdPlatform::StopServiceBrowser(const Browser &aBrowser, const DiscoveryCallbackIdentifier &aId)
+{
+    DnsServiceType fullServiceType(aBrowser.mServiceType, aBrowser.mSubTypeLabel);
+    auto           it = mServiceBrowsersTable.find(fullServiceType);
+
+    if (it != mServiceBrowsersTable.end())
+    {
+        auto &infraIfCallbackTable = it->second;
+
+        infraIfCallbackTable.Remove(aBrowser.mInfraIfIndex, aId);
+
+        if (!infraIfCallbackTable.HasAnyValidCallbacks(aBrowser.mInfraIfIndex))
+        {
+            mPublisher.UnsubscribeService(fullServiceType.ToString(), "");
+        }
+
+        if (!mInvokingCallbacks)
+        {
+            infraIfCallbackTable.CleanUpRemovedCallbacks();
+            if (infraIfCallbackTable.IsEmpty())
+            {
+                mServiceBrowsersTable.erase(it);
+            }
+        }
+    }
+}
+
+void DnssdPlatform::StartServiceResolver(const SrvResolver                 &aSrvResolver,
+                                         const DiscoveryCallbackIdentifier &aId,
+                                         const SrvCallback                 &aCallback)
+{
+    auto &callbackTable =
+        mServiceResolversTable[DnsServiceName(aSrvResolver.mServiceInstance, aSrvResolver.mServiceType)];
+    bool needsSubscription = !callbackTable.HasAnyValidCallbacks(aSrvResolver.mInfraIfIndex);
+
+    VerifyOrExit(!mInvokingCallbacks);
+
+    callbackTable.Add(aSrvResolver.mInfraIfIndex, aId, aCallback);
+
+    if (needsSubscription)
+    {
+        mPublisher.SubscribeService(aSrvResolver.mServiceType, aSrvResolver.mServiceInstance);
+    }
+
+exit:
+    return;
+}
+
+void DnssdPlatform::StopServiceResolver(const SrvResolver &aSrvResolver, const DiscoveryCallbackIdentifier &aId)
+{
+    auto it = mServiceResolversTable.find(DnsServiceName(aSrvResolver.mServiceInstance, aSrvResolver.mServiceType));
+
+    if (it != mServiceResolversTable.end())
+    {
+        auto &infraIfCallbackTable = it->second;
+
+        infraIfCallbackTable.Remove(aSrvResolver.mInfraIfIndex, aId);
+
+        if (!infraIfCallbackTable.HasAnyValidCallbacks(aSrvResolver.mInfraIfIndex))
+        {
+            mPublisher.UnsubscribeService(aSrvResolver.mServiceType, aSrvResolver.mServiceInstance);
+        }
+
+        if (!mInvokingCallbacks)
+        {
+            infraIfCallbackTable.CleanUpRemovedCallbacks();
+            if (infraIfCallbackTable.IsEmpty())
+            {
+                mServiceResolversTable.erase(it);
+            }
+        }
+    }
+}
+
+void DnssdPlatform::StartTxtResolver(const TxtResolver                 &aTxtResolver,
+                                     const DiscoveryCallbackIdentifier &aId,
+                                     const TxtCallback                 &aCallback)
+{
+    auto &callbackTable = mTxtResolversTable[DnsServiceName(aTxtResolver.mServiceInstance, aTxtResolver.mServiceType)];
+    bool  needsSubscription = !callbackTable.HasAnyValidCallbacks(aTxtResolver.mInfraIfIndex);
+
+    VerifyOrExit(!mInvokingCallbacks);
+
+    callbackTable.Add(aTxtResolver.mInfraIfIndex, aId, aCallback);
+
+    if (needsSubscription)
+    {
+        mPublisher.SubscribeService(aTxtResolver.mServiceType, aTxtResolver.mServiceInstance);
+    }
+
+exit:
+    return;
+}
+
+void DnssdPlatform::StopTxtResolver(const TxtResolver &aTxtResolver, const DiscoveryCallbackIdentifier &aId)
+{
+    auto it = mTxtResolversTable.find(DnsServiceName(aTxtResolver.mServiceInstance, aTxtResolver.mServiceType));
+
+    if (it != mTxtResolversTable.end())
+    {
+        auto &infraIfCallbackTable = it->second;
+
+        infraIfCallbackTable.Remove(aTxtResolver.mInfraIfIndex, aId);
+
+        if (!infraIfCallbackTable.HasAnyValidCallbacks(aTxtResolver.mInfraIfIndex))
+        {
+            mPublisher.UnsubscribeService(aTxtResolver.mServiceType, aTxtResolver.mServiceInstance);
+        }
+
+        if (!mInvokingCallbacks)
+        {
+            infraIfCallbackTable.CleanUpRemovedCallbacks();
+            if (infraIfCallbackTable.IsEmpty())
+            {
+                mTxtResolversTable.erase(it);
+            }
+        }
+    }
+}
+
+void DnssdPlatform::StartIp6AddressResolver(const AddressResolver             &aAddressResolver,
+                                            const DiscoveryCallbackIdentifier &aId,
+                                            const AddressCallback             &aCallback)
+{
+    StartAddressResolver(aAddressResolver, aCallback, aId, mIp6AddrResolversTable);
+}
+
+void DnssdPlatform::StopIp6AddressResolver(const AddressResolver             &aAddressResolver,
+                                           const DiscoveryCallbackIdentifier &aId)
+{
+    StopAddressResolver(aAddressResolver, aId, mIp6AddrResolversTable);
+}
+
+void DnssdPlatform::StartIp4AddressResolver(const AddressResolver             &aAddressResolver,
+                                            const DiscoveryCallbackIdentifier &aId,
+                                            const AddressCallback             &aCallback)
+{
+    StartAddressResolver(aAddressResolver, aCallback, aId, mIp4AddrResolversTable);
+}
+
+void DnssdPlatform::StopIp4AddressResolver(const AddressResolver             &aAddressResolver,
+                                           const DiscoveryCallbackIdentifier &aId)
+{
+    StopAddressResolver(aAddressResolver, aId, mIp4AddrResolversTable);
+}
+
 void DnssdPlatform::HandleMdnsState(Mdns::Publisher::State aState)
 {
     if (mPublisherState != aState)
@@ -337,6 +534,211 @@ void DnssdPlatform::HandleMdnsState(Mdns::Publisher::State aState)
         mPublisherState = aState;
         UpdateState();
     }
+}
+
+void DnssdPlatform::HandleDiscoveredService(const std::string                             &aType,
+                                            const Mdns::Publisher::DiscoveredInstanceInfo &aInfo)
+{
+    otbr::DnssdPlatform::Get().SetInvokingCallbacks(true);
+
+    otbr::DnssdPlatform::Get().ProcessServiceBrowsers(aType, aInfo);
+    otbr::DnssdPlatform::Get().ProcessServiceResolvers(aType, aInfo);
+    otbr::DnssdPlatform::Get().ProcessTxtResolvers(aType, aInfo);
+
+    otbr::DnssdPlatform::Get().SetInvokingCallbacks(false);
+}
+
+void DnssdPlatform::HandleDiscoveredHost(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aInfo)
+{
+    otbr::DnssdPlatform::Get().SetInvokingCallbacks(true);
+
+    otbr::DnssdPlatform::Get().ProcessIp6AddrResolvers(aHostName, aInfo);
+    otbr::DnssdPlatform::Get().ProcessIp4AddrResolvers(aHostName, aInfo);
+
+    otbr::DnssdPlatform::Get().SetInvokingCallbacks(false);
+}
+
+void DnssdPlatform::ProcessServiceBrowsers(const std::string                             &aType,
+                                           const Mdns::Publisher::DiscoveredInstanceInfo &aInfo)
+{
+    std::string  instanceName;
+    BrowseResult result;
+    auto         it = mServiceBrowsersTable.find(DnsServiceType(aType.c_str(), nullptr));
+
+    VerifyOrExit(mState == kStateReady);
+
+    VerifyOrExit(it != mServiceBrowsersTable.end());
+
+    instanceName = DnsUtils::UnescapeInstanceName(aInfo.mName);
+
+    result.mServiceType     = aType.c_str();
+    result.mSubTypeLabel    = nullptr;
+    result.mServiceInstance = instanceName.c_str();
+    result.mTtl             = aInfo.mTtl;
+    result.mInfraIfIndex    = aInfo.mNetifIndex;
+
+    it->second.InvokeAllCallbacks(result.mInfraIfIndex, result);
+
+exit:
+    return;
+}
+
+void DnssdPlatform::ProcessServiceResolvers(const std::string                             &aType,
+                                            const Mdns::Publisher::DiscoveredInstanceInfo &aInfo)
+{
+    std::string    instanceName = DnsUtils::UnescapeInstanceName(aInfo.mName);
+    DnsServiceName serviceName(instanceName, aType);
+    std::string    hostName;
+    std::string    domain;
+    SrvResult      srvResult;
+    auto           it = mServiceResolversTable.find(serviceName);
+
+    VerifyOrExit(mState == kStateReady);
+    VerifyOrExit(it != mServiceResolversTable.end());
+
+    SuccessOrExit(DnsUtils::SplitFullHostName(aInfo.mHostName, hostName, domain));
+    srvResult.mServiceInstance = instanceName.c_str();
+    srvResult.mServiceType     = aType.c_str();
+    srvResult.mHostName        = hostName.c_str();
+    srvResult.mPort            = aInfo.mPort;
+    srvResult.mPriority        = aInfo.mPriority;
+    srvResult.mWeight          = aInfo.mWeight;
+    srvResult.mTtl             = aInfo.mTtl;
+    srvResult.mInfraIfIndex    = aInfo.mNetifIndex;
+
+    it->second.InvokeAllCallbacks(srvResult.mInfraIfIndex, srvResult);
+
+exit:
+    return;
+}
+
+void DnssdPlatform::ProcessTxtResolvers(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo)
+{
+    std::string    instanceName = DnsUtils::UnescapeInstanceName(aInfo.mName);
+    DnsServiceName serviceName(instanceName, aType);
+    TxtResult      txtResult;
+    auto           it = mTxtResolversTable.find(serviceName);
+
+    VerifyOrExit(mState == kStateReady);
+
+    VerifyOrExit(it != mTxtResolversTable.end());
+
+    txtResult.mServiceInstance = instanceName.c_str();
+    txtResult.mServiceType     = aType.c_str();
+    txtResult.mTxtData         = aInfo.mTxtData.data();
+    txtResult.mTxtDataLength   = aInfo.mTxtData.size();
+    txtResult.mTtl             = aInfo.mTtl;
+    txtResult.mInfraIfIndex    = aInfo.mNetifIndex;
+
+    it->second.InvokeAllCallbacks(txtResult.mInfraIfIndex, txtResult);
+
+exit:
+    return;
+}
+
+void DnssdPlatform::ProcessAddrResolvers(const std::string                                        &aHostName,
+                                         const Mdns::Publisher::DiscoveredHostInfo                &aInfo,
+                                         std::map<DnsName, InfraIfCallbackTable<AddressCallback>> &aResolversTable)
+{
+    std::string                           instanceName;
+    AddressResult                         result;
+    std::vector<otPlatDnssdAddressAndTtl> addressAndTtls;
+    auto                                  it = aResolversTable.find(aHostName);
+
+    VerifyOrExit(mState == kStateReady);
+
+    VerifyOrExit(it != aResolversTable.end());
+
+    result.mHostName = aHostName.c_str();
+    for (const auto &addr : aInfo.mAddresses)
+    {
+        otIp6Address ip6Addr;
+
+        addr.CopyTo(ip6Addr);
+
+        addressAndTtls.push_back({ip6Addr, aInfo.mTtl});
+    }
+    result.mAddresses       = addressAndTtls.data();
+    result.mAddressesLength = addressAndTtls.size();
+    result.mInfraIfIndex    = aInfo.mNetifIndex;
+
+    it->second.InvokeAllCallbacks(result.mInfraIfIndex, result);
+
+exit:
+    return;
+}
+
+void DnssdPlatform::ProcessIp6AddrResolvers(const std::string                         &aHostName,
+                                            const Mdns::Publisher::DiscoveredHostInfo &aInfo)
+{
+    ProcessAddrResolvers(aHostName, aInfo, mIp6AddrResolversTable);
+}
+
+void DnssdPlatform::ProcessIp4AddrResolvers(const std::string                         &aHostName,
+                                            const Mdns::Publisher::DiscoveredHostInfo &aInfo)
+{
+    ProcessAddrResolvers(aHostName, aInfo, mIp4AddrResolversTable);
+}
+
+void DnssdPlatform::StartAddressResolver(const AddressResolver                                    &aAddressResolver,
+                                         const AddressCallback                                    &aCallback,
+                                         const DiscoveryCallbackIdentifier                        &aId,
+                                         std::map<DnsName, InfraIfCallbackTable<AddressCallback>> &aResolversTable)
+{
+    auto &callbackTable     = aResolversTable[DnsName(aAddressResolver.mHostName)];
+    bool  needsSubscription = !callbackTable.HasAnyValidCallbacks(aAddressResolver.mInfraIfIndex);
+
+    VerifyOrExit(!mInvokingCallbacks);
+
+    callbackTable.Add(aAddressResolver.mInfraIfIndex, aId, aCallback);
+
+    if (needsSubscription)
+    {
+        mPublisher.SubscribeHost(aAddressResolver.mHostName);
+    }
+
+exit:
+    return;
+}
+
+void DnssdPlatform::StopAddressResolver(const AddressResolver                                    &aAddressResolver,
+                                        const DiscoveryCallbackIdentifier                        &aId,
+                                        std::map<DnsName, InfraIfCallbackTable<AddressCallback>> &aResolversTable)
+{
+    auto it = aResolversTable.find(DnsName(aAddressResolver.mHostName));
+
+    if (it != aResolversTable.end())
+    {
+        auto &infraIfCallbackTable = it->second;
+
+        infraIfCallbackTable.Remove(aAddressResolver.mInfraIfIndex, aId);
+
+        if (!infraIfCallbackTable.HasAnyValidCallbacks(aAddressResolver.mInfraIfIndex))
+        {
+            mPublisher.UnsubscribeHost(aAddressResolver.mHostName);
+
+            if (!mInvokingCallbacks)
+            {
+                infraIfCallbackTable.CleanUpRemovedCallbacks();
+                if (infraIfCallbackTable.IsEmpty())
+                {
+                    aResolversTable.erase(it);
+                }
+            }
+        }
+    }
+}
+
+const std::string DnssdPlatform::DnsServiceType::ToString(void) const
+{
+    std::string serviceType(mType);
+
+    if (!mSubType.empty())
+    {
+        serviceType = std::string(mSubType) + "._sub." + serviceType;
+    }
+
+    return serviceType;
 }
 
 } // namespace otbr

@@ -29,6 +29,7 @@
 add_library(otbr-posix
     cli_daemon.hpp
     cli_daemon.cpp
+    dnssd.hpp
     dnssd.cpp
     infra_if.hpp
     infra_if.cpp
