@@ -1,0 +1,35 @@
+meta {
+  name: Get Action Item by ActionId (dynamic)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions/{{action_id}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+  ~Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.id: eq {{action_id}}
+  res.body.data.type: contains "Task"
+  res.body.data.attributes: isObject
+  res.body.data.attributes.status: isString
+}
+
+tests {
+  test("Data is single object.", function() {
+    const data = res.getBody().data;
+    expect(data).not.to.be.an.instanceOf(Array);
+  }
+}
+
+script:pre-request {
+  const actionId = bru.getGlobalEnvVar("action_id");  // Retrieve the stored ID
+}
