@@ -88,8 +88,6 @@ if(OTBR_REST)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_REST_SERVER=1)
 endif()
 
-option(OTBR_MDNS_USE_OT_CORE "Enable use of OpenThread's mDNS implementation" OFF)
-
 option(OTBR_SRP_ADVERTISING_PROXY "Enable Advertising Proxy" OFF)
 if (OTBR_SRP_ADVERTISING_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_ADVERTISING_PROXY=1)
@@ -193,7 +191,12 @@ else()
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_POWER_CALIBRATION=0)
 endif()
 
-option(OTBR_DNSSD_PLAT "Enable OTBR DNS-SD platform implementation" ${OTBR_OT_SRP_ADV_PROXY})
+set(OTBR_DNSSD_PLAT_DEFAULT OFF)
+if (OTBR_OT_SRP_ADV_PROXY AND OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+    set(OTBR_DNSSD_PLAT_DEFAULT ON)
+endif()
+
+option(OTBR_DNSSD_PLAT "Enable OTBR DNS-SD platform implementation" ${OTBR_DNSSD_PLAT_DEFAULT})
 if (OTBR_DNSSD_PLAT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNSSD_PLAT=1)
 else()

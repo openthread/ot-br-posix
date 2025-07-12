@@ -30,7 +30,7 @@ if(OTBR_DBUS)
     add_subdirectory(dbus)
 endif()
 
-if(OTBR_MDNS)
+if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     add_subdirectory(mdns)
 endif()
 

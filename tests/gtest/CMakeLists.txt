@@ -55,7 +55,7 @@ target_link_libraries(otbr-gtest-unit
 )
 gtest_discover_tests(otbr-gtest-unit)
 
-if(OTBR_MDNS)
+if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     add_executable(otbr-gtest-mdns-subscribe
         test_mdns_subscribe.cpp
     )
