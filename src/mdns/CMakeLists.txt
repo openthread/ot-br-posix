@@ -44,7 +44,7 @@ if(OTBR_MDNS STREQUAL "avahi")
     )
 endif()
 
-if(OTBR_MDNS STREQUAL "mDNSResponder")
+if(OTBR_MDNS STREQUAL "mDNSResponder" OR OTBR_MDNS STREQUAL "openthread")
     add_library(otbr-mdns
         mdns.cpp
         mdns_mdnssd.cpp

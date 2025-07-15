@@ -46,15 +46,18 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-radio-spinel
     openthread-hdlc
     openthread-posix
-    otbr-sdp-proxy
+    $<$<AND:$<BOOL:${OTBR_MDNS}>,$<NOT:$<STREQUAL:${OTBR_MDNS},openthread>>>:otbr-sdp-proxy>
     otbr-ncp
     otbr-common
     otbr-utils
 )
 
-add_dependencies(otbr-agent ot-ctl print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
+add_dependencies(otbr-agent ot-ctl print-ot-config otbr-utils otbr-ncp)
 if (OTBR_BORDER_AGENT)
     add_dependencies(otbr-agent otbr-border-agent)
+endif()
+if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+    add_dependencies(otbr-agent otbr-sdp-proxy)
 endif()
 
 install(TARGETS otbr-agent DESTINATION sbin)

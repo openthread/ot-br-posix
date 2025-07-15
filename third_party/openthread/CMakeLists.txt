@@ -72,7 +72,7 @@ set(OT_TREL ${OTBR_TREL} CACHE STRING "enable TREL" FORCE)
 set(OT_UDP_FORWARD OFF CACHE STRING "disable udp forward" FORCE)
 set(OT_UPTIME ON CACHE STRING "enable uptime" FORCE)
 
-if (OTBR_MDNS_USE_OT_CORE)
+if (OTBR_MDNS STREQUAL "openthread")
     if (OTBR_DNSSD_DISCOVERY_PROXY OR OTBR_DNSSD_PLAT OR OTBR_BORDER_AGENT_MESHCOP_SERVICE)
         message(FATAL_ERROR "OTBR DNSSD support must not be enabled with OT mDNS.")
     endif()
@@ -90,7 +90,7 @@ else()
     endif()
 endif()
 
-if (OTBR_MDNS_USE_OT_CORE OR OTBR_OT_SRP_ADV_PROXY OR OTBR_SRP_ADVERTISING_PROXY)
+if (OTBR_MDNS STREQUAL "openthread" OR OTBR_OT_SRP_ADV_PROXY OR OTBR_SRP_ADVERTISING_PROXY)
     set(OT_SRP_SERVER ON CACHE STRING "enable SRP server" FORCE)
     set(OT_EXTERNAL_HEAP ON CACHE STRING "enable external heap" FORCE)
 endif()
@@ -141,7 +141,7 @@ if (NOT OT_THREAD_VERSION STREQUAL "1.1")
     )
 endif()
 
-if (OTBR_MDNS_USE_OT_CORE)
+if (OTBR_MDNS STREQUAL "openthread")
     target_compile_definitions(ot-config INTERFACE
         "-DOPENTHREAD_CONFIG_MULTICAST_DNS_PUBLIC_API_ENABLE=1"
     )
