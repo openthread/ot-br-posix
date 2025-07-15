@@ -344,10 +344,7 @@ public:
      *
      * @param[in] aPublisher  A pointer to the mDNS Publisher object.
      */
-    void SetMdnsPublisher(otbr::Mdns::Publisher *aPublisher)
-    {
-        mPublisher = aPublisher;
-    }
+    void SetMdnsPublisher(otbr::Mdns::Publisher *aPublisher) { mPublisher = aPublisher; }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
     /**
@@ -378,10 +375,7 @@ public:
      *
      * @param[in] aCallback    The callback to send the UDP packet to the remote side.
      */
-    void SetUdpForwardSendCallback(UdpForwardSendCallback aCallback)
-    {
-        mUdpForwardSendCallback = aCallback;
-    }
+    void SetUdpForwardSendCallback(UdpForwardSendCallback aCallback) { mUdpForwardSendCallback = aCallback; }
 
     /**
      * This method enables/disables the Backbone Router.

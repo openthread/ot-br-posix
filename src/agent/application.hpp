@@ -155,10 +155,7 @@ public:
      *
      * @returns The Publisher object.
      */
-    Mdns::Publisher &GetPublisher(void)
-    {
-        return *mPublisher;
-    }
+    Mdns::Publisher &GetPublisher(void) { return *mPublisher; }
 #endif
 
 #if OTBR_ENABLE_BORDER_AGENT
@@ -167,10 +164,7 @@ public:
      *
      * @returns The border agent.
      */
-    BorderAgent &GetBorderAgent(void)
-    {
-        return mBorderAgent;
-    }
+    BorderAgent &GetBorderAgent(void) { return mBorderAgent; }
 #endif
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
@@ -179,10 +173,7 @@ public:
      *
      * @returns The backbone agent.
      */
-    BackboneRouter::BackboneAgent &GetBackboneAgent(void)
-    {
-        return *mBackboneAgent;
-    }
+    BackboneRouter::BackboneAgent &GetBackboneAgent(void) { return *mBackboneAgent; }
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
@@ -191,10 +182,7 @@ public:
      *
      * @returns The advertising proxy.
      */
-    AdvertisingProxy &GetAdvertisingProxy(void)
-    {
-        return *mAdvertisingProxy;
-    }
+    AdvertisingProxy &GetAdvertisingProxy(void) { return *mAdvertisingProxy; }
 #endif
 
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
@@ -203,10 +191,7 @@ public:
      *
      * @returns The discovery proxy.
      */
-    Dnssd::DiscoveryProxy &GetDiscoveryProxy(void)
-    {
-        return *mDiscoveryProxy;
-    }
+    Dnssd::DiscoveryProxy &GetDiscoveryProxy(void) { return *mDiscoveryProxy; }
 #endif
 
 #if OTBR_ENABLE_TREL
@@ -215,10 +200,7 @@ public:
      *
      * @returns The TrelDnssd.
      */
-    TrelDnssd::TrelDnssd &GetTrelDnssd(void)
-    {
-        return *mTrelDnssd;
-    }
+    TrelDnssd::TrelDnssd &GetTrelDnssd(void) { return *mTrelDnssd; }
 #endif
 
 #if OTBR_ENABLE_OPENWRT
@@ -227,10 +209,7 @@ public:
      *
      * @returns The UBus agent.
      */
-    ubus::UBusAgent &GetUBusAgent(void)
-    {
-        return *mUbusAgent;
-    }
+    ubus::UBusAgent &GetUBusAgent(void) { return *mUbusAgent; }
 #endif
 
 #if OTBR_ENABLE_REST_SERVER
@@ -239,10 +218,7 @@ public:
      *
      * @returns The rest web server.
      */
-    rest::RestWebServer &GetRestWebServer(void)
-    {
-        return *mRestWebServer;
-    }
+    rest::RestWebServer &GetRestWebServer(void) { return *mRestWebServer; }
 #endif
 
 #if OTBR_ENABLE_DBUS_SERVER
@@ -251,10 +227,7 @@ public:
      *
      * @returns The DBus agent.
      */
-    DBus::DBusAgent &GetDBusAgent(void)
-    {
-        return mDBusAgent;
-    }
+    DBus::DBusAgent &GetDBusAgent(void) { return mDBusAgent; }
 #endif
 
 private:

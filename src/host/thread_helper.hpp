@@ -224,10 +224,7 @@ public:
      *
      * @returns The underlying instance.
      */
-    otInstance *GetInstance(void)
-    {
-        return mInstance;
-    }
+    otInstance *GetInstance(void) { return mInstance; }
 
     /**
      * This method handles OpenThread state changed notification.

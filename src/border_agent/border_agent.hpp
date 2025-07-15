@@ -186,10 +186,7 @@ private:
     void ClearState(void);
     void Start(void);
     void Stop(void);
-    bool IsEnabled(void) const
-    {
-        return mIsEnabled;
-    }
+    bool IsEnabled(void) const { return mIsEnabled; }
 
     void EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries);
 

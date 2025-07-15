@@ -193,10 +193,7 @@ public:
      *
      * @returns the applied FeatureFlagList's serialized bytes.
      */
-    const std::string &GetAppliedFeatureFlagListBytes(void)
-    {
-        return mAppliedFeatureFlagListBytes;
-    }
+    const std::string &GetAppliedFeatureFlagListBytes(void) { return mAppliedFeatureFlagListBytes; }
 #endif
 
     ~RcpHost(void) override;
@@ -224,15 +221,9 @@ public:
     void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
     void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;
 
-    CoprocessorType GetCoprocessorType(void) override
-    {
-        return OT_COPROCESSOR_RCP;
-    }
+    CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_RCP; }
 
-    const char *GetCoprocessorVersion(void) override
-    {
-        return otPlatRadioGetVersionString(mInstance);
-    }
+    const char *GetCoprocessorVersion(void) override { return otPlatRadioGetVersionString(mInstance); }
 
 private:
     static void SafeInvokeAndClear(AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
