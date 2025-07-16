@@ -94,7 +94,11 @@ public:
      *
      * @param[in] aPublisher  A reference to the mDNS Publisher.
      */
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     BorderAgent(Mdns::Publisher &aPublisher);
+#else
+    BorderAgent(void);
+#endif
 
     ~BorderAgent(void) = default;
 
@@ -202,8 +206,10 @@ private:
     void UnpublishEpskcService(void);
 #endif
 
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     Mdns::Publisher &mPublisher;
-    bool             mIsEnabled;
+#endif
+    bool mIsEnabled;
 
     std::vector<uint8_t> mVendorOui;
 
