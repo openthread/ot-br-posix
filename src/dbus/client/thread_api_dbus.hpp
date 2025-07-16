@@ -894,9 +894,7 @@ private:
     void        ScanPendingCallHandler(DBusPendingCall *aPending);
     void        EnergyScanPendingCallHandler(DBusPendingCall *aPending);
 
-    static void EmptyFree(void *)
-    {
-    }
+    static void EmptyFree(void *) {}
 
     std::string mInterfaceName;
 

@@ -108,10 +108,10 @@ void PublishSingleServiceWithCustomHost(void)
     std::vector<uint8_t> keyData                         = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
     Publisher::TxtData   txtData;
     Publisher::TxtList   txtList{
-        {"nn", "cool"},
-        {"xp", xpanid, sizeof(xpanid)},
-        {"tv", "1.1.1"},
-        {"xa", extAddr, sizeof(extAddr)},
+          {"nn", "cool"},
+          {"xp", xpanid, sizeof(xpanid)},
+          {"tv", "1.1.1"},
+          {"xa", extAddr, sizeof(extAddr)},
     };
 
     otbrLogInfo("PublishSingleServiceWithCustomHost");
@@ -166,10 +166,10 @@ void PublishMultipleServicesWithCustomHost(void)
     std::vector<uint8_t> keyData2                        = {0xCA, 0xFE, 0xBE, 0xEF};
     Publisher::TxtData   txtData;
     Publisher::TxtList   txtList{
-        {"nn", "cool"},
-        {"xp", xpanid, sizeof(xpanid)},
-        {"tv", "1.1.1"},
-        {"xa", extAddr, sizeof(extAddr)},
+          {"nn", "cool"},
+          {"xp", xpanid, sizeof(xpanid)},
+          {"tv", "1.1.1"},
+          {"xa", extAddr, sizeof(extAddr)},
     };
 
     otbrLogInfo("PublishMultipleServicesWithCustomHost");
