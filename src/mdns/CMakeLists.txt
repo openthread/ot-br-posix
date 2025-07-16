@@ -44,7 +44,7 @@ if(OTBR_MDNS STREQUAL "avahi")
     )
 endif()
 
-if(OTBR_MDNS STREQUAL "mDNSResponder" OR OTBR_MDNS STREQUAL "openthread")
+if(OTBR_MDNS STREQUAL "mDNSResponder")
     add_library(otbr-mdns
         mdns.cpp
         mdns_mdnssd.cpp
@@ -58,5 +58,21 @@ if(OTBR_MDNS STREQUAL "mDNSResponder" OR OTBR_MDNS STREQUAL "openthread")
         PRIVATE
             otbr-utils
             dns_sd
+    )
+endif()
+
+if(OTBR_MDNS STREQUAL "openthread")
+    add_library(otbr-mdns
+        mdns.cpp
+        mdns_openthread.cpp
+    )
+    target_compile_definitions(otbr-mdns PUBLIC
+        OTBR_ENABLE_MDNS_OPENTHREAD=1
+    )
+    target_link_libraries(otbr-mdns
+        PUBLIC
+            otbr-common
+        PRIVATE
+            otbr-utils
     )
 endif()
