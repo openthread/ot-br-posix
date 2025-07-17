@@ -131,10 +131,6 @@ if [[ ! ${PLATFORM+x} ]]; then
 fi
 echo "Current platform is $PLATFORM"
 
-# The DHCPV6_PD feature requires IPv6 features in dhcpcd but RIO
-# is not supported within dhcpcd.
-with BORDER_ROUTING && with DHCPV6_PD && die "BORDER_ROUTING and DHCPV6_PD cannot coexist!"
-
 STAGE_DIR=$PWD/stage
 BUILD_DIR=$PWD/build
 
