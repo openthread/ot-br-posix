@@ -182,6 +182,18 @@ private:
     std::mutex mTaskQueueMutex;
 };
 
+// specialization for void return type
+template <> inline void TaskRunner::PostAndWait<void>(const Task<void> &aTask, Milliseconds aDelay)
+{
+    std::promise<void> pro;
+    auto               fut = pro.get_future();
+    Post(aDelay, [&pro, &aTask]() {
+        aTask();
+        pro.set_value();
+    });
+    fut.get();
+}
+
 } // namespace otbr
 
 #endif // OTBR_COMMON_TASK_RUNNER_HPP_
