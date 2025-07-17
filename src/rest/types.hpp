@@ -42,13 +42,16 @@
 
 #include <openthread/border_agent.h>
 
+#include "openthread/mesh_diag.h"
 #include "openthread/netdiag.h"
 
 #define OT_REST_ACCEPT_HEADER "Accept"
+#define OT_REST_ALLOW_HEADER "Allow"
 #define OT_REST_CONTENT_TYPE_HEADER "Content-Type"
 
 #define OT_REST_CONTENT_TYPE_JSON "application/json"
 #define OT_REST_CONTENT_TYPE_PLAIN "text/plain"
+#define OT_REST_CONTENT_TYPE_JSONAPI "application/vnd.api+json"
 
 using std::chrono::steady_clock;
 
@@ -66,42 +69,10 @@ enum class HttpMethod : std::uint8_t
     kInvalidMethod,
 };
 
-enum class HttpStatusCode : std::uint16_t
-{
-    kStatusOk                  = 200,
-    kStatusCreated             = 201,
-    kStatusNoContent           = 204,
-    kStatusBadRequest          = 400,
-    kStatusResourceNotFound    = 404,
-    kStatusMethodNotAllowed    = 405,
-    kStatusRequestTimeout      = 408,
-    kStatusConflict            = 409,
-    kStatusInternalServerError = 500,
-    kStatusInsufficientStorage = 507,
-};
-
-enum class PostError : std::uint8_t
-{
-    kPostErrorNone  = 0, ///< No error
-    kPostBadRequest = 1, ///< Bad request for post
-    kPostSetFail    = 2, ///< Fail when set value
-};
-
-enum class ConnectionState : std::uint8_t
-{
-    kInit          = 0, ///< Init
-    kReadWait      = 1, ///< Wait to read
-    kReadTimeout   = 2, ///< Reach read timeout
-    kCallbackWait  = 3, ///< Wait for callback
-    kWriteWait     = 4, ///< Wait for write
-    kWriteTimeout  = 5, ///< Reach write timeout
-    kInternalError = 6, ///< Occur internal call error
-    kComplete      = 7, ///< No longer need to be processed
-
-};
 struct NodeInfo
 {
     otBorderAgentId mBaId;
+    std::string     mBaState;
     std::string     mRole;
     uint32_t        mNumOfRouter;
     uint16_t        mRloc16;
@@ -112,11 +83,100 @@ struct NodeInfo
     std::string     mNetworkName;
 };
 
+typedef struct EnergyReport
+{
+    uint8_t             mChannel;
+    std::vector<int8_t> mMaxRssi;
+} EnergyReport;
+
+typedef struct EnergyScanReport
+{
+    otIp6InterfaceIdentifier  mOrigin; // deviceId ml-eidiid
+    std::vector<EnergyReport> mReports;
+} EnergyScanReport;
+
 struct DiagInfo
 {
     steady_clock::time_point      mStartTime;
     std::vector<otNetworkDiagTlv> mDiagContent;
 };
+
+enum class DeviceSelfType
+{
+    kNone,
+    kThisDevice,
+    kThisDeviceParent,
+};
+
+struct DeviceIp6Addrs // item of TLV 30
+{
+    uint16_t                  mRloc16;
+    std::vector<otIp6Address> mIp6Addrs;
+};
+
+struct RouterNeighborLink
+{
+    uint8_t mRouterId;
+    uint8_t mLinkQuality;
+};
+
+struct RouterInfo
+{
+    otExtAddress   mExtAddress;
+    uint16_t       mRloc16;
+    uint8_t        mRouterId;
+    uint16_t       mVersion;
+    DeviceSelfType mSelfType;
+    bool           mIsLeader;
+    bool           mIsBorderRouter;
+
+    std::vector<RouterNeighborLink>            mNeighborLinks;
+    std::vector<otMeshDiagRouterNeighborEntry> mNeighborLinksEntry; // TLV 31
+    std::vector<otMeshDiagChildInfo>           mChildren;
+    std::vector<otMeshDiagChildEntry>          mChildrenEntry;    // TLV 29
+    std::vector<DeviceIp6Addrs>                mChildrenIp6Addrs; // TLV 30
+    std::vector<otIp6Address>                  mIpAddresses;
+};
+
+/**
+ * Represents static device infos
+ *
+ */
+struct DeviceInfo
+{
+    steady_clock::time_point mUpdateTime;
+
+    otExtAddress     mExtAddress;
+    bool             mNeedsUpdate;
+    std::string      mRole;
+    otExtAddress     mMlEidIid;
+    otExtAddress     mEui64;
+    otIp6Address     mIp6Addr;
+    std::string      mHostName = "";
+    otLinkModeConfig mode;
+};
+
+// custom Tlvs
+#define NETWORK_DIAGNOSTIC_TLVEXT_BR_COUNTER 255
+#define NETWORK_DIAGNOSTIC_TLVEXT_SERVICEROLEFLAGS 254
+#define NETWORK_DIAGNOSTIC_TLVEXT_CHILDREN 253    // used as flag to have TLV 29 (Child Table) in response
+#define NETWORK_DIAGNOSTIC_TLVEXT_CHILDRENIP6 252 // used as flag to have TLV 30 (Child IPv6 Address List) in response
+#define NETWORK_DIAGNOSTIC_TLVEXT_ROUTERNEIGHBORS 251 // used as flag to have TLV 31 (Router Neighbor Table) in response
+typedef struct networkDiagTlvExtensions
+{
+    uint8_t mType; // custom Tlvs
+    union
+    {
+        otBorderRoutingCounters mBrCounters;
+        struct
+        {
+            bool mIsLeader;
+            bool mHostsService;
+            bool mIsPrimaryBBR;
+            bool mIsBorderRouter;
+        } mServiceRoleFlags;
+    } mData;
+} networkDiagTlvExtensions;
 
 } // namespace rest
 } // namespace otbr
