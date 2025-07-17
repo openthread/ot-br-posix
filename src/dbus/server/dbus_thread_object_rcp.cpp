@@ -1823,7 +1823,9 @@ void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
 
     mHost.GetThreadHelper()->DetachGracefully([aRequest, this](otError error) mutable {
         SuccessOrExit(error);
+#if OTBR_ENABLE_MDNS && !OTBR_ENABLE_MDNS_OPENTHREAD
         mPublisher->Stop();
+#endif
         SuccessOrExit(error = otInstanceErasePersistentInfo(mHost.GetInstance()));
 
     exit:

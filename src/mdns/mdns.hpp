@@ -117,8 +117,23 @@ public:
         }
     };
 
-    typedef std::vector<uint8_t>     TxtData;
-    typedef std::vector<TxtEntry>    TxtList;
+    typedef std::vector<uint8_t>  TxtData;
+    typedef std::vector<TxtEntry> TxtList;
+
+    /**
+     * mDNS state values.
+     */
+    enum class State
+    {
+        kIdle,  ///< Unable to publish service.
+        kReady, ///< Ready to publish service.
+    };
+
+    /** The callback for receiving mDNS publisher state changes. */
+    using StateCallback = std::function<void(State aNewState)>;
+
+#if OTBR_ENABLE_MDNS && !OTBR_ENABLE_MDNS_OPENTHREAD
+
     typedef std::vector<std::string> SubTypeList;
     typedef std::vector<Ip6Address>  AddressList;
     typedef std::vector<uint8_t>     KeyData;
@@ -168,18 +183,6 @@ public:
      */
     using DiscoveredHostCallback =
         std::function<void(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo)>;
-
-    /**
-     * mDNS state values.
-     */
-    enum class State
-    {
-        kIdle,  ///< Unable to publish service.
-        kReady, ///< Ready to publish service.
-    };
-
-    /** The callback for receiving mDNS publisher state changes. */
-    using StateCallback = std::function<void(State aNewState)>;
 
     /** The callback for receiving the result of a operation. */
     using ResultCallback = OnceCallback<void(otbrError aError)>;
@@ -352,6 +355,8 @@ public:
      */
     void RemoveSubscriptionCallbacks(uint64_t aSubscriberId);
 
+#endif // OTBR_ENABLE_MDNS && !OTBR_ENABLE_MDNS_OPENTHREAD
+
     /**
      * This method returns the mDNS statistics information of the publisher.
      *
@@ -413,6 +418,8 @@ public:
 
 protected:
     static constexpr uint8_t kMaxTextEntrySize = 255;
+
+#if OTBR_ENABLE_MDNS && !OTBR_ENABLE_MDNS_OPENTHREAD
 
     class Registration
     {
@@ -661,6 +668,8 @@ protected:
     std::map<std::pair<std::string, std::string>, Timepoint> mServiceInstanceResolutionBeginTime;
     // host name -> the timepoint to begin host resolution
     std::map<std::string, Timepoint> mHostResolutionBeginTime;
+
+#endif // OTBR_ENABLE_MDNS && !OTBR_ENABLE_MDNS_OPENTHREAD
 
     MdnsTelemetryInfo mTelemetryInfo{};
 };
