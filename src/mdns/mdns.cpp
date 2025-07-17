@@ -49,65 +49,6 @@ namespace otbr {
 
 namespace Mdns {
 
-void Publisher::PublishService(const std::string &aHostName,
-                               const std::string &aName,
-                               const std::string &aType,
-                               const SubTypeList &aSubTypeList,
-                               uint16_t           aPort,
-                               const TxtData     &aTxtData,
-                               ResultCallback   &&aCallback)
-{
-    otbrError error;
-
-    mServiceRegistrationBeginTime[std::make_pair(aName, aType)] = Clock::now();
-
-    error = PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtData, std::move(aCallback));
-    if (error != OTBR_ERROR_NONE)
-    {
-        UpdateMdnsResponseCounters(mTelemetryInfo.mServiceRegistrations, error);
-    }
-}
-
-void Publisher::PublishHost(const std::string &aName, const AddressList &aAddresses, ResultCallback &&aCallback)
-{
-    otbrError error;
-
-    mHostRegistrationBeginTime[aName] = Clock::now();
-
-    error = PublishHostImpl(aName, aAddresses, std::move(aCallback));
-    if (error != OTBR_ERROR_NONE)
-    {
-        UpdateMdnsResponseCounters(mTelemetryInfo.mHostRegistrations, error);
-    }
-}
-
-void Publisher::PublishKey(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback)
-{
-    otbrError error;
-
-    mKeyRegistrationBeginTime[aName] = Clock::now();
-
-    error = PublishKeyImpl(aName, aKeyData, std::move(aCallback));
-    if (error != OTBR_ERROR_NONE)
-    {
-        UpdateMdnsResponseCounters(mTelemetryInfo.mKeyRegistrations, error);
-    }
-}
-
-void Publisher::OnServiceResolveFailed(std::string aType, std::string aInstanceName, int32_t aErrorCode)
-{
-    UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, DnsErrorToOtbrError(aErrorCode));
-    UpdateServiceInstanceResolutionEmaLatency(aInstanceName, aType, DnsErrorToOtbrError(aErrorCode));
-    OnServiceResolveFailedImpl(aType, aInstanceName, aErrorCode);
-}
-
-void Publisher::OnHostResolveFailed(std::string aHostName, int32_t aErrorCode)
-{
-    UpdateMdnsResponseCounters(mTelemetryInfo.mHostResolutions, DnsErrorToOtbrError(aErrorCode));
-    UpdateHostResolutionEmaLatency(aHostName, DnsErrorToOtbrError(aErrorCode));
-    OnHostResolveFailedImpl(aHostName, aErrorCode);
-}
-
 otbrError Publisher::EncodeTxtData(const TxtList &aTxtList, std::vector<uint8_t> &aTxtData)
 {
     otbrError error = OTBR_ERROR_NONE;
@@ -185,6 +126,67 @@ otbrError Publisher::DecodeTxtData(Publisher::TxtList &aTxtList, const uint8_t *
 
 exit:
     return error;
+}
+
+#if !OTBR_ENABLE_MDNS_OPENTHREAD
+
+void Publisher::PublishService(const std::string &aHostName,
+                               const std::string &aName,
+                               const std::string &aType,
+                               const SubTypeList &aSubTypeList,
+                               uint16_t           aPort,
+                               const TxtData     &aTxtData,
+                               ResultCallback   &&aCallback)
+{
+    otbrError error;
+
+    mServiceRegistrationBeginTime[std::make_pair(aName, aType)] = Clock::now();
+
+    error = PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtData, std::move(aCallback));
+    if (error != OTBR_ERROR_NONE)
+    {
+        UpdateMdnsResponseCounters(mTelemetryInfo.mServiceRegistrations, error);
+    }
+}
+
+void Publisher::PublishHost(const std::string &aName, const AddressList &aAddresses, ResultCallback &&aCallback)
+{
+    otbrError error;
+
+    mHostRegistrationBeginTime[aName] = Clock::now();
+
+    error = PublishHostImpl(aName, aAddresses, std::move(aCallback));
+    if (error != OTBR_ERROR_NONE)
+    {
+        UpdateMdnsResponseCounters(mTelemetryInfo.mHostRegistrations, error);
+    }
+}
+
+void Publisher::PublishKey(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback)
+{
+    otbrError error;
+
+    mKeyRegistrationBeginTime[aName] = Clock::now();
+
+    error = PublishKeyImpl(aName, aKeyData, std::move(aCallback));
+    if (error != OTBR_ERROR_NONE)
+    {
+        UpdateMdnsResponseCounters(mTelemetryInfo.mKeyRegistrations, error);
+    }
+}
+
+void Publisher::OnServiceResolveFailed(std::string aType, std::string aInstanceName, int32_t aErrorCode)
+{
+    UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, DnsErrorToOtbrError(aErrorCode));
+    UpdateServiceInstanceResolutionEmaLatency(aInstanceName, aType, DnsErrorToOtbrError(aErrorCode));
+    OnServiceResolveFailedImpl(aType, aInstanceName, aErrorCode);
+}
+
+void Publisher::OnHostResolveFailed(std::string aHostName, int32_t aErrorCode)
+{
+    UpdateMdnsResponseCounters(mTelemetryInfo.mHostResolutions, DnsErrorToOtbrError(aErrorCode));
+    UpdateHostResolutionEmaLatency(aHostName, DnsErrorToOtbrError(aErrorCode));
+    OnHostResolveFailedImpl(aHostName, aErrorCode);
 }
 
 void Publisher::RemoveSubscriptionCallbacks(uint64_t aSubscriberId)
@@ -783,6 +785,8 @@ void Publisher::RemoveAddress(AddressList &aAddressList, const Ip6Address &aAddr
         aAddressList.erase(it);
     }
 }
+
+#endif // !OTBR_ENABLE_MDNS_OPENTHREAD
 
 void StateSubject::AddObserver(StateObserver &aObserver)
 {

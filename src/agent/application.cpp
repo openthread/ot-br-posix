@@ -265,7 +265,7 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     }));
 #endif
 
-#if OTBR_ENABLE_MDNS
+#if OTBR_ENABLE_MDNS && !OTBR_ENABLE_MDNS
     mPublisher->Start();
 #endif
 #if OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
@@ -317,7 +317,7 @@ void Application::DeinitRcpMode(void)
     mBorderAgent.SetEnabled(false);
     mBorderAgent.Deinit();
 #endif
-#if OTBR_ENABLE_MDNS
+#if OTBR_ENABLE_MDNS && !OTBR_ENABLE_MDNS_OPENTHREAD
     mMdnsStateSubject.Clear();
     mPublisher->Stop();
 #endif

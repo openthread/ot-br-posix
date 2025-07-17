@@ -44,6 +44,7 @@ add_library(otbr-ncp
 )
 
 target_link_libraries(otbr-ncp PRIVATE
+    $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     otbr-common
     otbr-posix
     $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
