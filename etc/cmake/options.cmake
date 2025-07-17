@@ -31,12 +31,18 @@ find_package(PkgConfig)
 
 option(OTBR_DOC "Build documentation" OFF)
 
+
 option(OTBR_BORDER_AGENT "Enable Border Agent" ON)
 if (OTBR_BORDER_AGENT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_AGENT=1)
 endif()
 
-option(OTBR_BORDER_AGENT_MESHCOP_SERVICE "Enable Border Agent to register MeshCoP mDNS service" ${OTBR_BORDER_AGENT})
+set(OTBR_BORDER_AGENT_MESHCOP_SERVICE_DEFAULT OFF)
+if (OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+    set(OTBR_BORDER_AGENT_MESHCOP_SERVICE_DEFAULT ${OTBR_BORDER_AGENT})
+endif()
+
+option(OTBR_BORDER_AGENT_MESHCOP_SERVICE "Enable Border Agent to register MeshCoP mDNS service" ${OTBR_BORDER_AGENT_MESHCOP_SERVICE_DEFAULT})
 if (OTBR_BORDER_AGENT_MESHCOP_SERVICE)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE=1)
 endif()
