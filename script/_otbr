@@ -61,13 +61,7 @@ otbr_uninstall()
 
 otbr_install()
 {
-    local otbr_options=()
-
-    if [[ ${OTBR_OPTIONS} ]]; then
-        read -r -a otbr_options <<<"${OTBR_OPTIONS}"
-    fi
-
-    otbr_options=(
+    local otbr_options=(
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
@@ -77,8 +71,14 @@ otbr_install()
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="
-        "${otbr_options[@]}"
     )
+
+    # If the user provided custom options, append them
+    if [[ -n ${OTBR_OPTIONS:-} ]]; then
+        local user_options=()
+        read -r -a user_options <<<"${OTBR_OPTIONS}"
+        otbr_options+=("${user_options[@]}")
+    fi
 
     if with OT_SRP_ADV_PROXY; then
         otbr_options+=(
