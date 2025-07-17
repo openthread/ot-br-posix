@@ -32,6 +32,7 @@ import urllib.error
 import ipaddress
 import json
 import re
+import time
 from threading import Thread
 
 rest_api_addr = "http://127.0.0.1:8081"
@@ -41,7 +42,7 @@ def assert_is_ipv6_address(string):
     assert (type(ipaddress.ip_address(string)) is ipaddress.IPv6Address)
 
 def get_data_from_url(url, result, index):
-    response = urllib.request.urlopen(urllib.request.Request(url))
+    response = urllib.request.urlopen(urllib.request.Request(url, headers={'Accept': 'application/json'}))
     body = response.read()
     data = json.loads(body)
     result[index] = data
@@ -84,13 +85,14 @@ def diagnostics_check(data):
         return 1
     for diag in data:
         expected_keys = [
-            "ExtAddress", "Rloc16", "Mode", "Connectivity", "Route",
-            "LeaderData", "NetworkData", "IP6AddressList", "MACCounters",
-            "ChildTable", "ChannelPages"
+            "extAddress", "rloc16", "mode", "connectivity", "route",
+            "leaderData", "networkData", "ip6AddressList", "macCounters",
+            "childTable", "channelPages", "maxChildTimeout", "version",
+            "vendorName", "vendorModel", "vendorSwVersion", "threadStackVersion"
         ]
         expected_value_type = [
-            str, int, dict, dict, dict, dict, str, list, dict, list,
-            str
+            str, str, dict, dict, dict, dict, str, list, dict, list,
+            str, int, int, str, str, str, str
         ]
         expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
@@ -98,36 +100,36 @@ def diagnostics_check(data):
             assert (key in diag)
             assert (type(diag[key]) == value)
 
-        assert (re.match(r'^[A-F0-9]{16}$', diag["ExtAddress"]) is not None)
+        assert (re.match(r'^[a-f0-9]{16}$', diag["extAddress"]) is not None)
 
-        mode = diag["Mode"]
+        mode = diag["mode"]
         mode_expected_keys = [
-            "RxOnWhenIdle", "DeviceType", "NetworkData"
+            "rxOnWhenIdle", "deviceTypeFTD", "fullNetworkData"
         ]
         for key in mode_expected_keys:
             assert (key in mode)
-            assert (type(mode[key]) == int)
+            assert (type(mode[key]) == bool)
 
-        connectivity = diag["Connectivity"]
+        connectivity = diag["connectivity"]
         connectivity_expected_keys = [
-            "ParentPriority", "LinkQuality3", "LinkQuality2", "LinkQuality1",
-            "LeaderCost", "IdSequence", "ActiveRouters", "SedBufferSize",
-            "SedDatagramCount"
+            "parentPriority", "linkQuality3", "linkQuality2", "linkQuality1",
+            "leaderCost", "idSequence", "activeRouters", "sedBufferSize",
+            "sedDatagramCount"
         ]
         for key in connectivity_expected_keys:
             assert (key in connectivity)
             assert (type(connectivity[key]) == int)
 
-        route = diag["Route"]
-        assert ("IdSequence" in route)
-        assert (type(route["IdSequence"]) == int)
+        route = diag["route"]
+        assert ("idSequence" in route)
+        assert (type(route["idSequence"]) == int)
 
-        assert ("RouteData" in route)
-        route_routedata = route["RouteData"]
-        assert (type(route["RouteData"]) == list)
+        assert ("routeData" in route)
+        route_routedata = route["routeData"]
+        assert (type(route["routeData"]) == list)
 
         routedata_expected_keys = [
-            "RouteId", "LinkQualityOut", "LinkQualityIn", "RouteCost"
+            "routeId", "linkQualityOut", "linkQualityIn", "routeCost"
         ]
 
         for item in route_routedata:
@@ -135,53 +137,53 @@ def diagnostics_check(data):
                 assert (key in item)
                 assert (type(item[key]) == int)
 
-        leaderdata = diag["LeaderData"]
+        leaderdata = diag["leaderData"]
         leaderdata_expected_keys = [
-            "PartitionId", "Weighting", "DataVersion", "StableDataVersion",
-            "LeaderRouterId"
+            "partitionId", "weighting", "dataVersion", "stableDataVersion",
+            "leaderRouterId"
         ]
 
         for key in leaderdata_expected_keys:
             assert (key in leaderdata)
             assert (type(leaderdata[key]) == int)
 
-        assert (re.match(r'^[A-F0-9]{44}$', diag["NetworkData"]) is not None)
+        assert (re.match(r'^[a-f0-9]{44}$', diag["networkData"]) is not None)
 
-        ip6_address_list = diag["IP6AddressList"]
+        ip6_address_list = diag["ip6AddressList"]
         assert (type(ip6_address_list) == list)
 
         for ip6_address in ip6_address_list:
             assert (type(ip6_address) == str)
             assert_is_ipv6_address(ip6_address)
 
-        mac_counters = diag["MACCounters"]
+        mac_counters = diag["macCounters"]
         assert (type(mac_counters) == dict)
         mac_counters_expected_keys = [
-            "IfInUnknownProtos", "IfInErrors", "IfOutErrors", "IfInUcastPkts",
-            "IfInBroadcastPkts", "IfInDiscards", "IfOutUcastPkts",
-            "IfOutBroadcastPkts", "IfOutDiscards"
+            "ifInUnknownProtos", "ifInErrors", "ifOutErrors", "ifInUcastPkts",
+            "ifInBroadcastPkts", "ifInDiscards", "ifOutUcastPkts",
+            "ifOutBroadcastPkts", "ifOutDiscards"
         ]
         for key in mac_counters_expected_keys:
             assert (key in mac_counters)
             assert (type(mac_counters[key]) == int)
 
-        child_table = diag["ChildTable"]
+        child_table = diag["childTable"]
         assert (type(child_table) == list)
 
         for child in child_table:
-            assert ("ChildId" in child)
-            assert (type(child["ChildId"]) == int)
-            assert ("Timeout" in child)
-            assert (type(child["Timeout"]) == int)
-            assert ("Mode" in child)
-            mode = child["Mode"]
+            assert ("childId" in child)
+            assert (type(child["childId"]) == int)
+            assert ("timeout" in child)
+            assert (type(child["timeout"]) == int)
+            assert ("mode" in child)
+            mode = child["mode"]
             assert (type(mode) == dict)
             for key in mode_expected_keys:
                 assert (key in mode)
                 assert (type(mode[key]) == int)
 
-        assert (type(diag["ChannelPages"]) == str)
-        assert (re.match(r'^[A-F0-9]{2}$', diag["ChannelPages"]) is not None)
+        assert (type(diag["channelPages"]) == str)
+        assert (re.match(r'^[a-f0-9]{2}$', diag["channelPages"]) is not None)
 
     return 2
 
@@ -190,11 +192,11 @@ def node_check(data):
     assert data is not None
 
     expected_keys = [
-        "State", "NumOfRouter", "RlocAddress", "NetworkName", "ExtAddress",
-        "Rloc16", "LeaderData", "ExtPanId"
+        "state", "routerCount", "rlocAddress", "networkName", "extAddress",
+        "rloc16", "leaderData", "extPanId"
     ]
     expected_value_type = [
-        str, int, str, str, str, int, dict, str
+        str, int, str, str, str, str, dict, str
     ]
     expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
@@ -202,15 +204,15 @@ def node_check(data):
         assert (key in data)
         assert (type(data[key]) == value)
 
-    assert_is_ipv6_address(data["RlocAddress"])
+    assert_is_ipv6_address(data["rlocAddress"])
 
-    assert (re.match(r'^[A-F0-9]{16}$', data["ExtAddress"]) is not None)
-    assert (re.match(r'[A-F0-9]{16}', data["ExtPanId"]) is not None)
+    assert (re.match(r'^[a-f0-9]{16}$', data["extAddress"]) is not None)
+    assert (re.match(r'[a-f0-9]{16}', data["extPanId"]) is not None)
 
-    leaderdata = data["LeaderData"]
+    leaderdata = data["leaderData"]
     leaderdata_expected_keys = [
-        "PartitionId", "Weighting", "DataVersion", "StableDataVersion",
-        "LeaderRouterId"
+        "partitionId", "weighting", "dataVersion", "stableDataVersion",
+        "leaderRouterId"
     ]
 
     for key in leaderdata_expected_keys:
@@ -242,7 +244,7 @@ def node_ext_address_check(data):
     assert data is not None
 
     assert (type(data) == str)
-    assert (re.match(r'^[A-F0-9]{16}$', data) is not None)
+    assert (re.match(r'^[a-f0-9]{16}$', data) is not None)
 
     return True
 
@@ -253,6 +255,14 @@ def node_state_check(data):
     assert (type(data) == str)
 
     return True
+
+def node_state_check_attached(data):
+    node_state_check(data)
+        
+    if (data != "detached") and (data != "disabled"):
+        return True
+    else:
+        return False
 
 
 def node_network_name_check(data):
@@ -269,8 +279,8 @@ def node_leader_data_check(data):
     assert (type(data) == dict)
 
     leaderdata_expected_keys = [
-        "PartitionId", "Weighting", "DataVersion", "StableDataVersion",
-        "LeaderRouterId"
+        "partitionId", "weighting", "dataVersion", "stableDataVersion",
+        "leaderRouterId"
     ]
 
     for key in leaderdata_expected_keys:
@@ -362,6 +372,21 @@ def node_state_test(thread_num):
     valid = [node_state_check(data) for data in response_data].count(True)
 
     print(" /node/state : all {}, valid {} ".format(thread_num, valid))
+
+
+def node_state_test_attached():
+    url = rest_api_addr + "/node/state"
+
+    response_data = [None]
+    is_attached = False
+    now = time.time()
+
+    while not is_attached and time.time() - now < 130:
+        get_data_from_url(url, response_data, 0)
+        is_attached = node_state_check_attached(response_data[0])
+        print(" /node/state : attached {} ".format(is_attached))
+        if not is_attached:
+            time.sleep(1)
 
 
 def node_network_name_test(thread_num):
@@ -467,11 +492,12 @@ def main():
     node_ext_address_test(200)
     node_state_test(200)
     node_network_name_test(200)
+    node_state_test_attached()  # wait for attached state
     node_leader_data_test(200)
     node_num_of_router_test(200)
     node_ext_panid_test(200)
     node_coprocessor_version_test(200)
-    diagnostics_test(20)
+    # diagnostics_test(20)  # partly replaced with restjsonapi tests
     error_test(10)
 
     return 0

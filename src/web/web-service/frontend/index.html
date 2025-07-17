@@ -310,10 +310,10 @@
 
             <span class="status-title">&nbsp&nbspNetwork Name:&nbsp 
             </span>
-            <span class="status-content" ng-if="basicInfo.NetworkName"> {{ basicInfo.NetworkName }}</span>
+            <span class="status-content" ng-if="basicInfo.networkName"> {{ basicInfo.networkName }}</span>
             <span class="status-title">&nbsp&nbspLeader:&nbsp
             </span>
-            <span class="status-content" ng-if="basicInfo.LeaderData"> {{ basicInfo.LeaderData.LeaderRouterId }}&nbsp&nbsp
+            <span class="status-content" ng-if="basicInfo.leaderData"> {{ basicInfo.leaderData.leaderRouterId }}&nbsp&nbsp
             </span>
             
             <span class="status-title">&nbsp&nbsp#Router:&nbsp
@@ -322,14 +322,43 @@
             <span class="status-content"> {{ NumOfRouter }}&nbsp&nbsp
             </span> &nbsp&nbsp&nbsp&nbsp
 
+            <!-- Slider for Topology -->
+            <div class="slider-container">
+              <p>Threshold Frame Error Rate:</p>
+              <md-input-container>
+                <md-slider min="0" max="100" step="1" ng-model="thresholdFrameErrorRate" aria-label="Threshold Frame Error Rate" ng-change="drawGraph()" md-discrete></md-slider>
+              </md-input-container>
+            </div>
 
+            <!-- TLV Checkboxes -->
+            <div class="checkbox-container">
+              <p>TLV List:</p>
+              <md-checkbox ng-model="detailList.mode.title">mode</md-checkbox>
+              <md-checkbox ng-model="detailList.connectivity.title">connectivity</md-checkbox>
+              <md-checkbox ng-model="detailList.leaderData.title">leaderData</md-checkbox>
+              <md-checkbox ng-model="detailList.networkData.title">networkData</md-checkbox>
+              <md-checkbox ng-model="detailList.ipv6Addresses.title">ipv6Addresses</md-checkbox>
+              <md-checkbox ng-model="detailList.macCounters.title">macCounters</md-checkbox>
+              <md-checkbox ng-model="detailList.batteryLevel.title">batteryLevel</md-checkbox>
+              <md-checkbox ng-model="detailList.supplyVoltage.title">supplyVoltage</md-checkbox>
+              <md-checkbox ng-model="detailList.channelPages.title">channelPages</md-checkbox>
+              <md-checkbox ng-model="detailList.lDevIdSubject.title">lDevIdSubject</md-checkbox>
+              <md-checkbox ng-model="detailList.iDevIdCert.title">iDevIdCert</md-checkbox>
+              <md-checkbox ng-model="detailList.eui64.title">eui64</md-checkbox>
+              <md-checkbox ng-model="detailList.version.title">version</md-checkbox>
+              <md-checkbox ng-model="detailList.vendorName.title">vendorName</md-checkbox>
+              <md-checkbox ng-model="detailList.vendorModel.title">vendorModel</md-checkbox>
+              <md-checkbox ng-model="detailList.vendorSwVersion.title">vendorSwVersion</md-checkbox>
+              <md-checkbox ng-model="detailList.threadStackVersion.title">threadStackVersion</md-checkbox>
+              <md-checkbox ng-model="detailList.children.title">children</md-checkbox>
+              <md-checkbox ng-model="detailList.childIpv6Addresses.title">childIpv6Addresses</md-checkbox>
+              <md-checkbox ng-model="detailList.mleCounters.title">mleCounters</md-checkbox>
+            </div>
 
 
             <button ng-disabled="!graphisReady" class="mdl-button mdl-js-button mdl-button--raised" ng-click="showTopology()">Reload</button>
 
-
           </div>
-
 
         </div>
 

@@ -49,10 +49,14 @@
 #include <openthread/border_router.h>
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
+#include <openthread/mesh_diag.h>
 #include <openthread/netdiag.h>
 
 #include "host/rcp_host.hpp"
 #include "host/thread_helper.hpp"
+#include "rest/rest_devices_coll.hpp"
+#include "rest/rest_diagnostics_coll.hpp"
+#include "rest/services.hpp"
 #include "rest/types.hpp"
 
 namespace otbr {
@@ -61,7 +65,7 @@ namespace rest {
 /**
  * This class implements a REST server.
  */
-class RestWebServer
+class RestWebServer : public std::enable_shared_from_this<RestWebServer>
 {
 public:
     /**
@@ -133,14 +137,36 @@ private:
     void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
     void GetCoprocessorVersion(Response &aResponse) const;
 
-    void DeleteOutDatedDiagnostic(void);
-    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
+    void ApiActionsHandler(const Request &aRequest, Response &aResponse);
+    void ApiActionsGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiActionsItemGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiActionsPostHandler(const Request &aRequest, Response &aResponse);
+    void ApiActionsDeleteHandler(const Request &aRequest, Response &aResponse);
+    void ApiActionsItemDeleteHandler(const Request &aRequest, Response &aResponse);
 
-    void DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
+    void ApiDevicesHandler(const Request &aRequest, Response &aResponse);
+    void ApiDevicesGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiDevicesItemGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiDevicesDeleteHandler(const Request &aRequest, Response &aResponse);
+    void ApiDevicesItemDeleteHandler(const Request &aRequest, Response &aResponse);
+    void ApiDevicesSelfGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiDevicesNodeInit();
+
+    void ApiDiagnosticsHandler(const Request &aRequest, Response &aResponse);
+    void ApiDiagnosticsGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiDiagnosticsItemGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiDiagnosticsDeleteHandler(const Request &aRequest, Response &aResponse);
+    void ApiDiagnosticsItemDeleteHandler(const Request &aRequest, Response &aResponse);
+
+    void                               RoutingErrorHandler(const Request &aRequest, Response &aResponse);
+    std::map<std::string, std::string> ExtractFieldsQueries(const Request               &aRequest,
+                                                            const std::set<std::string> &aContainedTypes) const;
+    otError                            HasValidChars(const Request &aRequest, std::string &aErrorDetails);
 
     otInstance *GetInstance(void) const { return mHost.GetThreadHelper()->GetInstance(); }
 
     void ErrorHandler(Response &aResponse, StatusCode aErrorCode) const;
+    void ErrorHandler(Response &aResponse, StatusCode aErrorCode, std::string aErrorDetails) const;
 
     template <typename Call, typename... Args>
     auto RunInMainLoop(Call aCall, Args... aArgs) const -> decltype(aCall(aArgs...))
@@ -161,12 +187,19 @@ private:
         };
     }
 
+    template <typename HandlerType> httplib::Server::Handler MakeHandlerInMainLoop(HandlerType aHandler)
+    {
+        return [this, aHandler](const Request &aRequest, Response &aResponse) -> void {
+            this->RunInMainLoop([this, aHandler, &aRequest, &aResponse]() { (this->*aHandler)(aRequest, aResponse); });
+        };
+    }
+
     Host::RcpHost &mHost;
 
     httplib::Server mServer;
     std::thread     mServerThread;
 
-    std::unordered_map<std::string, DiagInfo> mDiagSet;
+    Services mServices;
 };
 
 } // namespace rest
