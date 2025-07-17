@@ -66,7 +66,9 @@ Application::Application(Host::ThreadHost  &aHost,
     , mDnssdPlatform(*mPublisher)
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     , mBorderAgent(*mPublisher)
+#endif
     , mBorderAgentUdpProxy(mHost)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER

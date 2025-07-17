@@ -88,8 +88,12 @@ static const char kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Borde
 static constexpr int kBorderAgentServiceDummyPort = 49152;
 static constexpr int kEpskcRandomGenLen           = 8;
 
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 BorderAgent::BorderAgent(Mdns::Publisher &aPublisher)
     : mPublisher(aPublisher)
+#else
+BorderAgent::BorderAgent(void)
+#endif
 {
     ClearState();
 }
