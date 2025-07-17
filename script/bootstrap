@@ -102,9 +102,6 @@ EOF
         sudo apt-get install --no-install-recommends -y radvd
     }
 
-    # dhcpcd5
-    without DHCPV6_PD || sudo apt-get install --no-install-recommends -y dhcpcd5
-
     # libjsoncpp
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 

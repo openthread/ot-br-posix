@@ -36,7 +36,6 @@
 . script/_otbr
 . script/_ipforward
 . script/_nat64
-. script/_dhcpv6_pd
 . script/_dhcpv6_pd_ref
 . script/_rt_tables
 . script/_swapfile
@@ -51,7 +50,6 @@ main()
     setup_swapfile
     otbr_uninstall
     border_routing_uninstall
-    dhcpv6_pd_uninstall
     dhcpv6_pd_ref_uninstall
     nat64_uninstall
     rt_tables_uninstall
@@ -62,7 +60,6 @@ main()
     ipforward_install
     rt_tables_install
     nat64_install
-    dhcpv6_pd_install
     dhcpv6_pd_ref_install
     border_routing_install
     otbr_install
