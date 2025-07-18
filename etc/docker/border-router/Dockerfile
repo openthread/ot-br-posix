@@ -85,7 +85,6 @@ RUN set -x \
            -DOTBR_DNSSD_DISCOVERY_PROXY=ON \
            -DOTBR_SRP_ADVERTISING_PROXY=ON \
            -DOTBR_TREL=ON \
-           -DOTBR_NAT64=ON \
            -DOTBR_DNS_UPSTREAM_QUERY=ON \
            -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
            -DOT_FIREWALL=ON \
