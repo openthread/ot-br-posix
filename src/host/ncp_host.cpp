@@ -280,6 +280,14 @@ void NcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallba
     OTBR_UNUSED_VARIABLE(aCallback);
 }
 
+#if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+void NcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData)
+{
+    // To be implemented
+    OTBR_UNUSED_VARIABLE(aVendorTxtData);
+}
+#endif
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);

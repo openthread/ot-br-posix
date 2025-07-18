@@ -289,9 +289,7 @@ exit:
     return;
 }
 
-void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool                        aIsActive,
-                                                         uint16_t                    aPort,
-                                                         const std::vector<uint8_t> &aOtTxtData)
+void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool aIsActive, uint16_t aPort, const TxtData &aOtTxtData)
 {
     if (aIsActive != mBaIsActive || aPort != mMeshCoPUdpPort)
     {
@@ -379,6 +377,21 @@ void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
 
         assert(error == OTBR_ERROR_NONE);
         OTBR_UNUSED_VARIABLE(error);
+    }
+
+    if (mVendorTxtDataChangedCallback != nullptr)
+    {
+        mVendorTxtDataChangedCallback(mVendorTxtData);
+    }
+}
+
+void BorderAgent::SetVendorTxtDataChangedCallback(VendorTxtDataChangedCallback aCallback)
+{
+    mVendorTxtDataChangedCallback = aCallback;
+
+    if (mVendorTxtDataChangedCallback != nullptr)
+    {
+        mVendorTxtDataChangedCallback(mVendorTxtData);
     }
 }
 

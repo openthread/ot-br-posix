@@ -280,6 +280,17 @@ public:
      */
     virtual void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) = 0;
 
+#if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+    /**
+     * This method sets or updates the Border Agent Vendor TXT Data.
+     *
+     * This is then passed to OpenThread stack to be included in the advertised `meshcop` service TXT Data.
+     *
+     * @param[in] aVendorTxtData   The encoded vendor TXT Data.
+     */
+    virtual void SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData) = 0;
+#endif
+
     /**
      * This methods a callback for the Thread stack to forward UDP packet to the host.
      *

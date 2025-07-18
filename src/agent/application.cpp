@@ -268,7 +268,8 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #if OTBR_ENABLE_MDNS
     mPublisher->Start();
 #endif
-#if OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+#if OTBR_ENABLE_BORDER_AGENT
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mHost.SetBorderAgentMeshCoPServiceChangedCallback(
         [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
             mBorderAgent.HandleBorderAgentMeshCoPServiceChanged(aIsActive, aPort,
@@ -278,7 +279,11 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
         mBorderAgent.HandleEpskcStateChanged(aEpskcState, aPort);
     });
     SetBorderAgentOnInitState();
+#else
+    mBorderAgent.SetVendorTxtDataChangedCallback(
+        [this](const BorderAgent::TxtData &aVendorTxtData) { mHost.SetBorderAgentVendorTxtData(aVendorTxtData); });
 #endif
+#endif // OTBR_ENABLE_BORDER_AGENT
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent->Init();
 #endif

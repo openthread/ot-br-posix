@@ -125,6 +125,9 @@ public:
     void AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback) override;
     void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;
     const otMeshLocalPrefix *GetMeshLocalPrefix(void) const override;
+#if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+    void SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData) override;
+#endif
 
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
