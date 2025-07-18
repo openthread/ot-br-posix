@@ -50,7 +50,7 @@ jobs:
       matrix:
         include:
           - name: "Border Router (OT mDNS)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_DNSSD_DISCOVERY_PROXY=OFF"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_DNSSD_DISCOVERY_PROXY=OFF"
             border_routing: 1
             internet: 0
             ot_srp_adv_proxy: 1
@@ -58,7 +58,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
             ot_srp_adv_proxy: 0
@@ -66,7 +66,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router (Avahi)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
             ot_srp_adv_proxy: 0
@@ -74,7 +74,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router TREL (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
             ot_srp_adv_proxy: 0
@@ -82,7 +82,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
           - name: "Border Router MATN (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
             ot_srp_adv_proxy: 0
@@ -90,7 +90,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
             packet_verification: 1
           - name: "Border Router Internet Access Features (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_DHCP6_PD=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_DHCP6_PD=ON"
             border_routing: 1
             internet: 1
             ot_srp_adv_proxy: 0
@@ -98,7 +98,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Backbone Router"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 0
             internet: 0
             ot_srp_adv_proxy: 0
@@ -106,7 +106,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
             packet_verification: 1
           - name: "Border Router with OT Core Advertising Proxy (avahi)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF"
             border_routing: 1
             internet: 0
             ot_srp_adv_proxy: 1
@@ -114,7 +114,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router with OT Core Advertising Proxy (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF"
             border_routing: 1
             internet: 0
             ot_srp_adv_proxy: 1
@@ -156,8 +156,6 @@ jobs:
     - name: Build OTBR Docker Image
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
-        # We need the `-DOT_SRP_SERVER=ON` option because the `bbr_5_11_01.py` script is referring SRP server.
-        # This should be fixed by enhancing the test script to handle SRP server situations properly.
         otbr_options="${{ matrix.otbr_options }}"
         otbr_image_name="otbr-ot12-backbone-ci"
         docker build -t "${otbr_image_name}" -f etc/docker/test/Dockerfile . \
