@@ -186,6 +186,20 @@
         goto exit;   \
     } while (false)
 
+/**
+ * Ignores an error explicitly.
+ *
+ * This is primarily used to indicate the intention of developer that
+ * the error can be safely ignored or there is guaranteed to be no error.
+ *
+ * @param[in]  aError  The error to be ignored.
+ *
+ */
+static inline void IgnoreError(otError aError)
+{
+    OT_UNUSED_VARIABLE(aError);
+}
+
 #define OTBR_NOOP
 #define OTBR_UNUSED_VARIABLE(variable) ((void)(variable))
 

@@ -41,9 +41,17 @@
 
 #include "common/api_strings.hpp"
 #include "rest/json.hpp"
-#include "rest/types.hpp"
 
-#define OT_REST_RESOURCE_PATH_DIAGNOSTICS "/diagnostics"
+#include "rest/actions_list.hpp" // Actions Collection
+#include "rest/commissioner_manager.hpp"
+#include "rest/network_diag_handler.hpp"
+#include "rest/rest_devices_coll.hpp"     // Devices Collection
+#include "rest/rest_diagnostics_coll.hpp" // Diagnostics Collection
+#include "rest/services.hpp"
+#include "utils/string_utils.hpp"
+
+#include <cJSON.h>
+
 #define OT_REST_RESOURCE_PATH_NODE "/node"
 #define OT_REST_RESOURCE_PATH_NODE_BAID "/node/ba-id"
 #define OT_REST_RESOURCE_PATH_NODE_RLOC "/node/rloc"
@@ -65,6 +73,27 @@
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/networks/current/prefix"
 
+// API collection id definitions
+#define DEVICEID_REGEX "([0-9a-fA-F]{16})" // Device ID regex pattern matching 16 hex characters of a macaddress
+#define UUID_REGEX \
+    "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})" // UUID regex pattern matching UUID
+                                                                                    // format
+                                                                                    // /320ab7c8-9985-4497-8299-6f9b024608a3
+#define DEVICES_COLLECTION_NAME "devices"
+#define ACTIONS_COLLECTION_NAME "actions"
+#define DIAGNOSTICS_COLLECTION_NAME "diagnostics"
+
+// API endpoint path definition ids
+#define OT_REST_ROUTE_DEVICES "/api/devices"
+#define OT_REST_ROUTE_DEVICES_ID "/api/devices/:id"
+#define OT_REST_ROUTE_NODE "/api/node"
+
+#define OT_REST_ROUTE_ACTIONS "/api/actions"
+#define OT_REST_ROUTE_ACTIONS_ID "/api/actions/:id"
+
+#define OT_REST_ROUTE_DIAGNOSTICS "/api/diagnostics"
+#define OT_REST_ROUTE_DIAGNOSTICS_ID "/api/diagnostics/:id"
+
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
@@ -73,18 +102,6 @@ using namespace httplib;
 
 namespace otbr {
 namespace rest {
-
-// MulticastAddr
-static const char *kMulticastAddrAllRouters = "ff03::2";
-
-// Default TlvTypes for Diagnostic inforamtion
-static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 19};
-
-// Timeout (in Microseconds) for deleting outdated diagnostics
-static const uint32_t kDiagResetTimeout = 3000000;
-
-// Timeout (in Microseconds) for collecting diagnostics
-static const uint32_t kDiagCollectTimeout = 2000000;
 
 HttpMethod GetMethod(const Request &aRequest)
 {
@@ -105,7 +122,6 @@ HttpMethod GetMethod(const Request &aRequest)
 RestWebServer::RestWebServer(Host::RcpHost &aHost)
     : mHost(aHost)
 {
-    mServer.Get(OT_REST_RESOURCE_PATH_DIAGNOSTICS, MakeHandler(&RestWebServer::Diagnostic));
     mServer.Get(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&RestWebServer::NodeInfo));
     mServer.Delete(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&RestWebServer::NodeInfo));
     mServer.Get(OT_REST_RESOURCE_PATH_NODE_BAID, MakeHandler(&RestWebServer::BaId));
@@ -133,6 +149,28 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     mServer.Delete(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
     mServer.Options(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
     mServer.Get(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, MakeHandler(&RestWebServer::CoprocessorVersion));
+
+    mServer.set_error_handler(MakeHandler(&RestWebServer::RoutingErrorHandler));
+    mServer.Get(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+    mServer.Get(OT_REST_ROUTE_ACTIONS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiActionsItemGetHandler));
+    mServer.Post(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+    mServer.Delete(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+    mServer.Delete(OT_REST_ROUTE_ACTIONS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiActionsItemDeleteHandler));
+    mServer.Options(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+
+    mServer.Get(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
+    mServer.Get(OT_REST_ROUTE_DEVICES_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesItemGetHandler));
+    mServer.Get(OT_REST_ROUTE_NODE, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesSelfGetHandler));
+    mServer.Delete(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
+    mServer.Delete(OT_REST_ROUTE_DEVICES_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesItemDeleteHandler));
+    mServer.Options(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
+
+    mServer.Get(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
+    mServer.Get(OT_REST_ROUTE_DIAGNOSTICS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemGetHandler));
+    mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
+    mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS_ID,
+                   MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemDeleteHandler));
+    mServer.Options(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
 }
 
 RestWebServer::~RestWebServer(void)
@@ -151,6 +189,15 @@ void RestWebServer::ErrorHandler(Response &aResponse, StatusCode aErrorCode) con
 {
     std::string errorMessage = status_message(aErrorCode);
     std::string body         = Json::Error2JsonString(aErrorCode, errorMessage);
+
+    aResponse.status = aErrorCode;
+    aResponse.set_content(body, OT_REST_CONTENT_TYPE_JSON);
+}
+
+void RestWebServer::ErrorHandler(Response &aResponse, StatusCode aErrorCode, std::string aErrorDetails) const
+{
+    std::string errorMessage = status_message(aErrorCode);
+    std::string body         = Json::ErrorDetails2JsonString(aErrorCode, errorMessage, aErrorDetails);
 
     aResponse.status = aErrorCode;
     aResponse.set_content(body, OT_REST_CONTENT_TYPE_JSON);
@@ -992,117 +1039,800 @@ void RestWebServer::CoprocessorVersion(const Request &aRequest, Response &aRespo
     }
 }
 
-void RestWebServer::DeleteOutDatedDiagnostic(void)
+void RestWebServer::RoutingErrorHandler(const Request &aRequest, Response &aResponse)
 {
-    for (auto eraseIt = mDiagSet.begin(); eraseIt != mDiagSet.end();)
-    {
-        auto diagInfo = eraseIt->second;
-        auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo.mStartTime).count();
+    httplib::StatusCode error = StatusCode::OK_200;
+    std::string         errorDetails;
+    // VerifyOrExit(HasValidChars(aRequest, errorDetails) == OT_ERROR_NONE, error = StatusCode::BadRequest_400);
 
-        if (duration >= kDiagResetTimeout)
+    // handle methods not used or not supported by cpp-httplib
+    switch (GetMethod(aRequest))
+    {
+    case HttpMethod::kPost:
+        // fallthrough
+    case HttpMethod::kGet:
+        // fallthrough
+    case HttpMethod::kDelete:
+        // fallthrough
+    case HttpMethod::kOptions:
+        break;
+    default:
+        errorDetails = "method not supported";
+        error        = StatusCode::MethodNotAllowed_405;
+        aResponse.set_header("Allow", "GET, POST, DELETE, OPTIONS");
+        ExitNow();
+        break;
+    }
+
+exit:
+    if (error != StatusCode::OK_200 || aResponse.status >= StatusCode::MultipleChoices_300)
+    {
+        if (error < aResponse.status)
         {
-            eraseIt = mDiagSet.erase(eraseIt);
+            error = StatusCode(aResponse.status);
         }
-        else
-        {
-            eraseIt++;
-        }
+        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, error);
+        ErrorHandler(aResponse, error, errorDetails);
     }
 }
 
-void RestWebServer::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag)
+std::map<std::string, std::string> RestWebServer::ExtractFieldsQueries(
+    const Request               &aRequest,
+    const std::set<std::string> &aContainedTypes) const
 {
-    DiagInfo value;
-
-    value.mStartTime = steady_clock::now();
-    value.mDiagContent.assign(aDiag.begin(), aDiag.end());
-    mDiagSet[aKey] = value;
+    std::map<std::string, std::string> queries;
+    for (const auto &it : aContainedTypes)
+    {
+        std::string key = "fields[" + it + "]";
+        auto        q   = aRequest.params.find(key);
+        if (q != aRequest.params.end())
+        {
+            queries[it] = q->second;
+        }
+    }
+    // If any "fields[...]" query param is present but queries[] remains empty,
+    // add a dummy entry to produce an empty response.
+    bool hasFieldsQuery = false;
+    for (const auto &param : aRequest.params)
+    {
+        if (param.first.find("fields[") == 0)
+        {
+            hasFieldsQuery = true;
+            break;
+        }
+    }
+    if (hasFieldsQuery && queries.empty())
+    {
+        queries["None"] = "";
+    }
+    return queries;
 }
 
-void RestWebServer::Diagnostic(const Request &aRequest, Response &aResponse)
+void RestWebServer::ApiActionsHandler(const Request &aRequest, Response &aResponse)
 {
-    otbrError error = OTBR_ERROR_NONE;
-    OT_UNUSED_VARIABLE(aRequest);
-    struct otIp6Address multicastAddress;
+    StatusCode  statusCode = StatusCode::OK_200;
+    std::string errorDetails;
+    VerifyOrExit(HasValidChars(aRequest, errorDetails) == OT_ERROR_NONE, statusCode = StatusCode::BadRequest_400);
 
-    VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
-    VerifyOrExit(
-        RunInMainLoop(
-            otThreadSendDiagnosticGet, GetInstance(), &multicastAddress, kAllTlvTypes,
-            static_cast<uint8_t>(sizeof(kAllTlvTypes)),
-            [](otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext) -> void {
-                static_cast<RestWebServer *>(aContext)->DiagnosticResponseHandler(aError, aMessage, aMessageInfo);
-            },
-            static_cast<void *>(this)) == OT_ERROR_NONE,
-        error = OTBR_ERROR_REST);
+    switch (GetMethod(aRequest))
+    {
+    case HttpMethod::kPost:
+        ApiActionsPostHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kGet:
+        ApiActionsGetHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kDelete:
+        ApiActionsDeleteHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        aResponse.status = StatusCode::NoContent_204;
+        aResponse.set_header("Allow", "GET, POST, DELETE, OPTIONS");
+        break;
+    default:
+        // aResponse.SetAllowMethods(methods);
+        errorDetails = "method not supported";
+        statusCode   = StatusCode::MethodNotAllowed_405;
+        break;
+    }
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
+        ErrorHandler(aResponse, statusCode, errorDetails);
+    }
+}
 
-    RunInMainLoop(duration_cast<Milliseconds>(Microseconds(kDiagCollectTimeout)), [this] {
-        DeleteOutDatedDiagnostic();
-        return mDiagSet.size();
-    });
+void RestWebServer::ApiActionsPostHandler(const Request &aRequest, Response &aResponse)
+{
+    ActionsList &actions = mServices.GetActionsList();
+    std::string  responseMessage;
+    uint32_t     taskQueueMax;
+    std::string  errorCode;
+    StatusCode   statusCode = StatusCode::OK_200;
+    cJSON       *root       = nullptr;
+    cJSON       *dataArray;
+    cJSON       *resp_data;
+    cJSON       *resp_obj = nullptr;
+    cJSON       *datum;
+    cJSON       *resp;
+    const char  *resp_str;
+
+    std::string aUuid(UUID_STR_LEN, '\0'); // An empty UUID string for obtaining the created actionId
+
+    VerifyOrExit(!aRequest.get_header_value(OT_REST_CONTENT_TYPE_HEADER).empty(),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    VerifyOrExit((aRequest.get_header_value(OT_REST_CONTENT_TYPE_HEADER).compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0),
+                 statusCode = StatusCode::UnsupportedMediaType_415);
+
+    root = cJSON_Parse(aRequest.body.c_str());
+    VerifyOrExit(root != nullptr, statusCode = StatusCode::BadRequest_400);
+
+    // perform general validation before we attempt to
+    // perform any task specific validation
+    dataArray = cJSON_GetObjectItemCaseSensitive(root, "data");
+    VerifyOrExit((dataArray != nullptr) && cJSON_IsArray(dataArray), statusCode = StatusCode::UnprocessableContent_422);
+
+    // validate the form and arguments of all tasks
+    // before we attempt to perform processing on any of the tasks.
+    for (int idx = 0; idx < cJSON_GetArraySize(dataArray); idx++)
+    {
+        // Require all items in the list to be valid Task items with all required attributes;
+        // otherwise rejects whole list and returns 422 Unprocessable.
+        // Unimplemented tasks counted as failed / invalid tasks
+        VerifyOrExit(actions.ValidateRequest(cJSON_GetArrayItem(dataArray, idx)),
+                     statusCode = StatusCode::UnprocessableContent_422);
+    }
+
+    // Check queueing all tasks does not exceed the max number of tasks we can have queued
+    // older completed tasks can be omitted from the queue
+    actions.GetPendingOrActive(taskQueueMax);
+    taskQueueMax -= actions.GetMaxCollectionSize();
+    VerifyOrExit(cJSON_GetArraySize(dataArray) >= 0 &&
+                     taskQueueMax >= static_cast<uint32_t>(cJSON_GetArraySize(dataArray)),
+                 statusCode = StatusCode::ServiceUnavailable_503);
+
+    // Queue the tasks and prepare response data
+    resp_data = cJSON_CreateArray();
+    for (int i = 0; i < cJSON_GetArraySize(dataArray); i++)
+    {
+        datum = cJSON_GetArrayItem(dataArray, i);
+        if (actions.CreateAction(datum, aUuid) == OT_ERROR_NONE)
+        {
+            resp_obj = cJSON_CreateObject();
+            if (resp_obj != nullptr)
+            {
+                cJSON_AddStringToObject(resp_obj, "id", aUuid.c_str());
+                cJSON_AddStringToObject(resp_obj, "type", cJSON_GetObjectItem(datum, "type")->valuestring);
+
+                cJSON_AddItemToObject(resp_obj, "attributes", actions.JsonifyAction(aUuid));
+                cJSON_AddItemToArray(resp_data, resp_obj);
+            }
+        }
+    }
+
+    // prepare response object
+    resp = cJSON_CreateObject();
+    cJSON_AddItemToObject(resp, "data", resp_data);
+    cJSON_AddItemToObject(resp, "meta", Json::CreateMetaCollection(0, 200, cJSON_GetArraySize(resp_data)));
+
+    resp_str = cJSON_PrintUnformatted(resp);
+    otbrLogDebug("%s:%d - %s - Sending (%d):\n%s", __FILE__, __LINE__, __func__, strlen(resp_str), resp_str);
+
+    responseMessage = resp_str;
+    aResponse.set_content(responseMessage, OT_REST_CONTENT_TYPE_JSONAPI);
+    aResponse.status = StatusCode::OK_200;
+
+    cJSON_free((void *)resp_str);
+    cJSON_Delete(resp);
+
+    // Clear the 'root' JSON object and release its memory (this should also delete 'data')
+    cJSON_Delete(root);
+    root = nullptr;
 
 exit:
-
-    if (error == OTBR_ERROR_NONE)
+    if (statusCode != StatusCode::OK_200)
     {
-        std::vector<std::vector<otNetworkDiagTlv>> diagContentSet;
-        std::string                                body;
-
-        for (auto it = mDiagSet.begin(); it != mDiagSet.end(); ++it)
+        if (root != nullptr)
         {
-            diagContentSet.push_back(it->second.mDiagContent);
+            cJSON_Delete(root);
         }
+        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
+        ErrorHandler(aResponse, statusCode);
+    }
+}
 
-        body             = Json::Diag2JsonString(diagContentSet);
-        aResponse.status = StatusCode::OK_200;
-        aResponse.set_content(body, OT_REST_CONTENT_TYPE_JSON);
+void RestWebServer::ApiActionsGetHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode                         statusCode = StatusCode::OK_200;
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+
+    ActionsList &actions = mServices.GetActionsList();
+
+    std::string acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+    // Check if acceptHeader was not provided and is the default value ("*/*")
+    if (acceptHeader.compare("*/*") == 0)
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+
+    VerifyOrExit(((acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    queries = ExtractFieldsQueries(aRequest, actions.GetContainedTypes());
+
+    if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        // return all items
+        resp_body = actions.ToJsonApiColl(queries);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSONAPI);
+    }
+    else if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        // return all items
+        resp_body = actions.ToJsonString();
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSON);
+    }
+
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        ErrorHandler(aResponse, statusCode);
     }
     else
     {
-        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
+        aResponse.status = statusCode;
     }
 }
 
-void RestWebServer::DiagnosticResponseHandler(otError              aError,
-                                              const otMessage     *aMessage,
-                                              const otMessageInfo *aMessageInfo)
+void RestWebServer::ApiActionsItemGetHandler(const Request &aRequest, Response &aResponse)
 {
-    std::vector<otNetworkDiagTlv> diagSet;
-    otNetworkDiagTlv              diagTlv;
-    otNetworkDiagIterator         iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
-    otError                       error;
-    char                          rloc[7];
-    std::string                   keyRloc = "0xffee";
+    StatusCode                         statusCode = StatusCode::OK_200;
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+    std::string                        itemId = aRequest.path_params.at("id");
+    Uuid                               uuid;
+    ActionsList                       &actions      = mServices.GetActionsList();
+    std::string                        acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
 
-    SuccessOrExit(aError);
-
-    OTBR_UNUSED_VARIABLE(aMessageInfo);
-
-    while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
+    // Check if acceptHeader was not provided and is the default value ("*/*")
+    if (acceptHeader.compare("*/*") == 0)
     {
-        if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS)
-        {
-            snprintf(rloc, sizeof(rloc), "0x%04x", diagTlv.mData.mAddr16);
-            keyRloc = Json::CString2JsonString(rloc);
-        }
-        diagSet.push_back(diagTlv);
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
     }
-    UpdateDiag(keyRloc, diagSet);
+
+    VerifyOrExit(((acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    VerifyOrExit(uuid.Parse(itemId), statusCode = StatusCode::NotFound_404);
+
+    queries = ExtractFieldsQueries(aRequest, actions.GetContainedTypes());
+
+    if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        // return the item
+        resp_body = actions.ToJsonApiItemId(itemId, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSONAPI);
+    }
+    else if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        // return the item
+        resp_body = actions.ToJsonStringItemId(itemId, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSON);
+    }
 
 exit:
-    if (aError != OT_ERROR_NONE)
+    if (statusCode != StatusCode::OK_200)
     {
-        otbrLogWarning("Failed to get diagnostic data: %s", otThreadErrorToString(aError));
+        ErrorHandler(aResponse, statusCode);
+    }
+    else
+    {
+        aResponse.status = statusCode;
     }
 }
 
+void RestWebServer::ApiActionsDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    OT_UNUSED_VARIABLE(aRequest);
+    mServices.GetActionsList().DeleteAllActions();
+    aResponse.status = StatusCode::NoContent_204;
+}
+
+void RestWebServer::ApiActionsItemDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode  statusCode = StatusCode::NoContent_204;
+    std::string itemId     = aRequest.path_params.at("id");
+    Uuid        uuid;
+
+    // Check if itemId is a valid UUID
+    VerifyOrExit(uuid.Parse(itemId), statusCode = StatusCode::NotFound_404);
+    // If itemId is a valid UUID, delete the action with that ID
+    VerifyOrExit(mServices.GetActionsList().DeleteAction(uuid) == OT_ERROR_NONE, statusCode = StatusCode::NotFound_404);
+
+exit:
+    if (statusCode != StatusCode::NoContent_204)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+    else
+    {
+        aResponse.status = statusCode;
+    }
+}
+
+void RestWebServer::ApiDiagnosticsGetHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode statusCode = StatusCode::OK_200;
+
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+    std::string                        itemId;
+
+    std::string acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+    // Check if acceptHeader was not provided and is the default value ("*/*")
+    if (acceptHeader == "*/*")
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+
+    VerifyOrExit(((acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    queries = ExtractFieldsQueries(aRequest, mServices.GetDiagnosticsCollection().GetContainedTypes());
+
+    if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        // return all items
+        resp_body = mServices.GetDiagnosticsCollection().ToJsonApiColl(queries);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSONAPI);
+    }
+    else if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        // return all items
+        resp_body = mServices.GetDiagnosticsCollection().ToJsonString();
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSON);
+    }
+
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+}
+
+void RestWebServer::ApiDiagnosticsItemGetHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode                         statusCode = StatusCode::OK_200;
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+    std::string                        itemId       = aRequest.path_params.at("id");
+    std::string                        acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+
+    // Check if acceptHeader was not provided and is the default value ("*/*")
+    if (acceptHeader == "*/*")
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+
+    VerifyOrExit(((acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    queries = ExtractFieldsQueries(aRequest, mServices.GetDiagnosticsCollection().GetContainedTypes());
+
+    if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        // return the item
+        resp_body = mServices.GetDiagnosticsCollection().ToJsonApiItemId(itemId, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSONAPI);
+    }
+    else if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        // return the item
+        resp_body = mServices.GetDiagnosticsCollection().ToJsonStringItemId(itemId, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSON);
+    }
+
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+}
+
+void RestWebServer::ApiDiagnosticsDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    OT_UNUSED_VARIABLE(aRequest);
+    mServices.GetDiagnosticsCollection().DeleteAll();
+    mServices.GetNetworkDiagHandler().Clear();
+    aResponse.status = StatusCode::NoContent_204;
+}
+
+void RestWebServer::ApiDiagnosticsItemDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode  statusCode = StatusCode::NoContent_204;
+    std::string itemId     = aRequest.path_params.at("id");
+    Uuid        uuid;
+
+    // Check if itemId is a valid UUID
+    VerifyOrExit(uuid.Parse(itemId), statusCode = StatusCode::NotFound_404);
+    // If itemId is a valid UUID, delete the action with that ID
+    VerifyOrExit(mServices.GetDiagnosticsCollection().Delete(itemId) == OT_ERROR_NONE,
+                 statusCode = StatusCode::NotFound_404);
+
+exit:
+    if (statusCode != StatusCode::NoContent_204)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+    else
+    {
+        mServices.GetNetworkDiagHandler().Clear();
+        aResponse.status = statusCode;
+    }
+}
+
+void RestWebServer::ApiDiagnosticsHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode  statusCode = StatusCode::OK_200;
+    std::string errorDetails;
+    VerifyOrExit(HasValidChars(aRequest, errorDetails) == OT_ERROR_NONE, statusCode = StatusCode::BadRequest_400);
+
+    switch (GetMethod(aRequest))
+    {
+    case HttpMethod::kGet:
+        ApiDiagnosticsGetHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kDelete:
+        ApiDiagnosticsDeleteHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        aResponse.status = StatusCode::NoContent_204;
+        aResponse.set_header("Allow", "GET, DELETE, OPTIONS");
+        break;
+    case HttpMethod::kPost:
+    default:
+        // aResponse.SetAllowMethods(methods);
+        errorDetails = "not supported";
+        statusCode   = StatusCode::MethodNotAllowed_405;
+        break;
+    }
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
+        ErrorHandler(aResponse, statusCode, errorDetails);
+    }
+}
+
+void RestWebServer::ApiDevicesHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode  statusCode = StatusCode::OK_200;
+    std::string errorDetails;
+    VerifyOrExit(HasValidChars(aRequest, errorDetails) == OT_ERROR_NONE, statusCode = StatusCode::BadRequest_400);
+
+    switch (GetMethod(aRequest))
+    {
+    case HttpMethod::kDelete:
+        ApiDevicesDeleteHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kGet:
+        ApiDevicesGetHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        aResponse.status = StatusCode::NoContent_204;
+        aResponse.set_header("Allow", "GET, DELETE, OPTIONS");
+        break;
+    default:
+        // aResponse.SetAllowMethods(methods);
+        errorDetails = "not supported";
+        statusCode   = StatusCode::MethodNotAllowed_405;
+        break;
+    }
+
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
+        ErrorHandler(aResponse, statusCode, errorDetails);
+    }
+}
+
+void RestWebServer::ApiDevicesDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    OT_UNUSED_VARIABLE(aRequest);
+    mServices.GetDevicesCollection().DeleteAll();
+    aResponse.status = StatusCode::NoContent_204;
+}
+
+void RestWebServer::ApiDevicesItemDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode  statusCode = StatusCode::NoContent_204;
+    std::string itemId     = aRequest.path_params.at("id");
+
+    // DeviceCollection expects itemId to be a valid hex string of length 16
+    VerifyOrExit((itemId.length() == 16 && itemId.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos),
+                 statusCode = StatusCode::NotFound_404);
+    // If itemId is present, try to delete the specific device
+    VerifyOrExit(mServices.GetDevicesCollection().Delete(itemId), statusCode = StatusCode::NotFound_404);
+
+exit:
+    if (statusCode != StatusCode::NoContent_204)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+    else
+    {
+        aResponse.status = statusCode;
+    }
+}
+
+otError RestWebServer::HasValidChars(const Request &aRequest, std::string &aErrorDetails)
+{
+    otError          error            = OT_ERROR_NONE;
+    constexpr size_t kMaxHeaderParams = 16;
+    constexpr size_t kMaxQueryParams  = 16;
+
+    // Accept only ASCII alphanumerics and common symbols; percent (%) is allowed only for ASCII hex encoding (%20,
+    // etc.)
+    const std::string acceptedCharacters =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ,.-+[]{}=/*\"\n:%";
+
+    // Helper lambda to check percent-encoding is ASCII hex only
+    auto isValidPercentEncoding = [](const std::string &str, const std::string &accepted) -> bool {
+        size_t pos = 0;
+        while ((pos = str.find('%', pos)) != std::string::npos)
+        {
+            if (pos + 2 >= str.size())
+                return false;
+            char c1 = str[pos + 1];
+            char c2 = str[pos + 2];
+            if (!isxdigit(c1) || !isxdigit(c2))
+                return false;
+            // Optionally, restrict to ASCII range only (i.e., decoded value <= 0x7F)
+            int decoded = std::stoi(str.substr(pos + 1, 2), nullptr, 16);
+            // Check if decoded character is in acceptedCharacters
+            if (decoded > 0x7F || accepted.find(static_cast<char>(decoded)) == std::string::npos)
+                return false;
+            pos += 3;
+        }
+        return true;
+    };
+
+    // Limit the number of query parameters to prevent abuse (e.g., max 32)
+    aErrorDetails = "Too many query parameters.";
+    VerifyOrExit(aRequest.params.size() < kMaxQueryParams, error = OT_ERROR_INVALID_ARGS);
+    // Check if the request queries are safe to process
+    aErrorDetails = "Invalid characters in query.";
+    for (const auto &param : aRequest.params)
+    {
+        const std::string &val = param.second;
+        VerifyOrExit(val.find_first_not_of(acceptedCharacters) == std::string::npos, aErrorDetails += " (" + val + ")",
+                     error = OT_ERROR_INVALID_ARGS);
+        VerifyOrExit(isValidPercentEncoding(val, acceptedCharacters), error = OT_ERROR_INVALID_ARGS);
+    }
+
+    // Limit the number of header parameters to prevent abuse (e.g., max 16)
+    aErrorDetails = "Too many header options.";
+    VerifyOrExit(aRequest.headers.size() < kMaxHeaderParams, error = OT_ERROR_INVALID_ARGS);
+    // Check if the request headers are safe to process
+    aErrorDetails = "Invalid characters in headers.";
+    for (const auto &header : aRequest.headers)
+    {
+        const std::string &val = header.second;
+        VerifyOrExit((val.find_first_not_of(acceptedCharacters) == std::string::npos),
+                     aErrorDetails += " (" + val + ")", error = OT_ERROR_INVALID_ARGS);
+        VerifyOrExit(isValidPercentEncoding(val, acceptedCharacters), error = OT_ERROR_INVALID_ARGS);
+    }
+
+    // Check if the request body is safe to process
+    aErrorDetails = "Invalid characters in body.";
+    if (!aRequest.body.empty())
+    {
+        VerifyOrExit(aRequest.body.find_first_not_of(acceptedCharacters) == std::string::npos,
+                     error = OT_ERROR_INVALID_ARGS);
+        VerifyOrExit(isValidPercentEncoding(aRequest.body, acceptedCharacters), error = OT_ERROR_INVALID_ARGS);
+    }
+
+    // Check if the request path is safe to process
+    aErrorDetails = "Invalid characters in path.";
+    VerifyOrExit((aRequest.path.find_first_not_of(acceptedCharacters) == std::string::npos),
+                 error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(isValidPercentEncoding(aRequest.path, acceptedCharacters), error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+void RestWebServer::ApiDevicesSelfGetHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode                         statusCode   = StatusCode::OK_200;
+    std::string                        errorDetails = "None";
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+
+    // Get this device's ext address as hex string, lowercase
+    const otExtAddress *thisextaddr     = otLinkGetExtendedAddress(GetInstance());
+    std::string         thisextaddr_str = otbr::Utils::Bytes2Hex(thisextaddr->m8, OT_EXT_ADDRESS_SIZE);
+    thisextaddr_str                     = StringUtils::ToLowercase(thisextaddr_str);
+
+    std::string acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+    // Check if acceptHeader was not provided and is the default value ("*/*")
+    if (acceptHeader == "*/*")
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+
+    VerifyOrExit(((acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    VerifyOrExit(HasValidChars(aRequest, errorDetails) == OT_ERROR_NONE, statusCode = StatusCode::BadRequest_400);
+
+    queries = ExtractFieldsQueries(aRequest, mServices.GetDevicesCollection().GetContainedTypes());
+
+    if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        resp_body = mServices.GetDevicesCollection().ToJsonApiItemId(thisextaddr_str, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSONAPI);
+    }
+    else if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        resp_body = mServices.GetDevicesCollection().ToJsonStringItemId(thisextaddr_str, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSON);
+    }
+
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        ErrorHandler(aResponse, statusCode, errorDetails);
+    }
+}
+
+void RestWebServer::ApiDevicesGetHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode                         statusCode = StatusCode::OK_200;
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+
+    std::string acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+    // Check if acceptHeader was not provided and is the default value ("*/*")
+    if (acceptHeader == "*/*")
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+
+    VerifyOrExit(((acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    queries = ExtractFieldsQueries(aRequest, mServices.GetDevicesCollection().GetContainedTypes());
+
+    if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        // return all items
+        resp_body = mServices.GetDevicesCollection().ToJsonApiColl(queries);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSONAPI);
+    }
+    else if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        // return all items
+        resp_body = mServices.GetDevicesCollection().ToJsonString();
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSON);
+    }
+
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+}
+
+void RestWebServer::ApiDevicesItemGetHandler(const Request &aRequest, Response &aResponse)
+{
+    StatusCode                         statusCode = StatusCode::OK_200;
+    std::string                        resp_body;
+    std::map<std::string, std::string> queries;
+    std::string                        itemId       = aRequest.path_params.at("id");
+    std::string                        acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+
+    // Check if acceptHeader was not provided and is the default value ("*/*")
+    if (acceptHeader == "*/*")
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+
+    VerifyOrExit(((acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0) ||
+                  (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)),
+                 statusCode = StatusCode::NotAcceptable_406);
+
+    queries = ExtractFieldsQueries(aRequest, mServices.GetDevicesCollection().GetContainedTypes());
+
+    if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
+    {
+        // return the item
+        resp_body = mServices.GetDevicesCollection().ToJsonApiItemId(itemId, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSONAPI);
+    }
+    else if (acceptHeader.compare(OT_REST_CONTENT_TYPE_JSON) == 0)
+    {
+        // return the item
+        resp_body = mServices.GetDevicesCollection().ToJsonStringItemId(itemId, queries);
+        VerifyOrExit(!resp_body.empty(), statusCode = StatusCode::NotFound_404);
+        aResponse.set_content(resp_body, OT_REST_CONTENT_TYPE_JSON);
+    }
+
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        ErrorHandler(aResponse, statusCode);
+    }
+}
+
+void RestWebServer::ApiDevicesNodeInit()
+{
+    // Initialize the device collection with the current device info
+    DeviceInfo          aDeviceInfo = {};
+    const otExtAddress *thisextaddr = otLinkGetExtendedAddress(GetInstance());
+    std::string         thisextaddr_str;
+
+    thisextaddr_str = otbr::Utils::Bytes2Hex(thisextaddr->m8, OT_EXT_ADDRESS_SIZE);
+    thisextaddr_str = StringUtils::ToLowercase(thisextaddr_str);
+
+    mServices.GetNetworkDiagHandler().SetDeviceItemAttributes(thisextaddr_str, aDeviceInfo);
+}
+
+/**
+ * @brief Initializes the REST web server and starts the server thread.
+ *
+ * This function is not thread-safe and should be called only once during initialization.
+ * The server thread is started and will run for the lifetime of the RestWebServer object.
+ * The thread is joined and cleaned up in the destructor. Concurrent calls to Init are not supported.
+ *
+ * Note: This function must be called from a context where the RestWebServer object is managed by std::shared_ptr,
+ * as it uses shared_from_this(). Calling this function on an object not managed by std::shared_ptr will result in
+ * undefined behavior.
+ */
 void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenPort)
 {
-    mServerThread = std::thread([aRestListenAddress, aRestListenPort, this]() -> void {
-        otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
-        mServer.set_ipv6_v6only(false);
-        mServer.listen(aRestListenAddress, aRestListenPort);
+    static bool sInitialized = false;
+    if (sInitialized)
+    {
+        otbrLogWarning("REST server Init called more than once; ignoring subsequent calls.");
+        return;
+    }
+    sInitialized = true;
+
+    mServices.Init(GetInstance());
+    // Add current node to device collection for API exposure
+    ApiDevicesNodeInit();
+
+    // Use shared_from_this() to get a shared_ptr, then capture a weak_ptr in the thread lambda
+    // to avoid undefined behavior if the RestWebServer object is destroyed while the thread is running.
+    std::weak_ptr<RestWebServer> weakSelf = shared_from_this();
+    mServerThread                         = std::thread([aRestListenAddress, aRestListenPort, weakSelf]() {
+        if (auto self = weakSelf.lock())
+        {
+            otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
+            self->mServer.set_ipv6_v6only(false);
+            if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
+            {
+                otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(), aRestListenPort);
+            }
+        }
     });
 }
 
