@@ -147,7 +147,12 @@ if(OTBR_NOTIFY_UPSTART)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
 endif()
 
-option(OTBR_NAT64 "Enable NAT64 support" OFF)
+set(OTBR_NAT64_DEFAULT OFF)
+if (OTBR_BORDER_ROUTING)
+    set(OTBR_NAT64_DEFAULT ON)
+endif()
+
+option(OTBR_NAT64 "Enable NAT64 support" ${OTBR_NAT64_DEFAULT})
 if(OTBR_NAT64)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NAT64=1)
 else()

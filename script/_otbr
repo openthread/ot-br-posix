@@ -126,13 +126,6 @@ otbr_install()
 
     if with NAT64; then
         otbr_options+=(
-            "-DOTBR_NAT64=ON"
-            "-DOT_POSIX_NAT64_CIDR=${NAT64_DYNAMIC_POOL:-192.168.255.0/24}"
-        )
-    fi
-
-    if with NAT64; then
-        otbr_options+=(
             "-DOTBR_DNS_UPSTREAM_QUERY=ON"
         )
     fi
