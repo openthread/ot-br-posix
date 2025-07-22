@@ -68,8 +68,6 @@ extern "C" void otPlatDnssdRegisterService(otInstance                 *aInstance
                                            otPlatDnssdRequestId        aRequestId,
                                            otPlatDnssdRegisterCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-
     otbr::DnssdPlatform::Get().RegisterService(*aService, aRequestId, MakeRegisterCallback(aInstance, aCallback));
 }
 
@@ -78,8 +76,6 @@ extern "C" void otPlatDnssdUnregisterService(otInstance                 *aInstan
                                              otPlatDnssdRequestId        aRequestId,
                                              otPlatDnssdRegisterCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-
     otbr::DnssdPlatform::Get().UnregisterService(*aService, aRequestId, MakeRegisterCallback(aInstance, aCallback));
 }
 
@@ -88,8 +84,6 @@ extern "C" void otPlatDnssdRegisterHost(otInstance                 *aInstance,
                                         otPlatDnssdRequestId        aRequestId,
                                         otPlatDnssdRegisterCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-
     otbr::DnssdPlatform::Get().RegisterHost(*aHost, aRequestId, MakeRegisterCallback(aInstance, aCallback));
 }
 
@@ -98,8 +92,6 @@ extern "C" void otPlatDnssdUnregisterHost(otInstance                 *aInstance,
                                           otPlatDnssdRequestId        aRequestId,
                                           otPlatDnssdRegisterCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-
     otbr::DnssdPlatform::Get().UnregisterHost(*aHost, aRequestId, MakeRegisterCallback(aInstance, aCallback));
 }
 
@@ -108,8 +100,6 @@ extern "C" void otPlatDnssdRegisterKey(otInstance                 *aInstance,
                                        otPlatDnssdRequestId        aRequestId,
                                        otPlatDnssdRegisterCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-
     otbr::DnssdPlatform::Get().RegisterKey(*aKey, aRequestId, MakeRegisterCallback(aInstance, aCallback));
 }
 
@@ -118,8 +108,6 @@ extern "C" void otPlatDnssdUnregisterKey(otInstance                 *aInstance,
                                          otPlatDnssdRequestId        aRequestId,
                                          otPlatDnssdRegisterCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aInstance);
-
     otbr::DnssdPlatform::Get().UnregisterKey(*aKey, aRequestId, MakeRegisterCallback(aInstance, aCallback));
 }
 
