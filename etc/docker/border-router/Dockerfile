@@ -79,7 +79,6 @@ RUN set -x \
     && cmake -GNinja \
            -DBUILD_TESTING=OFF \
            -DCMAKE_INSTALL_PREFIX=/usr \
-           -DOTBR_BORDER_ROUTING=ON \
            -DOTBR_BACKBONE_ROUTER=ON \
            -DOTBR_DBUS=OFF \
            -DOTBR_MDNS=mDNSResponder \
