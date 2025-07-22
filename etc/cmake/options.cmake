@@ -118,7 +118,12 @@ if (OTBR_SRP_SERVER_ON_INIT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_SERVER_ON_INIT=1)
 endif()
 
-option(OTBR_DNSSD_DISCOVERY_PROXY "Enable DNS-SD Discovery Proxy support" OFF)
+set(OTBR_DNSSD_DISCOVERY_PROXY_DEFAULT OFF)
+if (OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+    set(OTBR_DNSSD_DISCOVERY_PROXY_DEFAULT ON)
+endif()
+
+option(OTBR_DNSSD_DISCOVERY_PROXY "Enable DNS-SD Discovery Proxy support" ${OTBR_DNSSD_DISCOVERY_PROXY_DEFAULT})
 if (OTBR_DNSSD_DISCOVERY_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNSSD_DISCOVERY_PROXY=1)
 endif()

@@ -56,7 +56,6 @@ jobs:
         OTBR_OPTIONS="-DOTBR_BORDER_AGENT=OFF \
                       -DOTBR_MDNS=OFF \
                       -DOTBR_SRP_ADVERTISING_PROXY=OFF \
-                      -DOTBR_DNSSD_DISCOVERY_PROXY=OFF \
                       -DOTBR_TREL=OFF \
                       -DOTBR_NAT64=OFF \
                       -DOT_FIREWALL=OFF \

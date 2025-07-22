@@ -82,7 +82,6 @@ RUN set -x \
            -DOTBR_BACKBONE_ROUTER=ON \
            -DOTBR_DBUS=OFF \
            -DOTBR_MDNS=mDNSResponder \
-           -DOTBR_DNSSD_DISCOVERY_PROXY=ON \
            -DOTBR_SRP_ADVERTISING_PROXY=ON \
            -DOTBR_TREL=ON \
            -DOTBR_DNS_UPSTREAM_QUERY=ON \
