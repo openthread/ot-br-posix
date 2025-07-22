@@ -98,7 +98,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Backbone Router"
-            otbr_options: "-DOTBR_BORDER_ROUTING=OFF -DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 0
             internet: 0
             ot_srp_adv_proxy: 0
