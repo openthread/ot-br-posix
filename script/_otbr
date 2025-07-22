@@ -30,6 +30,9 @@
 OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 readonly OTBR_TOP_BUILDDIR
 
+BORDER_ROUTING="${BORDER_ROUTING:-1}"
+readonly BORDER_ROUTING
+
 OTBR_OPTIONS="${OTBR_OPTIONS-}"
 readonly OTBR_OPTIONS
 
@@ -78,6 +81,12 @@ otbr_install()
         local user_options=()
         read -r -a user_options <<<"${OTBR_OPTIONS}"
         otbr_options+=("${user_options[@]}")
+    fi
+
+    if without BORDER_ROUTING; then
+        otbr_options+=(
+            "-DOTBR_BORDER_ROUTING=OFF"
+        )
     fi
 
     if with OT_SRP_ADV_PROXY; then
