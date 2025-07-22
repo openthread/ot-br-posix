@@ -58,5 +58,6 @@ jobs:
                       -DOTBR_SRP_ADVERTISING_PROXY=OFF \
                       -DOTBR_DNSSD_DISCOVERY_PROXY=OFF \
                       -DOTBR_TREL=OFF \
+                      -DOTBR_NAT64=OFF \
                       -DOT_FIREWALL=OFF \
                       -DOTBR_DBUS=OFF" ./script/test build
