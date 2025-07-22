@@ -122,12 +122,6 @@ otbr_install()
         )
     fi
 
-    if with NAT64; then
-        otbr_options+=(
-            "-DOTBR_DNS_UPSTREAM_QUERY=ON"
-        )
-    fi
-
     if with FIREWALL; then
         otbr_options+=(
             "-DOT_FIREWALL=ON"

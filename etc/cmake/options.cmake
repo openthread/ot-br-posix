@@ -176,7 +176,12 @@ else()
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_VENDOR_INFRA_LINK_SELECT=0)
 endif()
 
-option(OTBR_DNS_UPSTREAM_QUERY "Allow sending DNS queries to upstream" OFF)
+set(OTBR_DNS_UPSTREAM_QUERY_DEFAULT OFF)
+if (OTBR_BORDER_ROUTING)
+    set(OTBR_DNS_UPSTREAM_QUERY_DEFAULT ON)
+endif()
+
+option(OTBR_DNS_UPSTREAM_QUERY "Allow sending DNS queries to upstream" ${OTBR_DNS_UPSTREAM_QUERY_DEFAULT})
 if (OTBR_DNS_UPSTREAM_QUERY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNS_UPSTREAM_QUERY=1)
 endif()
