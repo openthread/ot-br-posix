@@ -94,14 +94,19 @@ if(OTBR_REST)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_REST_SERVER=1)
 endif()
 
-option(OTBR_SRP_ADVERTISING_PROXY "Enable Advertising Proxy" OFF)
-if (OTBR_SRP_ADVERTISING_PROXY)
-    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_ADVERTISING_PROXY=1)
-endif()
-
 option(OTBR_OT_SRP_ADV_PROXY "Enable OT core Advertising Proxy" OFF)
 if (OTBR_OT_SRP_ADV_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_OT_SRP_ADV_PROXY=1)
+endif()
+
+set(OTBR_SRP_ADVERTISING_PROXY_DEFAULT OFF)
+if (OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread" AND NOT OTBR_OT_SRP_ADV_PROXY)
+    set(OTBR_SRP_ADVERTISING_PROXY_DEFAULT ON)
+endif()
+
+option(OTBR_SRP_ADVERTISING_PROXY "Enable Advertising Proxy" ${OTBR_SRP_ADVERTISING_PROXY_DEFAULT})
+if (OTBR_SRP_ADVERTISING_PROXY)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_ADVERTISING_PROXY=1)
 endif()
 
 if (OTBR_OT_SRP_ADV_PROXY AND OTBR_SRP_ADVERTISING_PROXY)

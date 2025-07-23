@@ -82,7 +82,6 @@ RUN set -x \
            -DOTBR_BACKBONE_ROUTER=ON \
            -DOTBR_DBUS=OFF \
            -DOTBR_MDNS=mDNSResponder \
-           -DOTBR_SRP_ADVERTISING_PROXY=ON \
            -DOTBR_TREL=ON \
            -DOTBR_DNS_UPSTREAM_QUERY=ON \
            -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
