@@ -88,16 +88,6 @@ otbr_install()
         )
     fi
 
-    if with OT_SRP_ADV_PROXY; then
-        otbr_options+=(
-            "-DOTBR_OT_SRP_ADV_PROXY=ON"
-        )
-    else
-        otbr_options+=(
-            "-DOTBR_SRP_ADVERTISING_PROXY=ON"
-        )
-    fi
-
     if with WEB_GUI; then
         otbr_options+=("-DOTBR_WEB=ON")
     fi

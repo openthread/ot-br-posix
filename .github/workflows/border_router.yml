@@ -53,7 +53,6 @@ jobs:
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
-            ot_srp_adv_proxy: 1
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
@@ -61,7 +60,6 @@ jobs:
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
-            ot_srp_adv_proxy: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
@@ -69,7 +67,6 @@ jobs:
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
-            ot_srp_adv_proxy: 0
             otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
@@ -77,7 +74,6 @@ jobs:
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
-            ot_srp_adv_proxy: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
@@ -85,7 +81,6 @@ jobs:
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
-            ot_srp_adv_proxy: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
             packet_verification: 1
@@ -93,7 +88,6 @@ jobs:
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_DHCP6_PD=ON"
             border_routing: 1
             internet: 1
-            ot_srp_adv_proxy: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
@@ -101,23 +95,20 @@ jobs:
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 0
             internet: 0
-            ot_srp_adv_proxy: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
             packet_verification: 1
           - name: "Border Router with OT Core Advertising Proxy (avahi)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF -DOTBR_OT_SRP_ADV_PROXY=ON"
             border_routing: 1
             internet: 0
-            ot_srp_adv_proxy: 1
             otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router with OT Core Advertising Proxy (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF -DOTBR_OT_SRP_ADV_PROXY=ON"
             border_routing: 1
             internet: 0
-            ot_srp_adv_proxy: 1
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
@@ -135,7 +126,6 @@ jobs:
       INTER_OP_BBR: 0
       BORDER_ROUTING: ${{ matrix.border_routing }}
       NAT64: ${{ matrix.internet }}
-      OT_SRP_ADV_PROXY: ${{ matrix.ot_srp_adv_proxy }}
       MAX_JOBS: 3
       VERBOSE: 1
     steps:
@@ -166,7 +156,6 @@ jobs:
           --build-arg OT_BACKBONE_CI=1 \
           --build-arg NAT64="${{ matrix.internet }}" \
           --build-arg MDNS="${{ matrix.otbr_mdns }}" \
-          --build-arg OT_SRP_ADV_PROXY="${{ matrix.ot_srp_adv_proxy }}" \
           --build-arg OTBR_OPTIONS="${otbr_options} -DCMAKE_CXX_FLAGS='-DOPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF=1'"
     - name: Bootstrap OpenThread Test
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}

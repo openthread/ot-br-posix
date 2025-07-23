@@ -179,7 +179,6 @@ do_build_otbr_docker()
         "-DOTBR_TELEMETRY_DATA_API=ON"
         "-DOTBR_TREL=ON"
         "-DOTBR_LINK_METRICS_TELEMETRY=ON"
-        "-DOTBR_SRP_ADVERTISING_PROXY=ON"
         "-DOTBR_BORDER_AGENT=ON"
         "-DOTBR_BACKBONE_ROUTER=ON"
     )
