@@ -38,14 +38,12 @@
 . script/_nat64
 . script/_dhcpv6_pd_ref
 . script/_rt_tables
-. script/_sudo_extend
 . script/_firewall
 
 main()
 {
     # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
-    extend_sudo_timeout
     otbr_uninstall
     border_routing_uninstall
     dhcpv6_pd_ref_uninstall
