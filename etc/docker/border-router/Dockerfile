@@ -83,7 +83,6 @@ RUN set -x \
            -DOTBR_DBUS=OFF \
            -DOTBR_MDNS=mDNSResponder \
            -DOTBR_TREL=ON \
-           -DOTBR_DNS_UPSTREAM_QUERY=ON \
            -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
            -DOT_FIREWALL=ON \
     && ninja \

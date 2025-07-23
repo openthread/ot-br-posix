@@ -57,5 +57,6 @@ jobs:
                       -DOTBR_MDNS=OFF \
                       -DOTBR_TREL=OFF \
                       -DOTBR_NAT64=OFF \
+                      -DOTBR_DNS_UPSTREAM_QUERY=OFF \
                       -DOT_FIREWALL=OFF \
                       -DOTBR_DBUS=OFF" ./script/test build
