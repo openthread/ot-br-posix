@@ -222,7 +222,7 @@ void Application::CreateRcpMode(void)
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     mDiscoveryProxy = MakeUnique<Dnssd::DiscoveryProxy>(rcpHost, *mPublisher);
 #endif
-#if OTBR_ENABLE_TREL
+#if OTBR_ENABLE_TREL_DNSSD
     mTrelDnssd = MakeUnique<TrelDnssd::TrelDnssd>(rcpHost, *mPublisher);
 #endif
 #if OTBR_ENABLE_OPENWRT
@@ -254,7 +254,7 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     mMdnsStateSubject.AddObserver(*mDiscoveryProxy);
 #endif
-#if OTBR_ENABLE_TREL
+#if OTBR_ENABLE_TREL_DNSSD
     mMdnsStateSubject.AddObserver(*mTrelDnssd);
 #endif
 #if OTBR_ENABLE_DNSSD_PLAT

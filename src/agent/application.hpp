@@ -194,7 +194,7 @@ public:
     Dnssd::DiscoveryProxy &GetDiscoveryProxy(void) { return *mDiscoveryProxy; }
 #endif
 
-#if OTBR_ENABLE_TREL
+#if OTBR_ENABLE_TREL_DNSSD
     /**
      * Get the TrelDnssd object the application is using.
      *

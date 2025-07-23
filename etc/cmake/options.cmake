@@ -143,6 +143,16 @@ if(OTBR_TREL)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TREL=1)
 endif()
 
+set(OTBR_TREL_DNSSD_DEFAULT OFF)
+if(OTBR_TREL AND OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+    set(OTBR_TREL_DNSSD_DEFAULT ON)
+endif()
+
+option(OTBR_TREL_DNSSD "Enable TREL DNSSD support." ${OTBR_TREL_DNSSD_DEFAULT})
+if(OTBR_TREL_DNSSD)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TREL_DNSSD=1)
+endif()
+
 option(OTBR_EPSKC "Enable ephemeral PSKc" ON)
 if (OTBR_EPSKC)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_EPSKC=1)
