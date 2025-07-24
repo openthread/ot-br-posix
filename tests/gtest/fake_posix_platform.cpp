@@ -32,6 +32,7 @@
 
 #include "openthread/openthread-system.h"
 #include "openthread/platform/dns.h"
+#include "openthread/platform/mdns_socket.h"
 
 otPlatResetReason        gPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
 static ot::FakePlatform *sFakePlatform;
@@ -83,6 +84,29 @@ void otPlatDnsUpstreamQueryDone(otInstance *aInstance, otPlatDnsUpstreamQuery *a
     OT_UNUSED_VARIABLE(aInstance);
     OT_UNUSED_VARIABLE(aTxn);
     OT_UNUSED_VARIABLE(aResponse);
+}
+
+otError otPlatMdnsSetListeningEnabled(otInstance *aInstance, bool aEnable, uint32_t aInfraIfIndex)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aEnable);
+    OT_UNUSED_VARIABLE(aInfraIfIndex);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+void otPlatMdnsSendMulticast(otInstance *aInstance, otMessage *aMessage, uint32_t aInfraIfIndex)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aMessage);
+    OT_UNUSED_VARIABLE(aInfraIfIndex);
+}
+
+void otPlatMdnsSendUnicast(otInstance *aInstance, otMessage *aMessage, const otPlatMdnsAddressInfo *aAddress)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aMessage);
+    OT_UNUSED_VARIABLE(aAddress);
 }
 
 otInstance *otSysInit(otPlatformConfig *aPlatformConfig)

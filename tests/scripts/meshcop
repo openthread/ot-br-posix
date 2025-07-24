@@ -156,7 +156,7 @@ TUN_NAME=wpan0
 readonly TUN_NAME
 
 # The default meshcop service instance name
-OT_SERVICE_INSTANCE='OpenThread\(\\032\| \)BorderRouter\(\\032\| \)#[0-9A-F][0-9A-F][0-9A-F][0-9A-F]'
+OT_SERVICE_INSTANCE='OpenThread.*'
 readonly OT_SERVICE_INSTANCE
 
 echo "ORIGIN_PWD: ${ORIGIN_PWD}"
@@ -346,7 +346,7 @@ ba_start()
         sudo "${OTBR_AGENT_PATH}" -x && exit $?
 
         [[ ! -d tmp ]] || sudo rm -rf tmp
-        sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 "spinel+hdlc+forkpty://${ot_rcp}?forkpty-arg=${LEADER_NODE_ID}" &
+        sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -B eth0 -v -d 6 "spinel+hdlc+forkpty://${ot_rcp}?forkpty-arg=${LEADER_NODE_ID}" &
     )
 
     # wait for it to complete
