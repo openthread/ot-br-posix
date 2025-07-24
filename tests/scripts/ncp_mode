@@ -177,7 +177,6 @@ do_build_otbr_docker()
         "-DOTBR_DBUS=ON"
         "-DOTBR_FEATURE_FLAGS=ON"
         "-DOTBR_TELEMETRY_DATA_API=ON"
-        "-DOTBR_TREL=ON"
         "-DOTBR_LINK_METRICS_TELEMETRY=ON"
         "-DOTBR_BORDER_AGENT=ON"
         "-DOTBR_BACKBONE_ROUTER=ON"

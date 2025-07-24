@@ -71,14 +71,14 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router TREL (OT mDNS)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
           - name: "Border Router TREL (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON"
             border_routing: 1
             internet: 0
             otbr_mdns: "mDNSResponder"
