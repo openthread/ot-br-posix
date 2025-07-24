@@ -84,12 +84,26 @@ jobs:
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
+          - name: "Border Router MATN (OT mDNS)"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
+            border_routing: 1
+            internet: 0
+            otbr_mdns: "openthread"
+            cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
+            packet_verification: 1
           - name: "Border Router MATN (mDNSResponder)"
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
             border_routing: 1
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
+            packet_verification: 1
+          - name: "Border Router Internet Access Features (OT mDNS)"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
+            border_routing: 1
+            internet: 1
+            otbr_mdns: "openthread"
+            cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Border Router Internet Access Features (mDNSResponder)"
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
@@ -98,7 +112,7 @@ jobs:
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
-          - name: "Backbone Router"
+          - name: "Backbone Router (mDNSResponder)"
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
             border_routing: 0
             internet: 0
