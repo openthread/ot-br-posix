@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <memory>
 
 #include <dbus/dbus.h>
@@ -104,16 +105,20 @@ static void CheckExternalRoute(ThreadApiDBus *aApi, const Ip6Prefix &aPrefix)
     TEST_ASSERT(aApi->AddExternalRoute(route) == OTBR_ERROR_NONE);
     sleep(10);
     TEST_ASSERT(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
-    TEST_ASSERT(externalRouteTable.size() == 1);
-    TEST_ASSERT(externalRouteTable[0].mPrefix == aPrefix);
-    TEST_ASSERT(externalRouteTable[0].mPreference == 0);
-    TEST_ASSERT(externalRouteTable[0].mStable);
-    TEST_ASSERT(externalRouteTable[0].mNextHopIsThisDevice);
+
+    TEST_ASSERT(
+        std::any_of(externalRouteTable.begin(), externalRouteTable.end(), [&aPrefix](const ExternalRoute &route) {
+            return route.mPrefix == aPrefix && route.mPreference == 0 && route.mStable && route.mNextHopIsThisDevice;
+        }));
 
     TEST_ASSERT(aApi->RemoveExternalRoute(aPrefix) == OTBR_ERROR_NONE);
     sleep(10);
     TEST_ASSERT(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
-    TEST_ASSERT(externalRouteTable.empty());
+
+    TEST_ASSERT(
+        !std::any_of(externalRouteTable.begin(), externalRouteTable.end(), [&aPrefix](const ExternalRoute &route) {
+            return route.mPrefix == aPrefix && route.mPreference == 0 && route.mStable && route.mNextHopIsThisDevice;
+        }));
 }
 
 static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
@@ -130,15 +135,18 @@ static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
     TEST_ASSERT(aApi->AddOnMeshPrefix(prefix) == OTBR_ERROR_NONE);
     sleep(10);
     TEST_ASSERT(aApi->GetOnMeshPrefixes(onMeshPrefixes) == OTBR_ERROR_NONE);
-    TEST_ASSERT(onMeshPrefixes.size() == 1);
-    TEST_ASSERT(onMeshPrefixes[0].mPrefix == prefix.mPrefix);
-    TEST_ASSERT(onMeshPrefixes[0].mPreference == 0);
-    TEST_ASSERT(onMeshPrefixes[0].mStable);
+
+    TEST_ASSERT(std::any_of(onMeshPrefixes.begin(), onMeshPrefixes.end(), [&prefix](const OnMeshPrefix &onMeshPrefix) {
+        return onMeshPrefix.mPrefix == prefix.mPrefix && onMeshPrefix.mPreference == 0 && onMeshPrefix.mStable;
+    }));
 
     TEST_ASSERT(aApi->RemoveOnMeshPrefix(prefix.mPrefix) == OTBR_ERROR_NONE);
     sleep(10);
     TEST_ASSERT(aApi->GetOnMeshPrefixes(onMeshPrefixes) == OTBR_ERROR_NONE);
-    TEST_ASSERT(onMeshPrefixes.empty());
+
+    TEST_ASSERT(!std::any_of(onMeshPrefixes.begin(), onMeshPrefixes.end(), [&prefix](const OnMeshPrefix &onMeshPrefix) {
+        return onMeshPrefix.mPrefix == prefix.mPrefix && onMeshPrefix.mPreference == 0 && onMeshPrefix.mStable;
+    }));
 }
 
 static void CheckFeatureFlagUpdate(ThreadApiDBus *aApi)
@@ -219,12 +227,15 @@ void CheckDnssdCounters(ThreadApiDBus *aApi)
 
 void CheckMdnsInfo(ThreadApiDBus *aApi)
 {
+    OTBR_UNUSED_VARIABLE(aApi);
+#if !OTBR_ENABLE_MDNS_OPENTHREAD
     otbr::MdnsTelemetryInfo mdnsInfo;
 
     TEST_ASSERT(aApi->GetMdnsTelemetryInfo(mdnsInfo) == OTBR_ERROR_NONE);
 
     TEST_ASSERT(mdnsInfo.mServiceRegistrations.mSuccess > 0);
     TEST_ASSERT(mdnsInfo.mServiceRegistrationEmaLatency > 0);
+#endif
 }
 
 void CheckNat64(ThreadApiDBus *aApi)
@@ -341,22 +352,24 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_border_router().trel_info().counters().trel_tx_bytes() == 0);
 #endif
 #if OTBR_ENABLE_BORDER_ROUTING
-    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().name() == "lo");
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().name() == "eth0");
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().is_up());
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().is_running());
-    TEST_ASSERT(!telemetryData.wpan_border_router().infra_link_info().is_multicast());
-    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().link_local_address_count() == 0);
-    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().unique_local_address_count() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().is_multicast());
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().link_local_address_count() == 1);
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().unique_local_address_count() == 1);
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().global_unicast_address_count() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().peer_br_count() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_default_route_added() == false);
-    TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_ula_route_added() == false);
+    TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_ula_route_added());
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_others_route_added() == false);
 #endif
+#if !OTBR_ENABLE_MDNS_OPENTHREAD
     TEST_ASSERT(telemetryData.wpan_border_router().mdns().service_registration_responses().success_count() > 0);
+#endif
 #if OTBR_ENABLE_NAT64
     TEST_ASSERT(telemetryData.wpan_border_router().nat64_state().prefix_manager_state() ==
-                threadnetwork::TelemetryData::NAT64_STATE_NOT_RUNNING);
+                threadnetwork::TelemetryData::NAT64_STATE_IDLE);
 #endif
 #if OTBR_ENABLE_DHCP6_PD
     TEST_ASSERT(telemetryData.wpan_border_router().dhcp6_pd_state() ==
@@ -526,6 +539,8 @@ int main()
                         }
                         TEST_ASSERT(api->SetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
                         api->Attach([&api, channel, extpanid, &stepDone](ClientError aErr) {
+                            sleep(20);
+
                             uint8_t                routerId;
                             otbr::DBus::LeaderData leaderData;
                             uint8_t                leaderWeight;

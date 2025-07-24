@@ -57,7 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type: ["Debug", "Release"]
-        mdns: ["mDNSResponder", "avahi"]
+        mdns: ["openthread", "mDNSResponder", "avahi"]
     env:
       BUILD_TARGET: check
       OTBR_BUILD_TYPE: ${{ matrix.build_type }}
