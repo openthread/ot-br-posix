@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mdns: ["avahi"]
+        mdns: ["openthread", "avahi"]
     steps:
     - uses: actions/checkout@v4
       with:
