@@ -31,6 +31,13 @@ find_package(PkgConfig)
 
 option(OTBR_DOC "Build documentation" OFF)
 
+if (OTBR_MDNS STREQUAL "avahi")
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_AVAHI=1)
+elseif (OTBR_MDNS STREQUAL "mDNSResponder")
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_MDNSSD=1)
+elseif (OTBR_MDNS STREQUAL "openthread")
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_OPENTHREAD=1)
+endif()
 
 option(OTBR_BORDER_AGENT "Enable Border Agent" ON)
 if (OTBR_BORDER_AGENT)
@@ -94,7 +101,12 @@ if(OTBR_REST)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_REST_SERVER=1)
 endif()
 
-option(OTBR_OT_SRP_ADV_PROXY "Enable OT core Advertising Proxy" OFF)
+set(OTBR_OT_SRP_ADV_PROXY_DEFAULT OFF)
+if (OTBR_MDNS STREQUAL "openthread")
+    set(OTBR_OT_SRP_ADV_PROXY_DEFAULT ON)
+endif()
+
+option(OTBR_OT_SRP_ADV_PROXY "Enable OT core Advertising Proxy" ${OTBR_OT_SRP_ADV_PROXY_DEFAULT})
 if (OTBR_OT_SRP_ADV_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_OT_SRP_ADV_PROXY=1)
 endif()
