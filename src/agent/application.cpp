@@ -229,7 +229,7 @@ void Application::CreateRcpMode(void)
     mUbusAgent = MakeUnique<ubus::UBusAgent>(rcpHost);
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    mRestWebServer = MakeUnique<rest::RestWebServer>(rcpHost);
+    mRestWebServer = std::make_shared<rest::RestWebServer>(rcpHost);
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer = vendor::VendorServer::newInstance(*this);

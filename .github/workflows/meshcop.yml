@@ -80,5 +80,9 @@ jobs:
       env:
         OTBR_USE_WEB_COMMISSIONER: 1
       run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
+    - name: HTTP REST API
+      env:
+        TEST_CASE: "http_restapi"
+      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: Codecov
       uses: codecov/codecov-action@v5

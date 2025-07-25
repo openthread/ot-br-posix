@@ -285,7 +285,7 @@ private:
     std::unique_ptr<ubus::UBusAgent> mUbusAgent;
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    std::unique_ptr<rest::RestWebServer> mRestWebServer;
+    std::shared_ptr<rest::RestWebServer> mRestWebServer;
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
     DBus::DBusAgent mDBusAgent;

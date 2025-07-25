@@ -1,0 +1,49 @@
+meta {
+  name: Get addThreadDeviceTask Actions - SparseFields
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions?fields[addThreadDeviceTask]=status
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+  ~Accept: application/json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.meta.collection.pending: isDefined
+  res.body.data: isArray
+}
+
+tests {
+  test("Data contains fields requested", function() {
+    const data = res.getBody().data;
+    expect(data).to.be.an.instanceOf(Array);
+    for (let i=0; i < data.length; i++){
+      let item = data[i];
+      expect(item).to.have.property("id");
+      expect(item).to.have.property("type");
+      expect(item).to.have.property("attributes");
+      expect(item.attributes).not.to.have.property("eui");
+      expect(item.attributes).not.to.have.property("pskd");
+      expect(item.attributes).to.have.property("status");
+      expect(["pending", "active", "completed", "stopped", "failed", "waiting", "undiscovered", "attempted"]).to.include(item.attributes.status);
+      expect(item.attributes).to.have.property("created");
+      expect(item.attributes.created).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/);
+    }
+  });
+}
+
+docs {
+  Return addThreadDeviceTask items stored in the Collection with limited attributes.
+}

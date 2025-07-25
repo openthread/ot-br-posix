@@ -1,0 +1,49 @@
+meta {
+  name: Post Get NetworkDiagnostics
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": [
+      {
+        "type": "getNetworkDiagnosticTask",
+        "attributes": {
+          "destination": "ce500670b9ad06c3",
+          "types": [
+            "extAddress",
+            "rloc16",
+            "leaderData",
+            "ipv6Addresses",
+            "childTable",
+            "route",
+            "children",
+            "childIpv6Addresses",
+            "routerNeighbors"
+          ],
+          "timeout": 30
+        }
+      }
+    ]
+  }
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].attributes.status: isDefined
+}
