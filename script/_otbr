@@ -33,6 +33,9 @@ readonly OTBR_TOP_BUILDDIR
 BORDER_ROUTING="${BORDER_ROUTING:-1}"
 readonly BORDER_ROUTING
 
+BACKBONE_ROUTER="${BACKBONE_ROUTER:-1}"
+readonly BACKBONE_ROUTER
+
 OTBR_OPTIONS="${OTBR_OPTIONS-}"
 readonly OTBR_OPTIONS
 
@@ -102,15 +105,10 @@ otbr_install()
         otbr_options+=("-DOTBR_REST=ON")
     fi
 
-    if with BACKBONE_ROUTER; then
+    if without BACKBONE_ROUTER; then
         otbr_options+=(
-            "-DOTBR_BACKBONE_ROUTER=ON"
+            "-DOTBR_BACKBONE_ROUTER=OFF"
         )
-        if [[ ${REFERENCE_DEVICE} == "1" ]]; then
-            otbr_options+=(
-                "-DOTBR_DUA_ROUTING=ON"
-            )
-        fi
     fi
 
     if [[ ${REFERENCE_DEVICE} == "1" ]]; then
@@ -119,6 +117,7 @@ otbr_install()
             "-DOT_REFERENCE_DEVICE=ON"
             "-DOT_DHCP6_CLIENT=ON"
             "-DOT_DHCP6_SERVER=ON"
+            "-DOTBR_DUA_ROUTING=ON"
         )
     fi
 
