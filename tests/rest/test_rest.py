@@ -145,7 +145,7 @@ def diagnostics_check(data):
             assert (key in leaderdata)
             assert (type(leaderdata[key]) == int)
 
-        assert (re.match(r'^[A-F0-9]{12}$', diag["NetworkData"]) is not None)
+        assert (re.match(r'^[A-F0-9]{44}$', diag["NetworkData"]) is not None)
 
         ip6_address_list = diag["IP6AddressList"]
         assert (type(ip6_address_list) == list)

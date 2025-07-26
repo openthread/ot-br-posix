@@ -54,15 +54,15 @@ at_exit()
 
 trap at_exit INT TERM EXIT
 
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=invalid && exit 1
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach= && exit 1
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=99999999999999999999999999999999999 && exit 1
+sudo "${OTBR_AGENT}" -I wpan0 -B lo -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=invalid && exit 1
+sudo "${OTBR_AGENT}" -I wpan0 -B lo -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach= && exit 1
+sudo "${OTBR_AGENT}" -I wpan0 -B lo -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=99999999999999999999999999999999999 && exit 1
 
 sudo cp "${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf" /etc/dbus-1/system.d/
 sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
 sudo systemctl reload dbus
 
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
+sudo "${OTBR_AGENT}" -I wpan0 -B lo -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
 sleep 10
 sudo "${OT_CTL}" factoryreset
 sleep 1
@@ -75,19 +75,19 @@ sudo "${OT_CTL}" state | grep "leader"
 
 sudo killall otbr-agent
 sleep 10
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=0 &
+sudo "${OTBR_AGENT}" -I wpan0 -B lo -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=0 &
 sleep 10
 sudo "${OT_CTL}" state | grep "disabled"
 
 sudo killall otbr-agent
 sleep 10
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=1 &
+sudo "${OTBR_AGENT}" -I wpan0 -B lo -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=1 &
 sleep 40
 sudo "${OT_CTL}" state | grep "leader"
 
 sudo killall otbr-agent
 sleep 10
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach &
+sudo "${OTBR_AGENT}" -I wpan0 -B lo -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach &
 sleep 40
 sudo "${OT_CTL}" state | grep "leader"
 sudo "${OT_CTL}" reset

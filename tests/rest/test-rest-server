@@ -34,7 +34,7 @@ set -euxo pipefail
 main()
 {
     sudo expect <<EOF
-spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
+spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 -B lo "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
 expect "Start Thread Border Agent"
 set otbr_agent \$spawn_id
 spawn "${CMAKE_BINARY_DIR}/third_party/openthread/repo/src/posix/ot-ctl"

@@ -54,7 +54,7 @@ if (OTBR_BORDER_AGENT_MESHCOP_SERVICE)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE=1)
 endif()
 
-option(OTBR_BACKBONE_ROUTER "Enable Backbone Router" OFF)
+option(OTBR_BACKBONE_ROUTER "Enable Backbone Router" ON)
 if (OTBR_BACKBONE_ROUTER)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BACKBONE_ROUTER=1)
 endif()
