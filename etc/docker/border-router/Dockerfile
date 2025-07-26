@@ -32,7 +32,6 @@ ARG GITHUB_REPO="openthread/ot-br-posix"
 ARG GIT_COMMIT="HEAD"
 ARG TARGETARCH
 
-ENV MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147
 ENV S6_OVERLAY_VERSION=3.2.0.2
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -64,14 +63,6 @@ RUN set -x \
     \
     && git clone --depth 1 -b main https://github.com/"${GITHUB_REPO}".git \
     \
-    && (wget --no-check-certificate https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
-        && mkdir -p $MDNS_RESPONDER_SOURCE_NAME \
-        && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz -C $MDNS_RESPONDER_SOURCE_NAME --strip-components=1 \
-        && cd $MDNS_RESPONDER_SOURCE_NAME \
-        && cd mDNSPosix \
-        && make os=linux tls=no \
-        && make install os=linux tls=no) \
-    \
     && cd ot-br-posix \
     && git fetch origin "${GIT_COMMIT}" \
     && git checkout "${GIT_COMMIT}" \
@@ -80,7 +71,7 @@ RUN set -x \
            -DBUILD_TESTING=OFF \
            -DCMAKE_INSTALL_PREFIX=/usr \
            -DOTBR_DBUS=OFF \
-           -DOTBR_MDNS=mDNSResponder \
+           -DOTBR_MDNS=openthread \
            -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
            -DOT_FIREWALL=ON \
     && ninja \
