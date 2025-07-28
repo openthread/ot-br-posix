@@ -46,8 +46,8 @@
 #include <assert.h>
 
 #include "common/code_utils.hpp"
-#include "common/dns_utils.hpp"
 #include "common/logging.hpp"
+#include "utils/dns_utils.hpp"
 
 namespace otbr {
 
@@ -227,7 +227,7 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
 
     otbrLogInfo("Advertise SRP service updates: host=%s", fullHostName.c_str());
 
-    SuccessOrExit(error = SplitFullHostName(fullHostName, hostName, hostDomain));
+    SuccessOrExit(error = DnsUtils::SplitFullHostName(fullHostName, hostName, hostDomain));
     hostAddresses = otSrpServerHostGetAddresses(aHost, &hostAddressNum);
     hostDeleted   = otSrpServerHostIsDeleted(aHost);
 
@@ -252,7 +252,8 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
         std::string serviceType;
         std::string serviceDomain;
 
-        SuccessOrExit(error = SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceDomain));
+        SuccessOrExit(
+            error = DnsUtils::SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceDomain));
 
         if (!hostDeleted && !otSrpServerServiceIsDeleted(service))
         {

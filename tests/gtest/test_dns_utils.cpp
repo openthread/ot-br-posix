@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "common/dns_utils.hpp"
+#include "utils/dns_utils.hpp"
 
 #include <assert.h>
 #include <gtest/gtest.h>
@@ -40,11 +40,11 @@ static void CheckSplitFullDnsName(const std::string &aFullName,
                                   const std::string &aHostName,
                                   const std::string &aDomain)
 {
-    DnsNameInfo info;
+    otbr::DnsUtils::DnsNameInfo info;
 
     assert(aFullName.empty() || aFullName.back() != '.');
 
-    info = SplitFullDnsName(aFullName);
+    info = otbr::DnsUtils::SplitFullDnsName(aFullName);
 
     EXPECT_EQ(aIsServiceInstance, info.IsServiceInstance());
     EXPECT_EQ(aIsService, info.IsService());
@@ -54,7 +54,7 @@ static void CheckSplitFullDnsName(const std::string &aFullName,
     EXPECT_EQ(aHostName, info.mHostName);
     EXPECT_EQ(aDomain, info.mDomain);
 
-    info = SplitFullDnsName(aFullName + ".");
+    info = otbr::DnsUtils::SplitFullDnsName(aFullName + ".");
 
     EXPECT_EQ(aIsServiceInstance, info.IsServiceInstance());
     EXPECT_EQ(aIsService, info.IsService());

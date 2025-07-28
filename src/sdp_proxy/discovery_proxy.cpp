@@ -45,7 +45,6 @@
 #include <openthread/dnssd_server.h>
 
 #include "common/code_utils.hpp"
-#include "common/dns_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/dns_utils.hpp"
 #include "utils/string_utils.hpp"
@@ -127,8 +126,8 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(void *aContext, const char *aFull
 
 void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
 {
-    std::string fullName(aFullName);
-    DnsNameInfo nameInfo = SplitFullDnsName(fullName);
+    std::string           fullName(aFullName);
+    DnsUtils::DnsNameInfo nameInfo = DnsUtils::SplitFullDnsName(fullName);
 
     otbrLogInfo("Subscribe: %s", fullName.c_str());
 
@@ -152,8 +151,8 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(void *aContext, const char *aFu
 
 void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
 {
-    std::string fullName(aFullName);
-    DnsNameInfo nameInfo = SplitFullDnsName(fullName);
+    std::string           fullName(aFullName);
+    DnsUtils::DnsNameInfo nameInfo = DnsUtils::SplitFullDnsName(fullName);
 
     otbrLogInfo("Unsubscribe: %s", fullName.c_str());
 
@@ -231,10 +230,10 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string                      
         switch (type)
         {
         case OT_DNSSD_QUERY_TYPE_BROWSE:
-            splitError = SplitFullServiceName(queryName, serviceName, domain);
+            splitError = DnsUtils::SplitFullServiceName(queryName, serviceName, domain);
             break;
         case OT_DNSSD_QUERY_TYPE_RESOLVE:
-            splitError = SplitFullServiceInstanceName(queryName, instanceName, serviceName, domain);
+            splitError = DnsUtils::SplitFullServiceInstanceName(queryName, instanceName, serviceName, domain);
             break;
         default:
             splitError = OTBR_ERROR_NOT_FOUND;
@@ -299,7 +298,7 @@ void DiscoveryProxy::OnHostDiscovered(const std::string                         
             continue;
         }
 
-        splitError = SplitFullHostName(queryName, hostName, domain);
+        splitError = DnsUtils::SplitFullHostName(queryName, hostName, domain);
 
         if (splitError != OTBR_ERROR_NONE)
         {
@@ -324,7 +323,7 @@ std::string DiscoveryProxy::TranslateDomain(const std::string &aName, const std:
     std::string hostName;
     std::string domain;
 
-    VerifyOrExit(OTBR_ERROR_NONE == SplitFullHostName(aName, hostName, domain), targetName = aName);
+    VerifyOrExit(OTBR_ERROR_NONE == DnsUtils::SplitFullHostName(aName, hostName, domain), targetName = aName);
     VerifyOrExit(DnsLabelsEqual(domain, "local."), targetName = aName);
 
     targetName = hostName + "." + aTargetDomain;
@@ -334,18 +333,18 @@ exit:
     return targetName;
 }
 
-int DiscoveryProxy::GetServiceSubscriptionCount(const DnsNameInfo &aNameInfo) const
+int DiscoveryProxy::GetServiceSubscriptionCount(const DnsUtils::DnsNameInfo &aNameInfo) const
 {
     const otDnssdQuery *query = nullptr;
     int                 count = 0;
 
     while ((query = otDnssdGetNextQuery(mHost.GetInstance(), query)) != nullptr)
     {
-        char        queryName[OT_DNS_MAX_NAME_SIZE];
-        DnsNameInfo queryInfo;
+        char                  queryName[OT_DNS_MAX_NAME_SIZE];
+        DnsUtils::DnsNameInfo queryInfo;
 
         otDnssdGetQueryTypeAndName(query, &queryName);
-        queryInfo = SplitFullDnsName(queryName);
+        queryInfo = DnsUtils::SplitFullDnsName(queryName);
 
         count += (DnsLabelsEqual(aNameInfo.mInstanceName, queryInfo.mInstanceName) &&
                   DnsLabelsEqual(aNameInfo.mServiceName, queryInfo.mServiceName) &&
