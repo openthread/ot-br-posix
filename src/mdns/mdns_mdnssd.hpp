@@ -47,6 +47,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
+#include "common/task_runner.hpp"
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
 
@@ -104,6 +105,8 @@ protected:
 private:
     static constexpr uint32_t kDefaultTtl = 10;
 
+    static const Milliseconds kRetryDelay; // 5 seconds
+
     enum StopMode : uint8_t
     {
         kNormalStop,
@@ -112,7 +115,8 @@ private:
 
     class DnssdKeyRegistration;
 
-    class DnssdServiceRegistration : public ServiceRegistration
+    class DnssdServiceRegistration : public ServiceRegistration,
+                                     public std::enable_shared_from_this<DnssdServiceRegistration>
     {
         friend class DnssdKeyRegistration;
 
@@ -141,7 +145,7 @@ private:
         DnssdKeyRegistration *mRelatedKeyReg = nullptr;
     };
 
-    class DnssdHostRegistration : public HostRegistration
+    class DnssdHostRegistration : public HostRegistration, public std::enable_shared_from_this<DnssdHostRegistration>
     {
     public:
         using HostRegistration::HostRegistration; // Inherit base class constructor
@@ -164,7 +168,7 @@ private:
         std::vector<bool>         mAddrRegistered;
     };
 
-    class DnssdKeyRegistration : public KeyRegistration
+    class DnssdKeyRegistration : public KeyRegistration, public std::enable_shared_from_this<DnssdKeyRegistration>
     {
         friend class DnssdServiceRegistration;
 
@@ -210,7 +214,7 @@ private:
 
     struct ServiceSubscription;
 
-    struct ServiceInstanceResolution : public ServiceRef
+    struct ServiceInstanceResolution : public ServiceRef, public std::enable_shared_from_this<ServiceInstanceResolution>
     {
         explicit ServiceInstanceResolution(ServiceSubscription &aSubscription,
                                            std::string          aInstanceName,
@@ -226,6 +230,7 @@ private:
         {
         }
 
+        void      Release(void);
         void      Resolve(void);
         otbrError GetAddrInfo(uint32_t aInterfaceIndex);
         void      FinishResolution(void);
@@ -273,7 +278,7 @@ private:
         DiscoveredInstanceInfo mInstanceInfo;
     };
 
-    struct ServiceSubscription : public ServiceRef
+    struct ServiceSubscription : public ServiceRef, public std::enable_shared_from_this<ServiceSubscription>
     {
         explicit ServiceSubscription(PublisherMDnsSd &aPublisher, std::string aType, std::string aInstanceName)
             : ServiceRef(aPublisher)
@@ -282,6 +287,7 @@ private:
         {
         }
 
+        void Release(void);
         void Browse(void);
         void Resolve(uint32_t           aNetifIndex,
                      const std::string &aInstanceName,
@@ -309,10 +315,10 @@ private:
         std::string mType;
         std::string mInstanceName;
 
-        std::vector<std::unique_ptr<ServiceInstanceResolution>> mResolvingInstances;
+        std::vector<std::shared_ptr<ServiceInstanceResolution>> mResolvingInstances;
     };
 
-    struct HostSubscription : public ServiceRef
+    struct HostSubscription : public ServiceRef, public std::enable_shared_from_this<HostSubscription>
     {
         explicit HostSubscription(PublisherMDnsSd &aPublisher, std::string aHostName)
             : ServiceRef(aPublisher)
@@ -320,6 +326,7 @@ private:
         {
         }
 
+        void        Release(void);
         void        Resolve(void);
         static void HandleResolveResult(DNSServiceRef          aServiceRef,
                                         DNSServiceFlags        aFlags,
@@ -341,8 +348,8 @@ private:
         DiscoveredHostInfo mHostInfo;
     };
 
-    using ServiceSubscriptionList = std::vector<std::unique_ptr<ServiceSubscription>>;
-    using HostSubscriptionList    = std::vector<std::unique_ptr<HostSubscription>>;
+    using ServiceSubscriptionList = std::vector<std::shared_ptr<ServiceSubscription>>;
+    using HostSubscriptionList    = std::vector<std::shared_ptr<HostSubscription>>;
 
     static std::string MakeRegType(const std::string &aType, SubTypeList aSubTypeList);
 
@@ -350,6 +357,19 @@ private:
     DNSServiceErrorType CreateSharedHostsRef(void);
     void                DeallocateHostsRef(void);
     void                HandleServiceRefDeallocating(const DNSServiceRef &aServiceRef);
+
+    template <typename DnssdType> void ScheduleRetry(DnssdType *aPtr, std::function<void(DnssdType *)> aAction)
+    {
+        std::weak_ptr<DnssdType> weakPtr{aPtr->shared_from_this()};
+
+        mTaskRunner.Post(kRetryDelay, [weakPtr, aAction] {
+            auto sharedPtr = weakPtr.lock();
+            if (sharedPtr)
+            {
+                aAction(sharedPtr.get());
+            }
+        });
+    }
 
     DNSServiceRef mHostsRef;
     State         mState;
@@ -359,6 +379,8 @@ private:
     HostSubscriptionList    mSubscribedHosts;
 
     std::vector<DNSServiceRef> mServiceRefsToProcess;
+
+    TaskRunner mTaskRunner;
 };
 
 /**

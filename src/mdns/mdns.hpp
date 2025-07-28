@@ -534,11 +534,11 @@ protected:
         void OnComplete(otbrError aError);
     };
 
-    using ServiceRegistrationPtr = std::unique_ptr<ServiceRegistration>;
+    using ServiceRegistrationPtr = std::shared_ptr<ServiceRegistration>;
     using ServiceRegistrationMap = std::map<std::string, ServiceRegistrationPtr>;
-    using HostRegistrationPtr    = std::unique_ptr<HostRegistration>;
+    using HostRegistrationPtr    = std::shared_ptr<HostRegistration>;
     using HostRegistrationMap    = std::map<std::string, HostRegistrationPtr>;
-    using KeyRegistrationPtr     = std::unique_ptr<KeyRegistration>;
+    using KeyRegistrationPtr     = std::shared_ptr<KeyRegistration>;
     using KeyRegistrationMap     = std::map<std::string, KeyRegistrationPtr>;
 
     static SubTypeList SortSubTypeList(SubTypeList aSubTypeList);
@@ -570,7 +570,7 @@ protected:
 
     virtual otbrError DnsErrorToOtbrError(int32_t aError) = 0;
 
-    void AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
+    void AddServiceRegistration(ServiceRegistrationPtr aServiceReg);
     void RemoveServiceRegistration(const std::string &aName, const std::string &aType, otbrError aError);
     ServiceRegistration *FindServiceRegistration(const std::string &aName, const std::string &aType);
     ServiceRegistration *FindServiceRegistration(const std::string &aNameAndType);
@@ -600,11 +600,11 @@ protected:
                                                   const KeyData     &aKeyData,
                                                   ResultCallback   &&aCallback);
 
-    void              AddHostRegistration(HostRegistrationPtr &&aHostReg);
+    void              AddHostRegistration(HostRegistrationPtr aHostReg);
     void              RemoveHostRegistration(const std::string &aName, otbrError aError);
     HostRegistration *FindHostRegistration(const std::string &aName);
 
-    void             AddKeyRegistration(KeyRegistrationPtr &&aKeyReg);
+    void             AddKeyRegistration(KeyRegistrationPtr aKeyReg);
     void             RemoveKeyRegistration(const std::string &aName, otbrError aError);
     KeyRegistration *FindKeyRegistration(const std::string &aName);
     KeyRegistration *FindKeyRegistration(const std::string &aName, const std::string &aType);
