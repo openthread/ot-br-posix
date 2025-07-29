@@ -28,6 +28,5 @@
 #
 
 # shellcheck disable=SC2034
-NAT64=1
 WEB_GUI=1
 REST_API=1
