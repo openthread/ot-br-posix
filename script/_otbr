@@ -36,6 +36,9 @@ readonly BORDER_ROUTING
 BACKBONE_ROUTER="${BACKBONE_ROUTER:-1}"
 readonly BACKBONE_ROUTER
 
+NAT64="${NAT64:-1}"
+readonly NAT64
+
 OTBR_OPTIONS="${OTBR_OPTIONS-}"
 readonly OTBR_OPTIONS
 
@@ -108,6 +111,12 @@ otbr_install()
     if without BACKBONE_ROUTER; then
         otbr_options+=(
             "-DOTBR_BACKBONE_ROUTER=OFF"
+        )
+    fi
+
+    if without NAT64; then
+        otbr_options+=(
+            "-DOTBR_NAT64=OFF"
         )
     fi
 

@@ -68,9 +68,9 @@ main()
 {
     RELEASE=1 ./script/bootstrap
     ./script/bootstrap
-    INFRA_IF_NAME=eth0 BACKBONE_ROUTER=0 NAT64=1 ./script/setup
+    INFRA_IF_NAME=eth0 BACKBONE_ROUTER=0 ./script/setup
     # re-run to ensure the script can run successfully multiple times
-    INFRA_IF_NAME=eth0 BACKBONE_ROUTER=0 NAT64=1 ./script/setup
+    INFRA_IF_NAME=eth0 BACKBONE_ROUTER=0 ./script/setup
     SOCAT_OUTPUT=/tmp/ot-socat
 
     if ! command -v ot-rcp; then

@@ -34,10 +34,6 @@ NAT44_SERVICE=/etc/init.d/otbr-nat44
 WLAN_IFNAMES="${INFRA_IF_NAME:-eth0}"
 THREAD_IF="${THREAD_IF:-wpan0}"
 
-# Currently solution was verified only on raspbian and ubuntu.
-#
-#without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "nat64 is not tested under $PLATFORM."
-
 nat44_install()
 {
     sudo tee $NAT44_SERVICE <<EOF
