@@ -353,7 +353,7 @@ std::string Publisher::MakeFullName(const std::string &aName)
     return aName + ".local";
 }
 
-void Publisher::AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg)
+void Publisher::AddServiceRegistration(ServiceRegistrationPtr aServiceReg)
 {
     mServiceRegistrations.emplace(MakeFullServiceName(aServiceReg->mName, aServiceReg->mType), std::move(aServiceReg));
 }
@@ -469,7 +469,7 @@ exit:
     return std::move(aCallback);
 }
 
-void Publisher::AddHostRegistration(HostRegistrationPtr &&aHostReg)
+void Publisher::AddHostRegistration(HostRegistrationPtr aHostReg)
 {
     mHostRegistrations.emplace(MakeFullHostName(aHostReg->mName), std::move(aHostReg));
 }
@@ -538,7 +538,7 @@ exit:
     return std::move(aCallback);
 }
 
-void Publisher::AddKeyRegistration(KeyRegistrationPtr &&aKeyReg)
+void Publisher::AddKeyRegistration(KeyRegistrationPtr aKeyReg)
 {
     mKeyRegistrations.emplace(MakeFullKeyName(aKeyReg->mName), std::move(aKeyReg));
 }

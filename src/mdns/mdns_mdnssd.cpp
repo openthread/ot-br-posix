@@ -57,6 +57,8 @@ namespace Mdns {
 
 static const char kDomain[] = "local.";
 
+const Milliseconds PublisherMDnsSd::kRetryDelay(5000); // 5 seconds
+
 static otbrError DNSErrorToOtbrError(DNSServiceErrorType aError)
 {
     otbrError error;
@@ -88,6 +90,7 @@ static otbrError DNSErrorToOtbrError(DNSServiceErrorType aError)
         error = OTBR_ERROR_NOT_IMPLEMENTED;
         break;
 
+    case kDNSServiceErr_DefunctConnection:
     case kDNSServiceErr_ServiceNotRunning:
         error = OTBR_ERROR_INVALID_STATE;
         break;
@@ -207,10 +210,45 @@ static const char *DNSErrorToString(DNSServiceErrorType aError)
     case kDNSServiceErr_Timeout:
         return "Timeout";
 
+    case kDNSServiceErr_DefunctConnection:
+        return "Defunct Connection";
+
+    case kDNSServiceErr_StaleData:
+        return "Stale Data";
+
     default:
-        assert(false);
-        return nullptr;
+        return "Unhandled Error";
     }
+}
+
+// This is a best guess of retryable mDNSResponder errors. There isn't an authoritative retryable error list in
+// `dns_sd.h`
+bool IsRetryableError(DNSServiceErrorType aError)
+{
+    bool ret = false;
+
+    switch (aError)
+    {
+    case kDNSServiceErr_Transient:
+    case kDNSServiceErr_ServiceNotRunning:
+    case kDNSServiceErr_NoRouter:
+    case kDNSServiceErr_NATTraversal:
+    case kDNSServiceErr_DoubleNAT:
+    case kDNSServiceErr_Timeout:
+    case kDNSServiceErr_DefunctConnection:
+    case kDNSServiceErr_StaleData:
+    case kDNSServiceErr_BadTime:
+    case kDNSServiceErr_Firewall:
+    case kDNSServiceErr_NATPortMappingUnsupported:
+    case kDNSServiceErr_NATPortMappingDisabled:
+        ret = true;
+        break;
+    default:
+        ret = false;
+        break;
+    }
+
+    return ret;
 }
 
 PublisherMDnsSd::PublisherMDnsSd(StateCallback aCallback)
@@ -299,6 +337,8 @@ exit:
 
 void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 {
+    mTaskRunner.Update(aMainloop);
+
     for (auto &kv : mServiceRegistrations)
     {
         auto &serviceReg = static_cast<DnssdServiceRegistration &>(*kv.second);
@@ -329,6 +369,8 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 {
     mServiceRefsToProcess.clear();
+
+    mTaskRunner.Process(aMainloop);
 
     for (auto &kv : mServiceRegistrations)
     {
@@ -551,6 +593,15 @@ void PublisherMDnsSd::DnssdServiceRegistration::HandleRegisterResult(DNSServiceF
         otbrLogInfo("Successfully registered service %s.%s", mName.c_str(), mType.c_str());
         Complete(OTBR_ERROR_NONE);
     }
+    else if (IsRetryableError(aError))
+    {
+        otbrLogInfo("Will re-register service %s.%s on the retryable error: %s", mName.c_str(), mType.c_str(),
+                    DNSErrorToString(aError));
+        GetPublisher().ScheduleRetry<DnssdServiceRegistration>(this, [](DnssdServiceRegistration *aServiceReg) {
+            aServiceReg->Unregister();
+            aServiceReg->Register();
+        });
+    }
     else
     {
         otbrLogErr("Failed to register service %s.%s: %s", mName.c_str(), mType.c_str(), DNSErrorToString(aError));
@@ -642,7 +693,15 @@ void PublisherMDnsSd::DnssdHostRegistration::HandleRegisterResult(DNSServiceRef 
 
 void PublisherMDnsSd::DnssdHostRegistration::HandleRegisterResult(DNSRecordRef aRecordRef, DNSServiceErrorType aError)
 {
-    if (aError != kDNSServiceErr_NoError)
+    if (IsRetryableError(aError))
+    {
+        otbrLogInfo("Will re-register host %s on the retryable error: %s", mName.c_str(), DNSErrorToString(aError));
+        GetPublisher().ScheduleRetry<DnssdHostRegistration>(this, [](DnssdHostRegistration *aHostReg) {
+            aHostReg->Unregister();
+            aHostReg->Register();
+        });
+    }
+    else if (aError != kDNSServiceErr_NoError)
     {
         otbrLogErr("Failed to register host %s: %s", mName.c_str(), DNSErrorToString(aError));
         GetPublisher().RemoveHostRegistration(mName, DNSErrorToOtbrError(aError));
@@ -779,15 +838,23 @@ void PublisherMDnsSd::DnssdKeyRegistration::HandleRegisterResult(DNSServiceRef  
 
 void PublisherMDnsSd::DnssdKeyRegistration::HandleRegisterResult(DNSServiceErrorType aError)
 {
-    if (aError != kDNSServiceErr_NoError)
-    {
-        otbrLogErr("Failed to register key %s: %s", mName.c_str(), DNSErrorToString(aError));
-        GetPublisher().RemoveKeyRegistration(mName, DNSErrorToOtbrError(aError));
-    }
-    else
+    if (aError == kDNSServiceErr_NoError)
     {
         otbrLogInfo("Successfully registered key %s", mName.c_str());
         Complete(OTBR_ERROR_NONE);
+    }
+    else if (IsRetryableError(aError))
+    {
+        otbrLogInfo("Will re-register key %s on the retryable error: %s", mName.c_str(), DNSErrorToString(aError));
+        GetPublisher().ScheduleRetry<DnssdKeyRegistration>(this, [](DnssdKeyRegistration *aKeyReg) {
+            aKeyReg->Unregister();
+            aKeyReg->Register();
+        });
+    }
+    else
+    {
+        otbrLogErr("Failed to register key %s: %s", mName.c_str(), DNSErrorToString(aError));
+        GetPublisher().RemoveKeyRegistration(mName, DNSErrorToOtbrError(aError));
     }
 }
 
@@ -799,10 +866,10 @@ otbrError PublisherMDnsSd::PublishServiceImpl(const std::string &aHostName,
                                               const TxtData     &aTxtData,
                                               ResultCallback   &&aCallback)
 {
-    otbrError                 error             = OTBR_ERROR_NONE;
-    SubTypeList               sortedSubTypeList = SortSubTypeList(aSubTypeList);
-    std::string               regType           = MakeRegType(aType, sortedSubTypeList);
-    DnssdServiceRegistration *serviceReg;
+    otbrError                                 error             = OTBR_ERROR_NONE;
+    SubTypeList                               sortedSubTypeList = SortSubTypeList(aSubTypeList);
+    std::string                               regType           = MakeRegType(aType, sortedSubTypeList);
+    std::shared_ptr<DnssdServiceRegistration> serviceReg;
 
     if (mState != State::kReady)
     {
@@ -815,9 +882,9 @@ otbrError PublisherMDnsSd::PublishServiceImpl(const std::string &aHostName,
                                                    std::move(aCallback));
     VerifyOrExit(!aCallback.IsNull());
 
-    serviceReg = new DnssdServiceRegistration(aHostName, aName, aType, sortedSubTypeList, aPort, aTxtData,
-                                              std::move(aCallback), this);
-    AddServiceRegistration(std::unique_ptr<DnssdServiceRegistration>(serviceReg));
+    serviceReg = std::make_shared<DnssdServiceRegistration>(aHostName, aName, aType, sortedSubTypeList, aPort, aTxtData,
+                                                            std::move(aCallback), this);
+    AddServiceRegistration(serviceReg);
 
     error = serviceReg->Register();
 
@@ -840,8 +907,8 @@ otbrError PublisherMDnsSd::PublishHostImpl(const std::string &aName,
                                            const AddressList &aAddresses,
                                            ResultCallback   &&aCallback)
 {
-    otbrError              error = OTBR_ERROR_NONE;
-    DnssdHostRegistration *hostReg;
+    otbrError                              error = OTBR_ERROR_NONE;
+    std::shared_ptr<DnssdHostRegistration> hostReg;
 
     if (mState != State::kReady)
     {
@@ -853,8 +920,8 @@ otbrError PublisherMDnsSd::PublishHostImpl(const std::string &aName,
     aCallback = HandleDuplicateHostRegistration(aName, aAddresses, std::move(aCallback));
     VerifyOrExit(!aCallback.IsNull());
 
-    hostReg = new DnssdHostRegistration(aName, aAddresses, std::move(aCallback), this);
-    AddHostRegistration(std::unique_ptr<DnssdHostRegistration>(hostReg));
+    hostReg = std::make_shared<DnssdHostRegistration>(aName, aAddresses, std::move(aCallback), this);
+    AddHostRegistration(hostReg);
 
     error = hostReg->Register();
 
@@ -878,8 +945,8 @@ exit:
 
 otbrError PublisherMDnsSd::PublishKeyImpl(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback)
 {
-    otbrError             error = OTBR_ERROR_NONE;
-    DnssdKeyRegistration *keyReg;
+    otbrError                             error = OTBR_ERROR_NONE;
+    std::shared_ptr<DnssdKeyRegistration> keyReg;
 
     if (mState != State::kReady)
     {
@@ -891,8 +958,8 @@ otbrError PublisherMDnsSd::PublishKeyImpl(const std::string &aName, const KeyDat
     aCallback = HandleDuplicateKeyRegistration(aName, aKeyData, std::move(aCallback));
     VerifyOrExit(!aCallback.IsNull());
 
-    keyReg = new DnssdKeyRegistration(aName, aKeyData, std::move(aCallback), this);
-    AddKeyRegistration(std::unique_ptr<DnssdKeyRegistration>(keyReg));
+    keyReg = std::make_shared<DnssdKeyRegistration>(aName, aKeyData, std::move(aCallback), this);
+    AddKeyRegistration(keyReg);
 
     error = keyReg->Register();
 
@@ -929,7 +996,7 @@ std::string PublisherMDnsSd::MakeRegType(const std::string &aType, SubTypeList a
 void PublisherMDnsSd::SubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
     VerifyOrExit(mState == Publisher::State::kReady);
-    mSubscribedServices.push_back(MakeUnique<ServiceSubscription>(*this, aType, aInstanceName));
+    mSubscribedServices.push_back(std::make_shared<ServiceSubscription>(*this, aType, aInstanceName));
 
     otbrLogInfo("Subscribe service %s.%s (total %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
@@ -953,7 +1020,7 @@ void PublisherMDnsSd::UnsubscribeService(const std::string &aType, const std::st
 
     VerifyOrExit(mState == Publisher::State::kReady);
     it = std::find_if(mSubscribedServices.begin(), mSubscribedServices.end(),
-                      [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
+                      [&aType, &aInstanceName](const std::shared_ptr<ServiceSubscription> &aService) {
                           return aService->mType == aType && aService->mInstanceName == aInstanceName;
                       });
     VerifyOrExit(it != mSubscribedServices.end());
@@ -987,7 +1054,7 @@ otbrError PublisherMDnsSd::DnsErrorToOtbrError(int32_t aErrorCode)
 void PublisherMDnsSd::SubscribeHost(const std::string &aHostName)
 {
     VerifyOrExit(mState == State::kReady);
-    mSubscribedHosts.push_back(MakeUnique<HostSubscription>(*this, aHostName));
+    mSubscribedHosts.push_back(std::make_shared<HostSubscription>(*this, aHostName));
 
     otbrLogInfo("Subscribe host %s (total %zu)", aHostName.c_str(), mSubscribedHosts.size());
 
@@ -1004,7 +1071,7 @@ void PublisherMDnsSd::UnsubscribeHost(const std::string &aHostName)
     VerifyOrExit(mState == Publisher::State::kReady);
     it = std::find_if(
         mSubscribedHosts.begin(), mSubscribedHosts.end(),
-        [&aHostName](const std::unique_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
+        [&aHostName](const std::shared_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
 
     VerifyOrExit(it != mSubscribedHosts.end());
 
@@ -1071,6 +1138,12 @@ exit:
     return;
 }
 
+void PublisherMDnsSd::ServiceSubscription::Release(void)
+{
+    mResolvingInstances.clear();
+    ServiceRef::Release();
+}
+
 void PublisherMDnsSd::ServiceSubscription::Browse(void)
 {
     assert(mServiceRef == nullptr);
@@ -1120,7 +1193,16 @@ void PublisherMDnsSd::ServiceSubscription::HandleBrowseResult(DNSServiceRef     
     }
 
 exit:
-    if (aErrorCode != kDNSServiceErr_NoError)
+    if (IsRetryableError(aErrorCode))
+    {
+        otbrLogInfo("Re-browse service %s.%s on the retryable error: %s", aInstanceName, aType,
+                    DNSErrorToString(aErrorCode));
+        mPublisher.ScheduleRetry<ServiceSubscription>(this, [](ServiceSubscription *aSubscription) {
+            aSubscription->Release();
+            aSubscription->Browse();
+        });
+    }
+    else if (aErrorCode != kDNSServiceErr_NoError)
     {
         mPublisher.OnServiceResolveFailed(mType, mInstanceName, aErrorCode);
         Release();
@@ -1133,7 +1215,7 @@ void PublisherMDnsSd::ServiceSubscription::Resolve(uint32_t           aInterface
                                                    const std::string &aDomain)
 {
     mResolvingInstances.push_back(
-        MakeUnique<ServiceInstanceResolution>(*this, aInstanceName, aType, aDomain, aInterfaceIndex));
+        std::make_shared<ServiceInstanceResolution>(*this, aInstanceName, aType, aDomain, aInterfaceIndex));
     mResolvingInstances.back()->Resolve();
 }
 
@@ -1156,6 +1238,12 @@ void PublisherMDnsSd::ServiceSubscription::ProcessAll(const MainloopContext     
     {
         instance->Process(aMainloop, aReadyServices);
     }
+}
+
+void PublisherMDnsSd::ServiceInstanceResolution::Release(void)
+{
+    mInstanceInfo = {};
+    ServiceRef::Release();
 }
 
 void PublisherMDnsSd::ServiceInstanceResolution::Resolve(void)
@@ -1224,7 +1312,16 @@ exit:
         otbrLogWarning("Failed to resolve service instance %s", aFullName);
     }
 
-    if (aErrorCode != kDNSServiceErr_NoError || error != OTBR_ERROR_NONE)
+    if (IsRetryableError(aErrorCode))
+    {
+        otbrLogInfo("Will re-resolve service instance %s on the retryable error: %s", aFullName,
+                    DNSErrorToString(aErrorCode));
+        mPublisher.ScheduleRetry<ServiceInstanceResolution>(this, [](ServiceInstanceResolution *aInstance) {
+            aInstance->Release();
+            aInstance->Resolve();
+        });
+    }
+    else if (aErrorCode != kDNSServiceErr_NoError || error != OTBR_ERROR_NONE)
     {
         mSubscription->mPublisher.OnServiceResolveFailed(mSubscription->mType, mInstanceName, aErrorCode);
         FinishResolution();
@@ -1304,7 +1401,18 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
     mInstanceInfo.mTtl = aTtl;
 
 exit:
-    if ((!mInstanceInfo.mAddresses.empty() && !moreComing) || aErrorCode != kDNSServiceErr_NoError)
+    if (IsRetryableError(aErrorCode))
+    {
+        otbrLogInfo("Will re-resolve service instance %s on the retryable error: %s", mInstanceInfo.mName.c_str(),
+                    DNSErrorToString(aErrorCode));
+
+        mPublisher.ScheduleRetry<ServiceInstanceResolution>(this,
+                                                            [aInterfaceIndex](ServiceInstanceResolution *aInstance) {
+                                                                aInstance->Release();
+                                                                aInstance->GetAddrInfo(aInterfaceIndex);
+                                                            });
+    }
+    else if ((!mInstanceInfo.mAddresses.empty() && !moreComing) || aErrorCode != kDNSServiceErr_NoError)
     {
         FinishResolution();
     }
@@ -1318,6 +1426,12 @@ void PublisherMDnsSd::ServiceInstanceResolution::FinishResolution(void)
 
     // NOTE: The `ServiceSubscription` object may be freed in `OnServiceResolved`.
     subscription->mPublisher.OnServiceResolved(serviceName, instanceInfo);
+}
+
+void PublisherMDnsSd::HostSubscription::Release()
+{
+    mHostInfo = {};
+    ServiceRef::Release();
 }
 
 void PublisherMDnsSd::HostSubscription::Resolve(void)
@@ -1387,7 +1501,16 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
     mHostInfo.mTtl        = aTtl;
 
 exit:
-    if (aErrorCode != kDNSServiceErr_NoError)
+    if (IsRetryableError(aErrorCode))
+    {
+        otbrLogInfo("Will re-resolve host %s on the retryable error: %s", mHostName.c_str(),
+                    DNSErrorToString(aErrorCode));
+        mPublisher.ScheduleRetry<HostSubscription>(this, [](HostSubscription *aSubscription) {
+            aSubscription->Release();
+            aSubscription->Resolve();
+        });
+    }
+    else if (aErrorCode != kDNSServiceErr_NoError)
     {
         mPublisher.OnHostResolveFailed(aHostName, aErrorCode);
     }
