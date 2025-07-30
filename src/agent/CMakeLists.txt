@@ -46,17 +46,17 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-radio-spinel
     openthread-hdlc
     openthread-posix
-    $<$<AND:$<BOOL:${OTBR_MDNS}>,$<NOT:$<STREQUAL:${OTBR_MDNS},openthread>>>:otbr-sdp-proxy>
+    $<$<BOOL:${OTBR_DNSSD_DISCOVERY_PROXY}>:otbr-sdp-proxy>
     otbr-host
     otbr-common
     otbr-utils
 )
 
 add_dependencies(otbr-agent ot-ctl print-ot-config otbr-utils otbr-host)
-if (OTBR_BORDER_AGENT)
+if(OTBR_BORDER_AGENT)
     add_dependencies(otbr-agent otbr-border-agent)
 endif()
-if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+if(OTBR_DNSSD_DISCOVERY_PROXY)
     add_dependencies(otbr-agent otbr-sdp-proxy)
 endif()
 
