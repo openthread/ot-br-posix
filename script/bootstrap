@@ -60,13 +60,12 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y dbus libdbus-1-dev
 
     # mDNS
-    sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev
 
     # Thread Certification tests require Avahi to publish records for tests. Since the
     # same image is used for all tests this needs to be installed here. Additionally
     # Avahi should be included for reference device builds.
     if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
-        sudo apt-get install --no-install-recommends -y avahi-daemon
+        sudo apt-get install --no-install-recommends -y avahi-daemon libavahi-client-dev libavahi-client3 libavahi-common-dev
         # Increase the object number limit to rid of 'Too many objects' error
         sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
     fi
