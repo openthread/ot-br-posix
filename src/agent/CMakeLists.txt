@@ -47,12 +47,12 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-hdlc
     openthread-posix
     $<$<AND:$<BOOL:${OTBR_MDNS}>,$<NOT:$<STREQUAL:${OTBR_MDNS},openthread>>>:otbr-sdp-proxy>
-    otbr-ncp
+    otbr-host
     otbr-common
     otbr-utils
 )
 
-add_dependencies(otbr-agent ot-ctl print-ot-config otbr-utils otbr-ncp)
+add_dependencies(otbr-agent ot-ctl print-ot-config otbr-utils otbr-host)
 if (OTBR_BORDER_AGENT)
     add_dependencies(otbr-agent otbr-border-agent)
 endif()
