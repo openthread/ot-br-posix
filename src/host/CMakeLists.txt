@@ -28,7 +28,7 @@
 
 add_subdirectory(posix)
 
-add_library(otbr-ncp
+add_library(otbr-host
     async_task.cpp
     async_task.hpp
     ncp_host.cpp
@@ -43,7 +43,7 @@ add_library(otbr-ncp
     thread_host.hpp
 )
 
-target_link_libraries(otbr-ncp PRIVATE
+target_link_libraries(otbr-host PRIVATE
     otbr-common
     otbr-posix
     $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
