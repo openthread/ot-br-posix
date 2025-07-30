@@ -45,8 +45,6 @@
 #include <openthread/error.h>
 #include <openthread/ip6.h>
 
-#include "common/byteswap.hpp"
-
 #ifndef IN6ADDR_ANY
 /**
  * Any IPv6 address literal.
@@ -233,7 +231,7 @@ public:
      *
      * @returns Whether the Ip6 address is a link-local address.
      */
-    bool IsLinkLocal(void) const { return (m16[0] & bswap_16(0xffc0)) == bswap_16(0xfe80); }
+    bool IsLinkLocal(void) const;
 
     /**
      * This method returns whether or not the Ip6 address is the Loopback Address.
@@ -241,7 +239,7 @@ public:
      * @retval TRUE   If the Ip6 address is the Loopback Address.
      * @retval FALSE  If the Ip6 address is not the Loopback Address.
      */
-    bool IsLoopback(void) const { return (m32[0] == 0 && m32[1] == 0 && m32[2] == 0 && m32[3] == htobe32(1)); }
+    bool IsLoopback(void) const;
 
     /**
      * Returns the IPv6 address scope.
