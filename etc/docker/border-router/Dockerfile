@@ -72,6 +72,7 @@ RUN set -x \
            -DCMAKE_INSTALL_PREFIX=/usr \
            -DOTBR_DBUS=OFF \
            -DOTBR_MDNS=openthread \
+           -DOTBR_REST=ON \
            -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
            -DOT_FIREWALL=ON \
     && ninja \
