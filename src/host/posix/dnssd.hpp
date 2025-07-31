@@ -45,9 +45,9 @@
 #include <openthread/platform/dnssd.h>
 
 #include "common/code_utils.hpp"
-#include "common/dns_utils.hpp"
 #include "host/thread_host.hpp"
 #include "mdns/mdns.hpp"
+#include "utils/dns_utils.hpp"
 
 namespace otbr {
 

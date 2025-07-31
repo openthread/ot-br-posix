@@ -38,9 +38,96 @@
 
 #include <string>
 
+#include "common/types.hpp"
+
 namespace otbr {
 
 namespace DnsUtils {
+
+/**
+ * This structure represents DNS Name information.
+ *
+ * @sa SplitFullDnsName
+ */
+struct DnsNameInfo
+{
+    std::string mInstanceName; ///< Instance name, or empty if the DNS name is not a service instance.
+    std::string mServiceName;  ///< Service name, or empty if the DNS name is not a service or service instance.
+    std::string mHostName;     ///< Host name, or empty if the DNS name is not a host name.
+    std::string mDomain;       ///< Domain name.
+
+    /**
+     * This method returns if the DNS name is a service instance.
+     *
+     * @returns Whether the DNS name is a service instance.
+     */
+    bool IsServiceInstance(void) const { return !mInstanceName.empty(); };
+
+    /**
+     * This method returns if the DNS name is a service.
+     *
+     * @returns Whether the DNS name is a service.
+     */
+    bool IsService(void) const { return !mServiceName.empty() && mInstanceName.empty(); }
+
+    /**
+     * This method returns if the DNS name is a host.
+     *
+     * @returns Whether the DNS name is a host.
+     */
+    bool IsHost(void) const { return mServiceName.empty(); }
+};
+
+/**
+ * This method splits a full DNS name into name components.
+ *
+ * @param[in] aName  The full DNS name to dissect.
+ *
+ * @returns A `DnsNameInfo` structure containing DNS name information.
+ *
+ * @sa DnsNameInfo
+ */
+DnsNameInfo SplitFullDnsName(const std::string &aName);
+
+/**
+ * This function splits a full service name into components.
+ *
+ * @param[in]  aFullName  The full service name to split.
+ * @param[out] aType      A reference to a string to receive the service type.
+ * @param[out] aDomain    A reference to a string to receive the domain.
+ *
+ * @retval OTBR_ERROR_NONE          Successfully split the full service name.
+ * @retval OTBR_ERROR_INVALID_ARGS  If the full service name is not valid.
+ */
+otbrError SplitFullServiceName(const std::string &aFullName, std::string &aType, std::string &aDomain);
+
+/**
+ * This function splits a full service instance name into components.
+ *
+ * @param[in]  aFullName      The full service instance name to split.
+ * @param[out] aInstanceName  A reference to a string to receive the instance name.
+ * @param[out] aType          A reference to a string to receive the service type.
+ * @param[out] aDomain        A reference to a string to receive the domain.
+ *
+ * @retval OTBR_ERROR_NONE          Successfully split the full service instance name.
+ * @retval OTBR_ERROR_INVALID_ARGS  If the full service instance name is not valid.
+ */
+otbrError SplitFullServiceInstanceName(const std::string &aFullName,
+                                       std::string       &aInstanceName,
+                                       std::string       &aType,
+                                       std::string       &aDomain);
+
+/**
+ * This function splits a full host name into components.
+ *
+ * @param[in]  aFullName  The full host name to split.
+ * @param[out] aHostName  A reference to a string to receive the host name.
+ * @param[out] aDomain    A reference to a string to receive the domain.
+ *
+ * @retval OTBR_ERROR_NONE          Successfully split the full host name.
+ * @retval OTBR_ERROR_INVALID_ARGS  If the full host name is not valid.
+ */
+otbrError SplitFullHostName(const std::string &aFullName, std::string &aHostName, std::string &aDomain);
 
 /**
  * This function unescapes a DNS Service Instance name according to "DNS Name Escaping".

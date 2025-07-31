@@ -47,9 +47,9 @@
 #include <string.h>
 
 #include "common/code_utils.hpp"
-#include "common/dns_utils.hpp"
 #include "common/logging.hpp"
 #include "common/time.hpp"
+#include "utils/dns_utils.hpp"
 
 namespace otbr {
 
@@ -1292,7 +1292,7 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleResolveResult(DNSServiceR
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
 
-    SuccessOrExit(error = SplitFullServiceInstanceName(aFullName, instanceName, type, domain));
+    SuccessOrExit(error = DnsUtils::SplitFullServiceInstanceName(aFullName, instanceName, type, domain));
 
     mInstanceInfo.mNetifIndex = aInterfaceIndex;
     mInstanceInfo.mName       = instanceName;

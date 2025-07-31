@@ -46,9 +46,9 @@
 #include <openthread/dnssd_server.h>
 #include <openthread/instance.h>
 
-#include "common/dns_utils.hpp"
 #include "host/rcp_host.hpp"
 #include "mdns/mdns.hpp"
+#include "utils/dns_utils.hpp"
 
 namespace otbr {
 namespace Dnssd {
@@ -99,7 +99,7 @@ private:
     void               OnDiscoveryProxySubscribe(const char *aSubscription);
     static void        OnDiscoveryProxyUnsubscribe(void *aContext, const char *aFullName);
     void               OnDiscoveryProxyUnsubscribe(const char *aSubscription);
-    int                GetServiceSubscriptionCount(const DnsNameInfo &aNameInfo) const;
+    int                GetServiceSubscriptionCount(const DnsUtils::DnsNameInfo &aNameInfo) const;
     static std::string TranslateDomain(const std::string &aName, const std::string &aTargetDomain);
     void               OnServiceDiscovered(const std::string                             &aSubscription,
                                            const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
