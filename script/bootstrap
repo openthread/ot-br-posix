@@ -71,16 +71,18 @@ install_packages_apt()
         sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
     fi
 
-    (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \
-        && cd /tmp \
-        && wget -c --tries=3 --no-check-certificate -O "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
-            "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
-        && rm -rf "/tmp/$MDNS_RESPONDER_SOURCE_NAME" \
-        && mkdir -p "$MDNS_RESPONDER_SOURCE_NAME" \
-        && tar xvf "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" -C "$MDNS_RESPONDER_SOURCE_NAME" --overwrite --strip-components=1 \
-        && cd "/tmp/$MDNS_RESPONDER_SOURCE_NAME" \
-        && cd mDNSPosix \
-        && make os=linux tls=no && sudo make install os=linux tls=no)
+    if [[ ${OTBR_MDNS} == "mDNSResponder" || ${OT_BACKBONE_CI} == 1 ]]; then
+        (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \
+            && cd /tmp \
+            && wget -c --tries=3 --no-check-certificate -O "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
+                "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
+            && rm -rf "/tmp/$MDNS_RESPONDER_SOURCE_NAME" \
+            && mkdir -p "$MDNS_RESPONDER_SOURCE_NAME" \
+            && tar xvf "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" -C "$MDNS_RESPONDER_SOURCE_NAME" --overwrite --strip-components=1 \
+            && cd "/tmp/$MDNS_RESPONDER_SOURCE_NAME" \
+            && cd mDNSPosix \
+            && make os=linux tls=no && sudo make install os=linux tls=no)
+    fi
 
     # nat64
     sudo apt-get install --no-install-recommends -y iptables

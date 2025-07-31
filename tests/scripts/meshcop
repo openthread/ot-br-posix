@@ -500,6 +500,8 @@ test_meshcop_service()
 
     test_setup
     ba_start
+    sudo "${OT_CTL}" ba disable
+    sleep 2
     sudo "${OT_CTL}" factoryreset
     sleep 1
     sudo "${OT_CTL}" dataset init new
@@ -583,6 +585,8 @@ test_meshcop_service()
     grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
 
     # Test if the the meshcop service is unpublished when otbr-agent stops.
+    sudo "${OT_CTL}" ba disable
+    sleep 2
     sudo killall "${OTBR_AGENT}"
     sleep 10
     service="$(scan_meshcop_service)"
