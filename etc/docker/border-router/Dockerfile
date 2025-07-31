@@ -32,7 +32,7 @@ ARG GITHUB_REPO="openthread/ot-br-posix"
 ARG GIT_COMMIT="HEAD"
 ARG TARGETARCH
 
-ENV S6_OVERLAY_VERSION=3.2.0.2
+ENV S6_OVERLAY_VERSION=3.2.1.0
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
