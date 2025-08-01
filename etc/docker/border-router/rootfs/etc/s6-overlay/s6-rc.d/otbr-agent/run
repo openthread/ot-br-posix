@@ -39,6 +39,12 @@ readonly OT_INFRA_IF
 OT_THREAD_IF="${OT_THREAD_IF:-wpan0}"
 readonly OT_THREAD_IF
 
+OT_REST_LISTEN_ADDR="${OT_REST_LISTEN_ADDR:-127.0.0.1}"
+readonly OT_REST_LISTEN_ADDR
+
+OT_REST_LISTEN_PORT="${OT_REST_LISTEN_PORT:-8081}"
+readonly OT_REST_LISTEN_PORT
+
 OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
 readonly OT_FORWARD_INGRESS_CHAIN
 
@@ -80,5 +86,7 @@ exec s6-notifyoncheck -d -s 300 -w 300 -n 0 stdbuf -oL \
         -d"${OT_LOG_LEVEL}" -v -s \
         -I "${OT_THREAD_IF}" \
         -B "${OT_INFRA_IF}" \
-	"${OT_RCP_DEVICE}" \
-        "trel://${OT_INFRA_IF}"
+        "${OT_RCP_DEVICE}" \
+        "trel://${OT_INFRA_IF}" \
+        --rest-listen-address "${OT_REST_LISTEN_ADDR}" \
+        --rest-listen-port "${OT_REST_LISTEN_PORT}"
