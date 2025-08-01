@@ -30,6 +30,7 @@
 #include <sstream>
 #include <sys/socket.h>
 
+#include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
@@ -65,6 +66,16 @@ Ip6Address Ip6Address::ToSolicitedNodeMulticastAddress(void) const
     ma.m8[15] = m8[15];
 
     return ma;
+}
+
+bool Ip6Address::IsLinkLocal(void) const
+{
+    return (m16[0] & bswap_16(0xffc0)) == bswap_16(0xfe80);
+}
+
+bool Ip6Address::IsLoopback(void) const
+{
+    return (m32[0] == 0 && m32[1] == 0 && m32[2] == 0 && m32[3] == htobe32(1));
 }
 
 uint8_t Ip6Address::GetScope(void) const
