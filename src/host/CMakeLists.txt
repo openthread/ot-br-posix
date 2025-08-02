@@ -37,6 +37,8 @@ add_library(otbr-host
     ncp_spinel.hpp
     rcp_host.cpp
     rcp_host.hpp
+    telemetry_retriever_border_agent.cpp
+    telemetry_retriever_border_agent.hpp
     thread_helper.cpp
     thread_helper.hpp
     thread_host.cpp

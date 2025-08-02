@@ -52,8 +52,8 @@
 #include <openthread/thread.h>
 #include "mdns/mdns.hpp"
 #if OTBR_ENABLE_TELEMETRY_DATA_API
+#include "host/telemetry_retriever_border_agent.hpp"
 #include "proto/thread_telemetry.pb.h"
-#include "utils/telemetry_retriever_border_agent.hpp"
 #endif
 
 namespace otbr {

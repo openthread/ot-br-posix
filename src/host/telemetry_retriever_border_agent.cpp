@@ -28,19 +28,16 @@
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT
 
-#define OTBR_LOG_TAG "UTILS"
+#define OTBR_LOG_TAG "TLM"
 
-#include "utils/telemetry_retriever_border_agent.hpp"
+#include "host/telemetry_retriever_border_agent.hpp"
 
 #include <algorithm>
 
 #include <openthread/history_tracker.h>
 #include <openthread/platform/alarm-milli.h>
 
-#include "common/logging.hpp"
-
 namespace otbr {
-namespace agent {
 namespace TelemetryRetriever {
 
 BorderAgent::BorderAgent(otInstance *aInstance)
@@ -198,7 +195,6 @@ std::vector<std::pair<otHistoryTrackerBorderAgentEpskcEvent, uint32_t>> BorderAg
 }
 
 } // namespace TelemetryRetriever
-} // namespace agent
 } // namespace otbr
 
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT
