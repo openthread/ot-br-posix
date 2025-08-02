@@ -39,15 +39,16 @@
 #if OTBR_ENABLE_DNSSD_PLAT
 
 #include <functional>
+#include <map>
 #include <string>
 
 #include <openthread/instance.h>
 #include <openthread/platform/dnssd.h>
 
 #include "common/code_utils.hpp"
-#include "host/thread_host.hpp"
 #include "mdns/mdns.hpp"
 #include "utils/dns_utils.hpp"
+#include "utils/string_utils.hpp"
 
 namespace otbr {
 
@@ -98,12 +99,28 @@ public:
     //-----------------------------------------------------------------------------------------------------------------
     // `otPlatDnssd` APIs (see `openthread/include/openthread/platform/dnssd.h` for detailed documentation).
 
-    typedef otPlatDnssdState                                   State;
-    typedef otPlatDnssdService                                 Service;
-    typedef otPlatDnssdHost                                    Host;
-    typedef otPlatDnssdKey                                     Key;
-    typedef otPlatDnssdRequestId                               RequestId;
+    typedef otPlatDnssdState           State;
+    typedef otPlatDnssdService         Service;
+    typedef otPlatDnssdHost            Host;
+    typedef otPlatDnssdKey             Key;
+    typedef otPlatDnssdRequestId       RequestId;
+    typedef otPlatDnssdBrowser         Browser;
+    typedef otPlatDnssdBrowseResult    BrowseResult;
+    typedef otPlatDnssdSrvResolver     SrvResolver;
+    typedef otPlatDnssdSrvResult       SrvResult;
+    typedef otPlatDnssdTxtResolver     TxtResolver;
+    typedef otPlatDnssdTxtResult       TxtResult;
+    typedef otPlatDnssdAddressResolver AddressResolver;
+    typedef otPlatDnssdAddressResult   AddressResult;
+    typedef otPlatDnssdAddressAndTtl   AddressAndTtl;
+
     typedef std::function<void(otPlatDnssdRequestId, otError)> RegisterCallback;
+    typedef std::function<void(BrowseResult &)>                BrowseCallback;
+    typedef std::function<void(SrvResult &)>                   SrvCallback;
+    typedef std::function<void(TxtResult &)>                   TxtCallback;
+    typedef std::function<void(AddressResult &)>               AddressCallback;
+
+    typedef uint64_t DiscoveryCallbackIdentifier;
 
     State GetState(void) const { return mState; }
     void  RegisterService(const Service &aService, RequestId aRequestId, RegisterCallback aCallback);
@@ -112,10 +129,201 @@ public:
     void  UnregisterHost(const Host &aHost, RequestId aRequestId, RegisterCallback aCallback);
     void  RegisterKey(const Key &aKey, RequestId aRequestId, RegisterCallback aCallback);
     void  UnregisterKey(const Key &aKey, RequestId aRequestId, RegisterCallback aCallback);
+    void  StartServiceBrowser(const Browser                     &aBrowser,
+                              const DiscoveryCallbackIdentifier &aId,
+                              const BrowseCallback              &aCallback);
+    void  StopServiceBrowser(const Browser &aBrowser, const DiscoveryCallbackIdentifier &aId);
+    void  StartServiceResolver(const SrvResolver                 &aSrvResolver,
+                               const DiscoveryCallbackIdentifier &aId,
+                               const SrvCallback                 &aCallback);
+    void  StopServiceResolver(const SrvResolver &aSrvResolver, const DiscoveryCallbackIdentifier &aId);
+    void  StartTxtResolver(const TxtResolver                 &aTxtResolver,
+                           const DiscoveryCallbackIdentifier &aId,
+                           const TxtCallback                 &aCallback);
+    void  StopTxtResolver(const TxtResolver &aTxtResolver, const DiscoveryCallbackIdentifier &aId);
+    void  StartIp6AddressResolver(const AddressResolver             &aAddressResolver,
+                                  const DiscoveryCallbackIdentifier &aId,
+                                  const AddressCallback             &aCallback);
+    void  StopIp6AddressResolver(const AddressResolver &aAddressResolver, const DiscoveryCallbackIdentifier &aId);
+    void  StartIp4AddressResolver(const AddressResolver             &aAddressResolver,
+                                  const DiscoveryCallbackIdentifier &aId,
+                                  const AddressCallback             &aCallback);
+    void  StopIp4AddressResolver(const AddressResolver &aAddressResolver, const DiscoveryCallbackIdentifier &aId);
+
+    void SetInvokingCallbacks(bool aInvokingCallbacks) { mInvokingCallbacks = aInvokingCallbacks; }
 
 private:
     static constexpr State kStateReady   = OT_PLAT_DNSSD_READY;
     static constexpr State kStateStopped = OT_PLAT_DNSSD_STOPPED;
+
+    class DnsName
+    {
+    public:
+        DnsName(std::string aName)
+            : mName(std::move(aName))
+        {
+        }
+
+        bool operator==(const DnsName &aOther) const
+        {
+            return StringUtils::ToLowercase(mName) == StringUtils::ToLowercase(aOther.mName);
+        }
+
+        bool operator<(const DnsName &aOther) const
+        {
+            return StringUtils::ToLowercase(mName) < StringUtils::ToLowercase(aOther.mName);
+        }
+
+    private:
+        std::string mName;
+    };
+
+    class DnsServiceType
+    {
+    public:
+        DnsServiceType(const char *aType, const char *aSubType)
+            : mType(aType ? aType : "")
+            , mSubType(aSubType ? aSubType : "")
+        {
+        }
+
+        bool operator==(const DnsServiceType &aOther) const
+        {
+            return StringUtils::ToLowercase(ToString()) == StringUtils::ToLowercase(aOther.ToString());
+        }
+
+        bool operator<(const DnsServiceType &aOther) const
+        {
+            return StringUtils::ToLowercase(ToString()) < StringUtils::ToLowercase(aOther.ToString());
+        }
+
+        const std::string ToString(void) const;
+
+    private:
+        std::string mType;
+        std::string mSubType;
+    };
+
+    class DnsServiceName
+    {
+    public:
+        DnsServiceName(std::string aInstance, std::string aType)
+            : mInstance(std::move(aInstance))
+            , mType(std::move(aType))
+        {
+        }
+
+        bool operator==(const DnsServiceName &aOther) const
+        {
+            return (mInstance == aOther.mInstance) && (mType == aOther.mType);
+        }
+
+        bool operator<(const DnsServiceName &aOther) const
+        {
+            return (mInstance == aOther.mInstance) ? (mType < aOther.mType) : (mInstance < aOther.mInstance);
+        }
+
+    private:
+        DnsName mInstance;
+        DnsName mType;
+    };
+
+    template <typename T> struct FirstFunctionArg;
+
+    template <typename R, typename Arg, typename... Rest> struct FirstFunctionArg<std::function<R(Arg, Rest...)>>
+    {
+        using Type = Arg;
+    };
+
+    template <typename CallbackType> class InfraIfCallbackTable
+    {
+    public:
+        using CallbackResultType = typename FirstFunctionArg<CallbackType>::Type;
+
+        void Add(uint64_t aInfraIfIndex, const DiscoveryCallbackIdentifier &aId, CallbackType aCallback)
+        {
+            mInfraIfCallbackTable[aInfraIfIndex][aId] = std::move(aCallback);
+        }
+
+        void Remove(uint64_t aInfraIfIndex, const DiscoveryCallbackIdentifier &aId)
+        {
+            auto itOuter = mInfraIfCallbackTable.find(aInfraIfIndex);
+            if (itOuter != mInfraIfCallbackTable.end())
+            {
+                auto itInner = itOuter->second.find(aId);
+                if (itInner != itOuter->second.end())
+                {
+                    itInner->second = nullptr;
+                }
+            }
+        }
+
+        bool HasAnyValidCallbacks(uint64_t aInfraIfIndex)
+        {
+            bool result = false;
+            auto it     = mInfraIfCallbackTable.find(aInfraIfIndex);
+
+            if (it != mInfraIfCallbackTable.end())
+            {
+                for (auto itInner : it->second)
+                {
+                    if (itInner.second)
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
+
+        void InvokeAllCallbacks(uint64_t aInfraIfIndex, CallbackResultType &aResult)
+        {
+            auto it = mInfraIfCallbackTable.find(aInfraIfIndex);
+
+            for (auto itInner : it->second)
+            {
+                if (itInner.second)
+                {
+                    itInner.second(aResult);
+                }
+            }
+        }
+
+        void CleanUpRemovedCallbacks(void)
+        {
+            for (auto itOuter = mInfraIfCallbackTable.begin(); itOuter != mInfraIfCallbackTable.end();)
+            {
+                for (auto itInner = itOuter->second.begin(); itInner != itOuter->second.end();)
+                {
+                    if (!itInner->second)
+                    {
+                        itInner = itOuter->second.erase(itInner);
+                    }
+                    else
+                    {
+                        ++itInner;
+                    }
+                }
+
+                if (itOuter->second.empty())
+                {
+                    itOuter = mInfraIfCallbackTable.erase(itOuter);
+                }
+                else
+                {
+                    ++itOuter;
+                }
+            }
+        }
+
+        bool IsEmpty(void) { return mInfraIfCallbackTable.empty(); }
+
+    private:
+        typedef std::map<DiscoveryCallbackIdentifier, CallbackType> CallbackMap;
+
+        std::map<uint64_t, CallbackMap> mInfraIfCallbackTable;
+    };
 
     void HandleMdnsState(Mdns::Publisher::State aState) override;
 
@@ -124,13 +332,40 @@ private:
 
     static std::string KeyNameFor(const Key &aKey);
 
+    static void HandleDiscoveredService(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo);
+    static void HandleDiscoveredHost(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aInfo);
+
+    void ProcessServiceBrowsers(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo);
+    void ProcessServiceResolvers(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo);
+    void ProcessTxtResolvers(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo);
+    void ProcessAddrResolvers(const std::string                                        &aHostName,
+                              const Mdns::Publisher::DiscoveredHostInfo                &aInfo,
+                              std::map<DnsName, InfraIfCallbackTable<AddressCallback>> &aResolversTable);
+    void ProcessIp6AddrResolvers(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aInfo);
+    void ProcessIp4AddrResolvers(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aInfo);
+
+    void StartAddressResolver(const AddressResolver                                    &aAddressResolver,
+                              const AddressCallback                                    &aCallback,
+                              const DiscoveryCallbackIdentifier                        &aId,
+                              std::map<DnsName, InfraIfCallbackTable<AddressCallback>> &aResolversTable);
+    void StopAddressResolver(const AddressResolver                                    &aAddressResolver,
+                             const DiscoveryCallbackIdentifier                        &aId,
+                             std::map<DnsName, InfraIfCallbackTable<AddressCallback>> &aResolversTable);
+
     static DnssdPlatform *sDnssdPlatform;
 
-    Mdns::Publisher         &mPublisher;
-    State                    mState;
-    bool                     mRunning;
-    Mdns::Publisher::State   mPublisherState;
-    DnssdStateChangeCallback mStateChangeCallback;
+    Mdns::Publisher                                               &mPublisher;
+    State                                                          mState;
+    bool                                                           mRunning;
+    bool                                                           mInvokingCallbacks;
+    Mdns::Publisher::State                                         mPublisherState;
+    DnssdStateChangeCallback                                       mStateChangeCallback;
+    uint64_t                                                       mSubscriberId;
+    std::map<DnsServiceType, InfraIfCallbackTable<BrowseCallback>> mServiceBrowsersTable;
+    std::map<DnsServiceName, InfraIfCallbackTable<SrvCallback>>    mServiceResolversTable;
+    std::map<DnsServiceName, InfraIfCallbackTable<TxtCallback>>    mTxtResolversTable;
+    std::map<DnsName, InfraIfCallbackTable<AddressCallback>>       mIp6AddrResolversTable;
+    std::map<DnsName, InfraIfCallbackTable<AddressCallback>>       mIp4AddrResolversTable;
 };
 
 } // namespace otbr

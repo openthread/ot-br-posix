@@ -55,6 +55,31 @@ target_link_libraries(otbr-gtest-unit
 )
 gtest_discover_tests(otbr-gtest-unit)
 
+add_executable(otbr-gtest-unit-dnssd
+    ${OTBR_PROJECT_DIRECTORY}/src/common/types.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/logging.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/host/posix/dnssd.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/mdns/mdns.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/utils/dns_utils.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/utils/string_utils.cpp
+    test_dnssd.cpp
+)
+target_compile_options(otbr-gtest-unit-dnssd
+    PRIVATE
+        -DOTBR_ENABLE_DNSSD_PLAT=1
+        -DOTBR_ENABLE_MDNS=1
+)
+target_include_directories(otbr-gtest-unit-dnssd
+    PRIVATE
+        ${OTBR_PROJECT_DIRECTORY}/include
+        ${OTBR_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/include
+)
+target_link_libraries(otbr-gtest-unit-dnssd
+    GTest::gmock_main
+)
+gtest_discover_tests(otbr-gtest-unit-dnssd)
+
 if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     add_executable(otbr-gtest-mdns-subscribe
         test_mdns_subscribe.cpp
