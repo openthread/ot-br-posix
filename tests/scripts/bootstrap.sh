@@ -118,7 +118,7 @@ case "$(uname)" in
         fi
 
         if [ "$BUILD_TARGET" == pretty-check ]; then
-            sudo apt-get install -y clang-format-16 shellcheck
+            sudo apt-get install -y clang-format-19 shellcheck
             sudo snap install shfmt
             npm install prettier@2.0.4
         fi
