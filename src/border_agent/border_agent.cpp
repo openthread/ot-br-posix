@@ -81,12 +81,12 @@
 namespace otbr {
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
-static const char kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Border agent service type of mDNS
-static const char kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Border agent ePSKc service
+static const char    kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Border agent service type of mDNS
+static const char    kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Border agent ePSKc service
+static constexpr int kBorderAgentServiceDummyPort   = 49152;
 #endif
 
-static constexpr int kBorderAgentServiceDummyPort = 49152;
-static constexpr int kEpskcRandomGenLen           = 8;
+static constexpr int kEpskcRandomGenLen = 8;
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 BorderAgent::BorderAgent(Mdns::Publisher &aPublisher)

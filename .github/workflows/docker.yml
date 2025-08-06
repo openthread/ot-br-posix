@@ -79,6 +79,7 @@ jobs:
             build_args: >-
               --build-arg REFERENCE_DEVICE=1
               --build-arg BORDER_ROUTING=0
+              --build-arg MDNS=mDNSResponder
               --build-arg NAT64=0
               --build-arg WEB_GUI=0
               --build-arg REST_API=0
