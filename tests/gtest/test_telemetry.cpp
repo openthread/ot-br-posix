@@ -29,16 +29,14 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT
-
 #define OTBR_LOG_TAG "TEST"
 
 #include <openthread/history_tracker.h>
 #include <openthread/platform/alarm-milli.h>
 
 #include "common/logging.hpp"
+#include "host/telemetry_retriever_border_agent.hpp"
 #include "proto/thread_telemetry.pb.h"
-#include "utils/telemetry_retriever_border_agent.hpp"
 
 // Mock implementations
 void otbrLog(otbrLogLevel, const char *, const char *, ...)
@@ -105,8 +103,8 @@ const otHistoryTrackerBorderAgentEpskcEvent *otHistoryTrackerIterateBorderAgentE
 // Test cases
 TEST(Telemetry, RetrieveEpskcJourneyInfoCorrectly)
 {
-    otbr::agent::TelemetryRetriever::BorderAgent retriever(nullptr);
-    threadnetwork::TelemetryData                 telemetryData;
+    otbr::TelemetryRetriever::BorderAgent retriever(nullptr);
+    threadnetwork::TelemetryData          telemetryData;
     auto borderAgentInfo = telemetryData.mutable_wpan_border_router()->mutable_border_agent_info();
 
     // 1. Add a basic Epskc journey and verify the fields are correct.
@@ -208,5 +206,3 @@ TEST(Telemetry, RetrieveEpskcJourneyInfoCorrectly)
     ASSERT_EQ(epskcJourneyInfo.deactivated_reason(),
               threadnetwork::TelemetryData::EPSKC_DEACTIVATED_REASON_SESSION_ERROR);
 }
-
-#endif // OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT

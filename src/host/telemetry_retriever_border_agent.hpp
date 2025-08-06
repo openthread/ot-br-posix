@@ -34,10 +34,11 @@
 #include <openthread/history_tracker.h>
 #include <openthread/instance.h>
 
+#include "common/logging.hpp"
+
 #include "proto/thread_telemetry.pb.h"
 
 namespace otbr {
-namespace agent {
 namespace TelemetryRetriever {
 
 class BorderAgent
@@ -55,7 +56,6 @@ private:
 };
 
 } // namespace TelemetryRetriever
-} // namespace agent
 } // namespace otbr
 
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT
