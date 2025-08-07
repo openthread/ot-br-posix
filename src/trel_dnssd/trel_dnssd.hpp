@@ -36,7 +36,7 @@
 
 #include "openthread-br/config.h"
 
-#if OTBR_ENABLE_TREL
+#if OTBR_ENABLE_TREL_DNSSD
 
 #include <assert.h>
 #include <utility>
@@ -188,6 +188,6 @@ private:
 
 } // namespace otbr
 
-#endif // OTBR_ENABLE_TREL
+#endif // OTBR_ENABLE_TREL_DNSSD
 
 #endif // OTBR_AGENT_TREL_DNSSD_HPP_

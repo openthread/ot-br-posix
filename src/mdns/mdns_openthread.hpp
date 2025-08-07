@@ -51,34 +51,8 @@ public:
     PublisherOpenThread(void);
     ~PublisherOpenThread(void) override;
 
-    void      UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
-    void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
-    void      UnpublishKey(const std::string &aName, ResultCallback &&aCallback) override;
-    void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
-    void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
-    void      SubscribeHost(const std::string &aHostName) override;
-    void      UnsubscribeHost(const std::string &aHostName) override;
     otbrError Start(void) override;
-    bool      IsStarted(void) const override;
     void      Stop(void) override;
-
-protected:
-    otbrError PublishServiceImpl(const std::string &aHostName,
-                                 const std::string &aName,
-                                 const std::string &aType,
-                                 const SubTypeList &aSubTypeList,
-                                 uint16_t           aPort,
-                                 const TxtData     &aTxtData,
-                                 ResultCallback   &&aCallback) override;
-    otbrError PublishHostImpl(const std::string &aName,
-                              const AddressList &aAddresses,
-                              ResultCallback   &&aCallback) override;
-    otbrError PublishKeyImpl(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback) override;
-    void      OnServiceResolveFailedImpl(const std::string &aType,
-                                         const std::string &aInstanceName,
-                                         int32_t            aErrorCode) override;
-    void      OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) override;
-    otbrError DnsErrorToOtbrError(int32_t aErrorCode) override;
 };
 
 } // namespace Mdns

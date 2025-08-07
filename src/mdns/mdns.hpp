@@ -123,6 +123,8 @@ public:
     typedef std::vector<Ip6Address>  AddressList;
     typedef std::vector<uint8_t>     KeyData;
 
+#if !OTBR_ENABLE_MDNS_OPENTHREAD
+
     /**
      * This structure represents information of a discovered service instance.
      */
@@ -169,6 +171,11 @@ public:
     using DiscoveredHostCallback =
         std::function<void(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo)>;
 
+    /** The callback for receiving the result of a operation. */
+    using ResultCallback = OnceCallback<void(otbrError aError)>;
+
+#endif // !OTBR_ENABLE_MDNS_OPENTHREAD
+
     /**
      * mDNS state values.
      */
@@ -180,9 +187,6 @@ public:
 
     /** The callback for receiving mDNS publisher state changes. */
     using StateCallback = std::function<void(State aNewState)>;
-
-    /** The callback for receiving the result of a operation. */
-    using ResultCallback = OnceCallback<void(otbrError aError)>;
 
     /**
      * This method starts the mDNS publisher.
@@ -196,6 +200,8 @@ public:
      * This method stops the mDNS publisher.
      */
     virtual void Stop(void) = 0;
+
+#if !OTBR_ENABLE_MDNS_OPENTHREAD
 
     /**
      * This method checks if publisher has been started.
@@ -352,6 +358,8 @@ public:
      */
     void RemoveSubscriptionCallbacks(uint64_t aSubscriberId);
 
+#endif // !OTBR_ENABLE_MDNS_OPENTHREAD
+
     /**
      * This method returns the mDNS statistics information of the publisher.
      *
@@ -413,6 +421,8 @@ public:
 
 protected:
     static constexpr uint8_t kMaxTextEntrySize = 255;
+
+#if !OTBR_ENABLE_MDNS_OPENTHREAD
 
     class Registration
     {
@@ -661,6 +671,8 @@ protected:
     std::map<std::pair<std::string, std::string>, Timepoint> mServiceInstanceResolutionBeginTime;
     // host name -> the timepoint to begin host resolution
     std::map<std::string, Timepoint> mHostResolutionBeginTime;
+
+#endif // !OTBR_ENABLE_MDNS_OPENTHREAD
 
     MdnsTelemetryInfo mTelemetryInfo{};
 };
