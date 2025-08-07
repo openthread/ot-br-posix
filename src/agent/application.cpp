@@ -354,10 +354,16 @@ void Application::InitNcpMode(void)
     ncpHost.InitInfraIfCallbacks(*mInfraIf);
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    ncpHost.SetMdnsPublisher(mPublisher.get());
     mMdnsStateSubject.AddObserver(ncpHost);
+#endif
+#if OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+    mMdnsStateSubject.AddObserver(mBorderAgent);
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY || (OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE)
+    ncpHost.SetMdnsPublisher(mPublisher.get());
     mPublisher->Start();
 #endif
+
 #if OTBR_ENABLE_BORDER_AGENT
     mHost.SetBorderAgentMeshCoPServiceChangedCallback(
         [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
