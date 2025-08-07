@@ -514,7 +514,7 @@ otbrError PublisherAvahi::Start(void)
 
 bool PublisherAvahi::IsStarted(void) const
 {
-    return mClient != nullptr;
+    return mClient != nullptr && mState == Mdns::Publisher::State::kReady;
 }
 
 void PublisherAvahi::Stop(void)
