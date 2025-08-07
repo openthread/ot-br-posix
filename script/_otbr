@@ -39,6 +39,9 @@ readonly BACKBONE_ROUTER
 NAT64="${NAT64:-1}"
 readonly NAT64
 
+OTBR_MDNS="${OTBR_MDNS:-openthread}"
+readonly OTBR_MDNS
+
 OTBR_OPTIONS="${OTBR_OPTIONS-}"
 readonly OTBR_OPTIONS
 
@@ -75,7 +78,7 @@ otbr_install()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
-        "-DOTBR_MDNS=${OTBR_MDNS:=mDNSResponder}"
+        "-DOTBR_MDNS=${OTBR_MDNS}"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="

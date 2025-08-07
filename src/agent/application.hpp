@@ -278,7 +278,7 @@ private:
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     std::unique_ptr<Dnssd::DiscoveryProxy> mDiscoveryProxy;
 #endif
-#if OTBR_ENABLE_TREL
+#if OTBR_ENABLE_TREL_DNSSD
     std::unique_ptr<TrelDnssd::TrelDnssd> mTrelDnssd;
 #endif
 #if OTBR_ENABLE_OPENWRT

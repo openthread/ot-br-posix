@@ -35,7 +35,7 @@
 . script/_nat64
 . script/_firewall
 
-OTBR_MDNS="${OTBR_MDNS:-mDNSResponder}"
+OTBR_MDNS="${OTBR_MDNS:-openthread}"
 OT_BACKBONE_CI="${OT_BACKBONE_CI:-0}"
 REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
 
