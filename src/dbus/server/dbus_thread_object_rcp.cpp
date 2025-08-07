@@ -1154,7 +1154,7 @@ otError DBusThreadObjectRcp::GetExternalRoutesHandler(DBusMessageIter &aIter)
         ExternalRoute route;
 
         route.mPrefix.mPrefix      = std::vector<uint8_t>(&config.mPrefix.mPrefix.mFields.m8[0],
-                                                     &config.mPrefix.mPrefix.mFields.m8[OTBR_IP6_PREFIX_SIZE]);
+                                                          &config.mPrefix.mPrefix.mFields.m8[OTBR_IP6_PREFIX_SIZE]);
         route.mPrefix.mLength      = config.mPrefix.mLength;
         route.mRloc16              = config.mRloc16;
         route.mPreference          = config.mPreference;

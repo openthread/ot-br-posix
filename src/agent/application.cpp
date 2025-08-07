@@ -426,11 +426,9 @@ void Application::SetBorderAgentOnInitState(void)
 #if OTBR_ENABLE_DBUS_SERVER
 DBus::DependentComponents Application::MakeDBusDependentComponents(void)
 {
-    return DBus::DependentComponents
-    {
-        mHost, *mPublisher,
+    return DBus::DependentComponents{mHost, *mPublisher,
 #if OTBR_ENABLE_BORDER_AGENT
-            mBorderAgent
+                                     mBorderAgent
 #endif
     };
 }

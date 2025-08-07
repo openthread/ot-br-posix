@@ -210,8 +210,7 @@ void DBusAgent::Process(const MainloopContext &aMainloop)
         dbus_watch_handle(watch, flags);
     }
 
-    while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_dispatch(mConnection.get()))
-        ;
+    while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_dispatch(mConnection.get()));
 }
 
 } // namespace DBus
