@@ -636,6 +636,9 @@ message TelemetryData {
 
     // Information about the Border Agent
     optional BorderAgentInfo border_agent_info = 14;
+
+    // Whether multi-AIL (Adjacent Infrastructure Link) scenario is detected
+    optional bool multi_ail_detected = 15;
   }
 
   message RcpStabilityStatistics {
