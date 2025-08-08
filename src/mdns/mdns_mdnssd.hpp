@@ -295,6 +295,7 @@ private:
                      const std::string &aDomain);
         void UpdateAll(MainloopContext &aMainloop) const;
         void ProcessAll(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
+        std::shared_ptr<ServiceInstanceResolution> ExtractResolution(const ServiceInstanceResolution * aResolution);
 
         static void HandleBrowseResult(DNSServiceRef       aServiceRef,
                                        DNSServiceFlags     aFlags,
