@@ -246,7 +246,6 @@ void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aIns
     // service callbacks. We clear it before invoking the callback
     // and restart the iteration over the `mDiscoverCallbacks` list
     // to find the next one to signal, since the list may have changed.
-
     for (DiscoverCallback &callback : mDiscoverCallbacks)
     {
         if (callback.mServiceCallback != nullptr)

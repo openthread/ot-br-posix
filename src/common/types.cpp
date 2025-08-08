@@ -126,6 +126,11 @@ void Ip6Address::CopyFrom(const struct in6_addr &aIn6Addr)
     memcpy(m8, aIn6Addr.s6_addr, sizeof(aIn6Addr.s6_addr));
 }
 
+void Ip6Address::CopyTo(otIp6Address &aAddress) const
+{
+    memcpy(aAddress.mFields.m8, m8, sizeof(aAddress.mFields.m8));
+}
+
 otbrError Ip6Address::FromString(const char *aStr, Ip6Address &aAddr)
 {
     int ret;
