@@ -48,8 +48,6 @@ add_library(otbr-common
 target_link_libraries(otbr-common
     PUBLIC otbr-config
     openthread-ftd
-    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
 )
 
 target_include_directories(otbr-common
