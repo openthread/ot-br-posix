@@ -51,10 +51,6 @@
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
 #include "mdns/mdns.hpp"
-#if OTBR_ENABLE_TELEMETRY_DATA_API
-#include "host/telemetry_retriever_border_agent.hpp"
-#include "proto/thread_telemetry.pb.h"
-#endif
 
 namespace otbr {
 namespace Host {
@@ -235,22 +231,6 @@ public:
 
     void DetachGracefully(ResultHandler aHandler);
 
-#if OTBR_ENABLE_TELEMETRY_DATA_API
-    /**
-     * This method populates the telemetry data with best effort. The best effort means, for a given
-     * telemetry, if its retrieval has error, it is left unpopulated and the process continues to
-     * retrieve the remaining telemetries instead of the immediately return. The error code
-     * OT_ERRROR_FAILED will be returned if there is one or more error(s) happened in the process.
-     *
-     * @param[in] aPublisher     The Mdns::Publisher to provide MDNS telemetry if it is not `nullptr`.
-     * @param[in] telemetryData  The telemetry data to be populated.
-     *
-     * @retval OTBR_ERROR_NONE  There is no error happened in the process.
-     * @retval OT_ERRROR_FAILED There is one or more error(s) happened in the process.
-     */
-    otError RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData);
-#endif // OTBR_ENABLE_TELEMETRY_DATA_API
-
     /**
      * This method logs OpenThread action result.
      *
@@ -302,20 +282,6 @@ private:
     static void BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState, void *aThreadHelper);
     void        BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState);
 #endif
-#if OTBR_ENABLE_TELEMETRY_DATA_API
-#if OTBR_ENABLE_BORDER_ROUTING
-    void RetrieveInfraLinkInfo(threadnetwork::TelemetryData::InfraLinkInfo &aInfraLinkInfo);
-    void RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes &aExternalRouteInfo);
-#endif
-#if OTBR_ENABLE_DHCP6_PD
-    void RetrievePdInfo(threadnetwork::TelemetryData::WpanBorderRouter *aWpanBorderRouter);
-    void RetrieveHashedPdPrefix(std::string *aHashedPdPrefix);
-    void RetrievePdProcessedRaInfo(threadnetwork::TelemetryData::PdProcessedRaInfo *aPdProcessedRaInfo);
-#endif
-#if OTBR_ENABLE_BORDER_AGENT
-    void RetrieveBorderAgentInfo(threadnetwork::TelemetryData::BorderAgentInfo *aBorderAgentInfo);
-#endif
-#endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
     otInstance *mInstance;
 
@@ -345,16 +311,6 @@ private:
 
 #if OTBR_ENABLE_DHCP6_PD
     Dhcp6PdStateCallback mDhcp6PdCallback;
-#endif
-
-#if OTBR_ENABLE_TELEMETRY_DATA_API
-#if (OTBR_ENABLE_NAT64 || OTBR_ENABLE_DHCP6_PD)
-    static constexpr uint8_t kNat64PdCommonHashSaltLength = 16;
-    uint8_t                  mNat64PdCommonSalt[kNat64PdCommonHashSaltLength];
-#endif
-#if OTBR_ENABLE_BORDER_AGENT
-    TelemetryRetriever::BorderAgent mTelemetryRetriverBorderAgent;
-#endif
 #endif
 };
 

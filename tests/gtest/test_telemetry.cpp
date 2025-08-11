@@ -35,7 +35,7 @@
 #include <openthread/platform/alarm-milli.h>
 
 #include "common/logging.hpp"
-#include "host/telemetry_retriever_border_agent.hpp"
+#include "host/telemetry/telemetry_retriever_border_agent.hpp"
 #include "proto/thread_telemetry.pb.h"
 
 // Mock implementations
