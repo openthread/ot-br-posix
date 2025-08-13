@@ -311,6 +311,13 @@ public:
      */
     void CopyFrom(const struct in6_addr &aIn6Addr);
 
+    /**
+     * This method copies the Ip6 address to an `otIp6Address` structure.
+     *
+     * @param[out] aAddress  The `otIp6Address` structure to copy the Ip6 address to.
+     */
+    void CopyTo(otIp6Address &aAddress) const;
+
     union
     {
         uint8_t  m8[16];
