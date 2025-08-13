@@ -118,7 +118,8 @@ case "$(uname)" in
         fi
 
         if [ "$BUILD_TARGET" == pretty-check ]; then
-            sudo apt-get install -y clang-format-19 shellcheck
+            sudo bash "$(dirname "$0")/install-llvm.sh"
+            sudo apt-get install -y shellcheck
             sudo snap install shfmt
             npm install prettier@2.0.4
         fi
