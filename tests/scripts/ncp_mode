@@ -232,6 +232,8 @@ test_setup()
     # Preparation for otbr-agent
     exists_or_die "${OTBR_DBUS_CONF}"
     sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d
+    sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
+    sudo systemctl reload dbus
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
