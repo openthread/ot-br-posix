@@ -513,6 +513,10 @@ otbrError PublisherMDnsSd::DnssdServiceRegistration::Register(void)
 
     VerifyOrExit(GetPublisher().IsStarted(), dnsError = kDNSServiceErr_ServiceNotRunning);
 
+    // Note: If the mDNSResponder service is in some bad state, `DNSServiceRegister` may block here for 60 seconds at
+    // most.
+    // TODO: Abort on `Timeout` error, as it indicates an unresponsive mDNSResponder. This may require removing
+    // `kDNSServiceErr_Timeout` from `IsRetryableError` and adding specific handling for it.
     dnsError = DNSServiceRegister(&mServiceRef, kDNSServiceFlagsNoAutoRename, kDNSServiceInterfaceIndexAny,
                                   serviceNameCString, regType.c_str(),
                                   /* domain */ nullptr, hostNameCString, htons(mPort), mTxtData.size(), mTxtData.data(),
