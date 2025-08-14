@@ -234,6 +234,10 @@ private:
         void      Resolve(void);
         otbrError GetAddrInfo(uint32_t aInterfaceIndex);
         void      FinishResolution(void);
+        bool      Matches(uint32_t           aInterfaceIndex,
+                          const std::string &aInstanceName,
+                          const std::string &aType,
+                          const std::string &aDomain) const;
 
         static void HandleResolveResult(DNSServiceRef        aServiceRef,
                                         DNSServiceFlags      aFlags,

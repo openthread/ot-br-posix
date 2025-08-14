@@ -50,6 +50,7 @@
 #include "common/logging.hpp"
 #include "common/time.hpp"
 #include "utils/dns_utils.hpp"
+#include "utils/string_utils.hpp"
 
 namespace otbr {
 
@@ -1214,9 +1215,20 @@ void PublisherMDnsSd::ServiceSubscription::Resolve(uint32_t           aInterface
                                                    const std::string &aType,
                                                    const std::string &aDomain)
 {
+    for (const std::shared_ptr<ServiceInstanceResolution> &resolution : mResolvingInstances)
+    {
+        if (resolution->Matches(aInterfaceIndex, aInstanceName, aType, aDomain))
+        {
+            ExitNow();
+        }
+    }
+
     mResolvingInstances.push_back(
         std::make_shared<ServiceInstanceResolution>(*this, aInstanceName, aType, aDomain, aInterfaceIndex));
     mResolvingInstances.back()->Resolve();
+
+exit:
+    return;
 }
 
 void PublisherMDnsSd::ServiceSubscription::UpdateAll(MainloopContext &aMainloop) const
@@ -1238,6 +1250,16 @@ void PublisherMDnsSd::ServiceSubscription::ProcessAll(const MainloopContext     
     {
         instance->Process(aMainloop, aReadyServices);
     }
+}
+
+bool PublisherMDnsSd::ServiceInstanceResolution::Matches(uint32_t           aInterfaceIndex,
+                                                         const std::string &aInstanceName,
+                                                         const std::string &aType,
+                                                         const std::string &aDomain) const
+{
+    return (mNetifIndex == aInterfaceIndex) && otbr::StringUtils::EqualCaseInsensitive(mInstanceName, aInstanceName) &&
+           otbr::StringUtils::EqualCaseInsensitive(mType, aType) &&
+           otbr::StringUtils::EqualCaseInsensitive(mDomain, aDomain);
 }
 
 void PublisherMDnsSd::ServiceInstanceResolution::Release(void)
