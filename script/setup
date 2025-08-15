@@ -37,6 +37,7 @@
 . script/_ipforward
 . script/_nat64
 . script/_dhcpv6_pd_ref
+. script/_systemd_networkd
 . script/_rt_tables
 . script/_firewall
 
@@ -46,6 +47,7 @@ main()
     . "$BEFORE_HOOK"
     otbr_uninstall
     border_routing_uninstall
+    systemd_networkd_uninstall
     dhcpv6_pd_ref_uninstall
     nat64_uninstall
     rt_tables_uninstall
@@ -57,6 +59,7 @@ main()
     rt_tables_install
     nat64_install
     dhcpv6_pd_ref_install
+    systemd_networkd_install
     border_routing_install
     otbr_install
     # shellcheck source=/dev/null
