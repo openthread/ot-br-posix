@@ -72,6 +72,8 @@ jobs:
       run: tests/scripts/bootstrap.sh
     - name: Run
       run: script/test build check
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Codecov
       uses: codecov/codecov-action@v5
 
