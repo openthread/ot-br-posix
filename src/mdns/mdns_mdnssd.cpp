@@ -1244,6 +1244,21 @@ void PublisherMDnsSd::ServiceSubscription::ProcessAll(const MainloopContext     
     }
 }
 
+std::shared_ptr<PublisherMDnsSd::ServiceInstanceResolution>
+PublisherMDnsSd::ServiceSubscription::ExtractResolution(const ServiceInstanceResolution * aResolution)
+{
+    for (auto it = mResolvingInstances.begin(); it != mResolvingInstances.end(); ++it)
+    {
+        if (it->get() == aResolution)
+        {
+            auto ptr = std::move(*it);
+            mResolvingInstances.erase(it);
+            return ptr;
+        }
+    }
+    return nullptr;
+}
+
 void PublisherMDnsSd::ServiceInstanceResolution::Release(void)
 {
     mInstanceInfo = {};
@@ -1416,9 +1431,19 @@ exit:
                                                                 aInstance->GetAddrInfo(aInterfaceIndex);
                                                             });
     }
-    else if ((!mInstanceInfo.mAddresses.empty() && !moreComing) || aErrorCode != kDNSServiceErr_NoError)
+    else
     {
-        FinishResolution();
+        std::shared_ptr<ServiceInstanceResolution> resolution {};
+        if (!moreComing)
+        {
+            // Remove ourself from the vector of open resolutions but stay in scope long enough for handlers.
+            // mSubscription might be freed after invoking FinishResolution so this needs to be done here.
+            resolution = mSubscription->ExtractResolution(this);
+        }
+        if ((!mInstanceInfo.mAddresses.empty() && !moreComing) || aErrorCode != kDNSServiceErr_NoError)
+        {
+            FinishResolution();
+        }
     }
 }
 
