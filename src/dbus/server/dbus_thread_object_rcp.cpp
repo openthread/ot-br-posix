@@ -308,6 +308,8 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::GetInfraLinkInfo, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TREL_INFO,
                                std::bind(&DBusThreadObjectRcp::GetTrelInfoHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MULTI_AIL_DETECTED,
+                               std::bind(&DBusThreadObjectRcp::GetMultiAilDetectedHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
                                std::bind(&DBusThreadObjectRcp::GetDnsUpstreamQueryState, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TELEMETRY_DATA,
@@ -1484,6 +1486,22 @@ exit:
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_TREL
+}
+
+otError DBusThreadObjectRcp::GetMultiAilDetectedHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_MULTI_AIL
+    otError    error      = OT_ERROR_NONE;
+    const bool isDetected = otBorderRoutingIsMultiAilDetected(mHost.GetInstance());
+
+    SuccessOrExit(DBusMessageEncodeToVariant(&aIter, isDetected), error = OT_ERROR_INVALID_ARGS);
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 otError DBusThreadObjectRcp::GetTelemetryDataHandler(DBusMessageIter &aIter)

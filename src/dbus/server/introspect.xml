@@ -979,6 +979,11 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- MultiAilDetected: Whether multiple AILs are detected in the Thread network. -->
+    <property name="MultiAilDetected" type="b" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- DnsUpstreamQueryState: Whether the server will / should forward DNS queries platform
     specified upstream DNS servers. -->
     <property name="DnsUpstreamQueryState" type="b" access="readwrite">
