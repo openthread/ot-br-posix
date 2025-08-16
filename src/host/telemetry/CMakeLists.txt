@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2025, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,40 +26,16 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_custom_target(otbr-dbus-introspect-header ALL
-    COMMAND echo "R\"INTROSPECT(" > introspect.hpp
-    COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml >> introspect.hpp
-    COMMAND echo ")INTROSPECT\"" >> introspect.hpp
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    VERBATIM
+add_library(otbr-telemetry
+    telemetry.cpp
+    telemetry.hpp
+    telemetry_retriever_border_agent.cpp
+    telemetry_retriever_border_agent.hpp
 )
 
-add_library(otbr-dbus-server STATIC
-    dbus_agent.cpp
-    dbus_object.cpp
-    dbus_thread_object_ncp.cpp
-    dbus_thread_object_rcp.cpp
-    error_helper.cpp
-)
-
-target_include_directories(otbr-dbus-server PRIVATE
-    ${PROJECT_BINARY_DIR}/src
-    ${PROJECT_SOURCE_DIR}/build/src
-)
-
-add_dependencies(otbr-dbus-server otbr-dbus-introspect-header)
-
-target_link_libraries(otbr-dbus-server PUBLIC
-    otbr-dbus-common
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-telemetry>
+target_link_libraries(otbr-telemetry
+    PUBLIC otbr-config
+    otbr-common
     otbr-proto
+    otbr-utils
 )
-
-if(OTBR_DOC)
-add_custom_target(otbr-dbus-server-doc ALL
-    COMMAND gdbus-codegen --generate-docbook generated-docs ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml
-    COMMAND xmlto html generated-docs-io.openthread.BorderRouter.xml
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    VERBATIM
-)
-endif()

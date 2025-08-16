@@ -137,7 +137,7 @@ gtest_discover_tests(otbr-gtest-host-api)
 
 if(OTBR_TELEMETRY_DATA_API)
     add_executable(otbr-gtest-telemetry
-        ${OTBR_PROJECT_DIRECTORY}/src/host/telemetry_retriever_border_agent.cpp
+        ${OTBR_PROJECT_DIRECTORY}/src/host/telemetry/telemetry_retriever_border_agent.cpp
         test_telemetry.cpp
     )
     target_compile_options(otbr-gtest-telemetry

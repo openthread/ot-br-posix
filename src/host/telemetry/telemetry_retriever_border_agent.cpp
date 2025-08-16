@@ -26,11 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT
-
 #define OTBR_LOG_TAG "TLM"
 
-#include "host/telemetry_retriever_border_agent.hpp"
+#include "telemetry_retriever_border_agent.hpp"
+
+#if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_AGENT
 
 #include <algorithm>
 
