@@ -1426,6 +1426,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 #if OTBR_ENABLE_BORDER_ROUTING
         RetrieveInfraLinkInfo(*wpanBorderRouter->mutable_infra_link_info());
         RetrieveExternalRouteInfo(*wpanBorderRouter->mutable_external_route_info());
+        wpanBorderRouter->set_multi_ail_detected(otBorderRoutingIsMultiAilDetected(mInstance));
 #endif
 
 #if OTBR_ENABLE_SRP_SERVER
