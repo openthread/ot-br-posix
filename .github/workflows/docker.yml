@@ -48,7 +48,7 @@ jobs:
       OTBR_COVERAGE: 1
       VERBOSE: 1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: true
     - name: Bootstrap
@@ -95,7 +95,7 @@ jobs:
             platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: no
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: true
 
