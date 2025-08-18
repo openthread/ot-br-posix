@@ -388,14 +388,16 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
         {0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc}};
     otbr::Ip6Address kMulAddr2 = {
         {0xff, 0x32, 0x00, 0x40, 0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x01}};
-    const char *kMulAddr1Str = "ff03::fc";
-    const char *kMulAddr2Str = "ff32:40:fd0d:7fc:a1b9:f050:0:1";
+    const char        *kMulAddr1Str      = "ff03::fc";
+    const char        *kMulAddr2Str      = "ff32:40:fd0d:7fc:a1b9:f050:0:1";
+    constexpr uint16_t kWaitTimeMilliSec = 100;
 
     otbr::Ip6Address testArray1[] = {
         kMulAddr1,
     };
     std::vector<otbr::Ip6Address> testVec1(testArray1, testArray1 + sizeof(testArray1) / sizeof(otbr::Ip6Address));
     netif.UpdateIp6MulticastAddresses(testVec1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(kWaitTimeMilliSec));
     std::vector<std::string> wpanMulAddrs = GetAllIp6MulAddrs(wpan);
     EXPECT_EQ(wpanMulAddrs.size(), 5);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr1Str));
@@ -407,6 +409,7 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
     otbr::Ip6Address              testArray2[] = {kMulAddr1, kMulAddr2};
     std::vector<otbr::Ip6Address> testVec2(testArray2, testArray2 + sizeof(testArray2) / sizeof(otbr::Ip6Address));
     netif.UpdateIp6MulticastAddresses(testVec2);
+    std::this_thread::sleep_for(std::chrono::milliseconds(kWaitTimeMilliSec));
     wpanMulAddrs = GetAllIp6MulAddrs(wpan);
     EXPECT_EQ(wpanMulAddrs.size(), 6);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr1Str));
@@ -419,6 +422,7 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
     otbr::Ip6Address              testArray3[] = {kDefaultMulAddr1};
     std::vector<otbr::Ip6Address> testVec3(testArray3, testArray3 + sizeof(testArray3) / sizeof(otbr::Ip6Address));
     netif.UpdateIp6MulticastAddresses(testVec3);
+    std::this_thread::sleep_for(std::chrono::milliseconds(kWaitTimeMilliSec));
     wpanMulAddrs = GetAllIp6MulAddrs(wpan);
     EXPECT_EQ(wpanMulAddrs.size(), 4);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
@@ -428,6 +432,7 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
 
     std::vector<otbr::Ip6Address> empty;
     netif.UpdateIp6MulticastAddresses(empty);
+    std::this_thread::sleep_for(std::chrono::milliseconds(kWaitTimeMilliSec));
     wpanMulAddrs = GetAllIp6MulAddrs(wpan);
     EXPECT_EQ(wpanMulAddrs.size(), 4);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
