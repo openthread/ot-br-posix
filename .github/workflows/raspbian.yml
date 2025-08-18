@@ -55,7 +55,7 @@ jobs:
       IMAGE_URL: ${{ matrix.image_url }}
       BUILD_TARGET: raspbian-gcc
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Bootstrap

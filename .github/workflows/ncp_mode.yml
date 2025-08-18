@@ -55,7 +55,7 @@ jobs:
         OTBR_VERBOSE: 1
         OTBR_OPTIONS: "-DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.4 -DOTBR_MDNS=${{ matrix.mdns }} -DOTBR_COVERAGE=ON -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_SRP_ADVERTISING_PROXY=ON -DBUILD_TESTING=OFF"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: true
     - name: Bootstrap
