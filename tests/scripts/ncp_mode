@@ -49,6 +49,9 @@ readonly OT_NCP
 OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE:-otbr-ncp}"
 readonly OTBR_DOCKER_IMAGE
 
+OTBR_MDNS="${OTBR_MDNS:-avahi}"
+readonly OTBR_MDNS
+
 ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
 readonly ABS_TOP_BUILDDIR
 
@@ -234,6 +237,9 @@ test_setup()
     sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d
     sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
     sudo systemctl reload dbus
+    if [[ ${OTBR_MDNS} == "mDNSResponder" ]]; then
+        sudo systemctl restart mdns
+    fi
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
@@ -289,6 +295,7 @@ otbr_exec_expect_script()
         sudo killall ot-ncp-mtd || true
         sudo rm -rf tmp
         mkdir tmp
+        # avahi-browser is used to discover the service and verify in the test cases no matter what OTBR_MDNS is.
         restart_avahi_daemon
         {
             sudo -E expect -df "${script}" 2>"${log_file}"
