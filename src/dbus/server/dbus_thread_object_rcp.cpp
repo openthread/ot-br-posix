@@ -106,6 +106,9 @@ DBusThreadObjectRcp::DBusThreadObjectRcp(DBusConnection            &aConnection,
                                          const DependentComponents &aDeps)
     : DBusObject(&aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mHost(static_cast<Host::RcpHost &>(aDeps.mHost))
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+    , mTelemetryRetriever(mHost.GetInstance())
+#endif
     , mPublisher(&aDeps.mPublisher)
 #if OTBR_ENABLE_BORDER_AGENT
     , mBorderAgent(aDeps.mBorderAgent)
@@ -1509,9 +1512,8 @@ otError DBusThreadObjectRcp::GetTelemetryDataHandler(DBusMessageIter &aIter)
 #if OTBR_ENABLE_TELEMETRY_DATA_API
     otError                      error = OT_ERROR_NONE;
     threadnetwork::TelemetryData telemetryData;
-    auto                         threadHelper = mHost.GetThreadHelper();
 
-    if (threadHelper->RetrieveTelemetryData(mPublisher, telemetryData) != OT_ERROR_NONE)
+    if (mTelemetryRetriever.RetrieveTelemetryData(mPublisher, telemetryData) != OT_ERROR_NONE)
     {
         otbrLogWarning("Some metrics were not populated in RetrieveTelemetryData");
     }
