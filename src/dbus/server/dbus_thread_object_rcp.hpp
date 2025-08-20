@@ -43,6 +43,7 @@
 #include "border_agent/border_agent.hpp"
 #include "dbus/server/dbus_object.hpp"
 #include "host/rcp_host.hpp"
+#include "host/telemetry/telemetry.hpp"
 #include "mdns/mdns.hpp"
 
 namespace otbr {
@@ -188,9 +189,13 @@ private:
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
 
-    otbr::Host::RcpHost                                 &mHost;
+    otbr::Host::RcpHost &mHost;
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+    otbr::Host::TelemetryRetriever mTelemetryRetriever;
+#endif
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
     otbr::Mdns::Publisher                               *mPublisher;
+
 #if OTBR_ENABLE_BORDER_AGENT
     otbr::BorderAgent &mBorderAgent;
 #endif

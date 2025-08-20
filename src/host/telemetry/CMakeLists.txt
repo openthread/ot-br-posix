@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2025, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,59 +26,16 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-name: MeshCoP
+add_library(otbr-telemetry
+    telemetry.cpp
+    telemetry.hpp
+    telemetry_retriever_border_agent.cpp
+    telemetry_retriever_border_agent.hpp
+)
 
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
-    branches:
-      - 'main'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
-  cancel-in-progress: true
-
-jobs:
-
-  meshcop:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        mdns: ["openthread", "avahi"]
-    steps:
-    - uses: actions/checkout@v5
-      with:
-        submodules: true
-    - name: Bootstrap
-      env:
-        BUILD_TARGET: "meshcop"
-        OTBR_MDNS: ${{ matrix.mdns }}
-      run: tests/scripts/bootstrap.sh
-    - name: Build
-      env:
-        OTBR_MDNS: ${{ matrix.mdns }}
-        OTBR_COVERAGE: 1
-      run: |
-        script/bootstrap
-        script/test build
-    - name: mDNS service
-      env:
-        TEST_CASE: "mdns_service"
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: MTD
-      env:
-        OT_CLI: "ot-cli-mtd"
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: FTD
-      env:
-        OT_CLI: "ot-cli-ftd"
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: Web Commissioner
-      env:
-        OTBR_USE_WEB_COMMISSIONER: 1
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: Codecov
-      uses: codecov/codecov-action@v5
+target_link_libraries(otbr-telemetry
+    PUBLIC otbr-config
+    otbr-common
+    otbr-proto
+    otbr-utils
+)

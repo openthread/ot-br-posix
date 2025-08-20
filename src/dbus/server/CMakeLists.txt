@@ -51,6 +51,7 @@ add_dependencies(otbr-dbus-server otbr-dbus-introspect-header)
 
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
+    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-telemetry>
     otbr-proto
 )
 
