@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+#  Copyright (c) 2025, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+# This script manages systemd-networkd configuration for the reference device
+# on Debian 12. It disables the DHCPv6 client in systemd-networkd to prevent
+# conflicts with OpenThread's DHCPv6 PD client.
+
+# The '00-' prefix gives this configuration a high priority. For a given
+# interface, systemd-networkd applies the first matching file it finds in
+# lexical order.
+NETWORK_FILE="/etc/systemd/network/00-${INFRA_IF_NAME}.network"
+
+create_network_file()
+{
+    sudo tee "${NETWORK_FILE}" >/dev/null <<EOF
+[Match]
+Name=${INFRA_IF_NAME}
+
+[IPv6AcceptRA]
+# Disable systemd-networkd's client to avoid port conflicts with OpenThread's built-in DHCPv6 PD client
+DHCPv6Client=no
+EOF
+}
+
+systemd_networkd_install()
+{
+    with SYSTEMD_NETWORKD || return 0
+
+    if ! have systemctl; then
+        die "This script requires systemctl!"
+    fi
+
+    # Stop NetworkManager service to let systemd-networkd take over
+    sudo systemctl stop NetworkManager || true
+    sudo systemctl disable NetworkManager || true
+
+    sudo systemctl daemon-reload
+
+    create_network_file
+
+    sudo systemctl enable systemd-networkd || die "Failed to enable systemd-networkd."
+    sudo systemctl restart systemd-networkd || die "Failed to restart systemd-networkd."
+}
+
+systemd_networkd_uninstall()
+{
+    with SYSTEMD_NETWORKD || return 0
+
+    if ! have systemctl; then
+        die "This script requires systemctl!"
+    fi
+
+    # Stop and disable systemd-networkd
+    sudo systemctl stop systemd-networkd || true
+    sudo systemctl disable systemd-networkd || true
+
+    # Remove the network configuration file
+    sudo rm -f "${NETWORK_FILE}"
+
+    sudo systemctl daemon-reload
+
+    # Restore original NetworkManager services
+    sudo systemctl enable NetworkManager || true
+    sudo systemctl start NetworkManager || true
+}
