@@ -230,6 +230,10 @@ private:
         {
         }
 
+        bool      Matches(uint32_t           aInterfaceIndex,
+                          const std::string &aInstanceName,
+                          const std::string &aType,
+                          const std::string &aDomain) const;
         void      Release(void);
         void      Resolve(void);
         otbrError GetAddrInfo(uint32_t aInterfaceIndex);
@@ -293,6 +297,10 @@ private:
                      const std::string &aInstanceName,
                      const std::string &aType,
                      const std::string &aDomain);
+        void Remove(uint32_t           aNetifIndex,
+                    const std::string &aInstanceName,
+                    const std::string &aType,
+                    const std::string &aDomain);
         void UpdateAll(MainloopContext &aMainloop) const;
         void ProcessAll(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
 
