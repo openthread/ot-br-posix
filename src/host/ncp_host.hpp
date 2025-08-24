@@ -146,6 +146,7 @@ public:
 
     void InitNetifCallbacks(Netif &aNetif);
     void InitInfraIfCallbacks(InfraIf &aInfraIf);
+    void SetHostPowerState(uint8_t aPowerState, const AsyncResultReceiver &aReceiver);
 
 private:
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY

@@ -64,6 +64,8 @@ otbrError DBusThreadObjectNcp::Init(void)
                    std::bind(&DBusThreadObjectNcp::LeaveHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCHEDULE_MIGRATION_METHOD,
                    std::bind(&DBusThreadObjectNcp::ScheduleMigrationHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_HOST_POWER_STATE_METHOD,
+                   std::bind(&DBusThreadObjectNcp::HostPowerStateHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 exit:
@@ -149,6 +151,26 @@ void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
     SuccessOrExit(error = agent::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
 
     mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObjectNcp::HostPowerStateHandler(DBusRequest &aRequest)
+{
+    otError error = OT_ERROR_NONE;
+    uint8_t state = 0;
+    auto    args  = std::tie(state);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    mHost.SetHostPowerState(state, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
         aRequest.ReplyOtResult(aError);
     });

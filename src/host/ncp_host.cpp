@@ -253,6 +253,16 @@ void NcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aC
     OT_UNUSED_VARIABLE(aCallback);
 }
 
+void NcpHost::SetHostPowerState(uint8_t aState, const AsyncResultReceiver &aReceiver)
+{
+    AsyncTaskPtr task;
+    auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    task = std::make_shared<AsyncTask>(errorHandler);
+    task->First([this, aState](AsyncTaskPtr aNext) { mNcpSpinel.SetHostPowerState(aState, std::move(aNext)); });
+    task->Run();
+}
+
 #if OTBR_ENABLE_BACKBONE_ROUTER
 void NcpHost::SetBackboneRouterEnabled(bool aEnabled)
 {

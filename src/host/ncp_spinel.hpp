@@ -406,6 +406,13 @@ public:
         mBackboneRouterMulticastListenerCallback = aCallback;
     }
 
+    /**
+     * This method sets the Host Power state on the NCP.
+     *
+     * @param[in] aState  The Host Power state.
+     */
+    void SetHostPowerState(uint8_t aState, AsyncTaskPtr aAsyncTask);
+
 private:
     using FailureHandler = std::function<void(otError)>;
 
@@ -525,6 +532,7 @@ private:
     AsyncTaskPtr mThreadSetEnabledTask;
     AsyncTaskPtr mThreadDetachGracefullyTask;
     AsyncTaskPtr mThreadErasePersistentInfoTask;
+    AsyncTaskPtr mSetHostPowerStateTask;
 
     Ip6AddressTableCallback                  mIp6AddressTableCallback;
     Ip6MulticastAddressTableCallback         mIp6MulticastAddressTableCallback;
