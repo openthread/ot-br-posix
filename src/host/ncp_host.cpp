@@ -307,12 +307,14 @@ void NcpHost::Update(MainloopContext &aMainloop)
     mCliDaemon.UpdateFdSet(aMainloop);
 }
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY || (OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE)
 void NcpHost::SetMdnsPublisher(Mdns::Publisher *aPublisher)
 {
     mNcpSpinel.SetMdnsPublisher(aPublisher);
 }
+#endif
 
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 void NcpHost::HandleMdnsState(Mdns::Publisher::State aState)
 {
     mNcpSpinel.DnssdSetState(aState);
