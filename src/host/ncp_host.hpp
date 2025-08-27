@@ -140,7 +140,7 @@ public:
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_MDNS
     void SetMdnsPublisher(Mdns::Publisher *aPublisher);
 #endif
 

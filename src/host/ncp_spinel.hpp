@@ -338,14 +338,16 @@ public:
      * @param[in] aState  The dnssd state.
      */
     void DnssdSetState(Mdns::Publisher::State aState);
+#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
+#if OTBR_ENABLE_MDNS
     /**
      * This method sets the mDNS Publisher object.
      *
      * @param[in] aPublisher  A pointer to the mDNS Publisher object.
      */
     void SetMdnsPublisher(otbr::Mdns::Publisher *aPublisher) { mPublisher = aPublisher; }
-#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#endif
 
     /**
      * This method sets a callback that will be invoked when there are any changes on the MeshCoP service from
@@ -513,7 +515,7 @@ private:
     TaskRunner mTaskRunner;
 
     PropsObserver *mPropsObserver;
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_MDNS
     otbr::Mdns::Publisher *mPublisher;
 #endif
 
