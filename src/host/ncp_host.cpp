@@ -307,7 +307,7 @@ void NcpHost::Update(MainloopContext &aMainloop)
     mCliDaemon.UpdateFdSet(aMainloop);
 }
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY || (OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE)
+#if OTBR_ENABLE_MDNS
 void NcpHost::SetMdnsPublisher(Mdns::Publisher *aPublisher)
 {
     mNcpSpinel.SetMdnsPublisher(aPublisher);

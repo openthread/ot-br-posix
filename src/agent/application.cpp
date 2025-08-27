@@ -359,7 +359,7 @@ void Application::InitNcpMode(void)
 #if OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mMdnsStateSubject.AddObserver(mBorderAgent);
 #endif
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY || (OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE)
+#if OTBR_ENABLE_MDNS
     ncpHost.SetMdnsPublisher(mPublisher.get());
     mPublisher->Start();
 #endif

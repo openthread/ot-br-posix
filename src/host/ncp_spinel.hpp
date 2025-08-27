@@ -340,7 +340,7 @@ public:
     void DnssdSetState(Mdns::Publisher::State aState);
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY || (OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE)
+#if OTBR_ENABLE_MDNS
     /**
      * This method sets the mDNS Publisher object.
      *
@@ -515,7 +515,7 @@ private:
     TaskRunner mTaskRunner;
 
     PropsObserver *mPropsObserver;
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY || (OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE)
+#if OTBR_ENABLE_MDNS
     otbr::Mdns::Publisher *mPublisher;
 #endif
 
