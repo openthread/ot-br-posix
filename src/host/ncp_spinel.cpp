@@ -1364,6 +1364,7 @@ void NcpSpinel::SetHostPowerState(uint8_t aState, AsyncTaskPtr aAsyncTask)
     EncodingFunc encodingFunc = [aState](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteUint8(aState); };
 
     VerifyOrExit(mSetHostPowerStateTask == nullptr, error = OT_ERROR_BUSY);
+    VerifyOrExit(aState <= SPINEL_HOST_POWER_STATE_ONLINE, error = OT_ERROR_INVALID_ARGS);
 
     SuccessOrExit(error = SetProperty(SPINEL_PROP_HOST_POWER_STATE, encodingFunc));
     mSetHostPowerStateTask = aAsyncTask;
