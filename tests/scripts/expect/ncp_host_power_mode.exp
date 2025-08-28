@@ -1,0 +1,71 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2025, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+set HOST_POWER_STATE_OFFLINE    "0"
+set HOST_POWER_STATE_DEEP_SLEEP "1"
+set HOST_POWER_STATE_RESERVED   "2"
+set HOST_POWER_STATE_LOW_POWER  "3"
+set HOST_POWER_STATE_ONLINE     "4"
+
+
+# Step 1. Start otbr-agent with a NCP
+spawn_node 1 otbr $::env(EXP_OT_NCP_PATH)
+sleep 1
+
+# Step 2. Send dbus command to set host power state on NCP.
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.SetHostPowerState "byte:${HOST_POWER_STATE_OFFLINE}"
+expect eof
+
+sleep 1
+
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.SetHostPowerState "byte:${HOST_POWER_STATE_DEEP_SLEEP}"
+expect eof
+
+sleep 1
+
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.SetHostPowerState "byte:${HOST_POWER_STATE_LOW_POWER}"
+expect eof
+
+sleep 1
+
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.SetHostPowerState "byte:${HOST_POWER_STATE_ONLINE}"
+expect eof
+
+sleep 1
+
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.SetHostPowerState "byte:${HOST_POWER_STATE_RESERVED}"
+expect eof
+
+
+# Shut down otbr-agent
+switch_node 1
+send "\x04"
+expect eof
