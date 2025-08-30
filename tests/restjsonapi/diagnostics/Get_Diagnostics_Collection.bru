@@ -1,0 +1,94 @@
+meta {
+  name: Get Diagnostics Collection
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/diagnostics
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].type: neq ""
+  res.body.data[0].attributes.created: isDefined
+}
+
+tests {
+  test("Data contains fields requested", function() {
+    const data = res.getBody().data;
+
+    const offset = res.getBody().meta.collection.offset;
+    const limit = res.getBody().meta.collection.limit;
+    const total = res.getBody().meta.collection.total;
+    
+    expect(data).to.be.an.instanceOf(Array);
+    expect(offset).to.be.a('number');
+    expect(limit).to.be.a('number');
+    expect(total).to.be.a('number');
+
+    expect(data).to.be.an.instanceOf(Array);
+    for (let i=0; i < total; i++){
+      let item = data[i];
+      expect(item).to.have.property("id");
+      expect(item).to.have.property("type");
+      expect(item).to.have.property("attributes");
+      expect(item.attributes).to.have.property("created");
+      expect(item.attributes.created).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/);
+      
+      if (item.type.includes("networkDiagnostics")){
+        expect(item.attributes).to.have.property("extAddress");
+        expect(item.attributes).to.have.property("rloc16");
+        if (item.attributes.hasOwnProperty("ipv6Addresses")){
+          expect(item.attributes).to.have.property("isLeader");
+          expect(item.attributes).to.have.property("hostsService");
+          expect(item.attributes).to.have.property("isPrimaryBBR");
+          expect(item.attributes).to.have.property("isBorderRouter");
+        }
+
+        if (item.attributes.hasOwnProperty("macCounters")){
+          expect(item.attributes).to.have.property("mleCounters");
+        }
+
+        if (item.attributes.hasOwnProperty("route")){
+          expect(item.attributes).to.have.property("childTable");
+          expect(item.attributes).to.have.property("children");
+          expect(item.attributes).to.have.property("childIpv6Addresses");
+          expect(item.attributes).to.have.property("routerNeighbors");
+        }
+
+        if (item.attributes.hasOwnProperty("eui64")){
+          expect(item.attributes).to.have.property("version");
+          expect(item.attributes).to.have.property("vendorName");
+          expect(item.attributes).to.have.property("vendorModel");
+          expect(item.attributes).to.have.property("vendorSwVersion");
+          expect(item.attributes).to.have.property("threadStackVersion");
+        }
+      }
+  
+      if (item.type.includes("energyScanReport")){
+        expect(item.attributes).to.have.property("origin");
+        expect(item.attributes).to.have.property("report");
+        expect(item.attributes.report).to.be.an.instanceOf(Array);
+        expect(item.attributes.report[0]).to.have.property("channel");
+        expect(item.attributes.report[0]).to.have.property("maxRssi");
+      }
+    }
+  });
+}
+
+docs {
+  Return all items stored in the Diagnostics Collection.
+}

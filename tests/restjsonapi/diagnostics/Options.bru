@@ -1,0 +1,17 @@
+meta {
+  name: Options
+  type: http
+  seq: 1
+}
+
+options {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/diagnostics
+  body: none
+  auth: none
+}
+
+assert {
+  res.headers['allow']: contains OPTIONS
+  res.headers['allow']: contains GET
+  res.headers['allow']: contains DELETE
+}

@@ -108,7 +108,10 @@ otbr_install()
     fi
 
     if with REST_API; then
-        otbr_options+=("-DOTBR_REST=ON")
+        otbr_options+=(
+            "-DOTBR_REST=ON"
+            "-DCPPHTTPLIB_REQUEST_URI_MAX_LENGTH=2048" # see cpp-httlplib issue #1288 and related.
+        )
     fi
 
     if without BACKBONE_ROUTER; then
