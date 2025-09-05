@@ -595,6 +595,43 @@ test_meshcop_service()
     fi
 }
 
+# test the REST API server
+test_restapi()
+{
+    exit_message="Error in REST API server test"
+    cd tests/restjsonapi
+    exists_or_die install_bruno_cli
+    exists_or_die test-restjsonapi-server
+    executable_or_die test-restjsonapi-server
+    ./install_bruno_cli || die "Failed to install bruno cli"
+
+    test_setup
+    ba_start
+    # We want a formed network
+    web_start
+    network_form
+
+    ./setDUTdestination.sh "${OT_CTL}" || die "Failed to set DUT destination"
+
+    # Run the test-restjsonapi-server.sh script repeatedly.
+    for i in {1..3}; do
+        test_result=$(./test-restjsonapi-server 2>&1)
+        if grep -qi "error" <<<"${test_result}"; then
+            echo "Error found in test-restjsonapi-server on iteration $i"
+            echo "${test_result}"
+            exit 1
+        fi
+    done
+
+    cd ../..
+
+    # Validate conformance of openapi.yaml specification with the REST API server implementation.
+    python3 -m pip install --user "schemathesis>=4.0.5" || die "Failed to install schemathesis"
+    schemathesis run src/rest/openapi.yaml --url=http://localhost:8081 --include-path-regex="/api/.*" --phases=examples
+
+    exit_message="Successful REST API server test."
+}
+
 test_commissioning()
 {
     test_setup
@@ -613,6 +650,8 @@ main()
 {
     if [ "${TEST_CASE}" == "mdns_service" ]; then
         test_meshcop_service
+    elif [ "${TEST_CASE}" == "http_restapi" ]; then
+        test_restapi
     else
         test_commissioning
     fi

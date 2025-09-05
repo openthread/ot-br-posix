@@ -1,0 +1,17 @@
+meta {
+  name: Options
+  type: http
+  seq: 7
+}
+
+options {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: none
+  auth: none
+}
+
+assert {
+  res.headers['allow']: contains OPTIONS
+  res.headers['allow']: contains GET
+  res.headers['allow']: contains DELETE
+}
