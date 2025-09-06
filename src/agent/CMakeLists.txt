@@ -40,6 +40,7 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
+    $<$<BOOL:${OTBR_TREL_DNSSD}>:otbr-trel-dnssd>
     openthread-cli-ftd
     openthread-ftd
     openthread-spinel-rcp
