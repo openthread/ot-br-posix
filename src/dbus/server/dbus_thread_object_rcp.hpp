@@ -107,7 +107,7 @@ private:
     void GetPropertiesHandler(DBusRequest &aRequest);
     void LeaveNetworkHandler(DBusRequest &aRequest);
     void SetNat64Enabled(DBusRequest &aRequest);
-#if OTBR_ENABLE_BORDER_AGENT
+#if OTBR_ENABLE_EPSKC
     void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
     void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
 #endif
@@ -122,7 +122,7 @@ private:
     otError SetRadioRegionHandler(DBusMessageIter &aIter);
     otError SetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError SetNat64Cidr(DBusMessageIter &aIter);
-#if OTBR_ENABLE_BORDER_AGENT
+#if OTBR_ENABLE_EPSKC
     otError SetEphemeralKeyEnabled(DBusMessageIter &aIter);
 #endif
 
@@ -178,7 +178,7 @@ private:
     otError GetNat64Mappings(DBusMessageIter &aIter);
     otError GetNat64ProtocolCounters(DBusMessageIter &aIter);
     otError GetNat64ErrorCounters(DBusMessageIter &aIter);
-#if OTBR_ENABLE_BORDER_AGENT
+#if OTBR_ENABLE_EPSKC
     otError GetEphemeralKeyEnabled(DBusMessageIter &aIter);
 #endif
     otError GetInfraLinkInfo(DBusMessageIter &aIter);
