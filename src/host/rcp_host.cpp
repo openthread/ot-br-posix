@@ -248,7 +248,7 @@ void RcpHost::Init(void)
     {
         otError result = otSetStateChangedCallback(mInstance, &RcpHost::HandleStateChanged, this);
 
-        agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
+        ThreadHelper::LogOpenThreadResult("Set state callback", result);
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
 
@@ -290,7 +290,7 @@ void RcpHost::Init(void)
     otBorderAgentSetMeshCoPServiceChangedCallback(mInstance, RcpHost::HandleMeshCoPServiceChanged, this);
     otBorderAgentEphemeralKeySetCallback(mInstance, RcpHost::HandleEpskcStateChanged, this);
 
-    mThreadHelper = MakeUnique<otbr::agent::ThreadHelper>(mInstance, this);
+    mThreadHelper = MakeUnique<ThreadHelper>(mInstance, this);
 
     OtNetworkProperties::SetInstance(mInstance);
 

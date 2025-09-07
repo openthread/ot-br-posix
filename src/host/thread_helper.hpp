@@ -54,12 +54,8 @@
 
 namespace otbr {
 namespace Host {
-class RcpHost;
-}
-} // namespace otbr
 
-namespace otbr {
-namespace agent {
+class RcpHost;
 
 /**
  * This class implements Thread helper.
@@ -314,7 +310,7 @@ private:
 #endif
 };
 
-} // namespace agent
+} // namespace Host
 } // namespace otbr
 
 #endif // OTBR_THREAD_HELPER_HPP_
