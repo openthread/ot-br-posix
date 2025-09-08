@@ -28,6 +28,7 @@
 
 add_executable(otbr-agent
     application.cpp
+    realmain.cpp
     main.cpp
     uris.hpp
     vendor.hpp

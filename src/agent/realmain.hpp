@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2025, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,9 +26,41 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "agent/realmain.hpp"
+/**
+ * @file
+ *   This file includes definition for the real main method of the OTBR Agent.
+ */
 
-int main(int argc, char *argv[])
-{
-    return otbr::RealMain(argc, argv);
-}
+#ifndef OTBR_AGENT_REAL_MAIN_HPP_
+#define OTBR_AGENT_REAL_MAIN_HPP_
+
+#include <stdint.h>
+
+namespace otbr {
+
+/**
+ * @addtogroup border-router-agent
+ *
+ * @brief
+ *   This module includes definition for the real main method of the OTBR Agent.
+ *
+ * @{
+ */
+
+/**
+ * This method runs the real main method of the OTBR Agent until exit.
+ *
+ * @param[in] argc  The number of arguments.
+ * @param[in] argv  A pointer to an argument list.
+ *
+ * @returns The exit code.
+ */
+int RealMain(int argc, char *argv[]);
+
+/**
+ * @}
+ */
+
+} // namespace otbr
+
+#endif // OTBR_AGENT_REAL_MAIN_HPP_
