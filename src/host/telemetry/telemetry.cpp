@@ -976,6 +976,7 @@ void TelemetryRetriever::RetrieveBorderAgentInfo(threadnetwork::TelemetryData::B
     auto baCounters            = aBorderAgentInfo->mutable_border_agent_counters();
     auto otBorderAgentCounters = *otBorderAgentGetCounters(mInstance);
 
+#if OTBR_ENABLE_EPSKC
     baCounters->set_epskc_activations(otBorderAgentCounters.mEpskcActivations);
     baCounters->set_epskc_deactivation_clears(otBorderAgentCounters.mEpskcDeactivationClears);
     baCounters->set_epskc_deactivation_timeouts(otBorderAgentCounters.mEpskcDeactivationTimeouts);
@@ -988,14 +989,15 @@ void TelemetryRetriever::RetrieveBorderAgentInfo(threadnetwork::TelemetryData::B
     baCounters->set_epskc_secure_session_failures(otBorderAgentCounters.mEpskcSecureSessionFailures);
     baCounters->set_epskc_commissioner_petitions(otBorderAgentCounters.mEpskcCommissionerPetitions);
 
+    mTelemetryRetrieverBorderAgent.RetrieveEpskcJourneyInfo(aBorderAgentInfo);
+#endif
+
     baCounters->set_pskc_secure_session_successes(otBorderAgentCounters.mPskcSecureSessionSuccesses);
     baCounters->set_pskc_secure_session_failures(otBorderAgentCounters.mPskcSecureSessionFailures);
     baCounters->set_pskc_commissioner_petitions(otBorderAgentCounters.mPskcCommissionerPetitions);
 
     baCounters->set_mgmt_active_get_reqs(otBorderAgentCounters.mMgmtActiveGets);
     baCounters->set_mgmt_pending_get_reqs(otBorderAgentCounters.mMgmtPendingGets);
-
-    mTelemetryRetrieverBorderAgent.RetrieveEpskcJourneyInfo(aBorderAgentInfo);
 }
 #endif // OTBR_ENABLE_BORDER_AGENT
 
