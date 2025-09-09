@@ -172,7 +172,7 @@ static void PrintVersion(void)
     printf("%s\n", OTBR_PACKAGE_VERSION);
 }
 
-static void OnAllocateFailed(void)
+[[noreturn]] static void OnAllocateFailed(void)
 {
     otbrLogCrit("Allocate failure, exiting...");
     exit(1);
@@ -200,7 +200,7 @@ static otbrLogLevel GetDefaultLogLevel(void)
     return level;
 }
 
-static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
+[[noreturn]] static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
 {
     auto host = std::unique_ptr<otbr::Host::ThreadHost>(
         otbr::Host::ThreadHost::Create(/* aInterfaceName */ "", aRadioUrls,
