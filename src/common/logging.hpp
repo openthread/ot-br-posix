@@ -41,7 +41,7 @@
 #include <openthread/platform/logging.h>
 
 #ifndef OTBR_LOG_TAG
-#define OTBR_LOG_TAG ""
+#define OTBR_LOG_TAG "OTBR"
 #endif
 
 #include "common/types.hpp"
