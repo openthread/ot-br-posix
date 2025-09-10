@@ -122,7 +122,7 @@
                 .ok('Okay')
             );
         };
-        $scope.showPanels = function(index) {
+        $scope.showPanels = async function(index) {
             $scope.headerTitle = $scope.menu[index].title;
             for (var i = 0; i < 7; i++) {
                 $scope.menu[i].show = false;
@@ -156,8 +156,8 @@
                 });
             }
             if (index == 6) {
+                await $scope.showTopology();
                 $scope.dataInit();
-                $scope.showTopology();
             }
         };
 
@@ -437,8 +437,8 @@
 
         // Basic information line
         $scope.basicInfo = {
-            'NetworkName' : 'Unknown',
-            'LeaderData'  :{'LeaderRouterId' : 'Unknown'}
+            'networkName' : 'Unknown',
+            'leaderData'  :{'leaderRouterId' : 'Unknown'}
         }
         // Num of router calculated by diagnostic
         $scope.NumOfRouter = 'Unknown';
@@ -447,34 +447,73 @@
         $scope.nodeDetailInfo = 'Unknown';
         // For response of Diagnostic
         $scope.networksDiagInfo = '';
+        $scope.deviceList = '';
         $scope.graphisReady = false;
         $scope.detailList = {
-            'ExtAddress': { 'title': false, 'content': true },
-            'Rloc16': { 'title': false, 'content': true },
-            'Mode': { 'title': false, 'content': false },
-            'Connectivity': { 'title': false, 'content': false },
-            'Route': { 'title': false, 'content': false },
-            'LeaderData': { 'title': false, 'content': false },
-            'NetworkData': { 'title': false, 'content': true },
-            'IP6Address List': { 'title': false, 'content': true },
-            'MACCounters': { 'title': false, 'content': false },
-            'ChildTable': { 'title': false, 'content': false },
-            'ChannelPages': { 'title': false, 'content': false }
+            'extAddress': { 'title': true, 'content': true },
+            'rloc16': { 'title': true, 'content': true },
+            'ipv6Addresses': { 'title': false, 'content': false },
+            'routerNeighbor': { 'title': true, 'content': false },
+            'route': { 'title': true, 'content': false },
+            'leaderData': { 'title': false, 'content': false },
+            'networkData': { 'title': false, 'content': true },
+            'macCounters': { 'title': false, 'content': false },
+            'childTable': { 'title': true, 'content': false },
+            'channelPages': { 'title': false, 'content': false },
+            'mode': { 'title': false, 'content': false },
+            'timeout': { 'title': false, 'content': false },
+            'connectivity': { 'title': false, 'content': false },
+            'batteryLevel': { 'title': false, 'content': false },
+            'supplyVoltage': { 'title': false, 'content': false },
+            'maxChildTimeout': { 'title': false, 'content': false },
+            'lDevIdSubject': { 'title': false, 'content': false },
+            'iDevIdCert': { 'title': false, 'content': false },
+            'eui64': { 'title': false, 'content': false },
+            'version': { 'title': false, 'content': false },
+            'vendorName': { 'title': false, 'content': false },
+            'vendorModel': { 'title': false, 'content': false },
+            'vendorSwVersion': { 'title': false, 'content': false },
+            'threadStackVersion': { 'title': false, 'content': false },
+            'children': { 'title': false, 'content': false },
+            'childIpv6Addresses': { 'title': false, 'content': false },
+            'mleCounters': { 'title': false, 'content': false }
         };
+        
         $scope.graphInfo = {
             'nodes': [],
             'links': []
         }
 
-        $scope.dataInit = function() {
+        $scope.dataInit = async function(maxRetries = 10) {
+            let attempts = 0;
+            let response;
+        
+            while (attempts < maxRetries) {
+                try {
+                    attempts++;
+                    response = await $http.get('http://' + $scope.ipAddr + '/api/node',{
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    break; 
+                } catch (error) {
+                    if (error.status !== 400) {
+                        // Log the error
+                        console.warn(`Attempt ${attempts} failed with a ${error.status} error. Retrying...`);
+                    }
+                }
+            }
+            if (attempts === maxRetries) {
+                console.error(`Failed to fetch devices after ${maxRetries} attempts.`);
+            }
 
-            $http.get('http://' + $scope.ipAddr + '/node').then(function(response) {
-
-                $scope.basicInfo = response.data;
-                console.log(response.data);
-                $scope.basicInfo.Rloc16 = $scope.intToHexString($scope.basicInfo.Rloc16,4);
-                $scope.basicInfo.LeaderData.LeaderRouterId = '0x' + $scope.intToHexString($scope.basicInfo.LeaderData.LeaderRouterId,2);
-            });
+            $scope.basicInfo = response.data;
+            console.log($scope.basicInfo.networkName);
+            console.log($scope.basicInfo.leaderData.leaderRouterId);
+            $scope.basicInfo.rloc16 = $scope.intToHexString($scope.basicInfo.rloc16, 4);
+            $scope.basicInfo.leaderData.leaderRouterId = '0x' + $scope.intToHexString($scope.basicInfo.leaderData.leaderRouterId, 2);
+            $scope.$apply();
         }
         $scope.isObject = function(obj) {
             return obj.constructor === Object;
@@ -496,117 +535,340 @@
             }
             return value;
         }
-        $scope.showTopology = function() {
-            var nodeMap = {}
-            var count, src, dist, rloc, child, rlocOfParent, rlocOfChild, diagOfNode, linkNode, childInfo;
+
+        // Body for POST request to /actions endpoint with default TLVs
+        $scope.RequestBodyDefault = {
+            "data": [
+                {
+                "type": "getNetworkDiagnosticTask",
+                "attributes": {
+                    "destination": null,
+                    "types": [],
+                    "timeout": 60
+                    }
+                }
+            ]
+        }
+
+        // Body for POST request to /actions endpoint
+        $scope.RequestBody = {}
+
+        // Returns request body for given destination
+        $scope.createRequestBody = function(destination) {
+            var Body = angular.copy($scope.RequestBody);
+            Body.data[0].attributes.destination = destination;
+            //console.log(Body);
+            return Body;
+        }
+
+        // Add TLV to request body
+        $scope.updateRequestBody = function() {
+            $scope.RequestBody = angular.copy($scope.RequestBodyDefault);
+
+            // Iterate over each key in detailList to check which TLVs should be included in the request body
+            Object.keys($scope.detailList).forEach(function(key) {
+                if ($scope.detailList[key].title === true) {
+                    $scope.RequestBody.data[0].attributes.types.push(key);
+                }
+            });
+        }
+
+        // Sleep for given time
+        $scope.sleep = async function(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // GET request to check action status
+        $scope.getActionStatus = async function(action_id) {
+
+            const response = await $http.get('http://' + $scope.ipAddr + '/api/actions/' + action_id, {
+                headers: {
+                    'Accept': 'application/vnd.api+json'
+                }
+            });
+
+            let status = response.data.data.attributes.status;
+
+            return status;
+        }
+
+        // POST request to retrieve list of devices
+        $scope.fetchDevices = async function (maxRetries = 3) {
+            let attempts = 0;
+            let devicesResponse;
+        
+            while (attempts < maxRetries) {
+                try {
+                    attempts++;
+                    devicesResponse = await $http.post('http://' + $scope.ipAddr + '/api/devices', {}, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    break; 
+                } catch (error) {
+                    if (error.status !== 400) {
+                        // Log the error
+                        console.warn(`Attempt ${attempts} failed with a ${error.status} error. Retrying...`);
+                    }
+                }
+            }
+        
+            if (attempts === maxRetries) {
+                console.error(`Failed to fetch devices after ${maxRetries} attempts.`);
+            }
+        
+            return devicesResponse; // Return the successful response
+        }
+
+        // POST request to cause action that fetches device diagnostic, then poll action status until completed
+        $scope.fetchDeviceDiagnostic = async function(id) {
+            let stopped = false;
+
+            do {
+                // Fetch device diagnostics
+                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBody(id), {
+                    headers: {
+                        'Content-Type': 'application/vnd.api+json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                let action_id = postResponse.data.data[0].id; 
+                console.log("action_id:", action_id);
+
+                // Polling of action status
+                let time = 0.0;
+                stopped = false;
+                while (true) {
+                    const status = await $scope.getActionStatus(action_id);
+                    if (status === "completed") {
+                        console.log("Completed action in %fs (id: %s)", time, id);
+                        break; // Exit the loop if the action is completed
+                    }
+                    if (status === "stopped") {
+                        console.log("Oops... Action stopped (id: %s)", id);
+                        stopped = false; //true
+                        break; // Break out to retry the POST request
+                    }
+                    await $scope.sleep(500);
+                    time += 0.5;
+                }
+            } while (stopped);  
+        }
+
+        $scope.fetchDiagnosticsForDevices = async function(devices) {
+            // Create an array of promises for each device diagnostic fetch
+            let promises = devices.map(async (device) => {
+                let id = device.extAddress; // Assume each device has a unique 'id'
+                if (device.role !== "child") { // Ignore child diagnostics
+                    await $scope.fetchDeviceDiagnostic(id); // Fetch diagnostic for each device
+                }
+            });
+        
+            // Wait for all promises to resolve (all diagnostics to be fetched)
+            await Promise.all(promises);
+        };
+
+        // Deduplicate node entries based on "extAddress" and only retain newest entries
+        $scope.dedupNetworksDiagEntries = function() {
+            const networksDiagInfoDedup = Object.values($scope.networksDiagInfo.reduce((acc, entry) => {
+                const extAddress = entry.extAddress;
+                const createdDate = entry.created;
+            
+                // If no entry exists for this extAddress, or the current entry is newer, update the accumulator
+                if (!acc[extAddress] || new Date(createdDate) > new Date(acc[extAddress].created)) {
+                    acc[extAddress] = entry;
+                }
+            
+                return acc;
+            }, {}));
+
+            return networksDiagInfoDedup;
+        }
+
+        // Remove children node entries based on "rloc16"
+        $scope.removeChildren = function() {
+            
+            const filteredEntries = $scope.networksDiagInfo.filter(entry => {
+                return entry.rloc16.endsWith('00'); // Keep entries where rloc16 ends with '00'
+            });
+        
+            return filteredEntries;
+        };
+
+        // Behaviour upon pressing show Topology button
+        $scope.showTopology = async function() {
+            console.log("show topology...");  // Debugging log message
 
             $scope.graphisReady = false;
             $scope.graphInfo = {
                 'nodes': [],
                 'links': []
             };
-            $http.get('http://' + $scope.ipAddr + '/diagnostics').then(function(response) {
+            
+            // Consider TLV checkboxes
+            $scope.updateRequestBody();
 
+            try {
+                // Fetch the list of devices
+                devicesResponse = await $scope.fetchDevices();
+        
+                const devices = devicesResponse.data;
+                console.log("devices:", devices);
                 
-                $scope.networksDiagInfo = response.data;
-                for (diagOfNode of $scope.networksDiagInfo){
-                    
-                    diagOfNode['RouteId'] = '0x' + $scope.intToHexString(diagOfNode['Rloc16'] >> 10,2);
-                    
-                    diagOfNode['Rloc16'] = '0x' + $scope.intToHexString(diagOfNode['Rloc16'],4);
-                    
-                    diagOfNode['LeaderData']['LeaderRouterId'] = '0x' + $scope.intToHexString(diagOfNode['LeaderData']['LeaderRouterId'],2);
-                    for (linkNode of diagOfNode['Route']['RouteData']){
-                        linkNode['RouteId'] = '0x' + $scope.intToHexString(linkNode['RouteId'],2);
+                // Delete diagnostics entries
+                const deleteResponse = await $http.delete('http://' + $scope.ipAddr + '/api/diagnostics');
+                console.log("deleted diagnostics");
+
+                // Fetch the list of devices
+                const getResponse1 = await $http.get('http://' + $scope.ipAddr + '/api/diagnostics', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                $scope.networksDiagInfo = getResponse1.data;
+
+                // SANITY CHECK: Make sure response is empty after deletion
+                console.log('networksDiagInfo:', $scope.networksDiagInfo);
+
+                // Loop over each device and fetch diagnostics
+                await $scope.fetchDiagnosticsForDevices(devices);
+
+                // Fetch the list of device diagnostics
+                const getResponse = await $http.get('http://' + $scope.ipAddr + '/api/diagnostics', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                $scope.networksDiagInfo = getResponse.data;
+
+                // Once all diagnostics have been fetched
+                console.log('networksDiagInfo:', $scope.networksDiagInfo);
+
+                // Remove duplicate entries
+                $scope.networksDiagInfo = $scope.dedupNetworksDiagEntries();
+                $scope.networksDiagInfo = $scope.removeChildren();
+                console.log('networksDiagInfo after dedup:', $scope.networksDiagInfo);
+        
+                // Build Topology based on networksDiagInfo and render Graph
+                $scope.buildTopology();
+                $scope.drawGraph();
+
+                console.log("Graph rendered");
+        
+            } catch (error) {
+                console.error('Error fetching device diagnostics:', error);
+            }
+        };
+
+        // Build Topology by populating $scope.graphInfo based on $scope.networksDiagInfo
+        $scope.buildTopology = function() {
+            var nodeMap = {};
+            var count, src, dist, rloc, child, rlocOfParent, rlocOfChild, diagOfNode, linkNode, childInfo;
+
+            // Ensure consistent routerID and rloc16 across all nodes
+            for (diagOfNode of $scope.networksDiagInfo){
+                diagOfNode['routerId'] = '0x' + $scope.intToHexString(diagOfNode['routerId'],2);
+                if ('leaderData' in diagOfNode) {
+                    diagOfNode['leaderData']['leaderRouterId'] = '0x' + $scope.intToHexString(diagOfNode['leaderData']['leaderRouterId'],2);
+                }
+
+                if ('route' in diagOfNode) { // Router is connected to network
+                    for (linkNode of diagOfNode['route']['routeData']){
+                        linkNode['routeId'] = '0x' + $scope.intToHexString(linkNode['routeId'], 2);
                     }
                 }
-                
-                count = 0;
-                
-                for (diagOfNode of $scope.networksDiagInfo) {
-                    if ('ChildTable' in diagOfNode) {
-                        
-                        rloc = parseInt(diagOfNode['Rloc16'],16).toString(16);
-                        nodeMap[rloc] = count;
-                        
-                        if ( diagOfNode['RouteId'] == diagOfNode['LeaderData']['LeaderRouterId']) {
-                            diagOfNode['Role'] = 'Leader';
-                        } else {
-                            diagOfNode['Role'] = 'Router';
-                        }
+            }
+            
+            // Count nodes
+            count = 0;
+            // Populate nodes list
+            for (diagOfNode of $scope.networksDiagInfo) {
+                if ('childTable' in diagOfNode) {
 
-                        $scope.graphInfo.nodes.push(diagOfNode);
-                        
-                        if (diagOfNode['Rloc16'] === $scope.basicInfo.rloc16) {
-                            $scope.nodeDetailInfo = diagOfNode
+                    rloc = diagOfNode['rloc16'];
+                    nodeMap[rloc] = count;
+                    
+                    if (diagOfNode['isLeader'] == true) {
+                        diagOfNode['role'] = 'Leader';
+                    } else {
+                        diagOfNode['role'] = 'Router';
+                    }
+
+                    $scope.graphInfo.nodes.push(diagOfNode); 
+                    
+                    if (diagOfNode['rloc16'] === $scope.basicInfo.rloc16) {
+                        $scope.nodeDetailInfo = diagOfNode
+                    }
+                    count = count + 1;
+                }
+            }
+            // Num of Router is based on the diagnostic information
+            $scope.NumOfRouter = count;
+            
+            // Index for a second loop
+            src = 0;
+            // Construct links 
+            for (diagOfNode of $scope.networksDiagInfo) {
+                if ('childTable' in diagOfNode) {
+                    // Link between routers
+                    for (linkNode of diagOfNode['route']['routeData']) {
+                        rloc = (parseInt(linkNode['routeId'], 16) << 10).toString(16).padStart(4, '0');
+                        if (rloc in nodeMap) {
+                            dist = nodeMap[rloc];
+                            if (src < dist) {
+                                $scope.graphInfo.links.push({
+                                    'source': src,
+                                    'target': dist,
+                                    'weight': 1,
+                                    'type': 0,
+                                    'linkInfo': {
+                                        'inQuality': linkNode['linkQualityIn'],
+                                        'outQuality': linkNode['linkQualityOut']
+                                    }
+                                });
+                            }
                         }
+                    }
+
+                    // Link between router and child 
+                    for (childInfo of diagOfNode['childTable']) {
+                        child = {};
+                        rlocOfParent = diagOfNode['rloc16']
+                        rlocOfChild = (parseInt(diagOfNode['rloc16'], 16) + childInfo['childId']).toString(16);
+                        rlocOfChild = rlocOfChild.padStart(4, '0'); // Padding to ensure 4-character hex string
+
+                        src = nodeMap[rlocOfParent];
+                        
+                        child['rloc16'] = rlocOfChild;
+                        child['routerId'] = diagOfNode['routerId'];
+                        nodeMap[rlocOfChild] = count;
+                        child['role'] = 'Child';
+                        $scope.graphInfo.nodes.push(child);
+                        $scope.graphInfo.links.push({
+                            'source': src,
+                            'target': count,
+                            'weight': 1,
+                            'type': 1,
+                            'linkInfo': {
+                                'Timeout': childInfo['timeout'],
+                                'Mode': childInfo['mode']
+                            }
+
+                        });
+
                         count = count + 1;
                     }
                 }
-                // Num of Router is based on the diagnostic information
-                $scope.NumOfRouter = count;
-                
-                // Index for a second loop
-                src = 0;
-                // Construct links 
-                for (diagOfNode of $scope.networksDiagInfo) {
-                    if ('ChildTable' in diagOfNode) {
-                        // Link bewtwen routers
-                        for (linkNode of diagOfNode['Route']['RouteData']) {
-                            rloc = ( parseInt(linkNode['RouteId'],16) << 10).toString(16);
-                            if (rloc in nodeMap) {
-                                dist = nodeMap[rloc];
-                                if (src < dist) {
-                                    $scope.graphInfo.links.push({
-                                        'source': src,
-                                        'target': dist,
-                                        'weight': 1,
-                                        'type': 0,
-                                        'linkInfo': {
-                                            'inQuality': linkNode['LinkQualityIn'],
-                                            'outQuality': linkNode['LinkQualityOut']
-                                        }
-                                    });
-                                }
-                            }
-                        }
+                src = src + 1;
+            }
 
-                        // Link between router and child 
-                        for (childInfo of diagOfNode['ChildTable']) {
-                            child = {};
-                            rlocOfParent = parseInt(diagOfNode['Rloc16'],16).toString(16);
-                            rlocOfChild = (parseInt(diagOfNode['Rloc16'],16) + childInfo['ChildId']).toString(16);
+            console.log("graphInfo:", $scope.graphInfo);
 
-                            src = nodeMap[rlocOfParent];
-                            
-                            child['Rloc16'] = '0x' + rlocOfChild;
-                            child['RouteId'] = diagOfNode['RouteId'];
-                            nodeMap[rlocOfChild] = count;
-                            child['Role'] = 'Child';
-                            $scope.graphInfo.nodes.push(child);
-                            $scope.graphInfo.links.push({
-                                'source': src,
-                                'target': count,
-                                'weight': 1,
-                                'type': 1,
-                                'linkInfo': {
-                                    'Timeout': childInfo['Timeout'],
-                                    'Mode': childInfo['Mode']
-                                }
-
-                            });
-
-                            count = count + 1;
-                        }
-                    }
-                    src = src + 1;
-                }
-               
-                $scope.drawGraph();
-            })
         }
-
         
+
         $scope.updateDetailLabel = function() {
             for (var detailInfoKey in $scope.detailList) {
                 $scope.detailList[detailInfoKey]['title'] = false;
@@ -615,83 +877,107 @@
                 if (diagInfoKey in $scope.detailList) {
                     $scope.detailList[diagInfoKey]['title'] = true;
                 }
-
             }
         }
 
         
+        // Initialize the slider model
+        $scope.thresholdFrameErrorRate = 20;
+
+        // Draw SVG
         $scope.drawGraph = function() {
             var json, svg, tooltip, force;
             var scale, len;
+            
+            console.log("D3: updating SVG");
 
             document.getElementById('topograph').innerHTML = '';
             scale = $scope.graphInfo.nodes.length;
-            len = 125 * Math.sqrt(scale);
+            len = 50 * Math.sqrt(scale) + 200;
 
-            // Topology graph
-            svg = d3.select('.d3graph').append('svg')
-                .attr('preserveAspectRatio', 'xMidYMid meet')
-                .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + (len / (3 / 2)).toString(10));
-            
+            // Create the zoom behavior
+            var zoom = d3.behavior.zoom()
+                .scaleExtent([0.5, 3]) 
+                .on('zoom', zoomed);
+
+            function zoomed() {
+                svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+            }
+        
             // Legend
-            svg.append('circle')
-                .attr('cx',len-20)
-                .attr('cy',10).attr('r', 3)
+            svgLegend = d3.select('.d3graph').append('svg')
+                .attr('preserveAspectRatio', 'xMidYMid meet')
+                .attr('viewBox', '0, 0, ' + len.toString(10) + ',' + (len/7).toString(10))
+
+                    
+            const scale_legend = len/250;
+
+            svgLegend.append('circle')
+                .attr('cx',len-20 * scale_legend)
+                .attr('cy',10 * scale_legend).attr('r', 3 * scale_legend)
                 .style('fill', "#7e77f8")
                 .style('stroke', '#484e46')
                 .style('stroke-width', '0.4px');
             
-            svg.append('circle')
-                .attr("cx",len-20)
-                .attr('cy',20)
-                .attr('r', 3)
+            svgLegend.append('circle')
+                .attr("cx",len-20 * scale_legend)
+                .attr('cy',20 * scale_legend)
+                .attr('r', 3 * scale_legend)
                 .style('fill', '#03e2dd')
                 .style('stroke', '#484e46')
                 .style('stroke-width', '0.4px');
             
-            svg.append('circle')
-                .attr('cx',len-20)
-                .attr('cy',30)
-                .attr('r', 3)
+            svgLegend.append('circle')
+                .attr('cx',len-20 * scale_legend)
+                .attr('cy',30 * scale_legend)
+                .attr('r', 3 * scale_legend)
                 .style('fill', '#aad4b0')
                 .style('stroke', '#484e46')
                 .style('stroke-width', '0.4px')
                 .style('stroke-dasharray','2 1');
-           
-            svg.append('circle')
-                .attr('cx',len-50)
-                .attr('cy',10).attr('r', 3)
+        
+            svgLegend.append('circle')
+                .attr('cx',len-50 * scale_legend)
+                .attr('cy',10 * scale_legend).attr('r', 3 * scale_legend)
                 .style('fill', '#ffffff')
                 .style('stroke', '#f39191')
                 .style('stroke-width', '0.4px');
             
-            svg.append('text')
-                .attr('x', len-15)
-                .attr('y', 10)
+            svgLegend.append('text')
+                .attr('x', len-15 * scale_legend)
+                .attr('y', 10 * scale_legend)
                 .text('Leader')
-                .style('font-size', '4px')
+                .style('font-size', (4 * scale_legend).toString(10) + 'px')
                 .attr('alignment-baseline','middle');
             
-            svg.append('text')
-                .attr('x', len-15)
-                .attr('y',20 )
+            svgLegend.append('text')
+                .attr('x', len-15 * scale_legend)
+                .attr('y',20 * scale_legend )
                 .text('Router')
-                .style('font-size', '4px')
+                .style('font-size', (4 * scale_legend).toString(10) + 'px')
                 .attr('alignment-baseline','middle');
             
-            svg.append('text')
-                .attr('x', len-15)
-                .attr('y',30 )
+            svgLegend.append('text')
+                .attr('x', len-15 * scale_legend)
+                .attr('y',30 * scale_legend )
                 .text('Child')
-                .style('font-size', '4px')
+                .style('font-size', (4 * scale_legend).toString(10) + 'px')
                 .attr('alignment-baseline','middle');
             
-            svg.append('text')
-                .attr('x', len-45)
-                .attr('y',10 )
+            svgLegend.append('text')
+                .attr('x', len-45 * scale_legend)
+                .attr('y',10 * scale_legend)
                 .text('Selected')
-                .style('font-size', '4px')
+                .style('font-size', (4 * scale_legend).toString(10) + 'px')
                 .attr('alignment-baseline','middle');
+
+
+            // Topology graph
+            svg = d3.select('.d3graph').append('svg')
+                .attr('preserveAspectRatio', 'xMidYMid meet')
+                .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + len.toString(10))
+                .call(zoom) // Attach the zoom behavior
+                .append('g')  // Group for zoomable content
 
             // Tooltip style  for each node
             tooltip = d3.select('body')
@@ -703,23 +989,39 @@
                 .text('a simple tooltip');
 
             force = d3.layout.force()
-                .distance(40)
-                .size([len, len / (3 / 2)]);
+                .distance(function(link) {
+                    return link.type ? 50 : (link.linkInfo.inQuality ? 100 / link.linkInfo.inQuality + 50 : 250);
+                })
+                .charge(-50)
+                .linkStrength(0.5)
+                .size([len, len]);
 
-            
             json = $scope.graphInfo;
            
             force
                 .nodes(json.nodes)
                 .links(json.links)
                 .start();
-
+            
+            // Define color scale for errorRate
+            var colorScale = d3.scale.linear()
+            .domain([0, 0.5, 0.75, 1]) // Define points for each color stop
+            .range(['green', 'yellow', 'orange', 'red']); // Green for low error rate, red for high        
 
             var link = svg.selectAll('.link')
                 .data(json.links)
                 .enter().append('line')
                 .attr('class', 'link')
-                .style('stroke', '#908484')
+                // Color-grade based on errorRate
+                .style('stroke', function(item) {
+                    const target = item.source.routerNeighbor.find(neighbor => neighbor.rloc16 === item.target.rloc16);
+                    //console.log(target);
+                    if (target && target["frameErrorRate"] >= $scope.thresholdFrameErrorRate/100) {
+                        return colorScale(target.frameErrorRate);
+                    } else {
+                        return '#908484'; // Default color
+                    }
+                })
                 // Dash line for link between child and parent
                 .style('stroke-dasharray', function(item) {
                     if ('Timeout' in item.linkInfo) return '4 4';
@@ -728,13 +1030,13 @@
                 // Line width representing link quality
                 .style('stroke-width', function(item) {
                     if ('inQuality' in item.linkInfo)
-                        return Math.sqrt(item.linkInfo.inQuality/2);
-                    else return Math.sqrt(0.5)
+                        return Math.sqrt(item.linkInfo.inQuality);
+                    else return 1;
                 })
-                // Effect of mouseover on a line
+                // Effect of mouseover on a link
                 .on('mouseover', function(item) {
                     return tooltip.style('visibility', 'visible')
-                        .text(item.linkInfo);
+                        .text(JSON.stringify(item.linkInfo));
                 })
                 .on('mousemove', function() {
                     return tooltip.style('top', (d3.event.pageY - 10) + 'px')
@@ -749,13 +1051,13 @@
                 .data(json.nodes)
                 .enter().append('g')
                 .attr('class', function(item) {
-                        return item.Role;
+                        return item.role;
                 })
                 .call(force.drag)
                 // Tooltip effect of mouseover on a node 
                 .on('mouseover', function(item) {
                     return tooltip.style('visibility', 'visible')
-                                  .text(item.Rloc16 );
+                                  .text(item.rloc16);
                 })
                 .on('mousemove', function() {
                     return tooltip.style('top', (d3.event.pageY - 10) + 'px')
@@ -773,11 +1075,11 @@
                 .style('stroke-dasharray','2 1')
                 .style('stroke-width', '0.5px')
                 .attr('class', function(item) {
-                    return item.Rloc16;
+                    return item.rloc16;
                 })
                 .on('mouseover', function(item) {
                     return tooltip.style('visibility', 'visible')
-                                  .text(item.Rloc16 );
+                                  .text(item.rloc16);
                 })
                 .on('mousemove', function() {
                     return tooltip.style('top', (d3.event.pageY - 10) + 'px')
@@ -803,7 +1105,7 @@
                         .transition()
                         .attr('r','9');
                     return tooltip.style('visibility', 'visible')
-                                  .text(item.Rloc16);
+                                  .text(item.rloc16);
                 })
                 .on('mousemove', function() {
                     return tooltip.style('top', (d3.event.pageY - 10) + 'px')
@@ -823,7 +1125,6 @@
                         .style('stroke-width', '1px');
                     $scope.$apply(function() {
                         $scope.nodeDetailInfo = item;
-                        $scope.updateDetailLabel();
                     });
                 });
             d3.selectAll('.Router')
@@ -838,7 +1139,7 @@
                         .transition()
                         .attr('r','8');
                     return tooltip.style('visibility', 'visible')
-                                  .text(item.Rloc16);
+                                  .text(item.rloc16);
                 })
                 .on('mousemove', function() {
                     return tooltip.style('top', (d3.event.pageY - 10) + 'px')
@@ -860,7 +1161,6 @@
                         .style('stroke-width', '1px');
                     $scope.$apply(function() {
                         $scope.nodeDetailInfo = item;
-                        $scope.updateDetailLabel();
                     });
                 });
 
@@ -874,8 +1174,8 @@
                 });
             });
             
-            $scope.updateDetailLabel();
             $scope.graphisReady = true;
+            //$scope.$apply(); // Force reload of SVG element
 
         }
     };

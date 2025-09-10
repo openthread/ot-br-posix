@@ -1,0 +1,33 @@
+meta {
+  name: Post Dummy Task
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": [
+      {
+        "type": "dummyTask",
+        "attributes": {
+          "bla": "bla"
+        }
+      }
+    ]
+  }
+}
+
+assert {
+  res.body: isJson
+  res.status: eq 422
+}
