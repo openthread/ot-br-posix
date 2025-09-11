@@ -51,7 +51,7 @@
 #include "host/rcp_host.hpp"
 
 namespace otbr {
-namespace agent {
+namespace Host {
 namespace {
 const Tlv *FindTlv(uint8_t aTlvType, const uint8_t *aTlvs, int aTlvsSize)
 {
@@ -781,5 +781,5 @@ exit:
     return error;
 }
 
-} // namespace agent
+} // namespace Host
 } // namespace otbr

@@ -148,7 +148,7 @@ void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
     std::copy(dataset.begin(), dataset.end(), pendingOpDatasetTlvs.mTlvs);
     pendingOpDatasetTlvs.mLength = dataset.size();
 
-    SuccessOrExit(error = agent::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
+    SuccessOrExit(error = Host::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
 
     mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);

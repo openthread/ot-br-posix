@@ -130,7 +130,7 @@ public:
      *
      * @retval The pointer to the helper object.
      */
-    otbr::agent::ThreadHelper *GetThreadHelper(void)
+    ThreadHelper *GetThreadHelper(void)
     {
         assert(mThreadHelper != nullptr);
         return mThreadHelper.get();
@@ -282,10 +282,10 @@ private:
 
     otInstance *mInstance;
 
-    otPlatformConfig                           mConfig;
-    std::unique_ptr<otbr::agent::ThreadHelper> mThreadHelper;
-    std::vector<std::function<void(void)>>     mResetHandlers;
-    TaskRunner                                 mTaskRunner;
+    otPlatformConfig                       mConfig;
+    std::unique_ptr<ThreadHelper>          mThreadHelper;
+    std::vector<std::function<void(void)>> mResetHandlers;
+    TaskRunner                             mTaskRunner;
 
     std::vector<ThreadStateChangedCallback>       mThreadStateChangedCallbacks;
     std::vector<ThreadEnabledStateCallback>       mThreadEnabledStateChangedCallbacks;
