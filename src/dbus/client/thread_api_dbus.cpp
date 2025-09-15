@@ -883,6 +883,11 @@ ClientError ThreadApiDBus::AttachAllNodesTo(const std::vector<uint8_t> &aDataset
     return CallDBusMethodSync(OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD, args);
 }
 
+ClientError ThreadApiDBus::SetBorderAgentEnabled(bool aEnabled)
+{
+    return CallDBusMethodSync(OTBR_DBUS_SET_BORDER_AGENT_ENABLED_METHOD, std::tie(aEnabled));
+}
+
 ClientError ThreadApiDBus::UpdateVendorMeshCopTxtEntries(std::vector<TxtEntry> &aUpdate)
 {
     auto args = std::tie(aUpdate);
