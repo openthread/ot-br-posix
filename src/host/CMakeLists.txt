@@ -46,6 +46,7 @@ add_library(otbr-host
 
 target_link_libraries(otbr-host
     PUBLIC
+        openthread-ftd
         $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
     PRIVATE
         otbr-common
