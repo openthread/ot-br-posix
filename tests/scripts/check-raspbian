@@ -66,7 +66,7 @@ cd /home/pi/repo
 echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
 apt-get update --allow-releaseinfo-change
 apt-get install -y --no-install-recommends git python3-pip
-su -c 'RELEASE=1 script/bootstrap' pi
+RELEASE=1 script/bootstrap
 
 # Pin CMake version to 3.10.3 for issue https://github.com/openthread/ot-br-posix/issues/728.
 # For more background, see https://gitlab.kitware.com/cmake/cmake/-/issues/20568.
@@ -79,7 +79,7 @@ pip3 install scikit-build
 pip3 install cmake==3.10.3
 cmake --version
 
-su -c 'RELEASE=1 script/setup' pi
+RELEASE=1 script/setup
 deactivate
 rm -rf "\${TEMP_VENV_DIR}"
 EOF
