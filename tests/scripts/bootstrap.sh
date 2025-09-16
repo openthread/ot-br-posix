@@ -149,7 +149,7 @@ case "$(uname)" in
 
         # Prepare Raspbian image
         if [ "$BUILD_TARGET" == raspbian-gcc ]; then
-            sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
+            sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu-system qemu-user-static binfmt-support parted
 
             (mkdir -p docker-rpi-emu \
                 && cd docker-rpi-emu \
