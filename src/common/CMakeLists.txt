@@ -47,11 +47,11 @@ add_library(otbr-common
 
 target_link_libraries(otbr-common
     PUBLIC otbr-config
-    openthread-ftd
 )
 
 target_include_directories(otbr-common
     PUBLIC
-        ${OPENTHREAD_PROJECT_DIRECTORY}/src/posix/platform/include
+        ${OPENTHREAD_PROJECT_DIRECTORY}/include
         ${OPENTHREAD_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src/posix/platform/include
 )
