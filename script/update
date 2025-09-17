@@ -37,7 +37,7 @@
 . script/_otbr
 . script/_ipforward
 . script/_nat64
-. script/_dhcpv6_pd
+. script/_dhcpv6_pd_ref
 
 main()
 {
@@ -46,7 +46,7 @@ main()
     # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
     otbr_uninstall
-    dhcpv6_pd_uninstall
+    dhcpv6_pd_ref_uninstall
     nat64_uninstall
     ipforward_uninstall
     border_routing_uninstall
@@ -54,7 +54,7 @@ main()
     border_routing_install
     ipforward_install
     nat64_install
-    dhcpv6_pd_install
+    dhcpv6_pd_ref_install
     otbr_update
     # shellcheck source=/dev/null
     . "$AFTER_HOOK"
