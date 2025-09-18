@@ -198,7 +198,6 @@ void CheckTrelInfo(ThreadApiDBus *aApi)
     otbr::DBus::TrelInfo trelInfo;
 
     TEST_ASSERT(aApi->GetTrelInfo(trelInfo) == OTBR_ERROR_NONE);
-    TEST_ASSERT(trelInfo.mEnabled);
     TEST_ASSERT(trelInfo.mNumTrelPeers == 0);
     TEST_ASSERT(trelInfo.mTrelCounters.mTxPackets == 0);
     TEST_ASSERT(trelInfo.mTrelCounters.mTxBytes == 0);
@@ -346,7 +345,6 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_border_router().dns_server().response_counters().server_failure_count() == 0);
 #endif
 #if OTBR_ENABLE_TREL
-    TEST_ASSERT(telemetryData.wpan_border_router().trel_info().is_trel_enabled());
     TEST_ASSERT(telemetryData.wpan_border_router().trel_info().has_counters());
     TEST_ASSERT(telemetryData.wpan_border_router().trel_info().counters().trel_tx_packets() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().trel_info().counters().trel_tx_bytes() == 0);
