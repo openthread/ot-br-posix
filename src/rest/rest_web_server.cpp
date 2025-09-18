@@ -1828,6 +1828,7 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
         {
             otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
             self->mServer.set_ipv6_v6only(false);
+            self->mServer.set_default_headers({{"Access-Control-Allow-Origin", "*"}});
             if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
             {
                 otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(), aRestListenPort);
