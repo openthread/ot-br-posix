@@ -335,13 +335,16 @@
               <p>TLV List:</p>
               <md-checkbox ng-model="detailList.mode.title">mode</md-checkbox>
               <md-checkbox ng-model="detailList.connectivity.title">connectivity</md-checkbox>
+              <md-checkbox ng-model="detailList.route.title">route</md-checkbox>
               <md-checkbox ng-model="detailList.leaderData.title">leaderData</md-checkbox>
               <md-checkbox ng-model="detailList.networkData.title">networkData</md-checkbox>
               <md-checkbox ng-model="detailList.ipv6Addresses.title">ipv6Addresses</md-checkbox>
               <md-checkbox ng-model="detailList.macCounters.title">macCounters</md-checkbox>
               <md-checkbox ng-model="detailList.batteryLevel.title">batteryLevel</md-checkbox>
               <md-checkbox ng-model="detailList.supplyVoltage.title">supplyVoltage</md-checkbox>
+              <md-checkbox ng-model="detailList.childTable.title">childTable</md-checkbox>
               <md-checkbox ng-model="detailList.channelPages.title">channelPages</md-checkbox>
+              <md-checkbox ng-model="detailList.maxChildTimeout.title">maxChildTimeout</md-checkbox>
               <md-checkbox ng-model="detailList.lDevIdSubject.title">lDevIdSubject</md-checkbox>
               <md-checkbox ng-model="detailList.iDevIdCert.title">iDevIdCert</md-checkbox>
               <md-checkbox ng-model="detailList.eui64.title">eui64</md-checkbox>
@@ -352,11 +355,12 @@
               <md-checkbox ng-model="detailList.threadStackVersion.title">threadStackVersion</md-checkbox>
               <md-checkbox ng-model="detailList.children.title">children</md-checkbox>
               <md-checkbox ng-model="detailList.childIpv6Addresses.title">childIpv6Addresses</md-checkbox>
+              <md-checkbox ng-model="detailList.routerNeighbors.title">routerNeighbors</md-checkbox>
               <md-checkbox ng-model="detailList.mleCounters.title">mleCounters</md-checkbox>
             </div>
 
 
-            <button ng-disabled="!graphisReady" class="mdl-button mdl-js-button mdl-button--raised" ng-click="showTopology()">Reload</button>
+            <button ng-disabled="!graphisReady" class="mdl-button mdl-js-button mdl-button--raised" ng-click="reloadGraph()">Reload</button>
 
           </div>
 

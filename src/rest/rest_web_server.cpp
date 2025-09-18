@@ -52,6 +52,20 @@
 
 #include <cJSON.h>
 
+#ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN
+#define OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN "*"
+#endif
+
+#ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS
+#define OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS                                        \
+    "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
+    "Access-Control-Request-Headers"
+#endif
+
+#ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS
+#define OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS "DELETE, GET, OPTIONS, POST"
+#endif
+
 #define OT_REST_RESOURCE_PATH_NODE "/node"
 #define OT_REST_RESOURCE_PATH_NODE_BAID "/node/ba-id"
 #define OT_REST_RESOURCE_PATH_NODE_RLOC "/node/rloc"
@@ -1043,7 +1057,6 @@ void RestWebServer::RoutingErrorHandler(const Request &aRequest, Response &aResp
 {
     httplib::StatusCode error = StatusCode::OK_200;
     std::string         errorDetails;
-    // VerifyOrExit(HasValidChars(aRequest, errorDetails) == OT_ERROR_NONE, error = StatusCode::BadRequest_400);
 
     // handle methods not used or not supported by cpp-httplib
     switch (GetMethod(aRequest))
@@ -1060,18 +1073,16 @@ void RestWebServer::RoutingErrorHandler(const Request &aRequest, Response &aResp
         errorDetails = "method not supported";
         error        = StatusCode::MethodNotAllowed_405;
         aResponse.set_header("Allow", "GET, POST, DELETE, OPTIONS");
-        ExitNow();
         break;
     }
 
-exit:
     if (error != StatusCode::OK_200 || aResponse.status >= StatusCode::MultipleChoices_300)
     {
         if (error < aResponse.status)
         {
             error = StatusCode(aResponse.status);
         }
-        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, error);
+        otbrLogWarning("%s:%d Error (%d) - %s", __FILE__, __LINE__, error, errorDetails.c_str());
         ErrorHandler(aResponse, error, errorDetails);
     }
 }
@@ -1138,7 +1149,7 @@ void RestWebServer::ApiActionsHandler(const Request &aRequest, Response &aRespon
 exit:
     if (statusCode != StatusCode::OK_200)
     {
-        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
+        otbrLogWarning("%s:%d Error (%d) - %s", __FILE__, __LINE__, statusCode, errorDetails.c_str());
         ErrorHandler(aResponse, statusCode, errorDetails);
     }
 }
@@ -1543,7 +1554,7 @@ void RestWebServer::ApiDevicesHandler(const Request &aRequest, Response &aRespon
 exit:
     if (statusCode != StatusCode::OK_200)
     {
-        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
+        otbrLogWarning("%s:%d Error (%d) - %s", __FILE__, __LINE__, statusCode, errorDetails.c_str());
         ErrorHandler(aResponse, statusCode, errorDetails);
     }
 }
@@ -1580,13 +1591,13 @@ exit:
 otError RestWebServer::HasValidChars(const Request &aRequest, std::string &aErrorDetails)
 {
     otError          error            = OT_ERROR_NONE;
-    constexpr size_t kMaxHeaderParams = 16;
+    constexpr size_t kMaxHeaderParams = 32;
     constexpr size_t kMaxQueryParams  = 16;
 
     // Accept only ASCII alphanumerics and common symbols; percent (%) is allowed only for ASCII hex encoding (%20,
     // etc.)
     const std::string acceptedCharacters =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ,.-+[]{}=/*\"\n:%";
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ,.;?-+()[]{}=/*\"\n:%";
 
     // Helper lambda to check percent-encoding is ASCII hex only
     auto isValidPercentEncoding = [](const std::string &str, const std::string &accepted) -> bool {
@@ -1828,6 +1839,11 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
         {
             otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
             self->mServer.set_ipv6_v6only(false);
+            const httplib::Headers defaultHeaders = {
+                {"Access-Control-Allow-Origin", OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN},
+                {"Access-Control-Allow-Methods", OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS},
+                {"Access-Control-Allow-Headers", OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS}};
+            self->mServer.set_default_headers(defaultHeaders);
             if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
             {
                 otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(), aRestListenPort);

@@ -916,6 +916,13 @@ void NetworkDiagHandler::DiagnosticResponseHandler(otError              aError,
         diagSet.push_back(diagTlv);
     }
     VerifyOrExit(keyRloc != 0xfffe, aError = OT_ERROR_FAILED);
+    if (!mIsDiscoveryRequest)
+    {
+        // we only expect a single unicast response
+        VerifyOrExit(mIp6address.mFields.m32[2] == aMessageInfo->mPeerAddr.mFields.m32[2] &&
+                         mIp6address.mFields.m32[3] == aMessageInfo->mPeerAddr.mFields.m32[3],
+                     aError = OT_ERROR_NONE); // ignore if not matching
+    }
     otbrLogDebug("%s:%d - %s - received DiagSet from 0x%04x with %zu TLVs.", __FILE__, __LINE__, __func__, keyRloc,
                  diagSet.size());
     UpdateDiag(keyRloc, diagSet);

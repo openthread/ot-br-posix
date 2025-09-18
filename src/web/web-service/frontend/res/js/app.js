@@ -45,7 +45,7 @@
                     return networkInfo;
                 },
                 setNetworkInfo: function(value) {
-                    networkInfo = value
+                    networkInfo = value;
                 },
             };
         });
@@ -156,8 +156,14 @@
                 });
             }
             if (index == 6) {
+                $scope._svgDrawn = undefined; // Reset the flag so graph will show up instantly
+                // Discover devices upon loading the Topology panel
+                await $scope.updateDeviceCollection().catch((error) => {
+                    console.error(`Error discovering the network: ${JSON.stringify(error)}`);
+                });
+
+                await $scope.dataInit();
                 await $scope.showTopology();
-                $scope.dataInit();
             }
         };
 
@@ -453,7 +459,7 @@
             'extAddress': { 'title': true, 'content': true },
             'rloc16': { 'title': true, 'content': true },
             'ipv6Addresses': { 'title': false, 'content': false },
-            'routerNeighbor': { 'title': true, 'content': false },
+            'routerNeighbors': { 'title': true, 'content': false },
             'route': { 'title': true, 'content': false },
             'leaderData': { 'title': false, 'content': false },
             'networkData': { 'title': false, 'content': true },
@@ -484,39 +490,27 @@
             'links': []
         }
 
-        $scope.dataInit = async function(maxRetries = 10) {
-            let attempts = 0;
+        $scope.dataInit = async function() {
             let response;
         
-            while (attempts < maxRetries) {
-                try {
-                    attempts++;
-                    response = await $http.get('http://' + $scope.ipAddr + '/api/node',{
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    break; 
-                } catch (error) {
-                    if (error.status !== 400) {
-                        // Log the error
-                        console.warn(`Attempt ${attempts} failed with a ${error.status} error. Retrying...`);
+            $http.get('http://' + $scope.ipAddr + '/api/node', {
+                    headers: {
+                        'Accept': 'application/json'
                     }
-                }
-            }
-            if (attempts === maxRetries) {
-                console.error(`Failed to fetch devices after ${maxRetries} attempts.`);
-            }
-
-            $scope.basicInfo = response.data;
-            console.log($scope.basicInfo.networkName);
-            console.log($scope.basicInfo.leaderData.leaderRouterId);
-            $scope.basicInfo.rloc16 = $scope.intToHexString($scope.basicInfo.rloc16, 4);
-            $scope.basicInfo.leaderData.leaderRouterId = '0x' + $scope.intToHexString($scope.basicInfo.leaderData.leaderRouterId, 2);
-            $scope.$apply();
+            })
+            .then(function(response) {
+                $scope.basicInfo = response.data;
+                console.log($scope.basicInfo?.networkName);
+                console.log($scope.basicInfo?.leaderData?.leaderRouterId);
+                $scope.basicInfo.rloc16 = $scope.intToHexString($scope.basicInfo?.rloc16, 4);
+                $scope.basicInfo.leaderData.leaderRouterId = '0x' + $scope.intToHexString($scope.basicInfo?.leaderData?.leaderRouterId, 2);
+            })
+            .catch(function(error) {
+                console.warn(`Failed getting api/node: ${error}.`);
+            });
         }
         $scope.isObject = function(obj) {
-            return obj.constructor === Object;
+            return !!obj && obj.constructor === Object;
         }
         $scope.isArray = function(arr) {
             return !!arr && arr.constructor === Array;
@@ -536,6 +530,29 @@
             return value;
         }
 
+        // Body for POST request to /actions endpoint for network discovery assuming to expect 16 devices
+        $scope.RequestBodyUpdateDeviceCollectionDefault = {
+            "data": [
+                {
+                "type": "updateDeviceCollectionTask",
+                "attributes": {
+                    "maxAge": 30,
+                    "maxRetries": 5,
+                    "deviceCount": 16,
+                    "timeout": 15
+                    }
+                }
+            ]
+        }
+
+        // Body for POST request to /actions endpoint with given deviceCount
+        // deviceCount does not limit the items in device collection but may stop discovery before exceeding retries or timeout
+        $scope.createRequestBodyUpdateDeviceCollection = function(deviceCount) {
+            var Body = angular.copy($scope.RequestBodyUpdateDeviceCollectionDefault);
+            Body.data[0].attributes.deviceCount = deviceCount;
+            return Body;
+        }
+
         // Body for POST request to /actions endpoint with default TLVs
         $scope.RequestBodyDefault = {
             "data": [
@@ -544,20 +561,19 @@
                 "attributes": {
                     "destination": null,
                     "types": [],
-                    "timeout": 60
+                    "timeout": 10
                     }
                 }
             ]
         }
 
-        // Body for POST request to /actions endpoint
+        // Body for POST request to /actions endpoint for fetching device diagnostic
         $scope.RequestBody = {}
 
         // Returns request body for given destination
         $scope.createRequestBody = function(destination) {
             var Body = angular.copy($scope.RequestBody);
             Body.data[0].attributes.destination = destination;
-            //console.log(Body);
             return Body;
         }
 
@@ -585,87 +601,134 @@
                 headers: {
                     'Accept': 'application/vnd.api+json'
                 }
+            }).catch(function(error) {
+                console.warn(`Failed to get action status for id ${action_id}: ${error.status}`);
             });
 
-            let status = response.data.data.attributes.status;
-
-            return status;
+            return response.data?.data?.attributes?.status;
         }
 
-        // POST request to retrieve list of devices
-        $scope.fetchDevices = async function (maxRetries = 3) {
-            let attempts = 0;
-            let devicesResponse;
-        
-            while (attempts < maxRetries) {
-                try {
-                    attempts++;
-                    devicesResponse = await $http.post('http://' + $scope.ipAddr + '/api/devices', {}, {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    break; 
-                } catch (error) {
-                    if (error.status !== 400) {
-                        // Log the error
-                        console.warn(`Attempt ${attempts} failed with a ${error.status} error. Retrying...`);
-                    }
-                }
-            }
-        
-            if (attempts === maxRetries) {
-                console.error(`Failed to fetch devices after ${maxRetries} attempts.`);
-            }
-        
-            return devicesResponse; // Return the successful response
-        }
+        // POST action to update device collection and check action status until completed
+        $scope.updateDeviceCollection = async function( deviceCount = 16 ) {
+            let shouldRetry = false;
+            let retries = 0;
 
-        // POST request to cause action that fetches device diagnostic, then poll action status until completed
-        $scope.fetchDeviceDiagnostic = async function(id) {
-            let stopped = false;
-
+            console.log("discover network ...");  // Debugging log message
             do {
-                // Fetch device diagnostics
-                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBody(id), {
+                // start discovery task
+                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBodyUpdateDeviceCollection(deviceCount), {
                     headers: {
                         'Content-Type': 'application/vnd.api+json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/vnd.api+json'
                     }
                 });
 
-                let action_id = postResponse.data.data[0].id; 
+                let action_id = postResponse?.data?.data?.[0]?.id;
                 console.log("action_id:", action_id);
 
                 // Polling of action status
                 let time = 0.0;
-                stopped = false;
+                await $scope.sleep(200);
+                shouldRetry = false;
                 while (true) {
                     const status = await $scope.getActionStatus(action_id);
                     if (status === "completed") {
-                        console.log("Completed action in %fs (id: %s)", time, id);
+                        console.log("Completed action in %fs (id: %s)", time, action_id);
                         break; // Exit the loop if the action is completed
                     }
-                    if (status === "stopped") {
-                        console.log("Oops... Action stopped (id: %s)", id);
-                        stopped = false; //true
+                    if ((status === "stopped") || (status === undefined)) {
+                        console.log("Oops... Action stopped (id: %s)", action_id);
+                        retries += 1;
+                        if (retries > 2) {
+                            console.log("Exceed max retries, stop discovery");
+                            shouldRetry = false;
+                        }
+                        else {
+                            console.log("Retry discovery ...");
+                            shouldRetry = true;
+                        }
+
                         break; // Break out to retry the POST request
                     }
                     await $scope.sleep(500);
                     time += 0.5;
                 }
-            } while (stopped);  
+            } while (shouldRetry);
+        }
+
+        // GET device collection
+        $scope.fetchDevices = async function () {
+            const response = await $http.get('http://' + $scope.ipAddr + '/api/devices', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .catch(function(error) {
+                console.warn(`Get device collection failed with a ${error.status} error.`);
+            });
+            console.log("Devices:", response.data);
+            return response.data;
+        }
+
+        // POST request to cause action that fetches device diagnostic, then poll action status until completed
+        $scope.fetchDeviceDiagnostic = async function(device_id) {
+            let shouldRetry = false;
+            let retries = 0;
+
+            do {
+                // Fetch device diagnostics
+                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBody(device_id), {
+                    headers: {
+                        'Content-Type': 'application/vnd.api+json',
+                        'Accept': 'application/vnd.api+json'
+                    }
+                })
+                .catch((error) => {   
+                    console.error(`Error posting to actions endpoint: ${error}`);
+                });
+
+                let action_id = postResponse?.data?.data?.[0]?.id;
+                console.log("action_id:", action_id);
+
+                // Polling of action status
+                let time = 0.0;
+                await $scope.sleep(Math.random()*250); // Random wait to avoid multiple requests at the same time
+                shouldRetry = false;
+                while (true) {
+                    const status = await $scope.getActionStatus(action_id);
+                    if (status === "completed") {
+                        console.log("Completed action in %fs (id: %s)", time, device_id);
+                        break; // Exit the loop if the action is completed
+                    }
+                    if ((status === "stopped") || (status === undefined)) {
+                        console.log("Oops... Action stopped (id: %s)", device_id);
+                        retries += 1;
+                        if (retries > 2) {
+                            console.log("Exceed max retries, stop collecting diagnostic from device id: %s", device_id);
+                            shouldRetry = false;
+                        }
+                        else {
+                            console.log("Retry collecting diagnostic from device id: %s", device_id);
+                            shouldRetry = true;
+                        }
+
+                        break; // Break out to retry the POST request
+                    }
+                    await $scope.sleep(500);
+                    time += 0.5;
+                }
+            } while (shouldRetry);  
         }
 
         $scope.fetchDiagnosticsForDevices = async function(devices) {
             // Create an array of promises for each device diagnostic fetch
             let promises = devices.map(async (device) => {
-                let id = device.extAddress; // Assume each device has a unique 'id'
+                let device_id = device.extAddress; // Assume each device has a unique 'id'
                 if (device.role !== "child") { // Ignore child diagnostics
-                    await $scope.fetchDeviceDiagnostic(id); // Fetch diagnostic for each device
+                    await $scope.fetchDeviceDiagnostic(device_id); // Fetch diagnostic for each device
                 }
             });
-        
+
             // Wait for all promises to resolve (all diagnostics to be fetched)
             await Promise.all(promises);
         };
@@ -687,17 +750,13 @@
             return networksDiagInfoDedup;
         }
 
-        // Remove children node entries based on "rloc16"
-        $scope.removeChildren = function() {
-            
-            const filteredEntries = $scope.networksDiagInfo.filter(entry => {
-                return entry.rloc16.endsWith('00'); // Keep entries where rloc16 ends with '00'
-            });
-        
-            return filteredEntries;
+        // Upon pressing the Reload button
+        $scope.reloadGraph = function() {
+            $scope._svgDrawn = undefined; // Reset the flag so graph will show up instantly
+            $scope.showTopology();
         };
 
-        // Behaviour upon pressing show Topology button
+        // Behaviour upon pressing show Topology menu
         $scope.showTopology = async function() {
             console.log("show topology...");  // Debugging log message
 
@@ -710,56 +769,37 @@
             // Consider TLV checkboxes
             $scope.updateRequestBody();
 
-            try {
-                // Fetch the list of devices
-                devicesResponse = await $scope.fetchDevices();
-        
-                const devices = devicesResponse.data;
-                console.log("devices:", devices);
-                
-                // Delete diagnostics entries
-                const deleteResponse = await $http.delete('http://' + $scope.ipAddr + '/api/diagnostics');
-                console.log("deleted diagnostics");
+            // Fetch the list of devices
+            const devices = await $scope.fetchDevices();
 
-                // Fetch the list of devices
-                const getResponse1 = await $http.get('http://' + $scope.ipAddr + '/api/diagnostics', {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                $scope.networksDiagInfo = getResponse1.data;
+            // Delete diagnostics entries
+            await $http.delete('http://' + $scope.ipAddr + '/api/diagnostics').then(function(response) {
+                console.log(`Deleted diagnostics status ${response.status}`);
+            });
 
-                // SANITY CHECK: Make sure response is empty after deletion
-                console.log('networksDiagInfo:', $scope.networksDiagInfo);
+            // Loop over each device and fetch diagnostics
+            await $scope.fetchDiagnosticsForDevices(devices);
 
-                // Loop over each device and fetch diagnostics
-                await $scope.fetchDiagnosticsForDevices(devices);
+            // Fetch the list of device diagnostics
+            const getResponse = await $http.get('http://' + $scope.ipAddr + '/api/diagnostics', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            $scope.networksDiagInfo = getResponse.data;
 
-                // Fetch the list of device diagnostics
-                const getResponse = await $http.get('http://' + $scope.ipAddr + '/api/diagnostics', {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                $scope.networksDiagInfo = getResponse.data;
+            // Once all diagnostics have been fetched
+            console.log('networksDiagInfo:', $scope.networksDiagInfo);
 
-                // Once all diagnostics have been fetched
-                console.log('networksDiagInfo:', $scope.networksDiagInfo);
+            // Remove duplicate entries
+            $scope.networksDiagInfo = $scope.dedupNetworksDiagEntries();
+            console.log('networksDiagInfo after dedup:', $scope.networksDiagInfo);
+    
+            // Build Topology based on networksDiagInfo and render Graph
+            $scope.buildTopology();
+            $scope.drawGraph();
 
-                // Remove duplicate entries
-                $scope.networksDiagInfo = $scope.dedupNetworksDiagEntries();
-                $scope.networksDiagInfo = $scope.removeChildren();
-                console.log('networksDiagInfo after dedup:', $scope.networksDiagInfo);
-        
-                // Build Topology based on networksDiagInfo and render Graph
-                $scope.buildTopology();
-                $scope.drawGraph();
-
-                console.log("Graph rendered");
-        
-            } catch (error) {
-                console.error('Error fetching device diagnostics:', error);
-            }
+            console.log("Graph rendered");
         };
 
         // Build Topology by populating $scope.graphInfo based on $scope.networksDiagInfo
@@ -769,10 +809,13 @@
 
             // Ensure consistent routerID and rloc16 across all nodes
             for (diagOfNode of $scope.networksDiagInfo){
-                diagOfNode['routerId'] = '0x' + $scope.intToHexString(diagOfNode['routerId'],2);
                 if ('leaderData' in diagOfNode) {
+                    if (diagOfNode['routerId'] === diagOfNode['leaderData']['leaderRouterId']) {
+                        diagOfNode['isLeader'] = true;
+                    }
                     diagOfNode['leaderData']['leaderRouterId'] = '0x' + $scope.intToHexString(diagOfNode['leaderData']['leaderRouterId'],2);
                 }
+                diagOfNode['routerId'] = '0x' + $scope.intToHexString(diagOfNode['routerId'], 2);
 
                 if ('route' in diagOfNode) { // Router is connected to network
                     for (linkNode of diagOfNode['route']['routeData']){
@@ -783,9 +826,9 @@
             
             // Count nodes
             count = 0;
-            // Populate nodes list
+            // Populate router nodes list
             for (diagOfNode of $scope.networksDiagInfo) {
-                if ('childTable' in diagOfNode) {
+                if ('childTable' in diagOfNode) { // node is a router
 
                     rloc = diagOfNode['rloc16'];
                     nodeMap[rloc] = count;
@@ -811,10 +854,10 @@
             src = 0;
             // Construct links 
             for (diagOfNode of $scope.networksDiagInfo) {
-                if ('childTable' in diagOfNode) {
+                if ('childTable' in diagOfNode) { // node is a router
                     // Link between routers
                     for (linkNode of diagOfNode['route']['routeData']) {
-                        rloc = (parseInt(linkNode['routeId'], 16) << 10).toString(16).padStart(4, '0');
+                        rloc = `0x` + (parseInt(linkNode['routeId'], 16) << 10).toString(16).padStart(4, '0');
                         if (rloc in nodeMap) {
                             dist = nodeMap[rloc];
                             if (src < dist) {
@@ -841,7 +884,7 @@
 
                         src = nodeMap[rlocOfParent];
                         
-                        child['rloc16'] = rlocOfChild;
+                        child['rloc16'] = '0x' + rlocOfChild;
                         child['routerId'] = diagOfNode['routerId'];
                         nodeMap[rlocOfChild] = count;
                         child['role'] = 'Child';
@@ -1014,7 +1057,7 @@
                 .attr('class', 'link')
                 // Color-grade based on errorRate
                 .style('stroke', function(item) {
-                    const target = item.source.routerNeighbor.find(neighbor => neighbor.rloc16 === item.target.rloc16);
+                    const target = item.source?.routerNeighbors?.find(neighbor => neighbor.rloc16 === item.target.rloc16) || null;
                     //console.log(target);
                     if (target && target["frameErrorRate"] >= $scope.thresholdFrameErrorRate/100) {
                         return colorScale(target.frameErrorRate);
@@ -1173,9 +1216,12 @@
                     return 'translate(' + item.x + ',' + item.y + ')';
                 });
             });
-            
+
             $scope.graphisReady = true;
-            //$scope.$apply(); // Force reload of SVG element
+            if (typeof $scope._svgDrawn === 'undefined') {
+                $scope.$apply(); // Force reload of SVG element only once to speed up initial display.
+                $scope._svgDrawn = true;
+            }
 
         }
     };
