@@ -779,6 +779,17 @@ public:
     std::string GetInterfaceName(void);
 
     /**
+     * This method enables/disables the Border Agent.
+     *
+     * @param[in] aEnabled  Whether to enable the Border Agent.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     */
+    ClientError SetBorderAgentEnabled(bool aEnabled);
+
+    /**
      * This method sets multiple vendor-specific entries for the TXT record of the MeshCoP service.
      *
      * @note

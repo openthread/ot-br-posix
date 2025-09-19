@@ -283,6 +283,12 @@ void CheckEphemeralKey(ThreadApiDBus *aApi)
     TEST_ASSERT(enabled == true);
 }
 
+void CheckBorderAgent(ThreadApiDBus *aApi)
+{
+    TEST_ASSERT(aApi->SetBorderAgentEnabled(false) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->SetBorderAgentEnabled(true) == OTBR_ERROR_NONE);
+}
+
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 
 void CheckBorderAgentInfo(const threadnetwork::TelemetryData_BorderAgentInfo &aBorderAgentInfo)
@@ -520,6 +526,7 @@ int main()
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
                             CheckEphemeralKey(api.get());
+                            CheckBorderAgent(api.get());
 #if OTBR_ENABLE_TELEMETRY_DATA_API
                             CheckTelemetryData(api.get());
 #endif

@@ -200,6 +200,10 @@
       <arg name="prefix" type="(ayy)"/>
     </method>
 
+    <method name="SetBorderAgentEnabled">
+      <arg name="enable" type="b" direction="in"/>
+    </method>
+
     <!-- UpdateMeshCopTxt: Update multiple entries in the TXT record.
       @key: The key of the entry.
       @value: The value of the entry.

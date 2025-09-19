@@ -100,6 +100,7 @@ private:
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
 #if OTBR_ENABLE_BORDER_AGENT
+    void SetBorderAgentEnabledHandler(DBusRequest &aRequest);
     void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
 #endif
     void SetThreadEnabledHandler(DBusRequest &aRequest);
