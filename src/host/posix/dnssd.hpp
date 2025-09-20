@@ -42,12 +42,14 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 
 #include <openthread/instance.h>
 #include <openthread/platform/dnssd.h>
 
 #include "common/code_utils.hpp"
+#include "common/task_runner.hpp"
 #include "mdns/mdns.hpp"
 #include "utils/dns_utils.hpp"
 #include "utils/string_utils.hpp"
@@ -206,10 +208,10 @@ public:
     typedef StdDnssdCallback<std::function<void(const TxtResult &)>, TxtResult>         StdTxtCallback;
     typedef StdDnssdCallback<std::function<void(const AddressResult &)>, AddressResult> StdAddressCallback;
 
-    typedef std::unique_ptr<BrowseCallback>         BrowseCallbackPtr;
-    typedef std::unique_ptr<SrvCallback>            SrvCallbackPtr;
-    typedef std::unique_ptr<TxtCallback>            TxtCallbackPtr;
-    typedef std::unique_ptr<AddressCallback>        AddressCallbackPtr;
+    typedef std::shared_ptr<BrowseCallback>         BrowseCallbackPtr;
+    typedef std::shared_ptr<SrvCallback>            SrvCallbackPtr;
+    typedef std::shared_ptr<TxtCallback>            TxtCallbackPtr;
+    typedef std::shared_ptr<AddressCallback>        AddressCallbackPtr;
     typedef std::pair<uint64_t, BrowseCallbackPtr>  BrowseEntry;
     typedef std::pair<uint64_t, SrvCallbackPtr>     SrvEntry;
     typedef std::pair<uint64_t, TxtCallbackPtr>     TxtEntry;
@@ -233,8 +235,6 @@ public:
     void  StartIp4AddressResolver(const AddressResolver &aAddressResolver, AddressCallbackPtr aCallbackPtr);
     void  StopIp4AddressResolver(const AddressResolver &aAddressResolver, const AddressCallback &aCallback);
 
-    void SetInvokingCallbacks(bool aInvokingCallbacks) { mInvokingCallbacks = aInvokingCallbacks; }
-
 private:
     static constexpr State kStateReady   = OT_PLAT_DNSSD_READY;
     static constexpr State kStateStopped = OT_PLAT_DNSSD_STOPPED;
@@ -256,6 +256,8 @@ private:
         {
             return StringUtils::ToLowercase(mName) < StringUtils::ToLowercase(aOther.mName);
         }
+
+        const std::string &GetName(void) const { return mName; }
 
     private:
         std::string mName;
@@ -306,32 +308,21 @@ private:
             return (mInstance == aOther.mInstance) ? (mType < aOther.mType) : (mInstance < aOther.mInstance);
         }
 
+        const std::string &GetInstance(void) const { return mInstance.GetName(); }
+        const std::string &GetType(void) const { return mType.GetName(); }
+
     private:
         DnsName mInstance;
         DnsName mType;
     };
 
-    template <typename T> struct FirstFunctionArg;
-
-    template <typename R, typename Arg, typename... Rest> struct FirstFunctionArg<std::function<R(Arg, Rest...)>>
-    {
-        using Type = Arg;
-    };
-
-    // RequestType MUST be a std::pair<uint64_t, std::unique_ptr<CallbackType>>
+    // RequestType MUST be a std::pair<uint64_t, std::shared_ptr<CallbackType>>
     template <typename RequestType> class EntryList
     {
     public:
         using CallbackType       = typename RequestType::second_type::element_type;
-        using CallbackPtrType    = std::unique_ptr<CallbackType>;
+        using CallbackPtrType    = std::shared_ptr<CallbackType>;
         using CallbackResultType = typename CallbackType::ResultType;
-
-        bool HasSubscribedOnInfraIf(uint64_t aInfraIfIndex)
-        {
-            return std::find_if(mEntries.begin(), mEntries.end(), [aInfraIfIndex](const RequestType &entry) {
-                       return entry.first == aInfraIfIndex;
-                   }) != mEntries.end();
-        }
 
         void AddIfAbsent(uint64_t aInfraIfIndex, CallbackPtrType &&aCallbackPtr)
         {
@@ -342,47 +333,32 @@ private:
             }
         }
 
-        void MarkAsDeleted(uint64_t aInfraIfIndex, const CallbackType &aCallback)
+        void Delete(uint64_t aInfraIfIndex, const CallbackType &aCallback)
         {
             auto iter = FindEntry(aInfraIfIndex, aCallback);
             if (iter != mEntries.end())
             {
-                iter->second = nullptr;
+                mEntries.erase(iter);
             }
         }
 
         bool IsEmpty(void) { return mEntries.empty(); }
 
-        bool HasAnyValidCallbacks(void)
-        {
-            auto iter = std::find_if(mEntries.begin(), mEntries.end(),
-                                     [](const RequestType &entry) { return entry.second != nullptr; });
-            return iter != mEntries.end();
-        }
-
-        void CleanUpDeletedEntries(void)
-        {
-            for (auto iter = mEntries.begin(); iter != mEntries.end();)
-            {
-                if (!iter->second)
-                {
-                    iter = mEntries.erase(iter);
-                }
-                else
-                {
-                    ++iter;
-                }
-            }
-        }
-
         void InvokeAllCallbacks(uint64_t aInfraIfIndex, CallbackResultType &aResult)
         {
+            std::vector<CallbackPtrType> copyCallbacks;
+
             for (auto &entry : mEntries)
             {
-                if (entry.first == aInfraIfIndex && entry.second)
+                if (entry.first == aInfraIfIndex)
                 {
-                    entry.second->InvokeCallback(aResult);
+                    copyCallbacks.push_back(entry.second);
                 }
+            }
+
+            for (const CallbackPtrType &callback : copyCallbacks)
+            {
+                callback->InvokeCallback(aResult);
             }
         }
 
@@ -412,33 +388,35 @@ private:
     void ProcessServiceBrowsers(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo);
     void ProcessServiceResolvers(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo);
     void ProcessTxtResolvers(const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInfo);
-    void ProcessAddrResolvers(const std::string                          &aHostName,
-                              const Mdns::Publisher::DiscoveredHostInfo  &aInfo,
-                              std::map<DnsName, EntryList<AddressEntry>> &aResolversMap);
-    void ProcessIp6AddrResolvers(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aInfo);
-    void ProcessIp4AddrResolvers(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aInfo);
+    void ProcessIpAddrResolvers(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aInfo);
 
-    void StartAddressResolver(const AddressResolver                      &aAddressResolver,
-                              AddressCallbackPtr                          aCallbackPtr,
-                              std::map<DnsName, EntryList<AddressEntry>> &aResolversMap);
-    void StopAddressResolver(const AddressResolver                      &aAddressResolver,
-                             const AddressCallback                      &aCallback,
-                             std::map<DnsName, EntryList<AddressEntry>> &aResolversMap);
+    void StartAddressResolver(const AddressResolver &aAddressResolver, AddressCallbackPtr aCallbackPtr);
+    void StopAddressResolver(const AddressResolver &aAddressResolver, const AddressCallback &aCallback);
+
+    void ExecuteServiceSubscriptionUpdate(void);
+    void PostServiceSubscriptionUpdateTask(void);
+    void ExecuteHostSubscriptionUpdate(void);
+    void PostHostSubscriptionUpdateTask(void);
 
     static DnssdPlatform *sDnssdPlatform;
 
     Mdns::Publisher                                 &mPublisher;
     State                                            mState;
     bool                                             mRunning;
-    bool                                             mInvokingCallbacks;
+    TaskRunner                                       mTaskRunner;
+    bool                                             mServiceSubscriptionUpdateTaskPosted;
+    bool                                             mHostSubscriptionUpdateTaskPosted;
     Mdns::Publisher::State                           mPublisherState;
     DnssdStateChangeCallback                         mStateChangeCallback;
     uint64_t                                         mSubscriberId;
     std::map<DnsServiceType, EntryList<BrowseEntry>> mServiceBrowsersMap;
     std::map<DnsServiceName, EntryList<SrvEntry>>    mServiceResolversMap;
     std::map<DnsServiceName, EntryList<TxtEntry>>    mTxtResolversMap;
-    std::map<DnsName, EntryList<AddressEntry>>       mIp6AddrResolversMap;
-    std::map<DnsName, EntryList<AddressEntry>>       mIp4AddrResolversMap;
+    std::map<DnsName, EntryList<AddressEntry>>       mIpAddrResolversMap;
+
+    std::set<DnsServiceType> mServiceTypeSubscriptions;
+    std::set<DnsServiceName> mServiceNameSubscriptions;
+    std::set<DnsName>        mHostSubscriptions;
 };
 
 } // namespace otbr

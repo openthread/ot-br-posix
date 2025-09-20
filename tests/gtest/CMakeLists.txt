@@ -58,6 +58,9 @@ gtest_discover_tests(otbr-gtest-unit)
 add_executable(otbr-gtest-unit-dnssd
     ${OTBR_PROJECT_DIRECTORY}/src/common/types.cpp
     ${OTBR_PROJECT_DIRECTORY}/src/common/logging.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/mainloop.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/mainloop_manager.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/task_runner.cpp
     ${OTBR_PROJECT_DIRECTORY}/src/host/posix/dnssd.cpp
     ${OTBR_PROJECT_DIRECTORY}/src/mdns/mdns.cpp
     ${OTBR_PROJECT_DIRECTORY}/src/utils/dns_utils.cpp
@@ -74,6 +77,8 @@ target_include_directories(otbr-gtest-unit-dnssd
         ${OTBR_PROJECT_DIRECTORY}/include
         ${OTBR_PROJECT_DIRECTORY}/src
         ${OPENTHREAD_PROJECT_DIRECTORY}/include
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src/posix/platform/include
 )
 target_link_libraries(otbr-gtest-unit-dnssd
     GTest::gmock_main
