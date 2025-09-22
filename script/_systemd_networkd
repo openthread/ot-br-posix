@@ -43,7 +43,7 @@ create_network_file()
 Name=${INFRA_IF_NAME}
 
 [Network]
-DHCP=yes
+DHCP=ipv4
 
 [IPv6AcceptRA]
 # Disable systemd-networkd's client to avoid port conflicts with OpenThread's built-in DHCPv6 PD client
