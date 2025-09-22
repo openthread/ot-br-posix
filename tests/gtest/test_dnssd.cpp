@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 
 #include "common/code_utils.hpp"
+#include "common/mainloop_manager.hpp"
 #include "host/posix/dnssd.hpp"
 #include "mdns/mdns.hpp"
 
@@ -124,6 +125,27 @@ protected:
     std::unique_ptr<otbr::DnssdPlatform> mDnssdPlatform;
 };
 
+void ProcessMainloop(void)
+{
+    otbr::MainloopContext context;
+
+    context.mMaxFd   = -1;
+    context.mTimeout = {0, 1};
+    FD_ZERO(&context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+
+    otbr::MainloopManager::GetInstance().Update(context);
+    int rval =
+        select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet, &context.mTimeout);
+    if (rval < 0)
+    {
+        perror("select failed");
+        exit(EXIT_FAILURE);
+    }
+    otbr::MainloopManager::GetInstance().Process(context);
+}
+
 TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
 {
     constexpr uint8_t kInfraIfIndex = 1;
@@ -151,6 +173,7 @@ TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
         EXPECT_STREQ(aResult.mServiceType, serviceType);
         EXPECT_STREQ(aResult.mServiceInstance, "ZGMF-X42S #1");
     });
+    ProcessMainloop();
 
     discoveredInstanceInfo.mRemoved    = false;
     discoveredInstanceInfo.mNetifIndex = kInfraIfIndex;
@@ -158,11 +181,13 @@ TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
     discoveredInstanceInfo.mHostName   = "ZGMF-X42S #1._plant._tcp.local.";
     discoveredInstanceInfo.mTtl        = 10;
     mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
 
     // 2. Another service is resovled but the callback shouldn't be invoked again.
     EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq("")));
 
     mDnssdPlatform->StopServiceBrowser(browser, otbr::DnssdPlatform::StdBrowseCallback(nullptr, 1));
+    ProcessMainloop();
 
     discoveredInstanceInfo.mRemoved    = false;
     discoveredInstanceInfo.mNetifIndex = kInfraIfIndex;
@@ -170,6 +195,7 @@ TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
     discoveredInstanceInfo.mHostName   = "ZGMF-X666S #1._plant._tcp.local.";
     discoveredInstanceInfo.mTtl        = 10;
     mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
 }
 
 TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
@@ -230,6 +256,7 @@ TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
         },
         id2);
     mDnssdPlatform->StartServiceResolver(resolver2, std::move(callbackPtr));
+    ProcessMainloop();
 
     // 2. Found an instance for Resolver1.
     discoveredInstanceInfo1.mRemoved    = false;
@@ -242,6 +269,7 @@ TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
     discoveredInstanceInfo1.mWeight     = 13;
 
     mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo1);
+    ProcessMainloop();
 
     // 3. Found an instance for Resolver2.
     discoveredInstanceInfo2.mRemoved    = false;
@@ -254,12 +282,14 @@ TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
     discoveredInstanceInfo2.mWeight     = 16;
 
     mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo2);
+    ProcessMainloop();
 
     // 4. Updated an instance for Resolver1. Callback shouldn't be invoked.
     invoked = false;
 
     discoveredInstanceInfo1.mHostName = "ArchAngel.";
     mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo1);
+    ProcessMainloop();
 
     EXPECT_FALSE(invoked);
 }
