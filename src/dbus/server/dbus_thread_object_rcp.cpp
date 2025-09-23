@@ -233,6 +233,8 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::GetRloc16Handler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTENDED_ADDRESS,
                                std::bind(&DBusThreadObjectRcp::GetExtendedAddressHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_BORDER_AGENT_ID,
+                               std::bind(&DBusThreadObjectRcp::GetBorderAgentIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ROUTER_ID,
                                std::bind(&DBusThreadObjectRcp::GetRouterIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LEADER_DATA,
@@ -1650,6 +1652,22 @@ otError DBusThreadObjectRcp::GetEui64Handler(DBusMessageIter &aIter)
     eui64 = ConvertOpenThreadUint64(extAddr.m8);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, eui64) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObjectRcp::GetBorderAgentIdHandler(DBusMessageIter &aIter)
+{
+    otBorderAgentId      id;
+    std::vector<uint8_t> data;
+    otError              error = OT_ERROR_NONE;
+
+    SuccessOrExit(error = otBorderAgentGetId(mHost.GetInstance(), &id));
+
+    data = {std::begin(id.mId), std::end(id.mId)};
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;
