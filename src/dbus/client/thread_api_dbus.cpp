@@ -574,6 +574,11 @@ ClientError ThreadApiDBus::GetExtendedAddress(uint64_t &aExtendedAddress)
     return GetProperty(OTBR_DBUS_PROPERTY_EXTENDED_ADDRESS, aExtendedAddress);
 }
 
+ClientError ThreadApiDBus::GetBorderAgentId(std::vector<uint8_t> &aBorderAgentId)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_BORDER_AGENT_ID, aBorderAgentId);
+}
+
 ClientError ThreadApiDBus::GetRouterId(uint8_t &aRouterId)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_ROUTER_ID, aRouterId);

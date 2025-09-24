@@ -492,7 +492,8 @@ int main()
                         {
                             std::string                           name;
                             uint64_t                              extAddress = 0;
-                            uint16_t                              rloc16     = 0xffff;
+                            std::vector<uint8_t>                  borderAgentId;
+                            uint16_t                              rloc16 = 0xffff;
                             std::vector<uint8_t>                  networkData;
                             std::vector<uint8_t>                  stableNetworkData;
                             int8_t                                rssi;
@@ -508,6 +509,8 @@ int main()
                             TEST_ASSERT(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetRloc16(rloc16) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetExtendedAddress(extAddress) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetBorderAgentId(borderAgentId) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(borderAgentId.size() == 16);
                             TEST_ASSERT(api->GetNetworkData(networkData) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetStableNetworkData(stableNetworkData) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetChildTable(childTable) == OTBR_ERROR_NONE);

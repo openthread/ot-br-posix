@@ -133,6 +133,7 @@ private:
     otError GetPanIdHandler(DBusMessageIter &aIter);
     otError GetExtPanIdHandler(DBusMessageIter &aIter);
     otError GetEui64Handler(DBusMessageIter &aIter);
+    otError GetBorderAgentIdHandler(DBusMessageIter &aIter);
     otError GetChannelHandler(DBusMessageIter &aIter);
     otError GetNetworkKeyHandler(DBusMessageIter &aIter);
     otError GetCcaFailureRateHandler(DBusMessageIter &aIter);

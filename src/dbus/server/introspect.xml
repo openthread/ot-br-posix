@@ -716,6 +716,11 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- BorderAgentId: The 16 byte unique identifier for the border agent used in _meshcop._udp. advertisements -->
+    <property name="BorderAgentId" type="ay" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- RadioSpinelMetrics: The radio spinel metrics
     <literallayout>
         struct {
