@@ -40,6 +40,7 @@
 #include <vector>
 
 #include <openthread/backbone_router_ftd.h>
+#include <openthread/border_agent.h>
 #include <openthread/dataset.h>
 #include <openthread/error.h>
 #include <openthread/link.h>
@@ -122,6 +123,7 @@ public:
     using BackboneRouterMulticastListenerCallback =
         std::function<void(otBackboneRouterMulticastListenerEvent, Ip6Address)>;
     using BackboneRouterStateChangedCallback = std::function<void(otBackboneRouterState)>;
+    using EphemeralKeyStateChangedCallback   = std::function<void(otBorderAgentEphemeralKeyState, uint16_t)>;
 
     /**
      * Constructor.
@@ -368,6 +370,14 @@ public:
     void SetBorderAgentMeshCoPServiceChangedCallback(const BorderAgentMeshCoPServiceChangedCallback &aCallback);
 
     /**
+     * This method sets a callback that will be invoked when there are any changes on the Ephemeral Key state on
+     * Thread core.
+     *
+     * @param[in] aCallback  The callback function.
+     */
+    void AddEphemeralKeyStateChangedCallback(const EphemeralKeyStateChangedCallback &aCallback);
+
+    /**
      * This method forwards a UDP packet to the NCP.
      *
      * @param[in] aUdpPayload    The UDP payload.
@@ -422,6 +432,40 @@ public:
      * @param[in] aState  The Host Power state.
      */
     void SetHostPowerState(uint8_t aState, AsyncTaskPtr aAsyncTask);
+
+#if OTBR_ENABLE_EPSKC
+    /**
+     * Enables or disables the Ephemeral Key on the NCP.
+     *
+     * This method instructs the NCP to enable or disable the ephemeral key functionality.
+     *
+     * @param[in] aEnable      TRUE to enable and FALSE to disable.
+     * @param[in] aAsyncTask   The async task pointer to receive the result of this operation.
+     */
+    void EnableEphemeralKey(bool aEnable, AsyncTaskPtr aAsyncTask);
+
+    /**
+     * Activates the Ephemeral Key on the NCP.
+     *
+     * This method instructs the NCP to activate an ephemeral key for secure operations.
+     *
+     * @param[in] aPskc             The null-terminated PSKc string to use as the ephemeral key.
+     * @param[in] aDurationMilli    The duration (in milliseconds) for which the ephemeral key should be active.
+     * @param[in] aPort             The UDP port on which the ephemeral key is to be used.
+     * @param[in] aAsyncTask        The async task pointer to receive the result of this operation.
+     */
+    void ActivateEphemeralKey(const char *aPskc, uint32_t aDurationMilli, uint16_t aPort, AsyncTaskPtr aAsyncTask);
+
+    /**
+     * Deactivates the Ephemeral Key on the NCP.
+     *
+     * This method instructs the NCP to deactivate the currently active ephemeral key.
+     *
+     * @param[in] aRetainActiveSession  TRUE to retain the active session, FALSE to terminate it.
+     * @param[in] aAsyncTask            The async task pointer to receive the result of this operation.
+     */
+    void DeactivateEphemeralKey(bool aRetainActiveSession, AsyncTaskPtr aAsyncTask);
+#endif // OTBR_ENABLE_EPSKC
 
 private:
     using FailureHandler = std::function<void(otError)>;
@@ -543,6 +587,7 @@ private:
     AsyncTaskPtr mThreadDetachGracefullyTask;
     AsyncTaskPtr mThreadErasePersistentInfoTask;
     AsyncTaskPtr mSetHostPowerStateTask;
+    AsyncTaskPtr mEphemeralKeyTask;
 
     Ip6AddressTableCallback                  mIp6AddressTableCallback;
     Ip6MulticastAddressTableCallback         mIp6MulticastAddressTableCallback;
@@ -554,6 +599,7 @@ private:
     UdpForwardSendCallback                   mUdpForwardSendCallback;
     BackboneRouterStateChangedCallback       mBackboneRouterStateChangedCallback;
     BackboneRouterMulticastListenerCallback  mBackboneRouterMulticastListenerCallback;
+    EphemeralKeyStateChangedCallback         mEphemeralKeyStateChangedCallback;
 };
 
 } // namespace Host

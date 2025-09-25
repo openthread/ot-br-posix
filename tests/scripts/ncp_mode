@@ -183,6 +183,7 @@ do_build_otbr_docker()
         "-DOTBR_TELEMETRY_DATA_API=ON"
         "-DOTBR_LINK_METRICS_TELEMETRY=ON"
         "-DOTBR_BORDER_AGENT=ON"
+        "-DOTBR_EPSKC=ON"
     )
     sudo docker build -t "${OTBR_DOCKER_IMAGE}" \
         -f ./etc/docker/test/Dockerfile . \

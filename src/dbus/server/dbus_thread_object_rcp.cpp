@@ -60,16 +60,6 @@
 #endif
 #include "proto/capabilities.pb.h"
 
-/**
- * @def OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT
- *
- * Specifies the border agent UDP port for meshcop-e service.
- * If zero, an ephemeral port will be used.
- */
-#ifndef OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT
-#define OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT 0
-#endif
-
 using std::placeholders::_1;
 using std::placeholders::_2;
 
