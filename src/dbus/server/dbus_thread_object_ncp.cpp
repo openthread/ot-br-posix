@@ -26,14 +26,16 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dbus_thread_object_ncp.hpp"
+#include <openthread/border_agent.h>
+#include <openthread/border_router.h>
 
 #include "common/api_strings.hpp"
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
-#include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "host/thread_helper.hpp"
+
+#include "dbus_thread_object_ncp.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -66,6 +68,14 @@ otbrError DBusThreadObjectNcp::Init(void)
                    std::bind(&DBusThreadObjectNcp::ScheduleMigrationHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_HOST_POWER_STATE_METHOD,
                    std::bind(&DBusThreadObjectNcp::HostPowerStateHandler, this, _1));
+#if OTBR_ENABLE_EPSKC
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED,
+                   std::bind(&DBusThreadObjectNcp::EnableEphemeralKeyModeHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ACTIVATE_EPHEMERAL_KEY_MODE_METHOD,
+                   std::bind(&DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DEACTIVATE_EPHEMERAL_KEY_MODE_METHOD,
+                   std::bind(&DBusThreadObjectNcp::DeactivateEphemeralKeyModeHandler, this, _1));
+#endif
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 exit:
@@ -181,6 +191,86 @@ exit:
         aRequest.ReplyOtResult(error);
     }
 }
+
+#if OTBR_ENABLE_EPSKC
+void DBusThreadObjectNcp::EnableEphemeralKeyModeHandler(DBusRequest &aRequest)
+{
+    otError error = OT_ERROR_NONE;
+    bool    enable;
+    auto    args = std::tie(enable);
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    mHost.EnableEphemeralKey(enable, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+{
+    otError              error = OT_ERROR_NONE;
+    std::vector<uint8_t> data;
+    uint32_t             lifetime = 0;
+    uint16_t             port     = 0;
+    std::string          ePskc;
+    auto                 args = std::tie(data, lifetime, port);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    ePskc = std::string(data.begin(), data.end());
+
+    VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(ePskc.size() <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_LENGTH &&
+                     ePskc.size() >= OT_BORDER_AGENT_MIN_EPHEMERAL_KEY_LENGTH,
+                 error = OT_ERROR_INVALID_ARGS);
+
+    mHost.ActivateEphemeralKey(ePskc.c_str(), lifetime, port,
+                               [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+                                   OT_UNUSED_VARIABLE(aErrorInfo);
+                                   aRequest.ReplyOtResult(aError);
+                               });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.Reply(std::tie(data));
+    }
+    else
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObjectNcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+{
+    otError error = OT_ERROR_NONE;
+    bool    retain_active_session;
+    auto    args = std::tie(retain_active_session);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    mHost.DeactivateEphemeralKey(retain_active_session,
+                                 [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+                                     OT_UNUSED_VARIABLE(aErrorInfo);
+                                     aRequest.ReplyOtResult(aError);
+                                 });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.Reply(std::tie(retain_active_session));
+    }
+    else
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+#endif
 
 } // namespace DBus
 } // namespace otbr
