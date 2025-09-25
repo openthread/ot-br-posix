@@ -93,7 +93,9 @@ void Application::Init(const std::string &aRestListenAddress, int aRestListenPor
 {
     mHost.Init();
 
-    switch (mHost.GetCoprocessorType())
+    CoprocessorType type = mHost.GetCoprocessorType();
+
+    switch (type)
     {
     case OT_COPROCESSOR_RCP:
         InitRcpMode(aRestListenAddress, aRestListenPort);
@@ -110,7 +112,8 @@ void Application::Init(const std::string &aRestListenAddress, int aRestListenPor
     mDBusAgent.Init();
 #endif
 
-    otbrLogInfo("Co-processor version: %s", mHost.GetCoprocessorVersion());
+    otbrLogInfo("Co-processor version: %s type: %s", mHost.GetCoprocessorVersion(),
+                mHost.GetCoprocessorType() == OT_COPROCESSOR_RCP ? "RCP" : "NCP");
 }
 
 void Application::Deinit(void)
@@ -383,6 +386,13 @@ void Application::InitNcpMode(void)
             OTBR_UNUSED_VARIABLE(aLength);
 #endif
         });
+    mHost.AddEphemeralKeyStateChangedCallback([this](otBorderAgentEphemeralKeyState aState, uint16_t aPort) {
+        if (aState == OT_BORDER_AGENT_STATE_STARTED)
+        {
+            otbrLogInfo("Border Agent Ephemeral Key State Changed: Active on port %d", aPort);
+            mBorderAgentUdpProxy.Start(aPort);
+        }
+    });
     mHost.SetUdpForwardToHostCallback(
         [this](const uint8_t *aUdpPayload, uint16_t aLength, const otIp6Address &aPeerAddr, uint16_t aPeerPort) {
             mBorderAgentUdpProxy.SendToPeer(aUdpPayload, aLength, aPeerAddr, aPeerPort);

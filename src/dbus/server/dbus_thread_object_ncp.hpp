@@ -87,6 +87,9 @@ private:
     void LeaveHandler(DBusRequest &aRequest);
     void ScheduleMigrationHandler(DBusRequest &aRequest);
     void HostPowerStateHandler(DBusRequest &aRequest);
+    void EnableEphemeralKeyModeHandler(DBusRequest &aRequest);
+    void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
+    void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
 
     otbr::Host::NcpHost &mHost;
 };
