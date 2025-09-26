@@ -36,46 +36,68 @@ LOG_TAG="dhcpcd.exit.hook:"
 
 config_ra()
 {
+    prefixes="$1"
+
     logger "$LOG_TAG $reason start config radvd"
 
 sudo tee "${RADVD_CONF}" > /dev/null <<EOF
 interface ${WPAN_INTERFACE}
 {
+    IgnoreIfMissing on;
     AdvSendAdvert on;
-    prefix ${1}/${2}
+EOF
+
+    set -- $prefixes
+    while [ $# -ge 2 ]; do
+        prefix=$1
+        length=$2
+        logger "$LOG_TAG Deprecating prefix: $prefix/$length"
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
+    prefix ${prefix}/${length}
     {
         AdvOnLink on;
         AdvAutonomous on;
         AdvRouterAddr off;
-        AdvPreferredLifetime ${3};
-        AdvValidLifetime ${4};
+        AdvPreferredLifetime 0;
+        AdvValidLifetime 0;
     };
+EOF
+        shift 2
+    done
+
+sudo tee -a "${RADVD_CONF}" > /dev/null <<EOF
 };
 EOF
+
 }
 
 
 if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
-
-    for var in $(env); do
-        # Split the variable into name and value
-        name="${var%%=*}"
-        value="${var#*=}"
-        logger -t "$LOG_TAG $reason sysenv: " "$name=$value"
-    done
+    prefixes=""
 
     case $reason in
-        EXPIRE6 | STOP6 | RELEASE6 )
-            # TODO: Handle multiple IA_PD prefixes (new_dhcp6_ia_pd{i}_prefix{j}, new_dhcp6_ia_pd{i}_prefix{j}_length, etc.)
-            #       and deprecate old prefixes properly for each.  Currently, only one prefix is handled.)
-            if [ -z "$old_dhcp6_ia_pd1_prefix1" ] || [ -z "$old_dhcp6_ia_pd1_prefix1_length" ]; then
-                logger "$LOG_TAG WARNING: Missing DHCPv6 prefix information. Skipping radvd configuration."
-            else
-                config_ra $old_dhcp6_ia_pd1_prefix1 $old_dhcp6_ia_pd1_prefix1_length 0 0
-                if systemctl is-active network.target; then
-                    sudo systemctl reload-or-restart radvd
-                fi
-            fi
+        RELEASE6 | EXPIRE6 | STOP6 )
+            for name in $(env | cut -d'=' -f1); do
+                case "$name" in
+                    old_dhcp6_ia_pd*_prefix*)
+                    if echo "$name" | grep -q "[0-9]$"; then
+                        eval prefix="\$${name}"
+                        eval length="\$${name}_length"
+
+                        if [ -n $prefix ] && [ -n $length ]; then
+                            prefixes="$prefixes $prefix $length"
+                        fi
+                    fi
+                    ;;
+                esac
+            done
             ;;
     esac
+
+    if [ -n "$prefixes" ]; then
+        config_ra "$prefixes"
+        if systemctl is-active network.target; then
+            sudo systemctl reload-or-restart radvd || logger "$LOG_TAG Failed to reload radvd"
+        fi
+    fi
 fi
