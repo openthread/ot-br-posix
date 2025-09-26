@@ -345,6 +345,7 @@ void RcpHost::Deinit(void)
     OtNetworkProperties::SetInstance(nullptr);
     mThreadStateChangedCallbacks.clear();
     mThreadEnabledStateChangedCallbacks.clear();
+    mThreadRoleChangedCallbacks.clear();
     mResetHandlers.clear();
 
     mJoinReceiver              = nullptr;
@@ -364,10 +365,19 @@ void RcpHost::HandleStateChanged(otChangedFlags aFlags)
 
     mThreadHelper->StateChangedCallback(aFlags);
 
-    if ((aFlags & OT_CHANGED_THREAD_ROLE) && IsAttached() && mJoinReceiver != nullptr)
+    if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
-        otbrLogInfo("Join succeeded");
-        SafeInvokeAndClear(mJoinReceiver, OT_ERROR_NONE, "Join succeeded");
+        otDeviceRole role = GetDeviceRole();
+        for (auto &callback : mThreadRoleChangedCallbacks)
+        {
+            callback(role);
+        }
+
+        if (IsAttached() && mJoinReceiver != nullptr)
+        {
+            otbrLogInfo("Join succeeded");
+            SafeInvokeAndClear(mJoinReceiver, OT_ERROR_NONE, "Join succeeded");
+        }
     }
 }
 
@@ -421,6 +431,11 @@ void RcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback
 void RcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback)
 {
     mThreadEnabledStateChangedCallbacks.push_back(aCallback);
+}
+
+void RcpHost::AddThreadRoleChangedCallback(ThreadRoleChangedCallback aCallback)
+{
+    mThreadRoleChangedCallbacks.push_back(aCallback);
 }
 
 #if OTBR_ENABLE_BACKBONE_ROUTER

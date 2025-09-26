@@ -436,3 +436,52 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
 
     host.Deinit();
 }
+
+TEST(RcpHostApi, ThreadRoleChangedCallbackInvoked)
+{
+    // Verify the Thread role change callback fires for each major transition: enabling Thread drives
+    // Disabled -> Detached -> Leader, and disabling Thread brings the stack back to Disabled. The test
+    // pumps the mainloop until each role is observed to confirm the callback sequencing.
+    otbr::MainloopContext mainloop;
+    otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                               /* aDryRun */ false,
+                               /* aEnableAutoAttach */ false);
+
+    host.Init();
+
+    std::vector<otDeviceRole> observedRoles;
+    host.AddThreadRoleChangedCallback([&observedRoles](otDeviceRole aRole) { observedRoles.push_back(aRole); });
+
+    otInstance              *instance = ot::FakePlatform::CurrentInstance();
+    otOperationalDataset     dataset;
+    otOperationalDatasetTlvs datasetTlvs;
+
+    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(instance, &dataset));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(instance, &datasetTlvs));
+
+    // Case 1. Check callback invocation when enabling Thread.
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
+    ASSERT_EQ(otThreadSetEnabled(instance, true), OT_ERROR_NONE);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&observedRoles]() { return observedRoles.size() >= 1; });
+    ASSERT_FALSE(observedRoles.empty());
+    EXPECT_EQ(observedRoles.front(), OT_DEVICE_ROLE_DETACHED);
+
+    // Wait until the device promotes to leader; the callback should fire again.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                         [&]() { return host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER && observedRoles.size() >= 2; });
+    ASSERT_GE(observedRoles.size(), 2u);
+    EXPECT_EQ(observedRoles.back(), OT_DEVICE_ROLE_LEADER);
+
+    // Case 2. Check callback invocation when disabling Thread.
+    ASSERT_EQ(otThreadSetEnabled(instance, false), OT_ERROR_NONE);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&]() {
+        return host.GetDeviceRole() == OT_DEVICE_ROLE_DISABLED && observedRoles.size() >= 3;
+    });
+    EXPECT_GE(observedRoles.size(), 3u);
+    EXPECT_EQ(observedRoles.back(), OT_DEVICE_ROLE_DISABLED);
+
+    host.Deinit();
+}

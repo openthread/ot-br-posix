@@ -212,6 +212,7 @@ public:
 #endif
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
     void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
+    void AddThreadRoleChangedCallback(ThreadRoleChangedCallback aCallback);
 #if OTBR_ENABLE_BACKBONE_ROUTER
     void SetBackboneRouterEnabled(bool aEnabled) override;
     void SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback) override;
@@ -289,6 +290,7 @@ private:
 
     std::vector<ThreadStateChangedCallback>       mThreadStateChangedCallbacks;
     std::vector<ThreadEnabledStateCallback>       mThreadEnabledStateChangedCallbacks;
+    std::vector<ThreadRoleChangedCallback>        mThreadRoleChangedCallbacks;
     bool                                          mEnableAutoAttach = false;
     ThreadEnabledState                            mThreadEnabledState;
     AsyncResultReceiver                           mJoinReceiver;
