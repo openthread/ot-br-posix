@@ -92,6 +92,10 @@ private:
     void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
 
     otbr::Host::NcpHost &mHost;
+
+#if OTBR_ENABLE_BORDER_AGENT
+    otbr::BorderAgent &mBorderAgent;
+#endif
 };
 
 /**

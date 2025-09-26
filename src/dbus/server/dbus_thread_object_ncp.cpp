@@ -26,6 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dbus_thread_object_ncp.hpp"
 #include <openthread/border_agent.h>
 #include <openthread/border_router.h>
 
@@ -34,8 +35,6 @@
 #include "common/code_utils.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "host/thread_helper.hpp"
-
-#include "dbus_thread_object_ncp.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -48,6 +47,9 @@ DBusThreadObjectNcp::DBusThreadObjectNcp(DBusConnection            &aConnection,
                                          const DependentComponents &aDeps)
     : DBusObject(&aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mHost(static_cast<Host::NcpHost &>(aDeps.mHost))
+#if OTBR_ENABLE_BORDER_AGENT
+    , mBorderAgent(aDeps.mBorderAgent)
+#endif
 {
 }
 
@@ -213,23 +215,18 @@ exit:
 
 void DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
 {
-    otError              error = OT_ERROR_NONE;
-    std::vector<uint8_t> data;
-    uint32_t             lifetime = 0;
-    uint16_t             port     = 0;
-    std::string          ePskc;
-    auto                 args = std::tie(data, lifetime, port);
+    otError     error    = OT_ERROR_NONE;
+    uint32_t    lifetime = 0;
+    std::string ePskc;
+    auto        args = std::tie(lifetime);
 
     SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
-    ePskc = std::string(data.begin(), data.end());
-
     VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(ePskc.size() <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_LENGTH &&
-                     ePskc.size() >= OT_BORDER_AGENT_MIN_EPHEMERAL_KEY_LENGTH,
-                 error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(mBorderAgent.CreateEphemeralKey(ePskc), error = OT_ERROR_INVALID_ARGS);
+    otbrLogInfo("Created Ephemeral Key: %s", ePskc.c_str());
 
-    mHost.ActivateEphemeralKey(ePskc.c_str(), lifetime, port,
+    mHost.ActivateEphemeralKey(ePskc.c_str(), lifetime, OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT,
                                [aRequest](otError aError, const std::string &aErrorInfo) mutable {
                                    OT_UNUSED_VARIABLE(aErrorInfo);
                                    aRequest.ReplyOtResult(aError);
@@ -237,10 +234,6 @@ void DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
 
 exit:
     if (error != OT_ERROR_NONE)
-    {
-        aRequest.Reply(std::tie(data));
-    }
-    else
     {
         aRequest.ReplyOtResult(error);
     }
@@ -262,10 +255,6 @@ void DBusThreadObjectNcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aReques
 
 exit:
     if (error != OT_ERROR_NONE)
-    {
-        aRequest.Reply(std::tie(retain_active_session));
-    }
-    else
     {
         aRequest.ReplyOtResult(error);
     }

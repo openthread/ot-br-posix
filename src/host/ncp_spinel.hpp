@@ -449,10 +449,10 @@ public:
      *
      * This method instructs the NCP to activate an ephemeral key for secure operations.
      *
-     * @param[in] aPskc         The null-terminated PSKc string to use as the ephemeral key.
-     * @param[in] aDurationMilli The duration (in milliseconds) for which the ephemeral key should be active.
-     * @param[in] aPort         The UDP port on which the ephemeral key is to be used.
-     * @param[in] aAsyncTask    The async task pointer to receive the result of this operation.
+     * @param[in] aPskc             The null-terminated PSKc string to use as the ephemeral key.
+     * @param[in] aDurationMilli    The duration (in milliseconds) for which the ephemeral key should be active.
+     * @param[in] aPort             The UDP port on which the ephemeral key is to be used.
+     * @param[in] aAsyncTask        The async task pointer to receive the result of this operation.
      */
     void ActivateEphemeralKey(const char *aPskc, uint32_t aDurationMilli, uint16_t aPort, AsyncTaskPtr aAsyncTask);
 
@@ -465,7 +465,7 @@ public:
      * @param[in] aAsyncTask            The async task pointer to receive the result of this operation.
      */
     void DeactivateEphemeralKey(bool aRetainActiveSession, AsyncTaskPtr aAsyncTask);
-#endif
+#endif // OTBR_ENABLE_EPSKC
 
 private:
     using FailureHandler = std::function<void(otError)>;

@@ -295,9 +295,6 @@ void NcpSpinel::SetBorderAgentMeshCoPServiceChangedCallback(const BorderAgentMes
 void NcpSpinel::AddEphemeralKeyStateChangedCallback(const EphemeralKeyStateChangedCallback &aCallback)
 {
     mEphemeralKeyStateChangedCallback = aCallback;
-
-    // Get the Ephemeral Key state to have an initial value.
-    SuccessOrDie(GetProperty(SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_STATE), "Failed to get Ephemeral Key State");
 }
 
 void NcpSpinel::HandleReceivedFrame(const uint8_t *aFrame,
@@ -585,7 +582,6 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         SuccessOrExit(decoder.ReadUint8(state), error = OTBR_ERROR_PARSE);
         SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
         SafeInvoke(mEphemeralKeyStateChangedCallback, static_cast<otBorderAgentEphemeralKeyState>(state), port);
-
         break;
     }
 
@@ -605,7 +601,7 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
     }
 
     default:
-        otbrLogWarning("Received uncognized key: %u", aKey);
+        otbrLogWarning("Received unrecognized key: %u", aKey);
         break;
     }
 
@@ -1434,8 +1430,6 @@ void NcpSpinel::EnableEphemeralKey(bool aEnable, AsyncTaskPtr aAsyncTask)
     EncodingFunc encodingFunc = [aEnable](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnable); };
 
     VerifyOrExit(mEphemeralKeyTask == nullptr, error = OT_ERROR_BUSY);
-
-    otbrLogInfo("In EnableEphemeralKey aEnable: %s", (aEnable ? "true" : "false"));
 
     SuccessOrExit(error = SetProperty(SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ENABLE, encodingFunc));
     mEphemeralKeyTask = aAsyncTask;

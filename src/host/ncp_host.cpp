@@ -142,6 +142,7 @@ void NcpHost::Init(void)
     mNcpSpinel.SrpServerSetEnabled(/* aEnabled */ true);
 #endif
 #endif
+    otPlatCryptoRandomInit();
     mIsInitialized = true;
 }
 
@@ -268,8 +269,6 @@ void NcpHost::EnableEphemeralKey(bool aEnable, const AsyncResultReceiver &aRecei
 {
     AsyncTaskPtr task;
     auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
-
-    otbrLogInfo("In EnableEphemeralKey aEnable: %s", (aEnable ? "true" : "false"));
 
     task = std::make_shared<AsyncTask>(errorHandler);
     task->First([this, aEnable](AsyncTaskPtr aNext) { mNcpSpinel.EnableEphemeralKey(aEnable, std::move(aNext)); });
