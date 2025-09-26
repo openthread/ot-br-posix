@@ -238,10 +238,6 @@ void DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.Reply(std::tie(data));
-    }
-    else
-    {
         aRequest.ReplyOtResult(error);
     }
 }
@@ -262,10 +258,6 @@ void DBusThreadObjectNcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aReques
 
 exit:
     if (error != OT_ERROR_NONE)
-    {
-        aRequest.Reply(std::tie(retain_active_session));
-    }
-    else
     {
         aRequest.ReplyOtResult(error);
     }

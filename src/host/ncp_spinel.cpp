@@ -585,7 +585,6 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         SuccessOrExit(decoder.ReadUint8(state), error = OTBR_ERROR_PARSE);
         SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
         SafeInvoke(mEphemeralKeyStateChangedCallback, static_cast<otBorderAgentEphemeralKeyState>(state), port);
-
         break;
     }
 
@@ -605,7 +604,7 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
     }
 
     default:
-        otbrLogWarning("Received uncognized key: %u", aKey);
+        otbrLogWarning("Received unrecognized key: %u", aKey);
         break;
     }
 
