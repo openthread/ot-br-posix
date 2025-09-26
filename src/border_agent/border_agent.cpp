@@ -327,6 +327,12 @@ exit:
 
 #endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
+void BorderAgent::HandleThreadRoleChanged(otDeviceRole aRole)
+{
+    otbrLogInfo("Thread role changed to %s", otThreadDeviceRoleToString(aRole));
+    SetEnabled(aRole != OT_DEVICE_ROLE_DISABLED);
+}
+
 void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
 {
     Mdns::Publisher::TxtList txtList;
