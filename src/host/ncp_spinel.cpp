@@ -577,7 +577,7 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
 
         SuccessOrExit(ParseUdpForwardStream(aBuffer, aLength, udpPayload, length, peerAddress, peerPort, localPort),
                       error = OTBR_ERROR_PARSE);
-        SafeInvoke(mUdpForwardSendCallback, udpPayload, length, *peerAddress, peerPort);
+        SafeInvoke(mUdpForwardSendCallback, udpPayload, length, *peerAddress, peerPort, localPort);
 
         break;
     }
