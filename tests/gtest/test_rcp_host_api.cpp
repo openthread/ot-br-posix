@@ -464,7 +464,7 @@ TEST(RcpHostApi, ThreadEnabledDisableCallbackInvoked)
     otInstance *instance = ot::FakePlatform::CurrentInstance();
 
     // Case 1. check CB is invoked when enabling Thread
-    OT_UNUSED_VARIABLE(otIp6SetEnabled(instance, true));
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
     OT_UNUSED_VARIABLE(otThreadSetEnabled(instance, true));
 
     // set aInitialPump to true to make sure the cb is invoked
