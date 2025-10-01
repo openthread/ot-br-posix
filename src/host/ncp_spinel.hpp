@@ -108,7 +108,17 @@ public:
     using InfraIfSendIcmp6NdCallback = std::function<void(uint32_t, const otIp6Address &, const uint8_t *, uint16_t)>;
     using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
     using CliDaemonOutputCallback                  = std::function<void(const char *)>;
-    using UdpForwardSendCallback = std::function<void(const uint8_t *, uint16_t, const otIp6Address &, uint16_t)>;
+    /**
+     * Callback for forwarding UDP packets to the host.
+     *
+     * @param[in] aPayload         Pointer to the UDP payload.
+     * @param[in] aPayloadLength   Length of the UDP payload.
+     * @param[in] aPeerAddress     IPv6 address of the peer.
+     * @param[in] aPeerPort        UDP port of the peer.
+     * @param[in] aLocalPort       Local UDP port (on the Thread side).
+     */
+    using UdpForwardSendCallback =
+        std::function<void(const uint8_t *, uint16_t, const otIp6Address &, uint16_t, uint16_t)>;
     using BackboneRouterMulticastListenerCallback =
         std::function<void(otBackboneRouterMulticastListenerEvent, Ip6Address)>;
     using BackboneRouterStateChangedCallback = std::function<void(otBackboneRouterState)>;

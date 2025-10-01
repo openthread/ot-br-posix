@@ -383,10 +383,13 @@ void Application::InitNcpMode(void)
             OTBR_UNUSED_VARIABLE(aLength);
 #endif
         });
-    mHost.SetUdpForwardToHostCallback(
-        [this](const uint8_t *aUdpPayload, uint16_t aLength, const otIp6Address &aPeerAddr, uint16_t aPeerPort) {
+    mHost.SetUdpForwardToHostCallback([this](const uint8_t *aUdpPayload, uint16_t aLength,
+                                             const otIp6Address &aPeerAddr, uint16_t aPeerPort, uint16_t aLocalPort) {
+        if (aLocalPort == mBorderAgentUdpProxy.GetThreadPort())
+        {
             mBorderAgentUdpProxy.SendToPeer(aUdpPayload, aLength, aPeerAddr, aPeerPort);
-        });
+        }
+    });
     SetBorderAgentOnInitState();
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
