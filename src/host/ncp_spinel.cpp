@@ -1493,7 +1493,7 @@ exit:
             [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to deactivate ephemeral key!"); });
     }
 }
-#endif
+#endif // OTBR_ENABLE_EPSKC
 
 otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)
 {

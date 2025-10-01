@@ -301,7 +301,7 @@ void NcpHost::DeactivateEphemeralKey(bool aRetainActiveSession, const AsyncResul
     });
     task->Run();
 }
-#endif
+#endif // OTBR_ENABLE_EPSKC
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
 void NcpHost::SetBackboneRouterEnabled(bool aEnabled)

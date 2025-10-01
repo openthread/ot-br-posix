@@ -395,7 +395,14 @@ void Application::InitNcpMode(void)
         {
             mBorderAgentUdpProxy.SendToPeer(aUdpPayload, aLength, aPeerAddr, aPeerPort);
         }
+#if OTBR_ENABLE_EPSKC
+        else if (aLocalPort == mEphemeralKeyUdpProxy.GetThreadPort())
+        {
+            mEphemeralKeyUdpProxy.SendToPeer(aUdpPayload, aLength, aPeerAddr, aPeerPort);
+        }
+#endif // OTBR_ENABLE_EPSKC
     });
+#if OTBR_ENABLE_EPSKC
     mHost.AddEphemeralKeyStateChangedCallback([this](otBorderAgentEphemeralKeyState aState, uint16_t aPort) {
         if (aState == OT_BORDER_AGENT_STATE_STARTED)
         {
@@ -406,11 +413,12 @@ void Application::InitNcpMode(void)
         {
             otbrLogInfo("Border Agent Ephemeral Key State Changed: Inactive");
             mEphemeralKeyUdpProxy.Stop();
-#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
-            mBorderAgent.HandleEpskcStateChanged(aState, aPort);
-#endif
         }
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+        mBorderAgent.HandleEpskcStateChanged(aState, mEphemeralKeyUdpProxy.GetHostPort());
+#endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     });
+#endif // OTBR_ENABLE_EPSKC
     SetBorderAgentOnInitState();
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
