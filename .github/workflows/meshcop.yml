@@ -67,6 +67,7 @@ jobs:
     - name: mDNS service
       env:
         TEST_CASE: "mdns_service"
+        OTBR_MDNS: ${{ matrix.mdns }}
       run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: MTD
       env:

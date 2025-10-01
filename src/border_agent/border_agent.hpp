@@ -170,6 +170,13 @@ public:
 #endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
     /**
+     * This method handles Thread role changes.
+     *
+     * @param[in] aRole  The new Thread role.
+     */
+    void HandleThreadRoleChanged(otDeviceRole aRole);
+
+    /**
      * Sets the callback to be notified when vendor TXT Data gets set or changed.
      *
      * @param[in] aCallback  The callback.
