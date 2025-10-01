@@ -270,7 +270,9 @@ private:
 #if OTBR_ENABLE_BORDER_AGENT
     BorderAgent mBorderAgent;
     UdpProxy    mBorderAgentUdpProxy;
-    UdpProxy    mEphemeralKeyUdpProxy;
+#if OTBR_ENABLE_EPSKC
+    UdpProxy mEphemeralKeyUdpProxy;
+#endif
 
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
