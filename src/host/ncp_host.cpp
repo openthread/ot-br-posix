@@ -142,6 +142,7 @@ void NcpHost::Init(void)
     mNcpSpinel.SrpServerSetEnabled(/* aEnabled */ true);
 #endif
 #endif
+    otPlatCryptoRandomInit();
     mIsInitialized = true;
 }
 
@@ -263,6 +264,45 @@ void NcpHost::SetHostPowerState(uint8_t aState, const AsyncResultReceiver &aRece
     task->Run();
 }
 
+#if OTBR_ENABLE_EPSKC
+void NcpHost::EnableEphemeralKey(bool aEnable, const AsyncResultReceiver &aReceiver)
+{
+    AsyncTaskPtr task;
+    auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    task = std::make_shared<AsyncTask>(errorHandler);
+    task->First([this, aEnable](AsyncTaskPtr aNext) { mNcpSpinel.EnableEphemeralKey(aEnable, std::move(aNext)); });
+    task->Run();
+}
+
+void NcpHost::ActivateEphemeralKey(const char                *aPskc,
+                                   uint32_t                   aDuration,
+                                   uint16_t                   aPort,
+                                   const AsyncResultReceiver &aReceiver)
+{
+    AsyncTaskPtr task;
+    auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    task = std::make_shared<AsyncTask>(errorHandler);
+    task->First([this, aPskc, aDuration, aPort](AsyncTaskPtr aNext) {
+        mNcpSpinel.ActivateEphemeralKey(aPskc, aDuration, aPort, std::move(aNext));
+    });
+    task->Run();
+}
+
+void NcpHost::DeactivateEphemeralKey(bool aRetainActiveSession, const AsyncResultReceiver &aReceiver)
+{
+    AsyncTaskPtr task;
+    auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    task = std::make_shared<AsyncTask>(errorHandler);
+    task->First([this, aRetainActiveSession](AsyncTaskPtr aNext) {
+        mNcpSpinel.DeactivateEphemeralKey(aRetainActiveSession, std::move(aNext));
+    });
+    task->Run();
+}
+#endif // OTBR_ENABLE_EPSKC
+
 #if OTBR_ENABLE_BACKBONE_ROUTER
 void NcpHost::SetBackboneRouterEnabled(bool aEnabled)
 {
@@ -287,7 +327,7 @@ void NcpHost::SetBorderAgentMeshCoPServiceChangedCallback(BorderAgentMeshCoPServ
 
 void NcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallback aCallback)
 {
-    OTBR_UNUSED_VARIABLE(aCallback);
+    mNcpSpinel.AddEphemeralKeyStateChangedCallback(aCallback);
 }
 
 #if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
