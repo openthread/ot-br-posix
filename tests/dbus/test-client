@@ -75,11 +75,6 @@ scan_meshcop_service()
 
 update_meshcop_txt_and_check()
 {
-    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('nn',[97])]" || true
-    sleep 5
-    service="$(scan_meshcop_service)"
-    grep --binary-files=text "nn=OpenThread" <<<"${service}"
-
     sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('vn',[118,101,110,100,111,114])]"
     sleep 5
     service="$(scan_meshcop_service)"
