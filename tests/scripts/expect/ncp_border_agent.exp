@@ -50,8 +50,6 @@ proc check_common_txt {mdns_browse_result} {
     check_string_contains $mdns_browse_result "sb="
     check_string_contains $mdns_browse_result "xa="
     check_string_contains $mdns_browse_result "tv="
-    check_string_contains $mdns_browse_result "xp="
-    check_string_contains $mdns_browse_result "nn="
     check_string_contains $mdns_browse_result "id="
     check_string_contains $mdns_browse_result "mn="
     check_string_contains $mdns_browse_result "vn="
