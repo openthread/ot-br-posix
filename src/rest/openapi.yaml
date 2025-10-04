@@ -211,7 +211,7 @@ paths:
                         - threadStackVersion
                         - children
                         - childIpv6Addresses
-                        - routerNeighbor
+                        - routerNeighbors
                         - mleCounters
                       status: completed
                       created: '2025-02-26T15:53:06+02:00'
