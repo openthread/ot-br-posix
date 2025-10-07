@@ -49,13 +49,12 @@ startup()
 
     start_service rsyslog
     start_service dbus
-    # Thread Certification tests require Avahi to publish records for tests. Since the
-    # same image is used for all tests Avahi needs to be started here and if
-    # building a reference device.
-    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
+    # OT backbone CI tests require Avahi to publish records for testing. Since the
+    # same image is used for all tests Avahi needs to be started here.
+    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 ]]; then
         start_service avahi-daemon
     fi
-    if have service; then
+    if have service && [[ ${OTBR_MDNS} == "mDNSResponder" ]]; then
         sudo service mdns status || sudo service mdns start || echo "service mdns is not available!"
     fi
     without WEB_GUI || start_service otbr-web
