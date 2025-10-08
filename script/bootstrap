@@ -108,6 +108,9 @@ EOF
     # reference device
     without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils iperf3 ndisc6
 
+    # any CI device
+    without OT_BACKBONE_CI || sudo apt-get install --no-install-recommends -y dnsutils avahi-utils
+
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y libnetfilter-queue1 libnetfilter-queue-dev
 
