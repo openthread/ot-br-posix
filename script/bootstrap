@@ -61,16 +61,16 @@ install_packages_apt()
 
     # mDNS
 
-    # Thread Certification tests require Avahi to publish records for tests. Since the
-    # same image is used for all tests this needs to be installed here. Additionally
-    # Avahi should be included for reference device builds.
-    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
+    # OT backbone CI tests require Avahi to publish records for testing.
+    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 ]]; then
         sudo apt-get install --no-install-recommends -y avahi-daemon libavahi-client-dev libavahi-client3 libavahi-common-dev
         # Increase the object number limit to rid of 'Too many objects' error
         sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
     fi
 
-    if [[ ${OTBR_MDNS} == "mDNSResponder" || ${OT_BACKBONE_CI} == 1 ]]; then
+    # Thread Certification tests require mDNSResponder ('dns-sd') to publish records for testing. Since the
+    # same image is used for reference OTBRs and for reference Linux hosts, this needs to be installed here.
+    if [[ ${OTBR_MDNS} == "mDNSResponder" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
         (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \
             && cd /tmp \
             && wget -c --tries=3 --no-check-certificate -O "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
@@ -106,7 +106,10 @@ EOF
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 
     # reference device
-    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils avahi-utils iperf3 ndisc6
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils iperf3 ndisc6
+
+    # any CI device
+    without OT_BACKBONE_CI || sudo apt-get install --no-install-recommends -y dnsutils avahi-utils
 
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y libnetfilter-queue1 libnetfilter-queue-dev
