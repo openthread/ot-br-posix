@@ -68,7 +68,7 @@ install_packages_apt()
         sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
     fi
 
-    # Thread Certification tests require mDNSResonder ('dns-sd') to publish records for testing. Since the
+    # Thread Certification tests require mDNSResponder ('dns-sd') to publish records for testing. Since the
     # same image is used for reference OTBRs and for reference Linux hosts, this needs to be installed here.
     if [[ ${OTBR_MDNS} == "mDNSResponder" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
         (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147 \

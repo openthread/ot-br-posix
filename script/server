@@ -54,7 +54,7 @@ startup()
     if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 ]]; then
         start_service avahi-daemon
     fi
-    if have service && [[ ${OTBR_MDNS} == "mDNSResponder" ]]; then
+    if have service && [[ ${OTBR_MDNS} == "mDNSResponder" || ${OT_BACKBONE_CI} == 1 ]]; then
         sudo service mdns status || sudo service mdns start || echo "service mdns is not available!"
     fi
     without WEB_GUI || start_service otbr-web
