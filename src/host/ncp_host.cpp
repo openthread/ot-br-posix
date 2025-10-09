@@ -40,6 +40,14 @@
 #include "host/async_task.hpp"
 #include "lib/spinel/spinel_driver.hpp"
 
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY && !OTBR_ENABLE_MDNS
+#error "OTBR_ENABLE_MDNS is required when OTBR_ENABLE_SRP_ADVERTISING_PROXY is enabled"
+#endif
+
+#if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE && !OTBR_ENABLE_MDNS
+#error "OTBR_ENABLE_MDNS is required when OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE is enabled"
+#endif
+
 namespace otbr {
 namespace Host {
 
