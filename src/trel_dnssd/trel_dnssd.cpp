@@ -35,7 +35,7 @@
 
 #include "trel_dnssd/trel_dnssd.hpp"
 
-#if OTBR_ENABLE_TREL
+#if OTBR_ENABLE_TREL_DNSSD
 
 #include <inttypes.h>
 #include <net/if.h>
@@ -534,4 +534,4 @@ exit:
 
 } // namespace otbr
 
-#endif // OTBR_ENABLE_TREL
+#endif // OTBR_ENABLE_TREL_DNSSD
