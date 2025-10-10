@@ -68,4 +68,14 @@
 #define OTBR_CONFIG_CLI_MAX_LINE_LENGTH 640
 #endif
 
+/**
+ * @def OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT
+ *
+ * Specifies the border agent UDP port for meshcop-e service.
+ * If zero, an ephemeral port will be used.
+ */
+#ifndef OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT
+#define OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT 0
+#endif
+
 #endif // OTBR_CONFIG_H_

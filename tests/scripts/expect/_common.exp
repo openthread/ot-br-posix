@@ -197,3 +197,10 @@ proc check_string_contains {haystack needle} {
         exit 1
     }
 }
+
+proc check_string_should_not_contain {haystack needle} {
+    if {[regexp $needle $haystack]} {
+        puts "Error: '$needle' was found."
+        exit 1
+    }
+}

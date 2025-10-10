@@ -270,6 +270,10 @@ private:
 #if OTBR_ENABLE_BORDER_AGENT
     BorderAgent mBorderAgent;
     UdpProxy    mBorderAgentUdpProxy;
+#if OTBR_ENABLE_EPSKC
+    UdpProxy mEphemeralKeyUdpProxy;
+#endif
+
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
