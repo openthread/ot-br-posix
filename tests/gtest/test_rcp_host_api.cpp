@@ -42,11 +42,18 @@
 
 static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
                                  uint32_t                  aTimeoutSec,
-                                 std::function<bool(void)> aCondition)
+                                 std::function<bool(void)> aCondition,
+                                 bool                      aInitialPump = false)
 {
     timeval startTime;
     timeval now;
     gettimeofday(&startTime, nullptr);
+
+    if (aInitialPump)
+    {
+        otbr::MainloopManager::GetInstance().Update(aMainloop);
+        otbr::MainloopManager::GetInstance().Process(aMainloop);
+    }
 
     while (!aCondition())
     {
@@ -433,6 +440,52 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, ThreadEnabledDisableCallbackInvoked)
+{
+    otbr::MainloopContext mainloop;
+    otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                               /* aDryRun */ false,
+                               /* aEnableAutoAttach */ false);
+
+    host.Init();
+
+    bool         callbackInvoked = false;
+    otDeviceRole lastRole        = OT_DEVICE_ROLE_DISABLED;
+    auto         roleCb          = [&callbackInvoked, &lastRole](otDeviceRole aRole) {
+        lastRole        = aRole;
+        callbackInvoked = true;
+    };
+    host.AddThreadRoleChangedCallback(roleCb);
+
+    otInstance *instance = ot::FakePlatform::CurrentInstance();
+
+    // Case 1. check CB is invoked when enabling Thread
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
+    OT_UNUSED_VARIABLE(otThreadSetEnabled(instance, true));
+
+    // set aInitialPump to true to make sure the cb is invoked
+    MainloopProcessUntil(
+        mainloop, /* aTimeoutSec */ 1, [&host]() { return host.GetDeviceRole() != OT_DEVICE_ROLE_DISABLED; },
+        /* aInitialPump */ true);
+
+    EXPECT_TRUE(callbackInvoked);
+    EXPECT_NE(lastRole, OT_DEVICE_ROLE_DISABLED);
+
+    // Case 2. check CB is invoked when disabling Thread
+    callbackInvoked = false;
+    OT_UNUSED_VARIABLE(otThreadSetEnabled(instance, false));
+
+    // set aInitialPump to true to make sure the cb is invoked
+    MainloopProcessUntil(
+        mainloop, /* aTimeoutSec */ 1, [&host]() { return host.GetDeviceRole() == OT_DEVICE_ROLE_DISABLED; },
+        /* aInitialPump */ true);
+
+    EXPECT_TRUE(callbackInvoked);
+    EXPECT_EQ(lastRole, OT_DEVICE_ROLE_DISABLED);
 
     host.Deinit();
 }

@@ -269,6 +269,7 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     mPublisher->Start();
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
+    rcpHost.AddThreadRoleChangedCallback([this](otDeviceRole aRole) { mBorderAgent.HandleThreadRoleChanged(aRole); });
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mHost.SetBorderAgentMeshCoPServiceChangedCallback(
         [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
