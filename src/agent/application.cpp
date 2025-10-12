@@ -378,6 +378,9 @@ void Application::InitNcpMode(void)
 #if OTBR_ENABLE_BORDER_AGENT && OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mMdnsStateSubject.AddObserver(mBorderAgent);
 #endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    mMdnsStateSubject.AddObserver(mDnssdPlatform);
+#endif
 #if OTBR_ENABLE_MDNS
     ncpHost.SetMdnsPublisher(mPublisher.get());
     mPublisher->Start();
@@ -444,6 +447,10 @@ void Application::InitNcpMode(void)
 #if OTBR_ENABLE_BACKBONE_ROUTER_ON_INIT
     mHost.SetBackboneRouterEnabled(true);
 #endif
+#endif
+
+#if OTBR_ENABLE_DNSSD_PLAT
+    mDnssdPlatform.Start();
 #endif
 }
 

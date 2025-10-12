@@ -41,6 +41,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "host/posix/dnssd.hpp"
 #include "lib/spinel/spinel.h"
 #include "lib/spinel/spinel_decoder.hpp"
 #include "lib/spinel/spinel_driver.hpp"
@@ -63,6 +64,9 @@ NcpSpinel::NcpSpinel(void)
     , mPropsObserver(nullptr)
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     , mPublisher(nullptr)
+#endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    , mDiscoveryProxyId(0)
 #endif
 {
     std::fill_n(mWaitingKeyTable, SPINEL_PROP_LAST_STATUS, sizeof(mWaitingKeyTable));
@@ -708,6 +712,26 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         break;
     }
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_DNSSD_PLAT
+    case SPINEL_PROP_DNSSD_BROWSER:
+    {
+        otPlatDnssdBrowser   browser;
+        const uint8_t       *callbackData;
+        uint16_t             callbackDataSize;
+        std::vector<uint8_t> callbackDataCopy;
+
+        SuccessOrExit(ot::Spinel::DecodeDnssdBrowser(decoder, browser, callbackData, callbackDataSize));
+        callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
+
+        DnssdPlatform::Get().StartServiceBrowser(browser,
+                                                 std::make_shared<DnssdPlatform::StdBrowseCallback>(
+                                                     [this, callbackDataCopy](const otPlatDnssdBrowseResult &aResult) {
+                                                         SendDnssdBrowseResult(aResult, callbackDataCopy);
+                                                     },
+                                                     mDiscoveryProxyId++));
+        break;
+    }
+#endif // OTBR_ENABLE_DNSSD_PLAT
     case SPINEL_PROP_BACKBONE_ROUTER_MULTICAST_LISTENER:
     {
         const otIp6Address *addr;
@@ -1305,6 +1329,25 @@ otError NcpSpinel::SendDnssdResult(otPlatDnssdRequestId        aRequestId,
 
     return error;
 }
+
+#if OTBR_ENABLE_DNSSD_PLAT
+otError NcpSpinel::SendDnssdBrowseResult(const otPlatDnssdBrowseResult &aResult,
+                                         const std::vector<uint8_t>    &aCallbackData)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [&aResult, &aCallbackData](ot::Spinel::Encoder &aEncoder) {
+        return EncodeDnssdBrowseResult(aEncoder, aResult, aCallbackData.data(), aCallbackData.size());
+    };
+
+    error = SetProperty(SPINEL_PROP_DNSSD_BROWSE_RESULT, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to Send DnssdBrowseResult, %s", otThreadErrorToString(error));
+    }
+
+    return error;
+}
+#endif
 
 otbrError NcpSpinel::SetInfraIf(uint32_t aInfraIfIndex, bool aIsRunning, const std::vector<Ip6Address> &aIp6Addresses)
 {
