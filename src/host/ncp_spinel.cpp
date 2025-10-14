@@ -355,7 +355,11 @@ void NcpSpinel::HandleNotification(const uint8_t *aFrame, uint16_t aLength)
     }
 
 exit:
-    otbrLogResult(error, "%s", __FUNCTION__);
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to handle notification: %s", otbrErrorString(error));
+    }
+    return;
 }
 
 void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_t aLength)
@@ -588,7 +592,7 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
     }
 
 exit:
-    otbrLogResult(error, "NcpSpinel: %s", __FUNCTION__);
+    otbrLogResult(error, "%s, Property:%s", __FUNCTION__, spinel_prop_key_to_cstr(aKey));
     return;
 }
 
