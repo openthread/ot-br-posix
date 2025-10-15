@@ -836,19 +836,6 @@ otbrError NcpSpinel::HandleResponseForPropGet(spinel_tid_t      aTid,
         break;
     }
 
-    case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_STATE:
-    {
-        uint8_t             state;
-        uint16_t            port;
-        ot::Spinel::Decoder decoder;
-
-        decoder.Init(aData, aLength);
-        SuccessOrExit(decoder.ReadUint8(state), error = OTBR_ERROR_PARSE);
-        SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
-        SafeInvoke(mEphemeralKeyStateChangedCallback, static_cast<otBorderAgentEphemeralKeyState>(state), port);
-        break;
-    }
-
     default:
         VerifyOrExit(aKey == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
         break;
@@ -1439,7 +1426,6 @@ void NcpSpinel::EnableEphemeralKey(bool aEnable, AsyncTaskPtr aAsyncTask)
     mEphemeralKeyTask = aAsyncTask;
 
 exit:
-    otbrLogInfo("In EnableEphemeralKey error: %s", otThreadErrorToString(error));
 
     if (error != OT_ERROR_NONE)
     {
