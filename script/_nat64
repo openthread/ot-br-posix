@@ -107,7 +107,7 @@ EOF
 esac
 EOF
     sudo chmod a+x $NAT44_SERVICE
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl enable otbr-nat44 || die 'Unable to enable nat44 service!'
         sudo systemctl start otbr-nat44 || die 'Failed to start nat44 service!'
     fi
@@ -115,7 +115,7 @@ EOF
 
 nat44_uninstall()
 {
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl disable otbr-nat44 || true
     fi
 
