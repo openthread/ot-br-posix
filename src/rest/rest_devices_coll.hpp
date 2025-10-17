@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements api/devices collection and conversion of items and collection to json and json:api
- *
  */
 
 #ifndef OTBR_REST_DEVICES_COLLLECTION_HPP_
@@ -56,7 +55,6 @@ namespace rest {
 
 /**
  * @brief This virtual class implements a general json:api item for holding device attributes.
- *
  */
 class BasicDevices : public BasicCollectionItem
 {
@@ -93,7 +91,6 @@ protected:
 
 /**
  * @brief This class implements a general json:api item for holding static (or mostly static) device attributes.
- *
  */
 class ThreadDevice : public BasicDevices
 {
@@ -160,7 +157,6 @@ public:
 /**
  * @brief This class implements a json:api item for holding static (or mostly static) device attributes of 'this'
  * device.
- *
  */
 class ThisThreadDevice : public ThreadDevice
 {
@@ -196,7 +192,6 @@ public:
 
 /**
  * @brief This class implements a json:api collection for holding device items.
- *
  */
 class DevicesCollection : public BasicCollection
 {

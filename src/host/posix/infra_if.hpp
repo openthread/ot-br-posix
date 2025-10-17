@@ -50,7 +50,6 @@ namespace otbr {
  * Host infrastructure network interface module.
  *
  * The infrastructure network interface MUST be explicitly set by `SetInfraIf` before the InfraIf module can work.
- *
  */
 class InfraIf : public MainloopProcessor, private NonCopyable
 {

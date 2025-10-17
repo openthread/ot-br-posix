@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements api/devices collection and conversion of items and collection to json and json:api
- *
  */
 
 #include "rest_devices_coll.hpp"

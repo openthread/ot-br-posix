@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements APIs used for conversions of data from one form to another
- *
  */
 #include "rest_server_common.hpp"
 

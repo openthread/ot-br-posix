@@ -193,7 +193,6 @@
  * the error can be safely ignored or there is guaranteed to be no error.
  *
  * @param[in]  aError  The error to be ignored.
- *
  */
 static inline void IgnoreError(otError aError)
 {

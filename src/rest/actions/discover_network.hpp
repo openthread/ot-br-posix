@@ -56,7 +56,6 @@ public:
 
     /**
      * Destructor for a NetworkDiagnostic.
-     *
      */
     virtual ~DiscoverNetwork(void) override;
 

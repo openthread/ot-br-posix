@@ -69,7 +69,6 @@ namespace rest {
 /**
  * This class implements the handlers for collecting diagnostic requests (DiagReq) and diagnostic queries (DiagQuery)
  * for OTBR-REST.
- *
  */
 class NetworkDiagHandler
 {
@@ -121,7 +120,6 @@ public:
     otError GetDiscoveryStatus(uint32_t &aDeviceCount);
 
     /**
-     *
      */
     void StopDiagnosticsRequest(void);
 
@@ -142,7 +140,6 @@ public:
 
     /**
      * @brief Clear internal buffer.
-     *
      */
     void Clear(void);
 
@@ -304,7 +301,6 @@ private:
 
     /**
      * @brief Set minimal TLVs needed to collect for filling device collection
-     *
      */
     void SetDefaultTlvs(void);
 

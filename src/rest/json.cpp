@@ -74,7 +74,6 @@ std::string concat(const char *str1, const char *str2)
  *
  * the logic in this implementation relates to parsing the query to the set aSet
  * as implemented by BasicCollectionItem::parseQueryFieldValues
- *
  */
 static bool hasKey(std::set<std::string> aSet, std::string aKey)
 {

@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements APIs used for conversions of data from one form to another.
- *
  */
 #ifndef REST_SERVER_COMMON_HPP_
 #define REST_SERVER_COMMON_HPP_

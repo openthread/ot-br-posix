@@ -140,7 +140,6 @@ struct RouterInfo
 
 /**
  * Represents static device infos
- *
  */
 struct DeviceInfo
 {
