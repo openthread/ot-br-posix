@@ -29,7 +29,6 @@
 /**
  * @brief   Implements collection of network diagnostic TLVs,
  *          including retries.
- *
  */
 
 /**

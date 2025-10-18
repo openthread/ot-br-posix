@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements collection and conversion of items and collection to json and json:api
- *
  */
 
 #ifndef OTBR_REST_GENERIC_COLLLECTION_HPP_
@@ -51,7 +50,6 @@ namespace rest {
 
 /**
  * @brief This virtual class implements a general item of a json:api collection.
- *
  */
 class BasicCollectionItem
 {
@@ -112,7 +110,6 @@ public:
      *
      * the logic in this implementation relates to parsing the query to the set aSet
      * as implemented by BasicCollectionItem::parseQueryFieldValues
-     *
      */
     bool hasKey(std::set<std::string> aSet, std::string aKey);
 
@@ -151,7 +148,6 @@ public:
 
 /**
  * @brief This virtual class implements a general json:api collection.
- *
  */
 class BasicCollection
 {

@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements api/diagnostics collection and conversion of items and collection to json and json:api
- *
  */
 #include "rest_diagnostics_coll.hpp"
 #include "timestamp.hpp"
