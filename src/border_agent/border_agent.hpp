@@ -170,27 +170,11 @@ public:
 #endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
     /**
-     * This method handles Thread role changes.
-     *
-     * @param[in] aRole  The new Thread role.
-     */
-    void HandleThreadRoleChanged(otDeviceRole aRole);
-
-    /**
      * Sets the callback to be notified when vendor TXT Data gets set or changed.
      *
      * @param[in] aCallback  The callback.
      */
     void SetVendorTxtDataChangedCallback(VendorTxtDataChangedCallback aCallback);
-
-    /**
-     * This method checks if the device role is attached.
-     *
-     * @param[in] aRole The Thread device role.
-     *
-     * @returns true if the device is attached, false otherwise.
-     */
-    static bool IsAttached(otDeviceRole aRole);
 
     /**
      * This method creates ephemeral key in the Border Agent.

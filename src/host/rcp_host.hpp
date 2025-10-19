@@ -229,6 +229,8 @@ public:
 
     const char *GetCoprocessorVersion(void) override { return otPlatRadioGetVersionString(mInstance); }
 
+    bool IsAttached(void);
+
 private:
     static void SafeInvokeAndClear(AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
     {
@@ -274,8 +276,6 @@ private:
 
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
-
-    bool IsAttached(void);
 
     void UpdateThreadEnabledState(ThreadEnabledState aState);
 
