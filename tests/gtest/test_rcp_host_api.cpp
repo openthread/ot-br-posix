@@ -437,6 +437,47 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Deinit();
 }
 
+#if OTBR_ENABLE_BORDER_AGENT
+TEST(RcpHostApi, BorderAgentCallbackEnablesOnAttach)
+{
+    otbr::MainloopContext mainloop;
+    otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                               /* aDryRun */ false,
+                               /* aEnableAutoAttach */ false);
+
+    host.Init();
+
+    bool borderAgentEnabled = false;
+    host.AddThreadRoleChangedCallback([&host, &borderAgentEnabled](otDeviceRole aRole) {
+        OT_UNUSED_VARIABLE(aRole);
+        if (host.IsAttached())
+        {
+            borderAgentEnabled = true;
+        }
+    });
+
+    otInstance              *instance = ot::FakePlatform::CurrentInstance();
+    otOperationalDataset     dataset;
+    otOperationalDatasetTlvs datasetTlvs;
+
+    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(instance, &dataset));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(instance, &datasetTlvs));
+
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
+    ASSERT_EQ(otThreadSetEnabled(instance, true), OT_ERROR_NONE);
+
+    EXPECT_FALSE(borderAgentEnabled);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&borderAgentEnabled]() { return borderAgentEnabled; });
+
+    EXPECT_TRUE(host.IsAttached());
+    EXPECT_TRUE(borderAgentEnabled);
+
+    host.Deinit();
+}
+#endif // OTBR_ENABLE_BORDER_AGENT
+
 TEST(RcpHostApi, ThreadRoleChangedCallbackInvoked)
 {
     // Verify the Thread role change callback fires for each major transition: enabling Thread drives

@@ -327,23 +327,6 @@ exit:
 
 #endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
-bool BorderAgent::IsAttached(otDeviceRole aRole)
-{
-    return aRole == OT_DEVICE_ROLE_CHILD || aRole == OT_DEVICE_ROLE_ROUTER || aRole == OT_DEVICE_ROLE_LEADER;
-}
-
-void BorderAgent::HandleThreadRoleChanged(otDeviceRole aRole)
-{
-    if (IsAttached(aRole))
-    {
-        // This ensures the Border Agent is started only when the Thread device
-        // successfully attaches to a network. This aligns with the OpenThread
-        // core behavior and is particularly useful when the agent is initially
-        // disabled (e.g., via OTBR_STOP_BORDER_AGENT_ON_INIT).
-        SetEnabled(true);
-    }
-}
-
 void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
 {
     Mdns::Publisher::TxtList txtList;
