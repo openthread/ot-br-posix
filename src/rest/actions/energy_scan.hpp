@@ -46,7 +46,6 @@ namespace actions {
 
 /**
  * @brief This class implements a json:api item for holding network diagnostic attributes.
- *
  */
 class EnergyScan : public BasicActions
 {
@@ -61,7 +60,6 @@ public:
 
     /**
      * Destructor for a EnergyScan.
-     *
      */
     virtual ~EnergyScan(void) override;
 

@@ -58,7 +58,6 @@ namespace otbr {
 
 /**
  * This class implements the DNS-SD platform.
- *
  */
 class DnssdPlatform : public Mdns::StateObserver, private NonCopyable
 {

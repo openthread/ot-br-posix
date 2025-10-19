@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements generic collection and conversion of items and collection to json and json:api
- *
  */
 #include "rest_generic_collection.hpp"
 #include "timestamp.hpp"

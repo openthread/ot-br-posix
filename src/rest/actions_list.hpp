@@ -50,7 +50,6 @@ class Services;
 
 /**
  * @brief This class implements a json:api collection for holding action items.
- *
  */
 class ActionsCollection : public BasicCollection
 {
@@ -59,13 +58,11 @@ class ActionsCollection : public BasicCollection
 public:
     /**
      * Constructor for a Actions Collection.
-     *
      */
     ActionsCollection();
 
     /**
      * Destructor for a Actions Collection.
-     *
      */
     virtual ~ActionsCollection();
 
@@ -119,7 +116,6 @@ public:
 
 /**
  * @brief This class implements a json:api collection for holding action items with action-specific extensions.
- *
  */
 class ActionsList : public ActionsCollection
 {
@@ -133,7 +129,6 @@ public:
 
     /**
      * Destructor for a Actions List.
-     *
      */
     ~ActionsList();
 

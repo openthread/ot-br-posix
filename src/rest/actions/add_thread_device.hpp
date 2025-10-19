@@ -46,7 +46,6 @@ namespace actions {
 
 /**
  * @brief This class implements a json:api item for holding network diagnostic attributes.
- *
  */
 
 class AddThreadDevice : public BasicActions
@@ -62,7 +61,6 @@ public:
 
     /**
      * Destructor for a AddThreadDevice action.
-     *
      */
     virtual ~AddThreadDevice(void) override;
 

@@ -28,7 +28,6 @@
 
 /**
  * @brief   Implements api/diagnostics collection and conversion of items and collection to json and json:api
- *
  */
 
 #ifndef OTBR_REST_DIAGNOSTICS_COLLLECTION_HPP_
@@ -56,7 +55,6 @@ namespace rest {
 
 /**
  * @brief This virtual class implements a general json:api item for holding diagnostic attributes.
- *
  */
 class BasicDiagnostics : public BasicCollectionItem
 {
@@ -83,7 +81,6 @@ public:
 
 /**
  * @brief This class implements a json:api item for holding network diagnostic attributes.
- *
  */
 class NetworkDiagnostics : public BasicDiagnostics
 {
@@ -123,7 +120,6 @@ public:
 
 /**
  * @brief This class implements a json:api item for holding energy scan diagnostic attributes.
- *
  */
 class EnergyScanDiagnostics : public BasicDiagnostics
 {
@@ -159,7 +155,6 @@ public:
 
 /**
  * @brief This class implements a json:api collection for holding diagnostic items.
- *
  */
 class DiagnosticsCollection : public BasicCollection
 {

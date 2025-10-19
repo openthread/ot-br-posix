@@ -61,7 +61,6 @@ enum ActionStatus
 
 /**
  * @brief This virtual class implements a general json:api item for holding action attributes.
- *
  */
 class BasicActions : public BasicCollectionItem
 {
@@ -85,7 +84,6 @@ public:
 
     /**
      * Destructor for a Basic Actions.
-     *
      */
     ~BasicActions();
 
@@ -192,7 +190,6 @@ public:
      *
      * @param[in] aStatus  The status of the action.
      * @return  The status of the action as a string.
-     *
      */
     static const char *StatusToString(ActionStatus aStatus);
 
