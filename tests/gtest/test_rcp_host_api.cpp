@@ -497,7 +497,7 @@ TEST(RcpHostApi, ThreadRoleChangedCallbackInvoked)
     otOperationalDataset     dataset;
     otOperationalDatasetTlvs datasetTlvs;
 
-    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(instance, &dataset));
+    ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
     otDatasetConvertToTlvs(&dataset, &datasetTlvs);
     ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs), OT_ERROR_NONE);
 
