@@ -1570,5 +1570,43 @@ otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)
     return role;
 }
 
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+void NcpSpinel::BorderRoutingSetDhcp6PdEnabled(bool aEnabled)
+{
+    otError      error;
+    EncodingFunc encodingFunc = [aEnabled](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnabled); };
+
+    error = SetProperty(SPINEL_PROP_BORDER_ROUTER_DHCP6_PD_ENABLE, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to call BorderRoutingSetDhcp6PdEnabled, %s", otThreadErrorToString(error));
+    }
+}
+
+otbrError NcpSpinel::BorderRoutingProcessDhcp6PdPrefix(const otBorderRoutingPrefixTableEntry *aPrefixInfo)
+{
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [aPrefixInfo](ot::Spinel::Encoder &aEncoder) {
+        otError error = OT_ERROR_NONE;
+
+        // Write prefix and prefix length
+        SuccessOrExit(error = aEncoder.WriteIp6Address(aPrefixInfo->mPrefix.mPrefix));
+        SuccessOrExit(error = aEncoder.WriteUint8(aPrefixInfo->mPrefix.mLength));
+
+        // Write valid and preferred lifetimes
+        SuccessOrExit(error = aEncoder.WriteUint32(aPrefixInfo->mValidLifetime));
+        SuccessOrExit(error = aEncoder.WriteUint32(aPrefixInfo->mPreferredLifetime));
+
+    exit:
+        return error;
+    };
+
+    SuccessOrExit(SetProperty(SPINEL_PROP_BORDER_ROUTER_DHCP6_PD_PREFIX, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    return error;
+}
+#endif // OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+
 } // namespace Host
 } // namespace otbr
