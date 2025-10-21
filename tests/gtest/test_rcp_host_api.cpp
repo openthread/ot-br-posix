@@ -499,7 +499,7 @@ TEST(RcpHostApi, ThreadRoleChangedCallbackInvoked)
 
     OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(instance, &dataset));
     otDatasetConvertToTlvs(&dataset, &datasetTlvs);
-    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(instance, &datasetTlvs));
+    ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs), OT_ERROR_NONE);
 
     // Case 1. Check callback invocation when enabling Thread.
     ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
