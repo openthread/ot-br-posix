@@ -28,6 +28,7 @@
 
 add_library(otbr-utils
     crc16.cpp
+    csprng.cpp
     dns_utils.cpp
     hex.cpp
     infra_link_selector.cpp

@@ -52,8 +52,6 @@
 
 #include <openthread/border_agent.h>
 #include <openthread/border_routing.h>
-#include <openthread/random_crypto.h>
-#include <openthread/random_noncrypto.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/verhoeff_checksum.h>
@@ -70,6 +68,7 @@
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
 #include "common/types.hpp"
+#include "utils/csprng.hpp"
 #include "utils/hex.hpp"
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
@@ -114,7 +113,7 @@ otbrError BorderAgent::CreateEphemeralKey(std::string &aEphemeralKey)
     {
         while (true)
         {
-            SuccessOrExit(otRandomCryptoFillBuffer(candidateBuffer, 1), error = OTBR_ERROR_ABORTED);
+            SuccessOrExit(Csprng::GetInstance().RandomGet(candidateBuffer, 1), error = OTBR_ERROR_ABORTED);
             // Generates a random number in the range [0, 9] with equal probability.
             if (candidateBuffer[0] < 250)
             {
