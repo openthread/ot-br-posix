@@ -269,6 +269,17 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     mPublisher->Start();
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
+    rcpHost.AddThreadRoleChangedCallback([this, &rcpHost](otDeviceRole aRole) {
+        OT_UNUSED_VARIABLE(aRole);
+        // This ensures the Border Agent is started only when the Thread device
+        // successfully attaches to a network. This aligns with the OpenThread
+        // core behavior and is particularly useful when the agent is initially
+        // disabled (e.g., via OTBR_STOP_BORDER_AGENT_ON_INIT).
+        if (rcpHost.IsAttached())
+        {
+            mBorderAgent.SetEnabled(true);
+        }
+    });
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mHost.SetBorderAgentMeshCoPServiceChangedCallback(
         [this](bool aIsActive, uint16_t aPort, const uint8_t *aTxtData, uint16_t aLength) {
