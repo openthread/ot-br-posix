@@ -35,4 +35,5 @@ target_link_libraries(otbr-border-agent PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
     otbr-common
+    otbr-utils
 )
