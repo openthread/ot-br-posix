@@ -135,14 +135,24 @@ if (OTBR_SRP_SERVER_ON_INIT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_SERVER_ON_INIT=1)
 endif()
 
-set(OTBR_DNSSD_DISCOVERY_PROXY_DEFAULT OFF)
-if (OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
-    set(OTBR_DNSSD_DISCOVERY_PROXY_DEFAULT ON)
+# Default to use OT core Discovery Proxy so long as OTBR_MDNS is enabled.
+if (OTBR_MDNS)
+    set(OTBR_OT_DISCOVERY_PROXY_DEFAULT ON)
+else()
+    set(OTBR_OT_DISCOVERY_PROXY_DEFAULT OFF)
 endif()
+
+option(OTBR_OT_DISCOVERY_PROXY "Enable OT core Discovery Proxy" ${OTBR_OT_DISCOVERY_PROXY_DEFAULT})
+
+set(OTBR_DNSSD_DISCOVERY_PROXY_DEFAULT OFF)
 
 option(OTBR_DNSSD_DISCOVERY_PROXY "Enable DNS-SD Discovery Proxy support" ${OTBR_DNSSD_DISCOVERY_PROXY_DEFAULT})
 if (OTBR_DNSSD_DISCOVERY_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNSSD_DISCOVERY_PROXY=1)
+endif()
+
+if (OTBR_OT_DISCOVERY_PROXY AND OTBR_DNSSD_DISCOVERY_PROXY)
+    message(FATAL_ERROR "Only one Discovery Proxy can be enabled.")
 endif()
 
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
@@ -243,7 +253,7 @@ else()
 endif()
 
 set(OTBR_DNSSD_PLAT_DEFAULT OFF)
-if (OTBR_OT_SRP_ADV_PROXY AND OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+if ((OTBR_OT_SRP_ADV_PROXY OR OTBR_OT_DISCOVERY_PROXY) AND OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     set(OTBR_DNSSD_PLAT_DEFAULT ON)
 endif()
 
