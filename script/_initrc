@@ -84,7 +84,7 @@ without()
 }
 
 HAVE_SYSTEMCTL=0
-if have systemctl; then
+if have systemctl && without DOCKER; then
     HAVE_SYSTEMCTL=1
 fi
 HAVE_SERVICE=0
