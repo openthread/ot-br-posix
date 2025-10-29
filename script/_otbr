@@ -133,6 +133,7 @@ otbr_install()
             "-DOT_DHCP6_CLIENT=ON"
             "-DOT_DHCP6_SERVER=ON"
             "-DOTBR_DUA_ROUTING=ON"
+            "-DOTBR_DHCP6_PD_MIN_LIFETIME=60"
         )
     fi
 
