@@ -209,7 +209,6 @@ void BorderAgent::Stop(void)
 }
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
-
 void BorderAgent::HandleEpskcStateChanged(otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort)
 {
     switch (aEpskcState)
