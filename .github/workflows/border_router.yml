@@ -113,7 +113,7 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Backbone Router (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_OT_DISCOVERY_PROXY=OFF"
             border_routing: 0
             internet: 0
             otbr_mdns: "mDNSResponder"
