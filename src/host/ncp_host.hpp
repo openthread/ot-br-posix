@@ -183,6 +183,40 @@ private:
     NcpSpinel                 mNcpSpinel;
     TaskRunner                mTaskRunner;
     CliDaemon                 mCliDaemon;
+
+#if OTBR_ENABLE_MDNS
+    struct MdnsSocket
+    {
+        int  mFd     = -1;
+        bool mActive = false;
+    } mMdnsSocket;
+
+    void OpenMdnsSocket(void);
+    void CloseMdnsSocket(void);
+    void ProcessMdnsSocket(const MainloopContext &aMainloop);
+    void UpdateMdnsSocketFdSet(MainloopContext &aMainloop);
+#endif // OTBR_ENABLE_MDNS
+
+#if OTBR_ENABLE_TREL
+    struct TrelSocket
+    {
+        int      mFd     = -1;
+        uint16_t mPort   = 0;
+        bool     mActive = false;
+    } mTrelSocket;
+
+    void OpenTrelSocket(uint16_t aPort);
+    void CloseTrelSocket(void);
+    void ProcessTrelSocket(const MainloopContext &aMainloop);
+    void UpdateTrelSocketFdSet(MainloopContext &aMainloop);
+    void HandleTrelStateChanged(bool aEnabled, uint16_t aPort);
+#endif // OTBR_ENABLE_TREL
+
+    void HandleUdpForwardSend(const uint8_t      *aUdpPayload,
+                              uint16_t            aLength,
+                              const otIp6Address &aPeerAddr,
+                              uint16_t            aPeerPort,
+                              uint16_t            aLocalPort);
 };
 
 } // namespace Host

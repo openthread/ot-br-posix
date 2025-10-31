@@ -125,6 +125,8 @@ public:
     using BackboneRouterStateChangedCallback = std::function<void(otBackboneRouterState)>;
     using EphemeralKeyStateChangedCallback   = std::function<void(otBorderAgentEphemeralKeyState, uint16_t)>;
 
+    using TrelStateChangedCallback = std::function<void(bool, uint16_t)>;
+
     /**
      * Constructor.
      */
@@ -467,6 +469,21 @@ public:
     void DeactivateEphemeralKey(bool aRetainActiveSession, AsyncTaskPtr aAsyncTask);
 #endif // OTBR_ENABLE_EPSKC
 
+#if OTBR_ENABLE_TREL
+    void SetTrelStateChangedCallback(TrelStateChangedCallback aCallback);
+
+    /**
+     * This method updates the TREL state on the NCP.
+     *
+     * @param[in] aEnabled  Whether TREL is enabled.
+     * @param[in] aPort     The UDP port number.
+     *
+     * @retval OTBR_ERROR_NONE  Successfully sent the update to NCP.
+     * @retval OTBR_ERROR_OPENTHREAD  Failed to encode or send the property.
+     */
+    otbrError UpdateTrelState(bool aEnabled, uint16_t aPort);
+#endif
+
 private:
     using FailureHandler = std::function<void(otError)>;
 
@@ -600,6 +617,9 @@ private:
     BackboneRouterStateChangedCallback       mBackboneRouterStateChangedCallback;
     BackboneRouterMulticastListenerCallback  mBackboneRouterMulticastListenerCallback;
     EphemeralKeyStateChangedCallback         mEphemeralKeyStateChangedCallback;
+
+    uint16_t                 mTrelPort = 0; // Last observed TREL UDP port (0 = unknown).
+    TrelStateChangedCallback mTrelStateChangedCallback;
 };
 
 } // namespace Host

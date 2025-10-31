@@ -30,12 +30,24 @@
 
 #include "ncp_host.hpp"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <memory>
 
 #include <openthread/error.h>
 #include <openthread/thread.h>
 
 #include <openthread/openthread-system.h>
+
+#include "common/code_utils.hpp"
+
+#if OTBR_ENABLE_MDNS
+#include "mdns/mdns.hpp"
+#endif
 
 #include "host/async_task.hpp"
 #include "lib/spinel/spinel_driver.hpp"
@@ -143,11 +155,30 @@ void NcpHost::Init(void)
 #endif
 #endif
     mIsInitialized = true;
+
+#if OTBR_ENABLE_MDNS
+    OpenMdnsSocket();
+#endif
+
+#if OTBR_ENABLE_TREL
+    mNcpSpinel.SetTrelStateChangedCallback(
+        [this](bool aEnabled, uint16_t aPort) { HandleTrelStateChanged(aEnabled, aPort); });
+#endif // OTBR_ENABLE_TREL
+
+    mNcpSpinel.SetUdpForwardSendCallback(
+        [this](const uint8_t *aUdpPayload, uint16_t aLength, const otIp6Address &aPeerAddr, uint16_t aPeerPort,
+               uint16_t aLocalPort) { HandleUdpForwardSend(aUdpPayload, aLength, aPeerAddr, aPeerPort, aLocalPort); });
 }
 
 void NcpHost::Deinit(void)
 {
     mIsInitialized = false;
+#if OTBR_ENABLE_MDNS
+    CloseMdnsSocket();
+#endif
+#if OTBR_ENABLE_TREL
+    CloseTrelSocket();
+#endif
     mNcpSpinel.Deinit();
     otSysDeinit();
 }
@@ -341,6 +372,12 @@ void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
     mCliDaemon.Process(aMainloop);
+#if OTBR_ENABLE_MDNS
+    ProcessMdnsSocket(aMainloop);
+#endif
+#if OTBR_ENABLE_TREL
+    ProcessTrelSocket(aMainloop);
+#endif
 }
 
 void NcpHost::Update(MainloopContext &aMainloop)
@@ -354,6 +391,12 @@ void NcpHost::Update(MainloopContext &aMainloop)
     }
 
     mCliDaemon.UpdateFdSet(aMainloop);
+#if OTBR_ENABLE_MDNS
+    UpdateMdnsSocketFdSet(aMainloop);
+#endif
+#if OTBR_ENABLE_TREL
+    UpdateTrelSocketFdSet(aMainloop);
+#endif
 }
 
 #if OTBR_ENABLE_MDNS
@@ -398,6 +441,312 @@ void NcpHost::InitNetifCallbacks(Netif &aNetif)
     mNcpSpinel.NetifSetStateChangedCallback([&aNetif](bool aState) { aNetif.SetNetifState(aState); });
     mNcpSpinel.Ip6SetReceiveCallback(
         [&aNetif](const uint8_t *aData, uint16_t aLength) { aNetif.Ip6Receive(aData, aLength); });
+}
+
+#if OTBR_ENABLE_MDNS
+void NcpHost::OpenMdnsSocket(void)
+{
+    int                 fd;
+    int                 on = 1;
+    int                 flags;
+    struct sockaddr_in6 addr;
+    struct ipv6_mreq    mreq;
+
+    if (mMdnsSocket.mActive)
+    {
+        return;
+    }
+
+    fd = ::socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    if (fd < 0)
+    {
+        otbrLogWarning("mDNS socket create failed: %s", strerror(errno));
+        return;
+    }
+
+    (void)setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags != -1)
+    {
+        (void)fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port   = htons(Mdns::kMdnsPort);
+    addr.sin6_addr   = in6addr_any;
+
+    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
+    {
+        otbrLogWarning("mDNS socket bind(%u) failed: %s", Mdns::kMdnsPort, strerror(errno));
+        close(fd);
+        return;
+    }
+
+    memset(&mreq, 0, sizeof(mreq));
+    mreq.ipv6mr_multiaddr.s6_addr[0]  = 0xff;
+    mreq.ipv6mr_multiaddr.s6_addr[1]  = 0x02;
+    mreq.ipv6mr_multiaddr.s6_addr[15] = 0xfb;
+    mreq.ipv6mr_interface             = 0;
+
+    if (setsockopt(fd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) < 0)
+    {
+        otbrLogWarning("mDNS socket join multicast group failed: %s", strerror(errno));
+        close(fd);
+        return;
+    }
+
+    mMdnsSocket.mFd     = fd;
+    mMdnsSocket.mActive = true;
+    otbrLogInfo("mDNS socket opened on port %u", Mdns::kMdnsPort);
+}
+
+void NcpHost::CloseMdnsSocket(void)
+{
+    if (mMdnsSocket.mActive)
+    {
+        close(mMdnsSocket.mFd);
+        mMdnsSocket.mFd     = -1;
+        mMdnsSocket.mActive = false;
+        otbrLogInfo("mDNS socket closed");
+    }
+}
+
+static bool IsTrelMdnsPacket(const uint8_t *aData, uint16_t aLength)
+{
+    // DNS label encoding: each label is length-prefixed
+    // "_trel._udp" encodes as: 0x05 't' 'r' 'e' 'l' 0x04 '_' 'u' 'd' 'p'
+    static constexpr uint8_t  kTrelServicePattern[] = {0x05, 't', 'r', 'e', 'l', 0x04, '_', 'u', 'd', 'p'};
+    static constexpr uint16_t kDnsHeaderSize        = 12;
+
+    if (aLength < kDnsHeaderSize + sizeof(kTrelServicePattern))
+    {
+        return false;
+    }
+
+    for (uint16_t offset = kDnsHeaderSize; offset <= aLength - sizeof(kTrelServicePattern); offset++)
+    {
+        if (memcmp(&aData[offset], kTrelServicePattern, sizeof(kTrelServicePattern)) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void NcpHost::ProcessMdnsSocket(const MainloopContext &aMainloop)
+{
+    if (!mMdnsSocket.mActive)
+    {
+        return;
+    }
+
+    if (FD_ISSET(mMdnsSocket.mFd, &aMainloop.mReadFdSet))
+    {
+        uint8_t             buffer[1280];
+        struct sockaddr_in6 srcAddr;
+        socklen_t           addrLen = sizeof(srcAddr);
+        ssize_t             len;
+
+        while ((len = recvfrom(mMdnsSocket.mFd, buffer, sizeof(buffer), 0, (struct sockaddr *)&srcAddr, &addrLen)) > 0)
+        {
+            otIp6Address peer;
+            uint16_t     remotePort;
+
+            // Only forward TREL-related mDNS packets to reduce NCP overhead
+            if (!IsTrelMdnsPacket(buffer, static_cast<uint16_t>(len)))
+            {
+                continue;
+            }
+
+            memcpy(peer.mFields.m8, &srcAddr.sin6_addr, sizeof(peer.mFields.m8));
+            remotePort = ntohs(srcAddr.sin6_port);
+
+            mNcpSpinel.UdpForward(buffer, static_cast<uint16_t>(len), peer, remotePort, Mdns::kMdnsPort);
+        }
+    }
+}
+
+void NcpHost::UpdateMdnsSocketFdSet(MainloopContext &aMainloop)
+{
+    if (!mMdnsSocket.mActive)
+    {
+        return;
+    }
+
+    FD_SET(mMdnsSocket.mFd, &aMainloop.mReadFdSet);
+
+    if (mMdnsSocket.mFd > aMainloop.mMaxFd)
+    {
+        aMainloop.mMaxFd = mMdnsSocket.mFd;
+    }
+}
+
+#endif // OTBR_ENABLE_MDNS
+
+#if OTBR_ENABLE_TREL
+void NcpHost::HandleTrelStateChanged(bool aEnabled, uint16_t aPort)
+{
+    if (!aEnabled)
+    {
+        CloseTrelSocket();
+    }
+    else
+    {
+        // If enabled=true and port=0, OS will choose a random port
+        OpenTrelSocket(aPort);
+    }
+}
+
+void NcpHost::OpenTrelSocket(uint16_t aPort)
+{
+    if (mTrelSocket.mActive && mTrelSocket.mPort == aPort)
+    {
+        return;
+    }
+    CloseTrelSocket();
+
+    int fd = ::socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    if (fd < 0)
+    {
+        otbrLogWarning("TREL socket create failed: %s", strerror(errno));
+        return;
+    }
+
+    int on = 1;
+    (void)setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+
+    // Non-blocking
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags != -1)
+    {
+        (void)fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    }
+
+    struct sockaddr_in6 addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port   = htons(aPort);
+    addr.sin6_addr   = in6addr_any;
+    if (bind(fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) < 0)
+    {
+        otbrLogWarning("TREL socket bind(%u) failed: %s", aPort, strerror(errno));
+        close(fd);
+        return;
+    }
+
+    // Get actual bound port (in case aPort was 0)
+    socklen_t addrLen = sizeof(addr);
+    if (getsockname(fd, reinterpret_cast<struct sockaddr *>(&addr), &addrLen) == 0)
+    {
+        uint16_t actualPort = ntohs(addr.sin6_port);
+        mTrelSocket.mPort   = actualPort;
+
+        // If actual port differs from requested, update NCP
+        if (actualPort != aPort)
+        {
+            mNcpSpinel.UpdateTrelState(true, actualPort);
+        }
+    }
+    else
+    {
+        mTrelSocket.mPort = aPort;
+    }
+
+    mTrelSocket.mFd     = fd;
+    mTrelSocket.mActive = true;
+    otbrLogInfo("TREL socket bound on UDP port %u", mTrelSocket.mPort);
+}
+
+void NcpHost::CloseTrelSocket(void)
+{
+    if (mTrelSocket.mActive)
+    {
+        close(mTrelSocket.mFd);
+        mTrelSocket.mFd     = -1;
+        mTrelSocket.mPort   = 0;
+        mTrelSocket.mActive = false;
+        otbrLogInfo("TREL socket closed");
+    }
+}
+
+void NcpHost::ProcessTrelSocket(const MainloopContext &aMainloop)
+{
+    if (!mTrelSocket.mActive)
+    {
+        return;
+    }
+
+    if (FD_ISSET(mTrelSocket.mFd, &aMainloop.mReadFdSet))
+    {
+        uint8_t             buffer[1280];
+        struct sockaddr_in6 srcAddr;
+        socklen_t           addrLen = sizeof(srcAddr);
+        ssize_t             len;
+
+        while ((len = recvfrom(mTrelSocket.mFd, buffer, sizeof(buffer), 0, (struct sockaddr *)&srcAddr, &addrLen)) > 0)
+        {
+            otIp6Address peer;
+            uint16_t     remotePort;
+
+            memcpy(peer.mFields.m8, &srcAddr.sin6_addr, sizeof(peer.mFields.m8));
+            remotePort = ntohs(srcAddr.sin6_port);
+
+            mNcpSpinel.UdpForward(buffer, static_cast<uint16_t>(len), peer, remotePort, mTrelSocket.mPort);
+        }
+    }
+}
+
+void NcpHost::UpdateTrelSocketFdSet(MainloopContext &aMainloop)
+{
+    if (!mTrelSocket.mActive)
+    {
+        return;
+    }
+
+    FD_SET(mTrelSocket.mFd, &aMainloop.mReadFdSet);
+
+    if (mTrelSocket.mFd > aMainloop.mMaxFd)
+    {
+        aMainloop.mMaxFd = mTrelSocket.mFd;
+    }
+}
+
+#endif // OTBR_ENABLE_TREL
+
+void NcpHost::HandleUdpForwardSend(const uint8_t      *aUdpPayload,
+                                   uint16_t            aLength,
+                                   const otIp6Address &aPeerAddr,
+                                   uint16_t            aPeerPort,
+                                   uint16_t            aLocalPort)
+{
+#if OTBR_ENABLE_MDNS
+    if (aLocalPort == Mdns::kMdnsPort && mMdnsSocket.mActive)
+    {
+        struct sockaddr_in6 dest;
+        memset(&dest, 0, sizeof(dest));
+        dest.sin6_family = AF_INET6;
+        memcpy(&dest.sin6_addr, &aPeerAddr, sizeof(dest.sin6_addr));
+        dest.sin6_port = htons(aPeerPort);
+
+        sendto(mMdnsSocket.mFd, aUdpPayload, aLength, 0, (struct sockaddr *)&dest, sizeof(dest));
+    }
+#endif
+
+#if OTBR_ENABLE_TREL
+    if (aLocalPort == mTrelSocket.mPort && mTrelSocket.mActive)
+    {
+        struct sockaddr_in6 dest;
+        memset(&dest, 0, sizeof(dest));
+        dest.sin6_family = AF_INET6;
+        memcpy(&dest.sin6_addr, &aPeerAddr, sizeof(dest.sin6_addr));
+        dest.sin6_port = htons(aPeerPort);
+
+        sendto(mTrelSocket.mFd, aUdpPayload, aLength, 0, (struct sockaddr *)&dest, sizeof(dest));
+    }
+#endif
 }
 
 void NcpHost::InitInfraIfCallbacks(InfraIf &aInfraIf)
