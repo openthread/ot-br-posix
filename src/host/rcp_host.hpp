@@ -212,6 +212,7 @@ public:
 #endif
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
     void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
+    void AddThreadRoleChangedCallback(ThreadRoleChangedCallback aCallback);
 #if OTBR_ENABLE_BACKBONE_ROUTER
     void SetBackboneRouterEnabled(bool aEnabled) override;
     void SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback) override;
@@ -227,6 +228,8 @@ public:
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_RCP; }
 
     const char *GetCoprocessorVersion(void) override { return otPlatRadioGetVersionString(mInstance); }
+
+    bool IsAttached(void);
 
 private:
     static void SafeInvokeAndClear(AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
@@ -274,8 +277,6 @@ private:
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
 
-    bool IsAttached(void);
-
     void UpdateThreadEnabledState(ThreadEnabledState aState);
 
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
@@ -289,6 +290,7 @@ private:
 
     std::vector<ThreadStateChangedCallback>       mThreadStateChangedCallbacks;
     std::vector<ThreadEnabledStateCallback>       mThreadEnabledStateChangedCallbacks;
+    std::vector<ThreadRoleChangedCallback>        mThreadRoleChangedCallbacks;
     bool                                          mEnableAutoAttach = false;
     ThreadEnabledState                            mThreadEnabledState;
     AsyncResultReceiver                           mJoinReceiver;

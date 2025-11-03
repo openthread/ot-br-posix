@@ -131,6 +131,7 @@ public:
     using DeviceRoleHandler                        = std::function<void(otError, otDeviceRole)>;
     using ThreadStateChangedCallback               = std::function<void(otChangedFlags)>;
     using ThreadEnabledStateCallback               = std::function<void(ThreadEnabledState)>;
+    using ThreadRoleChangedCallback                = std::function<void(otDeviceRole)>;
     using BorderAgentMeshCoPServiceChangedCallback = std::function<void(bool, uint16_t, const uint8_t *, uint16_t)>;
     using EphemeralKeyStateChangedCallback         = std::function<void(otBorderAgentEphemeralKeyState, uint16_t)>;
     /**
