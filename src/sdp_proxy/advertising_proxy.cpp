@@ -244,6 +244,42 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
         }
     }
 
+    if (!hostDeleted)
+    {
+        std::vector<Ip6Address> addresses;
+
+        // TODO: select a preferred address or advertise all addresses from SRP client.
+        otbrLogDebug("Publish SRP host '%s'", fullHostName.c_str());
+
+        addresses = GetEligibleAddresses(hostAddresses, hostAddressNum);
+        VerifyOrExit(!addresses.empty(),
+                     otbrLogWarning("No eligible addresses for SRP host '%s'", fullHostName.c_str());
+                     error = OTBR_ERROR_ABORTED);
+
+        mPublisher.PublishHost(
+            hostName, addresses,
+            Mdns::Publisher::ResultCallback([this, hasUpdate, updateId, fullHostName](otbrError aError) {
+                otbrLogResult(aError, "Handle publish SRP host '%s'", fullHostName.c_str());
+                if (hasUpdate)
+                {
+                    OnMdnsPublishResult(updateId, aError);
+                }
+            }));
+    }
+    else
+    {
+        otbrLogDebug("Unpublish SRP host '%s'", fullHostName.c_str());
+        mPublisher.UnpublishHost(hostName, [this, hasUpdate, updateId, fullHostName](otbrError aError) {
+            // Treat `NOT_FOUND` as success when unpublishing host.
+            aError = (aError == OTBR_ERROR_NOT_FOUND) ? OTBR_ERROR_NONE : aError;
+            otbrLogResult(aError, "Handle unpublish SRP host '%s'", fullHostName.c_str());
+            if (hasUpdate)
+            {
+                OnMdnsPublishResult(updateId, aError);
+            }
+        });
+    }
+
     service = nullptr;
     while ((service = otSrpServerHostGetNextService(aHost, service)) != nullptr)
     {
@@ -285,38 +321,6 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
                     }
                 });
         }
-    }
-
-    if (!hostDeleted)
-    {
-        std::vector<Ip6Address> addresses;
-
-        // TODO: select a preferred address or advertise all addresses from SRP client.
-        otbrLogDebug("Publish SRP host '%s'", fullHostName.c_str());
-
-        addresses = GetEligibleAddresses(hostAddresses, hostAddressNum);
-        mPublisher.PublishHost(
-            hostName, addresses,
-            Mdns::Publisher::ResultCallback([this, hasUpdate, updateId, fullHostName](otbrError aError) {
-                otbrLogResult(aError, "Handle publish SRP host '%s'", fullHostName.c_str());
-                if (hasUpdate)
-                {
-                    OnMdnsPublishResult(updateId, aError);
-                }
-            }));
-    }
-    else
-    {
-        otbrLogDebug("Unpublish SRP host '%s'", fullHostName.c_str());
-        mPublisher.UnpublishHost(hostName, [this, hasUpdate, updateId, fullHostName](otbrError aError) {
-            // Treat `NOT_FOUND` as success when unpublishing host.
-            aError = (aError == OTBR_ERROR_NOT_FOUND) ? OTBR_ERROR_NONE : aError;
-            otbrLogResult(aError, "Handle unpublish SRP host '%s'", fullHostName.c_str());
-            if (hasUpdate)
-            {
-                OnMdnsPublishResult(updateId, aError);
-            }
-        });
     }
 
 exit:
