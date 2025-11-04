@@ -292,6 +292,11 @@ void NcpSpinel::SetBorderAgentMeshCoPServiceChangedCallback(const BorderAgentMes
     SuccessOrDie(GetProperty(SPINEL_PROP_BORDER_AGENT_MESHCOP_SERVICE_STATE), "Failed to get MeshCoP Service State");
 }
 
+void NcpSpinel::AddEphemeralKeyStateChangedCallback(const EphemeralKeyStateChangedCallback &aCallback)
+{
+    mEphemeralKeyStateChangedCallback = aCallback;
+}
+
 void NcpSpinel::HandleReceivedFrame(const uint8_t *aFrame,
                                     uint16_t       aLength,
                                     uint8_t        aHeader,
@@ -571,6 +576,19 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_STATE:
+    {
+        uint8_t             state;
+        uint16_t            port;
+        ot::Spinel::Decoder decoder;
+
+        decoder.Init(aBuffer, aLength);
+        SuccessOrExit(decoder.ReadUint8(state), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
+        SafeInvoke(mEphemeralKeyStateChangedCallback, static_cast<otBorderAgentEphemeralKeyState>(state), port);
+        break;
+    }
+
     case SPINEL_PROP_THREAD_UDP_FORWARD_STREAM:
     {
         const uint8_t      *udpPayload;
@@ -587,7 +605,7 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
     }
 
     default:
-        otbrLogWarning("Received uncognized key: %u", aKey);
+        otbrLogWarning("Received unrecognized key: %u", aKey);
         break;
     }
 
@@ -905,6 +923,21 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
     case SPINEL_PROP_HOST_POWER_STATE:
         CallAndClear(mSetHostPowerStateTask, OT_ERROR_NONE);
         otbrLogInfo("Set Host Power result: %s", spinel_status_to_cstr(status));
+        break;
+
+    case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ENABLE:
+        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        otbrLogInfo("Set Ephemeral Key Enable result: %s", spinel_status_to_cstr(status));
+        break;
+
+    case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ACTIVATE:
+        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        otbrLogInfo("Activate Ephemeral Key result: %s", spinel_status_to_cstr(status));
+        break;
+
+    case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_DEACTIVATE:
+        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        otbrLogInfo("Deactivate Ephemeral Key result: %s", spinel_status_to_cstr(status));
         break;
 
     default:
@@ -1380,6 +1413,77 @@ exit:
             [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to set host power state!"); });
     }
 }
+
+#if OTBR_ENABLE_EPSKC
+void NcpSpinel::EnableEphemeralKey(bool aEnable, AsyncTaskPtr aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [aEnable](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnable); };
+
+    VerifyOrExit(mEphemeralKeyTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ENABLE, encodingFunc));
+    mEphemeralKeyTask = aAsyncTask;
+
+exit:
+
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to enable ephemeral key!"); });
+    }
+}
+
+void NcpSpinel::ActivateEphemeralKey(const char  *aPskc,
+                                     uint32_t     aDurationMilli,
+                                     uint16_t     aPort,
+                                     AsyncTaskPtr aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [aPskc, aDurationMilli, aPort](ot::Spinel::Encoder &aEncoder) {
+        otError error = OT_ERROR_NONE;
+
+        SuccessOrExit(error = aEncoder.WriteUtf8(aPskc));
+        SuccessOrExit(error = aEncoder.WriteUint32(aDurationMilli));
+        SuccessOrExit(error = aEncoder.WriteUint16(aPort));
+
+    exit:
+        return error;
+    };
+
+    VerifyOrExit(mEphemeralKeyTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ACTIVATE, encodingFunc));
+    mEphemeralKeyTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to activate ephemeral key!"); });
+    }
+}
+
+void NcpSpinel::DeactivateEphemeralKey(bool aRetainActiveSession, AsyncTaskPtr aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [aRetainActiveSession](ot::Spinel::Encoder &aEncoder) {
+        return aEncoder.WriteBool(aRetainActiveSession);
+    };
+
+    VerifyOrExit(mEphemeralKeyTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_DEACTIVATE, encodingFunc));
+    mEphemeralKeyTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to deactivate ephemeral key!"); });
+    }
+}
+#endif // OTBR_ENABLE_EPSKC
 
 otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)
 {

@@ -148,6 +148,15 @@ public:
     void InitInfraIfCallbacks(InfraIf &aInfraIf);
     void SetHostPowerState(uint8_t aPowerState, const AsyncResultReceiver &aReceiver);
 
+#if OTBR_ENABLE_EPSKC
+    void EnableEphemeralKey(bool aEnable, const AsyncResultReceiver &aReceiver);
+    void ActivateEphemeralKey(const char                *aPskc,
+                              uint32_t                   aDuration,
+                              uint16_t                   aPort,
+                              const AsyncResultReceiver &aReceiver);
+    void DeactivateEphemeralKey(bool aRetainActiveSession, const AsyncResultReceiver &aReceiver);
+#endif
+
 private:
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     void HandleMdnsState(Mdns::Publisher::State aState) override;
