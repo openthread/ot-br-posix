@@ -59,6 +59,7 @@ set(OT_LINK_METRICS_MANAGER ${OTBR_LINK_METRICS_TELEMETRY} CACHE STRING "enable 
 set(OT_LOG_LEVEL_DYNAMIC ON CACHE STRING "enable dynamic log level control" FORCE)
 set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 set(OT_MESH_DIAG ON CACHE STRING "enable Mesh Diagnostics" FORCE)
+set(OT_MESSAGE_USE_HEAP ON CACHE STRING "use heap for message buffers" FORCE)
 set(OT_MLR ON CACHE STRING "Enable MLR by default" FORCE)
 set(OT_NAT64_BORDER_ROUTING ${OTBR_NAT64} CACHE STRING "enable NAT64 in border routing manager" FORCE)
 set(OT_NAT64_TRANSLATOR ${OTBR_NAT64} CACHE STRING "enable NAT64 translator" FORCE)
