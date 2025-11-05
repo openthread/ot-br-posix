@@ -125,7 +125,7 @@ case "$(uname)" in
         fi
 
         if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
-            SOURCE_NAME=mDNSResponder-2600.100.147
+            SOURCE_NAME=mDNSResponder-2881.0.25
             (cd /tmp \
                 && wget -c --tries=3 --no-check-certificate -O "$SOURCE_NAME.tar.gz" \
                     "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$SOURCE_NAME.tar.gz" \
