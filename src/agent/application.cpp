@@ -297,6 +297,14 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     mHost.AddEphemeralKeyStateChangedCallback([this](otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort) {
         mBorderAgent.HandleEpskcStateChanged(aEpskcState, aPort);
     });
+#if OTBR_ENABLE_MULTI_AIL
+    otBorderRoutingSetMultiAilCallback(
+        rcpHost.GetInstance(),
+        [](bool isDetected, void *aContext) {
+            static_cast<BorderAgent *>(aContext)->HandleMultiAilStateChanged(isDetected);
+        },
+        &mBorderAgent);
+#endif
     SetBorderAgentOnInitState();
 #else
     mBorderAgent.SetVendorTxtDataChangedCallback(

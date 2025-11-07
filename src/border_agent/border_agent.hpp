@@ -196,12 +196,22 @@ public:
     void UpdateVendorMeshCoPTxtEntries(const VendorTxtEntries &aVendorEntries);
 #endif
 
+#if OTBR_ENABLE_MULTI_AIL
+    /**
+     * This method handles multi-AIL state changes.
+     *
+     * @param[in] aIsDetected  If a multi-AIL is detected.
+     */
+    void HandleMultiAilStateChanged(bool aIsDetected);
+#endif
+
 private:
     void ClearState(void);
     void Start(void);
     void Stop(void);
     bool IsEnabled(void) const { return mIsEnabled; }
 
+    void EncodeVendorTxtData(void);
     void EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries);
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
@@ -220,6 +230,9 @@ private:
     Mdns::Publisher &mPublisher;
 #endif
     bool mIsEnabled;
+#if OTBR_ENABLE_MULTI_AIL
+    bool mIsMultiAil;
+#endif
 
     std::vector<uint8_t> mVendorOui;
 
@@ -227,6 +240,7 @@ private:
     std::string mProductName;
 
     TxtData                      mVendorTxtData; // Encoded vendor-specific TXT data.
+    VendorTxtEntries             mVendorTxtEntries;
     VendorTxtDataChangedCallback mVendorTxtDataChangedCallback;
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE

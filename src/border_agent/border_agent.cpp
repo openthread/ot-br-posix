@@ -151,6 +151,7 @@ otbrError BorderAgent::SetMeshCoPServiceValues(const std::string              &a
     mProductName = aProductName;
     mVendorName  = aVendorName;
     mVendorOui   = aVendorOui;
+
     EncodeVendorTxtData(vendorEntries);
 
     mBaseServiceInstanceName = aServiceInstanceName;
@@ -177,18 +178,32 @@ exit:
 
 void BorderAgent::ClearState(void)
 {
-    VendorTxtEntries emptyTxtEntries;
-
     mIsEnabled = false;
+#if OTBR_ENABLE_MULTI_AIL
+    mIsMultiAil = false;
+#endif
     mVendorOui.clear();
     mVendorName  = OTBR_VENDOR_NAME;
     mProductName = OTBR_PRODUCT_NAME;
-    EncodeVendorTxtData(emptyTxtEntries);
+
+    mVendorTxtEntries.clear();
+    EncodeVendorTxtData();
     mBaseServiceInstanceName = OTBR_MESHCOP_SERVICE_INSTANCE_NAME;
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mServiceInstanceName.clear();
 #endif
 }
+
+#if OTBR_ENABLE_MULTI_AIL
+void BorderAgent::HandleMultiAilStateChanged(bool aIsDetected)
+{
+    if (mIsMultiAil != aIsDetected)
+    {
+        mIsMultiAil = aIsDetected;
+        EncodeVendorTxtData();
+    }
+}
+#endif
 
 void BorderAgent::Start(void)
 {
@@ -325,7 +340,7 @@ exit:
 
 #endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
 
-void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
+void BorderAgent::EncodeVendorTxtData()
 {
     Mdns::Publisher::TxtList txtList;
 
@@ -344,7 +359,14 @@ void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
         txtList.emplace_back("mn", mProductName.c_str());
     }
 
-    for (const auto &vendorEntry : aVendorEntries)
+#if OTBR_ENABLE_MULTI_AIL
+    if (mIsMultiAil)
+    {
+        txtList.emplace_back("vmail");
+    }
+#endif
+
+    for (const auto &vendorEntry : mVendorTxtEntries)
     {
         const std::string          &key   = vendorEntry.first;
         const std::vector<uint8_t> &value = vendorEntry.second;
@@ -381,6 +403,12 @@ void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
     {
         mVendorTxtDataChangedCallback(mVendorTxtData);
     }
+}
+
+void BorderAgent::EncodeVendorTxtData(const VendorTxtEntries &aVendorEntries)
+{
+    mVendorTxtEntries = aVendorEntries;
+    EncodeVendorTxtData();
 }
 
 void BorderAgent::SetVendorTxtDataChangedCallback(VendorTxtDataChangedCallback aCallback)

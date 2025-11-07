@@ -339,6 +339,10 @@ void RcpHost::Deinit(void)
 {
     assert(mInstance != nullptr);
 
+#if OTBR_ENABLE_MULTI_AIL
+    otBorderRoutingSetMultiAilCallback(mInstance, nullptr, nullptr);
+#endif
+
     otSysDeinit();
     mInstance = nullptr;
 
