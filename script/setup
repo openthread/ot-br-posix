@@ -36,7 +36,7 @@
 . script/_otbr
 . script/_ipforward
 . script/_nat64
-. script/_dhcpv6_pd_ref
+. script/_dhcpcd
 . script/_systemd_networkd
 . script/_rt_tables
 . script/_firewall
@@ -48,7 +48,7 @@ main()
     otbr_uninstall
     border_routing_uninstall
     systemd_networkd_uninstall
-    dhcpv6_pd_ref_uninstall
+    dhcpcd_uninstall
     nat64_uninstall
     rt_tables_uninstall
     ipforward_uninstall
@@ -58,7 +58,7 @@ main()
     ipforward_install
     rt_tables_install
     nat64_install
-    dhcpv6_pd_ref_install
+    dhcpcd_install
     systemd_networkd_install
     border_routing_install
     otbr_install
