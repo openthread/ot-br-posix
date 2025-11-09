@@ -39,6 +39,9 @@ readonly BACKBONE_ROUTER
 NAT64="${NAT64:-1}"
 readonly NAT64
 
+OTBR_DHCP6_PD_CLIENT="${OTBR_DHCP6_PD_CLIENT:-none}"
+readonly OTBR_DHCP6_PD_CLIENT
+
 OTBR_MDNS="${OTBR_MDNS:-openthread}"
 readonly OTBR_MDNS
 
@@ -78,6 +81,7 @@ otbr_install()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
+        "-DOTBR_DHCP6_PD_CLIENT=${OTBR_DHCP6_PD_CLIENT}"
         "-DOTBR_MDNS=${OTBR_MDNS}"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
@@ -101,7 +105,7 @@ otbr_install()
         otbr_options+=("-DOTBR_WEB=ON")
     fi
 
-    if with DHCPV6_PD_REF; then
+    if [[ ${OTBR_DHCP6_PD_CLIENT} == "openthread" || ${OTBR_DHCP6_PD_CLIENT} == "dhcpcd" ]]; then
         otbr_options+=(
             "-DOTBR_DHCP6_PD=ON"
         )

@@ -35,6 +35,7 @@
 
 FIREWALL="${FIREWALL:-1}"
 
+OTBR_DHCP6_PD_CLIENT="${OTBR_DHCP6_PD_CLIENT:-none}"
 OTBR_MDNS="${OTBR_MDNS:-openthread}"
 BACKBONE_ROUTER="${BACKBONE_ROUTER:-1}"
 OT_BACKBONE_CI="${OT_BACKBONE_CI:-0}"
@@ -88,8 +89,8 @@ install_packages_apt()
 
     sudo apt-get install --no-install-recommends -y bind9
 
-    # dhcpv6-pd
-    without DHCPV6_PD_REF || {
+    # DHCPv6 PD client implementation using dhcpcd
+    if [[ ${OTBR_DHCP6_PD_CLIENT} == "dhcpcd" ]]; then
         sudo apt-get install --no-install-recommends -y dhcpcd
         sudo mkdir -p /etc/systemd/system/dhcpcd.service.d
         # allow edit system config file eg. /etc/radvd.conf
@@ -100,7 +101,7 @@ EOF
         # reload dhcpcd daemon to activate the custom.conf
         sudo systemctl daemon-reload
         sudo apt-get install --no-install-recommends -y radvd
-    }
+    fi
 
     # libjsoncpp
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
