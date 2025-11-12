@@ -69,7 +69,7 @@ RUN set -x \
     && cd ot-br-posix \
     && git fetch origin "${GIT_COMMIT}" \
     && git checkout "${GIT_COMMIT}" \
-    && git submodule update --depth 1 --init \
+    && git submodule update --depth 1 --init --recursive \
     && cmake -GNinja \
            -DBUILD_TESTING=OFF \
            -DCMAKE_INSTALL_PREFIX=/usr \
