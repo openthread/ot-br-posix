@@ -78,6 +78,12 @@ set(OT_TREL ${OTBR_TREL} CACHE STRING "enable TREL" FORCE)
 set(OT_UDP_FORWARD OFF CACHE STRING "disable udp forward" FORCE)
 set(OT_UPTIME ON CACHE STRING "enable uptime" FORCE)
 
+if (OTBR_DHCP6_PD_CLIENT STREQUAL "openthread")
+    set(OT_BORDER_ROUTING_DHCP6_PD_CLIENT ${OTBR_DHCP6_PD} CACHE STRING "enable native dhcpv6 pd client support" FORCE)
+else()
+    set(OT_BORDER_ROUTING_DHCP6_PD_CLIENT OFF CACHE STRING "enable native dhcpv6 pd client support" FORCE)
+endif()
+
 if (OTBR_MDNS STREQUAL "openthread")
     if (OTBR_DNSSD_DISCOVERY_PROXY OR OTBR_DNSSD_PLAT OR OTBR_BORDER_AGENT_MESHCOP_SERVICE)
         message(FATAL_ERROR "OTBR DNSSD support must not be enabled with OT mDNS.")

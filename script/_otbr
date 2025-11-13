@@ -39,6 +39,27 @@ readonly BACKBONE_ROUTER
 NAT64="${NAT64:-1}"
 readonly NAT64
 
+# Handle deprecated DHCPV6_PD_REF flag
+if [[ -n ${DHCPV6_PD_REF+x} ]]; then
+    echo >&2 "WARNING: DHCPV6_PD_REF is now deprecated, please use OTBR_DHCP6_PD_CLIENT instead:"
+    echo >&2 "         DHCPV6_PD_REF=1  -> OTBR_DHCP6_PD_CLIENT=dhcpcd"
+    echo >&2 "         DHCPV6_PD_REF=0  -> OTBR_DHCP6_PD_CLIENT=none"
+    echo >&2 "         It is also possible to use native implementation by setting OTBR_DHCP6_PD_CLIENT=openthread"
+
+    if [[ -z ${OTBR_DHCP6_PD_CLIENT+x} ]]; then
+        if [[ ${DHCPV6_PD_REF} == "1" ]]; then
+            OTBR_DHCP6_PD_CLIENT="dhcpcd"
+            echo >&2 " Setting OTBR_DHCP6_PD_CLIENT=dhcpcd"
+        else
+            OTBR_DHCP6_PD_CLIENT="none"
+            echo >&2 " Setting OTBR_DHCP6_PD_CLIENT=none"
+        fi
+    fi
+fi
+
+OTBR_DHCP6_PD_CLIENT="${OTBR_DHCP6_PD_CLIENT:-none}"
+readonly OTBR_DHCP6_PD_CLIENT
+
 OTBR_MDNS="${OTBR_MDNS:-openthread}"
 readonly OTBR_MDNS
 
@@ -78,6 +99,7 @@ otbr_install()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
+        "-DOTBR_DHCP6_PD_CLIENT=${OTBR_DHCP6_PD_CLIENT}"
         "-DOTBR_MDNS=${OTBR_MDNS}"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
@@ -101,7 +123,7 @@ otbr_install()
         otbr_options+=("-DOTBR_WEB=ON")
     fi
 
-    if with DHCPV6_PD_REF; then
+    if [[ ${OTBR_DHCP6_PD_CLIENT} == "openthread" || ${OTBR_DHCP6_PD_CLIENT} == "dhcpcd" ]]; then
         otbr_options+=(
             "-DOTBR_DHCP6_PD=ON"
         )

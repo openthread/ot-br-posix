@@ -102,9 +102,9 @@ WantedBy=multi-user.target
 EOF
 }
 
-dhcpv6_pd_ref_uninstall()
+dhcpcd_uninstall()
 {
-    with DHCPV6_PD_REF || return 0
+    [[ ${OTBR_DHCP6_PD_CLIENT} == "dhcpcd" ]] || return 0
 
     if have systemctl; then
         sudo systemctl disable ${PD_DAEMON_SERVICE_NAME} || true
@@ -128,9 +128,9 @@ dhcpv6_pd_ref_uninstall()
     fi
 }
 
-dhcpv6_pd_ref_install()
+dhcpcd_install()
 {
-    with DHCPV6_PD_REF || return 0
+    [[ ${OTBR_DHCP6_PD_CLIENT} == "dhcpcd" ]] || return 0
 
     if [[ -f ${DHCP_CONFIG_PATH} ]]; then
         sudo mv ${DHCP_CONFIG_PATH} ${DHCP_CONFIG_ORIG_PATH}

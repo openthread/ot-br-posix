@@ -28,5 +28,4 @@
 #
 
 # shellcheck disable=SC2034
-DHCPV6_PD_REF=0
 REST_API=1
