@@ -226,9 +226,16 @@ void DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
     otbrLogInfo("Created Ephemeral Key: %s", ePskc.c_str());
 
     mHost.ActivateEphemeralKey(ePskc.c_str(), lifetime, OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT,
-                               [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+                               [aRequest, ePskc](otError aError, const std::string &aErrorInfo) mutable {
                                    OT_UNUSED_VARIABLE(aErrorInfo);
-                                   aRequest.ReplyOtResult(aError);
+                                   if (aError != OT_ERROR_NONE)
+                                   {
+                                       aRequest.ReplyOtResult(aError);
+                                   }
+                                   else
+                                   {
+                                       aRequest.Reply(std::tie(ePskc));
+                                   }
                                });
 
 exit:

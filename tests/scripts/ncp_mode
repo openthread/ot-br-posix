@@ -205,7 +205,7 @@ setup_infraif()
     sudo sysctl -w net.ipv6.conf.backbone1.accept_ra=2
     sudo sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
     # Delete the 9101::1/ address to ensure ping through backbone1 use an on-link address.
-    sudo ip addr del 9101::1/64 dev backbone1
+    sudo ip addr del 9101::1/64 dev backbone1 || true
 }
 
 test_setup()
