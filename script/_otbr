@@ -50,7 +50,7 @@ readonly REFERENCE_DEVICE
 
 otbr_uninstall()
 {
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl stop otbr-web || true
         sudo systemctl stop otbr-agent || true
         sudo systemctl disable otbr-web || true
@@ -66,7 +66,7 @@ otbr_uninstall()
             sudo xargs rm <install_manifests.txt || true
         fi
     )
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl daemon-reload
     fi
 }
@@ -151,7 +151,7 @@ otbr_install()
         && ninja \
         && sudo ninja install)
 
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl reload dbus
         sudo systemctl daemon-reload
         without WEB_GUI || sudo systemctl enable otbr-web || true

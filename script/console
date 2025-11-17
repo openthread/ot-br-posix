@@ -60,7 +60,7 @@ main()
 {
     # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl stop otbr-web otbr-agent || true
     fi
     killall_services

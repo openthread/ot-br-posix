@@ -38,7 +38,7 @@ firewall_uninstall()
     with FIREWALL || return 0
 
     firewall_stop
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl disable otbr-firewall || true
     fi
     # systemctl disable doesn't remove sym-links
@@ -54,7 +54,7 @@ firewall_install()
 
     sudo cp script/otbr-firewall $FIREWALL_SERVICE
     sudo chmod a+x $FIREWALL_SERVICE
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl enable otbr-firewall || die 'Failed to enable firewall service!'
         sudo systemctl start otbr-firewall || die 'Failed to start firewall service!'
     fi

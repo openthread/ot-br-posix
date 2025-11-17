@@ -106,7 +106,7 @@ dhcpv6_pd_ref_uninstall()
 {
     with DHCPV6_PD_REF || return 0
 
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl disable ${PD_DAEMON_SERVICE_NAME} || true
         sudo systemctl stop ${PD_DAEMON_SERVICE_NAME} || true
         sudo rm -f ${PD_DAEMON_SERVICE_PATH} || true
@@ -119,7 +119,7 @@ dhcpv6_pd_ref_uninstall()
     sudo rm -f ${DHCPCD_ENTER_HOOK} ${DHCPCD_EXIT_HOOK}
     sudo rm -f ${PD_DAEMON_PATH}
 
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl daemon-reload
 
         if systemctl is-active dhcpcd; then
@@ -154,7 +154,7 @@ dhcpv6_pd_ref_install()
     # TODO: Re-enable and start the daemon when a solution is found
     #       for dhcpcd restarts breaking mDNS.
     #
-    # if have systemctl; then
+    # if have systemctl && without DOCKER; then
     #    sudo systemctl daemon-reload
     #    sudo systemctl enable ${PD_DAEMON_SERVICE_NAME}
     #    sudo systemctl start ${PD_DAEMON_SERVICE_NAME}
@@ -164,7 +164,7 @@ dhcpv6_pd_ref_install()
     # dhcp6_pd_daemon which caused mDNS disruptions.
     sudo cp ${DHCP_CONFIG_PD_PATH} ${DHCP_CONFIG_PATH}
 
-    if have systemctl; then
+    if have systemctl && without DOCKER; then
         sudo systemctl daemon-reload
 
         # Restart dhcpcd only if it's running. This is unnecessary when the dhcp6_pd_daemon
