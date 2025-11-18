@@ -1338,6 +1338,23 @@ void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     {
         VerifyOrExit(!update.count(reservedKey), error = OT_ERROR_INVALID_ARGS);
     }
+
+    // Border Agent in OT core manages registering/updating of the
+    // mDNS MeshCoP service(s) on the infrastructure link.
+    // Here explicitly sets `id` from application and prefers it over
+    // the random generated one in the meshcop Txt payload composed.
+
+    if (update.count("id"))
+    {
+        otBorderAgentId id;
+        const auto     &idVec = update.at("id");
+
+        VerifyOrExit(idVec.size() == sizeof(id.mId), error = OT_ERROR_INVALID_ARGS);
+        memcpy(id.mId, idVec.data(), sizeof(id.mId));
+        SuccessOrExit(error = otBorderAgentSetId(mHost.GetInstance(), &id));
+        update.erase("id");
+    }
+
     mBorderAgent.UpdateVendorMeshCoPTxtEntries(update);
 
 exit:
