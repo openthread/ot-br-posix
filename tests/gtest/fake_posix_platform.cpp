@@ -32,6 +32,7 @@
 
 #include "openthread/openthread-system.h"
 #include "openthread/platform/dns.h"
+#include "openthread/platform/infra_if.h"
 #include "openthread/platform/mdns_socket.h"
 
 otPlatResetReason        gPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
@@ -107,6 +108,24 @@ void otPlatMdnsSendUnicast(otInstance *aInstance, otMessage *aMessage, const otP
     OT_UNUSED_VARIABLE(aInstance);
     OT_UNUSED_VARIABLE(aMessage);
     OT_UNUSED_VARIABLE(aAddress);
+}
+
+void otPlatInfraIfDhcp6PdClientSetListeningEnabled(otInstance *aInstance, bool aEnable, uint32_t aInfraIfIndex)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aEnable);
+    OT_UNUSED_VARIABLE(aInfraIfIndex);
+}
+
+void otPlatInfraIfDhcp6PdClientSend(otInstance   *aInstance,
+                                    otMessage    *aMessage,
+                                    otIp6Address *aDestAddress,
+                                    uint32_t      aInfraIfIndex)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aMessage);
+    OT_UNUSED_VARIABLE(aDestAddress);
+    OT_UNUSED_VARIABLE(aInfraIfIndex);
 }
 
 otInstance *otSysInit(otPlatformConfig *aPlatformConfig)
