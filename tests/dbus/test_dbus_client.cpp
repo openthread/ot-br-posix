@@ -287,6 +287,18 @@ void CheckBorderAgent(ThreadApiDBus *aApi)
 {
     TEST_ASSERT(aApi->SetBorderAgentEnabled(false) == OTBR_ERROR_NONE);
     TEST_ASSERT(aApi->SetBorderAgentEnabled(true) == OTBR_ERROR_NONE);
+
+#if OTBR_ENABLE_BORDER_AGENT_ID
+    std::vector<uint8_t> borderAgentId        = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                                                 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+    std::vector<uint8_t> invalidBorderAgentId = {0x00};
+    std::vector<uint8_t> responseBorderAgentId;
+
+    TEST_ASSERT(aApi->SetBorderAgentId(invalidBorderAgentId) != OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->SetBorderAgentId(borderAgentId) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->GetBorderAgentId(responseBorderAgentId) == OTBR_ERROR_NONE);
+    TEST_ASSERT(borderAgentId == responseBorderAgentId);
+#endif
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
