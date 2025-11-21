@@ -37,6 +37,12 @@
 
 #include <openthread/openthread-system.h>
 
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+#include <openthread/border_routing.h>
+#include <openthread/icmp6.h>
+#include <openthread/ip6.h>
+#endif
+
 #include "host/async_task.hpp"
 #include "lib/spinel/spinel_driver.hpp"
 
@@ -141,6 +147,10 @@ void NcpHost::Init(void)
 #else
     mNcpSpinel.SrpServerSetEnabled(/* aEnabled */ true);
 #endif
+#endif
+
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    mNcpSpinel.BorderRoutingSetDhcp6PdEnabled(true);
 #endif
     mIsInitialized = true;
 }
@@ -430,6 +440,112 @@ otbrError NcpHost::HandleIcmp6Nd(uint32_t          aInfraIfIndex,
 {
     return mNcpSpinel.HandleIcmp6Nd(aInfraIfIndex, aIp6Address, aData, aDataLen);
 }
+
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+otbrError NcpHost::TryProcessIcmp6RaMessage(const uint8_t *aData, uint16_t aLength)
+{
+    otbrError                           error = OTBR_ERROR_NOT_FOUND;
+    const uint8_t                       *ra    = nullptr;
+    ssize_t                             raLength;
+    const uint8_t                       *optionPtr;
+    ssize_t                             remainingLen;
+    bool                                foundPio = false;
+
+    // Check if data is a valid IPv6 packet with ICMPv6 RA message
+    VerifyOrExit(aData != nullptr && aLength >= OT_IP6_HEADER_SIZE + OT_ICMP6_ROUTER_ADVERT_MIN_SIZE,
+                 error = OTBR_ERROR_INVALID_ARGS);
+
+    // Check IPv6 version (first 4 bits should be 6)
+    VerifyOrExit((aData[0] >> 4) == 6, error = OTBR_ERROR_INVALID_ARGS);
+
+    // Check if protocol is ICMPv6 (0x3A = 58)
+    VerifyOrExit(aData[OT_IP6_HEADER_PROTO_OFFSET] == OT_IP6_PROTO_ICMP6, error = OTBR_ERROR_INVALID_ARGS);
+
+    // Get pointer to ICMPv6 header (after IPv6 header)
+    ra = aData + OT_IP6_HEADER_SIZE;
+    raLength = aLength - OT_IP6_HEADER_SIZE;
+
+    // Check if it's a Router Advertisement message (Type 134, Code 0)
+    VerifyOrExit(raLength >= OT_ICMP6_ROUTER_ADVERT_MIN_SIZE, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(ra[0] == OT_ICMP6_TYPE_ROUTER_ADVERT && ra[1] == 0, error = OTBR_ERROR_INVALID_ARGS);
+
+    // Parse options to find Prefix Information Options (PIO)
+    // Options start after RA header (offset 16 from ICMPv6 header start)
+    optionPtr    = ra + 16;
+    remainingLen = raLength - 16;
+
+    while (remainingLen >= 8) // Minimum option size is 8 bytes
+    {
+        uint8_t  optionType   = optionPtr[0];
+        uint8_t  optionLength = optionPtr[1]; // Length in units of 8 bytes
+        uint16_t optionSize   = optionLength * 8;
+
+        // Check if we have enough data for this option
+        if (optionLength == 0 || remainingLen < optionSize)
+        {
+            break; // Invalid option, stop parsing
+        }
+
+        // Process Prefix Information Option (Type 3)
+        if (optionType == 3 && optionLength == 4) // PIO is 32 bytes
+        {
+            // PIO structure:
+            // Bytes 0-1: Type (3) and Length (4 = 32 bytes)
+            // Byte 2: Prefix Length
+            // Byte 3: Flags (L|A|Reserved1)
+            // Bytes 4-7: Valid Lifetime
+            // Bytes 8-11: Preferred Lifetime
+            // Bytes 12-15: Reserved2
+            // Bytes 16-31: Prefix (16 bytes)
+
+            otBorderRoutingPrefixTableEntry pioEntry;
+            memset(&pioEntry, 0, sizeof(pioEntry));
+
+            // Extract prefix (16 bytes starting at offset 16)
+            memcpy(pioEntry.mPrefix.mPrefix.mFields.m8, &optionPtr[16], OT_IP6_ADDRESS_SIZE);
+            // Extract prefix length
+            pioEntry.mPrefix.mLength = optionPtr[2];
+            // Extract lifetimes (big-endian)
+            pioEntry.mValidLifetime = (static_cast<uint32_t>(optionPtr[4]) << 24) |
+                                      (static_cast<uint32_t>(optionPtr[5]) << 16) |
+                                      (static_cast<uint32_t>(optionPtr[6]) << 8) | static_cast<uint32_t>(optionPtr[7]);
+            pioEntry.mPreferredLifetime = (static_cast<uint32_t>(optionPtr[8]) << 24) |
+                                          (static_cast<uint32_t>(optionPtr[9]) << 16) |
+                                          (static_cast<uint32_t>(optionPtr[10]) << 8) | static_cast<uint32_t>(optionPtr[11]);
+
+            // Logging the PIO information
+            Ip6Address prefixAddr(pioEntry.mPrefix.mPrefix);
+            otbrLogInfo("PIO Entry: prefix=%s/%u, validLifetime=%u, preferredLifetime=%u",
+                        prefixAddr.ToString().c_str(), pioEntry.mPrefix.mLength,
+                        pioEntry.mValidLifetime, pioEntry.mPreferredLifetime);
+
+            // Process this PIO by sending it to NCP
+            otError pioError = mNcpSpinel.BorderRoutingProcessDhcp6PdPrefix(&pioEntry);
+            if (pioError != OT_ERROR_NONE)
+            {
+                otbrLogWarning("Failed to process PIO from RA message, %s", otThreadErrorToString(pioError));
+            }
+            else
+            {
+                foundPio = true;
+            }
+        }
+
+        // Move to next option
+        optionPtr += optionSize;
+        remainingLen -= optionSize;
+    }
+
+    // Return success if we found at least one PIO
+    if (foundPio)
+    {
+        error = OTBR_ERROR_NONE;
+    }
+
+exit:
+    return error;
+}
+#endif // OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
 
 } // namespace Host
 } // namespace otbr

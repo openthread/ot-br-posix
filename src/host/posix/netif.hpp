@@ -57,6 +57,9 @@ public:
 
         virtual otbrError Ip6Send(const uint8_t *aData, uint16_t aLength);
         virtual otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded);
+        #if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+        virtual otbrError TryProcessIcmp6RaMessage(const uint8_t *aData, uint16_t aLength);
+        #endif
     };
 
     Netif(const std::string &aInterfaceName, Dependencies &aDependencies);

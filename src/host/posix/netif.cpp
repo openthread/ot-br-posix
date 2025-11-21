@@ -68,6 +68,16 @@ otbrError Netif::Dependencies::Ip6MulAddrUpdateSubscription(const otIp6Address &
     return OTBR_ERROR_NONE;
 }
 
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+otbrError Netif::Dependencies::TryProcessIcmp6RaMessage(const uint8_t *aData, uint16_t aLength)
+{
+    OTBR_UNUSED_VARIABLE(aData);
+    OTBR_UNUSED_VARIABLE(aLength);
+
+    return OTBR_ERROR_NOT_FOUND;
+}
+#endif
+
 OT_TOOL_PACKED_BEGIN
 struct Mldv2Header
 {
@@ -278,6 +288,14 @@ void Netif::ProcessIp6Send(void)
 
     rval = read(mTunFd, packet, sizeof(packet));
     VerifyOrExit(rval > 0, error = OTBR_ERROR_ERRNO);
+
+    #if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    // Try to process as RA message for DHCP6 PD prefix processing
+    if (mDeps.TryProcessIcmp6RaMessage(packet, static_cast<uint16_t>(rval)) == OTBR_ERROR_NONE)
+    {
+        ExitNow();
+    }
+    #endif
 
     otbrLogInfo("Send packet (%hu bytes)", static_cast<uint16_t>(rval));
 

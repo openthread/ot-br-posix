@@ -176,6 +176,9 @@ private:
                             const Ip6Address &aIp6Address,
                             const uint8_t    *aData,
                             uint16_t          aDataLen) override;
+    #if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    otbrError TryProcessIcmp6RaMessage(const uint8_t *aData, uint16_t aLength) override;
+    #endif
 
     bool                      mIsInitialized;
     ot::Spinel::SpinelDriver &mSpinelDriver;
