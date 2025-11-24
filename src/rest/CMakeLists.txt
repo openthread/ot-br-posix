@@ -49,13 +49,22 @@ add_library(otbr-rest
     uuid.cpp
 )
 
-target_include_directories(otbr-rest PUBLIC
-    ${PROJECT_SOURCE_DIR}/third_party/cpp-httplib/repo
+if (CJSON_FOUND)
+    set(CJSON_LIB_TARGETS ${CJSON_LINK_LIBRARIES})
+else()
+    set(CJSON_LIB_TARGETS cjson)
+endif()
+
+target_include_directories(otbr-rest
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/third_party/cpp-httplib/repo
+    PRIVATE
+        ${CJSON_INCLUDE_DIRS}
 )
 
 target_link_libraries(otbr-rest
     PRIVATE
-        cjson
+        ${CJSON_LIB_TARGETS}
         otbr-config
         otbr-utils
         openthread-ftd

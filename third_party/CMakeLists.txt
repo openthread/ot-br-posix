@@ -28,5 +28,12 @@
 
 add_subdirectory(openthread)
 if(OTBR_REST)
-    add_subdirectory(cJSON)
+    pkg_check_modules(CJSON libcjson)
+    if (CJSON_FOUND)
+        set(CJSON_FOUND ${CJSON_FOUND} PARENT_SCOPE)
+        set(CJSON_INCLUDE_DIRS ${CJSON_INCLUDE_DIRS} PARENT_SCOPE)
+        set(CJSON_LINK_LIBRARIES ${CJSON_LINK_LIBRARIES} PARENT_SCOPE)
+    else()
+        add_subdirectory(cJSON)
+    endif()
 endif()
