@@ -1666,6 +1666,7 @@ exit:
 
 otError DBusThreadObjectRcp::GetBorderAgentIdHandler(DBusMessageIter &aIter)
 {
+#if OPENTHREAD_CONFIG_BORDER_AGENT_ID_ENABLE
     otBorderAgentId      id;
     std::vector<uint8_t> data;
     otError              error = OT_ERROR_NONE;
@@ -1678,6 +1679,10 @@ otError DBusThreadObjectRcp::GetBorderAgentIdHandler(DBusMessageIter &aIter)
 
 exit:
     return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 otError DBusThreadObjectRcp::GetOtRcpVersionHandler(DBusMessageIter &aIter)
