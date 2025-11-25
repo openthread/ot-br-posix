@@ -297,6 +297,34 @@ void NcpSpinel::AddEphemeralKeyStateChangedCallback(const EphemeralKeyStateChang
     mEphemeralKeyStateChangedCallback = aCallback;
 }
 
+#if OTBR_ENABLE_TREL
+void NcpSpinel::SetTrelStateChangedCallback(TrelStateChangedCallback aCallback)
+{
+    mTrelStateChangedCallback = aCallback;
+
+    // Get the initial TREL state to have an initial value.
+    SuccessOrDie(GetProperty(SPINEL_PROP_TREL_STATE), "Failed to get TREL state");
+}
+
+otbrError NcpSpinel::UpdateTrelState(bool aEnabled, uint16_t aPort)
+{
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [aEnabled, aPort](ot::Spinel::Encoder &aEncoder) {
+        otError error = OT_ERROR_NONE;
+        SuccessOrExit(error = aEncoder.WriteBool(aEnabled));
+        SuccessOrExit(error = aEncoder.WriteUint16(aPort));
+    exit:
+        return error;
+    };
+
+    SuccessOrExit(SetProperty(SPINEL_PROP_TREL_STATE, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    otbrLogResult(error, "UpdateTrelState: enabled=%d port=%u", aEnabled, aPort);
+    return error;
+}
+#endif // OTBR_ENABLE_TREL
+
 void NcpSpinel::HandleReceivedFrame(const uint8_t *aFrame,
                                     uint16_t       aLength,
                                     uint8_t        aHeader,
@@ -604,6 +632,22 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_TREL_STATE:
+    {
+        bool     enabled;
+        uint16_t port;
+        SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_BOOL_S SPINEL_DATATYPE_UINT16_S,
+                                               &enabled, &port));
+        // Trigger callback on any state change
+        if (enabled != (mTrelPort != 0) || port != mTrelPort)
+        {
+            mTrelPort = enabled ? port : 0;
+            SafeInvoke(mTrelStateChangedCallback, enabled, port);
+        }
+        otbrLogInfo("TREL state updated: enabled=%d port=%u", enabled, port);
+        break;
+    }
+
     default:
         otbrLogWarning("Received unrecognized key: %u", aKey);
         break;
@@ -833,6 +877,23 @@ otbrError NcpSpinel::HandleResponseForPropGet(spinel_tid_t      aTid,
         SuccessOrExit(decoder.ReadData(data, dataLen), error = OTBR_ERROR_PARSE);
 
         SafeInvoke(mBorderAgentMeshCoPServiceChangedCallback, isActive, port, data, dataLen);
+        break;
+    }
+    case SPINEL_PROP_TREL_STATE:
+    {
+        bool                enabled;
+        uint16_t            port;
+        ot::Spinel::Decoder decoder;
+        decoder.Init(aData, aLength);
+        SuccessOrExit(decoder.ReadBool(enabled), error = OTBR_ERROR_PARSE);
+        SuccessOrExit(decoder.ReadUint16(port), error = OTBR_ERROR_PARSE);
+        // Trigger callback on any state change
+        if (enabled != (mTrelPort != 0) || port != mTrelPort)
+        {
+            mTrelPort = enabled ? port : 0;
+            SafeInvoke(mTrelStateChangedCallback, enabled, port);
+        }
+        otbrLogInfo("TREL state query response: enabled=%d port=%u", enabled, port);
         break;
     }
 

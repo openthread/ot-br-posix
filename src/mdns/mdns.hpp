@@ -68,6 +68,11 @@ namespace Mdns {
  */
 
 /**
+ * mDNS well-known port number (RFC 6762).
+ */
+static constexpr uint16_t kMdnsPort = 5353;
+
+/**
  * This interface defines the functionality of mDNS publisher.
  */
 class Publisher : private NonCopyable
