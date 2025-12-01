@@ -34,7 +34,11 @@
 #ifndef OTBR_AGENT_REAL_MAIN_HPP_
 #define OTBR_AGENT_REAL_MAIN_HPP_
 
+#include <functional>
 #include <stdint.h>
+#include <vector>
+
+#include "common/logging.hpp"
 
 namespace otbr {
 
@@ -47,15 +51,32 @@ namespace otbr {
  * @{
  */
 
+struct MainConfig
+{
+    otbrLogLevel              mLogLevel;              ///< Log level.
+    const char               *mInterfaceName;         ///< Thread network interface name.
+    const char               *mBackboneInterfaceName; ///< Backbone network interface name.
+    bool                      mVerbose;               ///< Whether to enable verbose logging.
+    bool                      mSyslogDisable;         ///< Whether to disable syslog and print to standard out.
+    bool                      mPrintRadioVersion;     ///< Whether to print radio version and exit.
+    bool                      mEnableAutoAttach;      ///< Whether to enable auto attach.
+    const char               *mRestListenAddress;     ///< REST server listen address.
+    int                       mRestListenPort;        ///< REST server listen port.
+    std::vector<const char *> mRadioUrls;             ///< Radio URLs.
+};
+
+using MainConfigCallback = std::function<void(const MainConfig &aConfig)>;
+
 /**
  * This method runs the real main method of the OTBR Agent until exit.
  *
- * @param[in] argc  The number of arguments.
- * @param[in] argv  A pointer to an argument list.
+ * @param[in] argc                    The number of arguments.
+ * @param[in] argv                    A pointer to an argument list.
+ * @param[in] aMainConfigCallback     A callback to do platform-specific configurations.
  *
  * @returns The exit code.
  */
-int RealMain(int argc, char *argv[]);
+int RealMain(int argc, char *argv[], MainConfigCallback aMainConfigCallback = nullptr);
 
 /**
  * @}

@@ -218,21 +218,23 @@ static otbrLogLevel GetDefaultLogLevel(void)
     exit(EXIT_SUCCESS);
 }
 
-static int realmain(int argc, char *argv[])
+static int realmain(int argc, char *argv[], otbr::MainConfigCallback aMainConfigCallback)
 {
-    otbrLogLevel              logLevel = GetDefaultLogLevel();
     int                       opt;
-    int                       ret               = EXIT_SUCCESS;
-    const char               *interfaceName     = kDefaultInterfaceName;
-    bool                      verbose           = false;
-    bool                      syslogDisable     = false;
-    bool                      printRadioVersion = false;
-    bool                      enableAutoAttach  = true;
-    const char               *restListenAddress = "127.0.0.1";
-    int                       restListenPort    = kPortNumber;
-    std::vector<const char *> radioUrls;
-    std::vector<const char *> backboneInterfaceNames;
+    int                       ret = EXIT_SUCCESS;
     long                      parseResult;
+    std::vector<const char *> backboneInterfaceNames;
+
+    otbr::MainConfig config = {.mLogLevel              = GetDefaultLogLevel(),
+                               .mInterfaceName         = kDefaultInterfaceName,
+                               .mBackboneInterfaceName = "",
+                               .mVerbose               = false,
+                               .mSyslogDisable         = false,
+                               .mPrintRadioVersion     = false,
+                               .mEnableAutoAttach      = true,
+                               .mRestListenAddress     = "127.0.0.1",
+                               .mRestListenPort        = kPortNumber,
+                               .mRadioUrls             = {}};
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -248,19 +250,19 @@ static int realmain(int argc, char *argv[])
         case OTBR_OPT_DEBUG_LEVEL:
             VerifyOrExit(ParseInteger(optarg, parseResult), ret = EXIT_FAILURE);
             VerifyOrExit(OTBR_LOG_EMERG <= parseResult && parseResult <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
-            logLevel = static_cast<otbrLogLevel>(parseResult);
+            config.mLogLevel = static_cast<otbrLogLevel>(parseResult);
             break;
 
         case OTBR_OPT_INTERFACE_NAME:
-            interfaceName = optarg;
+            config.mInterfaceName = optarg;
             break;
 
         case OTBR_OPT_VERBOSE:
-            verbose = true;
+            config.mVerbose = true;
             break;
 
         case OTBR_OPT_SYSLOG_DISABLE:
-            syslogDisable = true;
+            config.mSyslogDisable = true;
             break;
 
         case OTBR_OPT_VERSION:
@@ -274,27 +276,27 @@ static int realmain(int argc, char *argv[])
             break;
 
         case OTBR_OPT_RADIO_VERSION:
-            printRadioVersion = true;
+            config.mPrintRadioVersion = true;
             break;
 
         case OTBR_OPT_AUTO_ATTACH:
             if (optarg == nullptr)
             {
-                enableAutoAttach = true;
+                config.mEnableAutoAttach = true;
             }
             else
             {
                 VerifyOrExit(ParseInteger(optarg, parseResult), ret = EXIT_FAILURE);
-                enableAutoAttach = parseResult;
+                config.mEnableAutoAttach = parseResult;
             }
             break;
         case OTBR_OPT_REST_LISTEN_ADDR:
-            restListenAddress = optarg;
+            config.mRestListenAddress = optarg;
             break;
 
         case OTBR_OPT_REST_LISTEN_PORT:
             VerifyOrExit(ParseInteger(optarg, parseResult), ret = EXIT_FAILURE);
-            restListenPort = parseResult;
+            config.mRestListenPort = parseResult;
             break;
 
         default:
@@ -304,10 +306,10 @@ static int realmain(int argc, char *argv[])
         }
     }
 
-    otbrLogInit(argv[0], logLevel, verbose, syslogDisable);
+    otbrLogInit(argv[0], config.mLogLevel, config.mVerbose, config.mSyslogDisable);
     otbrLogNotice("Running %s", OTBR_PACKAGE_VERSION);
     otbrLogNotice("Thread version: %s", otbr::Host::RcpHost::GetThreadVersion());
-    otbrLogNotice("Thread interface: %s", interfaceName);
+    otbrLogNotice("Thread interface: %s", config.mInterfaceName);
 
     if (backboneInterfaceNames.empty())
     {
@@ -317,33 +319,42 @@ static int realmain(int argc, char *argv[])
     for (int i = optind; i < argc; i++)
     {
         otbrLogNotice("Radio URL: %s", argv[i]);
-        radioUrls.push_back(argv[i]);
+        config.mRadioUrls.push_back(argv[i]);
     }
 
-    if (printRadioVersion)
+    if (config.mPrintRadioVersion)
     {
-        PrintRadioVersionAndExit(radioUrls);
+        PrintRadioVersionAndExit(config.mRadioUrls);
         assert(false);
     }
 
     {
 #if __linux__
         otbr::Utils::InfraLinkSelector    infraLinkSelector(backboneInterfaceNames);
-        const std::string                 backboneInterfaceName = infraLinkSelector.Select();
-        otbr::Application::ErrorCondition errorCondition        = [&backboneInterfaceName, &infraLinkSelector](void) {
-            return std::string(infraLinkSelector.Select()) == backboneInterfaceName ? OTBR_ERROR_NONE
-                                                                                           : OTBR_ERROR_INFRA_LINK_CHANGED;
+        otbr::Application::ErrorCondition errorCondition = [&config, &infraLinkSelector](void) -> otbrError {
+            return strcmp(infraLinkSelector.Select(), config.mBackboneInterfaceName) == 0
+                       ? OTBR_ERROR_NONE
+                       : OTBR_ERROR_INFRA_LINK_CHANGED;
         };
-#else
-        const std::string backboneInterfaceName = backboneInterfaceNames.empty() ? "" : backboneInterfaceNames.front();
-#endif
-        std::unique_ptr<otbr::Host::ThreadHost> host = otbr::Host::ThreadHost::Create(
-            interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach);
 
-        otbr::Application app(*host, interfaceName, backboneInterfaceName);
+        config.mBackboneInterfaceName = infraLinkSelector.Select();
+#else
+        config.mBackboneInterfaceName =
+            backboneInterfaceNames.empty() ? config.mBackboneInterfaceName : backboneInterfaceNames.front();
+#endif
+        std::unique_ptr<otbr::Host::ThreadHost> host =
+            otbr::Host::ThreadHost::Create(config.mInterfaceName, config.mRadioUrls, config.mBackboneInterfaceName,
+                                           /* aDryRun */ false, config.mEnableAutoAttach);
+
+        if (aMainConfigCallback)
+        {
+            aMainConfigCallback(config);
+        }
+
+        otbr::Application app(*host, config.mInterfaceName, config.mBackboneInterfaceName);
 
         gApp = &app;
-        app.Init(restListenAddress, restListenPort);
+        app.Init(config.mRestListenAddress, config.mRestListenPort);
 #if __linux__
         app.SetErrorCondition(errorCondition);
 #endif
@@ -379,7 +390,7 @@ void otPlatReset(otInstance *aInstance)
 #endif
 }
 
-int otbr::RealMain(int argc, char *argv[])
+int otbr::RealMain(int argc, char *argv[], MainConfigCallback aMainConfigCallback)
 {
 #ifndef OTBR_ENABLE_PLATFORM_ANDROID
     if (setjmp(sResetJump))
@@ -394,5 +405,5 @@ int otbr::RealMain(int argc, char *argv[])
         execvp(args[0], args.data());
     }
 #endif
-    return realmain(argc, argv);
+    return realmain(argc, argv, aMainConfigCallback);
 }
