@@ -42,6 +42,7 @@
 #include <openthread/dataset_ftd.h>
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
+#include <openthread/netdiag.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
@@ -211,6 +212,83 @@ exit:
         }
         mEnergyScanHandler = nullptr;
     }
+}
+
+void ThreadHelper::GetNetworkDiagnosticTlvs(otIp6Address aDest,
+                                        uint8_t *aTypes,
+                                        uint8_t count,
+                                        NetworkDiagnosticHandler aHandler)
+{
+    otError      error = OT_ERROR_NONE;
+
+    VerifyOrExit(mDiagHandler == nullptr, error = OT_ERROR_BUSY);
+    VerifyOrExit(aHandler != nullptr, error = OT_ERROR_REJECTED);
+
+    mDiagHandler = aHandler;
+    mNetworkDiagTlvResults.clear();
+    mNetworkDiagTlvTypes.clear();
+    mNetworkDiagTlvTypes.assign(aTypes, aTypes + count);
+
+    error = otThreadSendDiagnosticGet(mInstance, &aDest, mNetworkDiagTlvTypes.data(), mNetworkDiagTlvTypes.size(),
+                              &ThreadHelper::NetDiagCallback, this);
+
+exit:
+    if (error != OT_ERROR_NONE )
+    {
+        aHandler(error, {});
+        mDiagHandler = nullptr;
+    }
+}
+
+void ThreadHelper::NetDiagCallback(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aThreadHelper)
+{
+    ThreadHelper *helper = static_cast<ThreadHelper *>(aThreadHelper);
+    helper->NetDiagCallback(aError, aMessage, aMessageInfo);
+}
+
+void ThreadHelper::NetDiagCallback(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo)
+{
+    OTBR_UNUSED_VARIABLE(aMessageInfo);
+
+    otError error = aError;
+
+    uint8_t buf[16] = {};
+    uint16_t bufSize = static_cast<uint16_t>(sizeof(buf));
+    uint16_t length = 0;
+
+    uint16_t bytesToWrite = 0;
+    uint16_t bytesWritten = 0;
+
+    VerifyOrExit(error == OT_ERROR_NONE);
+    VerifyOrExit(mDiagHandler);
+
+    length = otMessageGetLength(aMessage) - otMessageGetOffset(aMessage);
+
+    while (length > 0)
+    {
+        bytesToWrite = (length < bufSize) ? length : bufSize;
+        otMessageRead(aMessage, otMessageGetOffset(aMessage) + bytesWritten, buf, bytesToWrite);
+
+        length -= bytesToWrite;
+        bytesWritten += bytesToWrite;
+
+        mNetworkDiagTlvResults.insert(mNetworkDiagTlvResults.end(), buf, buf + bytesToWrite);
+    }
+
+exit:
+    if (mDiagHandler)
+    {
+        if (error != OT_ERROR_NONE)
+        {
+            mDiagHandler(error, {});
+        }
+        else
+        {
+            mDiagHandler(OT_ERROR_NONE, mNetworkDiagTlvResults);
+        }
+    }
+
+    mDiagHandler = nullptr;
 }
 
 void ThreadHelper::RandomFill(void *aBuf, size_t size)
