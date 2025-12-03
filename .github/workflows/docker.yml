@@ -83,7 +83,7 @@ jobs:
               --build-arg NAT64=0
               --build-arg WEB_GUI=0
               --build-arg REST_API=0
-              --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON'
+              --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOTBR_OT_DISCOVERY_PROXY=OFF'
             platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: yes
           - image_tag: "test"
