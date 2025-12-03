@@ -558,6 +558,9 @@ private:
                                   uint16_t            &aPeerPort,
                                   uint16_t            &aLocalPort);
     otError SendDnssdResult(otPlatDnssdRequestId aRequestId, const std::vector<uint8_t> &aCallbackData, otError aError);
+#if OTBR_ENABLE_DNSSD_PLAT
+    otError SendDnssdBrowseResult(const otPlatDnssdBrowseResult &aResult, const std::vector<uint8_t> &aCallbackData);
+#endif
 
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
@@ -578,6 +581,9 @@ private:
     PropsObserver *mPropsObserver;
 #if OTBR_ENABLE_MDNS
     otbr::Mdns::Publisher *mPublisher;
+#endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    uint64_t mDiscoveryProxyId;
 #endif
 
     AsyncTaskPtr mDatasetSetActiveTask;
