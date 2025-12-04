@@ -39,6 +39,9 @@ readonly BACKBONE_ROUTER
 NAT64="${NAT64:-1}"
 readonly NAT64
 
+DISCOVERY_PROXY="${DISCOVERY_PROXY:-1}"
+readonly DISCOVERY_PROXY
+
 # Handle deprecated DHCPV6_PD_REF flag
 if [[ -n ${DHCPV6_PD_REF+x} ]]; then
     echo >&2 "WARNING: DHCPV6_PD_REF is now deprecated, please use OTBR_DHCP6_PD_CLIENT instead:"
@@ -145,6 +148,13 @@ otbr_install()
     if without NAT64; then
         otbr_options+=(
             "-DOTBR_NAT64=OFF"
+        )
+    fi
+
+    # OT Discovery Proxy depends on Border Routing. Disable it if Border Routing is disabled or if explicitly disabled.
+    if without DISCOVERY_PROXY || without BORDER_ROUTING; then
+        otbr_options+=(
+            "-DOTBR_OT_DISCOVERY_PROXY=OFF"
         )
     fi
 
