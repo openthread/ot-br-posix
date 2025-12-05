@@ -50,6 +50,11 @@
 
 #include "agent/application.hpp"
 #include "agent/realmain.hpp"
+
+#if OTBR_ENABLE_BORDER_AGENT
+#include "border_agent/border_agent.hpp"
+#endif
+
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
@@ -84,12 +89,19 @@ enum
     OTBR_OPT_AUTO_ATTACH,
     OTBR_OPT_REST_LISTEN_ADDR,
     OTBR_OPT_REST_LISTEN_PORT,
+    OTBR_OPT_VENDOR_NAME,
+    OTBR_OPT_PRODUCT_NAME,
 };
 
 #ifndef OTBR_ENABLE_PLATFORM_ANDROID
 static jmp_buf sResetJump;
 #endif
 static otbr::Application *gApp = nullptr;
+
+#if OTBR_ENABLE_BORDER_AGENT
+static bool isVendorNameSet  = false;
+static bool isProductNameSet = false;
+#endif
 
 void                       __gcov_flush();
 static const struct option kOptions[] = {
@@ -104,6 +116,10 @@ static const struct option kOptions[] = {
     {"auto-attach", optional_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
     {"rest-listen-address", required_argument, nullptr, OTBR_OPT_REST_LISTEN_ADDR},
     {"rest-listen-port", required_argument, nullptr, OTBR_OPT_REST_LISTEN_PORT},
+#if OTBR_ENABLE_BORDER_AGENT
+    {"vendor-name", required_argument, nullptr, OTBR_OPT_VENDOR_NAME},
+    {"product-name", required_argument, nullptr, OTBR_OPT_PRODUCT_NAME},
+#endif
     {0, 0, 0, 0}};
 
 static bool ParseInteger(const char *aStr, long &aOutResult)
@@ -161,9 +177,19 @@ static void PrintHelp(const char *aProgramName)
             "     --auto-attach          Whether or not to automatically attach to the saved network (default: 1).\n"
             "     --rest-listen-address  Network address to listen on for the REST API (default: 127.0.0.1).\n"
             "     --rest-listen-port     Network port to listen on for the REST API "
-            "(default: " HELP_DEFAULT_REST_PORT_NUMBER ").\n"
-            "\n",
+            "(default: " HELP_DEFAULT_REST_PORT_NUMBER ").\n",
             aProgramName);
+#if OTBR_ENABLE_BORDER_AGENT
+    if (!isVendorNameSet)
+    {
+        fprintf(stderr, "     --vendor-name          Vendor Name.\n");
+    }
+    if (!isProductNameSet)
+    {
+        fprintf(stderr, "     --product-name         Product Name.\n");
+    }
+#endif
+    fprintf(stderr, "\n");
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
 
@@ -234,6 +260,14 @@ static int realmain(int argc, char *argv[])
     std::vector<const char *> backboneInterfaceNames;
     long                      parseResult;
 
+#if OTBR_ENABLE_BORDER_AGENT
+    const char *vendorName  = OTBR_VENDOR_NAME;
+    const char *productName = OTBR_PRODUCT_NAME;
+
+    isVendorNameSet  = strlen(vendorName) > 0;
+    isProductNameSet = strlen(productName) > 0;
+#endif
+
     std::set_new_handler(OnAllocateFailed);
 
     while ((opt = getopt_long(argc, argv, "B:d:hI:Vvs", kOptions, nullptr)) != -1)
@@ -296,7 +330,31 @@ static int realmain(int argc, char *argv[])
             VerifyOrExit(ParseInteger(optarg, parseResult), ret = EXIT_FAILURE);
             restListenPort = parseResult;
             break;
+#if OTBR_ENABLE_BORDER_AGENT
+        case OTBR_OPT_VENDOR_NAME:
+            if (!isVendorNameSet)
+            {
+                vendorName = optarg;
+            }
+            else
+            {
+                fprintf(stderr, "Vendor name has already been set to \"%s\" at compile-time.\n", vendorName);
+                ExitNow(ret = EXIT_FAILURE);
+            }
+            break;
 
+        case OTBR_OPT_PRODUCT_NAME:
+            if (!isProductNameSet)
+            {
+                productName = optarg;
+            }
+            else
+            {
+                fprintf(stderr, "Product name has already been set to \"%s\" at compile-time.\n", productName);
+                ExitNow(ret = EXIT_FAILURE);
+            }
+            break;
+#endif
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -305,6 +363,20 @@ static int realmain(int argc, char *argv[])
     }
 
     otbrLogInit(argv[0], logLevel, verbose, syslogDisable);
+
+#if OTBR_ENABLE_BORDER_AGENT
+    if (!isVendorNameSet && strlen(vendorName) == 0)
+    {
+        otbrLogErr("Vendor name must be set.");
+        ExitNow(ret = EXIT_FAILURE);
+    }
+    if (!isProductNameSet && strlen(productName) == 0)
+    {
+        otbrLogErr("Product name must be set.");
+        ExitNow(ret = EXIT_FAILURE);
+    }
+#endif
+
     otbrLogNotice("Running %s", OTBR_PACKAGE_VERSION);
     otbrLogNotice("Thread version: %s", otbr::Host::RcpHost::GetThreadVersion());
     otbrLogNotice("Thread interface: %s", interfaceName);
@@ -343,6 +415,16 @@ static int realmain(int argc, char *argv[])
         otbr::Application app(*host, interfaceName, backboneInterfaceName);
 
         gApp = &app;
+
+#if OTBR_ENABLE_BORDER_AGENT
+        if (!isVendorNameSet || !isProductNameSet)
+        {
+            char instanceName[otbr::kMaxVendorNameLength + 1 + otbr::kMaxProductNameLength + 1];
+            snprintf(instanceName, sizeof(instanceName), "%s %s", vendorName, productName);
+            app.GetBorderAgent().SetMeshCoPServiceValues(instanceName, productName, vendorName, {}, {});
+        }
+#endif
+
         app.Init(restListenAddress, restListenPort);
 #if __linux__
         app.SetErrorCondition(errorCondition);
