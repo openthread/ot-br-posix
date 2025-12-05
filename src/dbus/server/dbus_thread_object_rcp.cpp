@@ -124,6 +124,8 @@ otbrError DBusThreadObjectRcp::Init(void)
                    std::bind(&DBusThreadObjectRcp::ScanHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ENERGY_SCAN_METHOD,
                    std::bind(&DBusThreadObjectRcp::EnergyScanHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_GET_NETDIAG_TLVS,
+                   std::bind(&DBusThreadObjectRcp::GetNetworkDiagnosticTlvs, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_METHOD,
                    std::bind(&DBusThreadObjectRcp::AttachHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DETACH_METHOD,
@@ -419,6 +421,47 @@ void DBusThreadObjectRcp::ReplyEnergyScanResult(DBusRequest                     
         }
 
         aRequest.Reply(std::tie(results));
+    }
+}
+
+void DBusThreadObjectRcp::GetNetworkDiagnosticTlvs(DBusRequest &aRequest)
+{
+    static constexpr uint16_t kMaxTlvs = 35;
+
+    otError error = OT_ERROR_NONE;
+    auto threadHelper = mHost.GetThreadHelper();
+    Ip6Address dest;
+    otIp6Address address;
+    std::vector<uint8_t> tlvTypes;
+    uint8_t tlvTypesArray[kMaxTlvs] = {};
+    uint8_t count = 0;
+
+    auto args = std::tie(dest, tlvTypes);
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+    memcpy(address.mFields.m8, dest.data(), OT_IP6_ADDRESS_SIZE);
+    count = static_cast<uint8_t>(std::min<std::size_t>(tlvTypes.size(), kMaxTlvs));
+    memcpy(tlvTypesArray, tlvTypes.data(), count);
+
+    threadHelper->GetNetworkDiagnosticTlvs(address, tlvTypesArray, count, std::bind(&DBusThreadObjectRcp::ReplyGetNetworkDiagnosticTlvResult, this, aRequest, _1, _2));
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObjectRcp::ReplyGetNetworkDiagnosticTlvResult(DBusRequest &aRequest, otError aError, const std::vector<uint8_t> &aResult)
+{
+    std::vector<uint8_t> results;
+    if (aError != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(aError);
+    }
+    else
+    {
+        aRequest.Reply(std::tie(aResult));
     }
 }
 

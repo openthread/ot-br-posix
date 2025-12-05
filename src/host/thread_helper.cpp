@@ -42,6 +42,7 @@
 #include <openthread/dataset_ftd.h>
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
+#include <openthread/netdiag.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
@@ -211,6 +212,61 @@ exit:
         }
         mEnergyScanHandler = nullptr;
     }
+}
+
+void ThreadHelper::GetNetworkDiagnosticTlvs(otIp6Address aDest,
+                                        uint8_t *aTypes,
+                                        uint8_t count,
+                                        NetworkDiagnosticHandler aHandler)
+{
+    otError      error = OT_ERROR_NONE;
+
+    mDiagHandler = std::move(aHandler);
+    mNetworkDiagTlvResults.clear();
+
+    error = otThreadSendDiagnosticGet(mInstance, &aDest, aTypes, count,
+                              &ThreadHelper::NetDiagCallback, this);
+
+    if (error != OT_ERROR_NONE && mDiagHandler)
+    {
+        mDiagHandler(error, {});
+    }
+}
+
+void ThreadHelper::NetDiagCallback(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aThreadHelper)
+{
+    ThreadHelper *helper = static_cast<ThreadHelper *>(aThreadHelper);
+    helper->NetDiagCallback(aError, aMessage, aMessageInfo);
+}
+
+void ThreadHelper::NetDiagCallback(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo)
+{
+    otError error = OT_ERROR_NONE;
+    const uint16_t replySize = 1024;
+    uint8_t reply[replySize] = {};
+    uint16_t written = 0;
+
+    OTBR_UNUSED_VARIABLE(aMessageInfo);
+    VerifyOrExit(mDiagHandler);
+
+    if (aError != OT_ERROR_NONE)
+    {
+        mDiagHandler(aError, {});
+    }
+    else
+    {
+        SuccessOrExit(error = otThreadGetRawDiagnosticTlvs(aMessage, replySize, reply, &written));
+        mNetworkDiagTlvResults.insert(mNetworkDiagTlvResults.end(), reply, reply + written);
+        mDiagHandler(error, mNetworkDiagTlvResults);
+    }
+
+exit:
+    if (error != OT_ERROR_NONE && mDiagHandler)
+    {
+        mDiagHandler(error, {});
+    }
+
+    mDiagHandler = nullptr;
 }
 
 void ThreadHelper::RandomFill(void *aBuf, size_t size)
