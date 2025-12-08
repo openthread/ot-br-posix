@@ -187,6 +187,10 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::SetDnsUpstreamQueryState, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
                                std::bind(&DBusThreadObjectRcp::SetNat64Cidr, this, _1));
+#if OTBR_ENABLE_BORDER_AGENT_ID
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_BORDER_AGENT_ID,
+                               std::bind(&DBusThreadObjectRcp::SetBorderAgentIdHandler, this, _1));
+#endif
 #if OTBR_ENABLE_EPSKC
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED,
                                std::bind(&DBusThreadObjectRcp::SetEphemeralKeyEnabled, this, _1));
@@ -223,8 +227,10 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::GetRloc16Handler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTENDED_ADDRESS,
                                std::bind(&DBusThreadObjectRcp::GetExtendedAddressHandler, this, _1));
+#if OTBR_ENABLE_BORDER_AGENT_ID
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_BORDER_AGENT_ID,
                                std::bind(&DBusThreadObjectRcp::GetBorderAgentIdHandler, this, _1));
+#endif
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ROUTER_ID,
                                std::bind(&DBusThreadObjectRcp::GetRouterIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LEADER_DATA,
@@ -1308,6 +1314,23 @@ exit:
     return error;
 }
 
+#if OTBR_ENABLE_BORDER_AGENT_ID
+otError DBusThreadObjectRcp::SetBorderAgentIdHandler(DBusMessageIter &aIter)
+{
+    otError                                        error = OT_ERROR_NONE;
+    std::array<uint8_t, OT_BORDER_AGENT_ID_LENGTH> data;
+    otBorderAgentId                                borderAgentId;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    std::copy(data.begin(), data.end(), borderAgentId.mId);
+
+    error = otBorderAgentSetId(mHost.GetInstance(), &borderAgentId);
+
+exit:
+    return error;
+}
+#endif
+
 #if OTBR_ENABLE_BORDER_AGENT
 void DBusThreadObjectRcp::SetBorderAgentEnabledHandler(DBusRequest &aRequest)
 {
@@ -1664,6 +1687,7 @@ exit:
     return error;
 }
 
+#if OTBR_ENABLE_BORDER_AGENT_ID
 otError DBusThreadObjectRcp::GetBorderAgentIdHandler(DBusMessageIter &aIter)
 {
     otBorderAgentId      id;
@@ -1679,6 +1703,7 @@ otError DBusThreadObjectRcp::GetBorderAgentIdHandler(DBusMessageIter &aIter)
 exit:
     return error;
 }
+#endif
 
 otError DBusThreadObjectRcp::GetOtRcpVersionHandler(DBusMessageIter &aIter)
 {
