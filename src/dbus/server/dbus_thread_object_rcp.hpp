@@ -86,6 +86,7 @@ private:
 
     void ScanHandler(DBusRequest &aRequest);
     void EnergyScanHandler(DBusRequest &aRequest);
+    void GetNetworkDiagnosticTlvs(DBusRequest &aRequest);
     void AttachHandler(DBusRequest &aRequest);
     void AttachAllNodesToHandler(DBusRequest &aRequest);
     void DetachHandler(DBusRequest &aRequest);
@@ -190,6 +191,7 @@ private:
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
+    void ReplyGetNetworkDiagnosticTlvResult(DBusRequest &aRequest, otError aError, const std::vector<uint8_t> &aResult);
 
     otbr::Host::RcpHost &mHost;
 #if OTBR_ENABLE_TELEMETRY_DATA_API
