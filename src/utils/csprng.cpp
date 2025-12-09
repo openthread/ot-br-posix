@@ -39,8 +39,26 @@
 
 #include "common/code_utils.hpp"
 #include "common/types.hpp"
+#include "host/posix/entropy.hpp"
 
 namespace otbr {
+
+static constexpr uint16_t kEntropyMinThreshold = 16;
+
+static int handleMbedtlsEntropyPoll(void *aData, unsigned char *aOutput, size_t aInLen, size_t *aOutLen)
+{
+    int rval = MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+
+    SuccessOrExit(Entropy::GetEntropy(reinterpret_cast<uint8_t *>(aOutput), static_cast<uint16_t>(aInLen)));
+    VerifyOrExit(aOutLen != nullptr);
+
+    *aOutLen = aInLen;
+    rval     = 0;
+
+exit:
+    OTBR_UNUSED_VARIABLE(aData);
+    return rval;
+}
 
 Csprng &Csprng::GetInstance(void)
 {
@@ -68,6 +86,13 @@ Csprng::Csprng(void)
     : mInitialized(false)
 {
     mbedtls_entropy_init(&mEntropyContext);
+#ifndef OT_MBEDTLS_STRONG_DEFAULT_ENTROPY_PRESENT
+    if (mbedtls_entropy_add_source(&mEntropyContext, handleMbedtlsEntropyPoll, nullptr, kEntropyMinThreshold,
+                                   MBEDTLS_ENTROPY_SOURCE_STRONG) != 0)
+    {
+        otbrLogWarning("Failed to add custom entropy source to mbedtls");
+    }
+#endif
     mbedtls_ctr_drbg_init(&mCtrDrbgContext);
 
     if (mbedtls_ctr_drbg_seed(&mCtrDrbgContext, mbedtls_entropy_func, &mEntropyContext, nullptr, 0) == 0)

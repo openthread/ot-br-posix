@@ -31,6 +31,8 @@ add_library(otbr-posix
     cli_daemon.cpp
     dnssd.hpp
     dnssd.cpp
+    entropy.hpp
+    entropy.cpp
     infra_if.hpp
     infra_if.cpp
     multicast_routing_manager.hpp
