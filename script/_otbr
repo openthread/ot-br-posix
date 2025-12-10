@@ -101,6 +101,8 @@ otbr_install()
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "-DOTBR_DHCP6_PD_CLIENT=${OTBR_DHCP6_PD_CLIENT}"
         "-DOTBR_MDNS=${OTBR_MDNS}"
+        "-DOTBR_VENDOR_NAME=OpenThreadTest"
+        "-DOTBR_PRODUCT_NAME=BorderRouter"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="
