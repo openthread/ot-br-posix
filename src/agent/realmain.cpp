@@ -343,25 +343,24 @@ static int realmain(int argc, char *argv[])
         }
     }
 
-    otbrLogInit(argv[0], logLevel, verbose, syslogDisable);
-
 #if OTBR_ENABLE_BORDER_AGENT
 #ifndef OTBR_VENDOR_NAME
     if (vendorName == nullptr)
     {
-        otbrLogErr("Vendor name must be set.");
+        fprintf(stderr, "Vendor name must be set.\n");
         ExitNow(ret = EXIT_FAILURE);
     }
 #endif
 #ifndef OTBR_PRODUCT_NAME
     if (productName == nullptr)
     {
-        otbrLogErr("Product name must be set.");
+        fprintf(stderr, "Product name must be set.\n");
         ExitNow(ret = EXIT_FAILURE);
     }
 #endif
 #endif
 
+    otbrLogInit(argv[0], logLevel, verbose, syslogDisable);
     otbrLogNotice("Running %s", OTBR_PACKAGE_VERSION);
     otbrLogNotice("Thread version: %s", otbr::Host::RcpHost::GetThreadVersion());
     otbrLogNotice("Thread interface: %s", interfaceName);
