@@ -42,5 +42,6 @@ add_library(otbr-utils
 
 target_link_libraries(otbr-utils PUBLIC
     otbr-common
+    otbr-posix
     mbedtls
 )
