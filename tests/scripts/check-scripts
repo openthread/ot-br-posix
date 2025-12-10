@@ -42,10 +42,7 @@ check_otbr_agent()
 check_upstart()
 {
     echo 'Verify Upstart notification'
-    UPSTART_JOB=otbr-agent sudo -E otbr-agent -d7 -v \
-        --vendor-name "OpenThreadTest" \
-        --product-name "BorderRouter" \
-        "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=2" &
+    UPSTART_JOB=otbr-agent sudo -E otbr-agent -d7 -v "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=2" &
     sleep 2
     UPSTART_JOB_PID=$!
 

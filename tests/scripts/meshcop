@@ -156,7 +156,7 @@ TUN_NAME=wpan0
 readonly TUN_NAME
 
 # The default meshcop service instance name
-OT_SERVICE_INSTANCE='OpenThreadTest.*'
+OT_SERVICE_INSTANCE='OpenThread.*'
 readonly OT_SERVICE_INSTANCE
 
 echo "ORIGIN_PWD: ${ORIGIN_PWD}"
