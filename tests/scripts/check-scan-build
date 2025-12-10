@@ -44,6 +44,8 @@ main()
             -DOTBR_TELEMETRY_DATA_API=ON \
             -DOTBR_WEB=ON \
             -DOTBR_REST=ON \
+            -DOTBR_VENDOR_NAME="OpenThreadTest" \
+            -DOTBR_PRODUCT_NAME="BorderRouter" \
             .. \
         && scan-build -o "${SCAN_TMPDIR}" -analyze-headers -v ninja)
     ! (grep "^<!-- BUGFILE $(pwd)" "${SCAN_TMPDIR}"/*/report-*.html | grep -v 'third_party') && echo 'Success'
