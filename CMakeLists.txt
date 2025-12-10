@@ -90,6 +90,16 @@ target_compile_definitions(otbr-config INTERFACE
     "OTBR_SYSLOG_FACILITY_ID=${OTBR_SYSLOG_FACILITY_ID}"
 )
 
+if(OTBR_VENDOR_NAME)
+    target_compile_definitions(otbr-config INTERFACE "OTBR_VENDOR_NAME=\"${OTBR_VENDOR_NAME}\"")
+endif()
+if(OTBR_PRODUCT_NAME)
+    target_compile_definitions(otbr-config INTERFACE "OTBR_PRODUCT_NAME=\"${OTBR_PRODUCT_NAME}\"")
+endif()
+if(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
+    target_compile_definitions(otbr-config INTERFACE "OTBR_MESHCOP_SERVICE_INSTANCE_NAME=\"${OTBR_MESHCOP_SERVICE_INSTANCE_NAME}\"")
+endif()
+
 if(BUILD_SHARED_LIBS)
     target_link_libraries(otbr-config INTERFACE -Wl,--unresolved-symbols=ignore-in-shared-libs)
 endif()
