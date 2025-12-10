@@ -85,8 +85,14 @@ enum
     OTBR_OPT_AUTO_ATTACH,
     OTBR_OPT_REST_LISTEN_ADDR,
     OTBR_OPT_REST_LISTEN_PORT,
+#if OTBR_ENABLE_BORDER_AGENT
+#ifndef OTBR_VENDOR_NAME
     OTBR_OPT_VENDOR_NAME,
+#endif
+#ifndef OTBR_PRODUCT_NAME
     OTBR_OPT_PRODUCT_NAME,
+#endif
+#endif
 };
 
 #ifndef OTBR_ENABLE_PLATFORM_ANDROID
@@ -108,8 +114,12 @@ static const struct option kOptions[] = {
     {"rest-listen-address", required_argument, nullptr, OTBR_OPT_REST_LISTEN_ADDR},
     {"rest-listen-port", required_argument, nullptr, OTBR_OPT_REST_LISTEN_PORT},
 #if OTBR_ENABLE_BORDER_AGENT
+#ifndef OTBR_VENDOR_NAME
     {"vendor-name", required_argument, nullptr, OTBR_OPT_VENDOR_NAME},
+#endif
+#ifndef OTBR_PRODUCT_NAME
     {"product-name", required_argument, nullptr, OTBR_OPT_PRODUCT_NAME},
+#endif
 #endif
     {0, 0, 0, 0}};
 
