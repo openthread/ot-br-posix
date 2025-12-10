@@ -181,10 +181,19 @@ void BorderAgent::ClearState(void)
 
     mIsEnabled = false;
     mVendorOui.clear();
-    mVendorName  = OTBR_VENDOR_NAME;
+#ifdef OTBR_VENDOR_NAME
+    mVendorName = OTBR_VENDOR_NAME;
+#endif
+#ifdef OTBR_PRODUCT_NAME
     mProductName = OTBR_PRODUCT_NAME;
+#endif
     EncodeVendorTxtData(emptyTxtEntries);
+#if defined(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
     mBaseServiceInstanceName = OTBR_MESHCOP_SERVICE_INSTANCE_NAME;
+#elif defined(OTBR_VENDOR_NAME) && defined(OTBR_PRODUCT_NAME)
+    mBaseServiceInstanceName = (OTBR_VENDOR_NAME " " OTBR_PRODUCT_NAME);
+#endif
+
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mServiceInstanceName.clear();
 #endif
