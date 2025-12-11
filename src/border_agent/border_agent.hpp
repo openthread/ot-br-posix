@@ -51,18 +51,6 @@
 #include "sdp_proxy/discovery_proxy.hpp"
 #include "trel_dnssd/trel_dnssd.hpp"
 
-#ifndef OTBR_VENDOR_NAME
-#define OTBR_VENDOR_NAME "OpenThread"
-#endif
-
-#ifndef OTBR_PRODUCT_NAME
-#define OTBR_PRODUCT_NAME "BorderRouter"
-#endif
-
-#ifndef OTBR_MESHCOP_SERVICE_INSTANCE_NAME
-#define OTBR_MESHCOP_SERVICE_INSTANCE_NAME (OTBR_VENDOR_NAME " " OTBR_PRODUCT_NAME)
-#endif
-
 namespace otbr {
 
 /**
