@@ -50,7 +50,6 @@
 
 #include "agent/application.hpp"
 #include "agent/realmain.hpp"
-
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"

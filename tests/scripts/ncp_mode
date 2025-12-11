@@ -184,8 +184,6 @@ do_build_otbr_docker()
         "-DOTBR_LINK_METRICS_TELEMETRY=ON"
         "-DOTBR_BORDER_AGENT=ON"
         "-DOTBR_EPSKC=ON"
-        "-DOTBR_VENDOR_NAME=OpenThreadTest"
-        "-DOTBR_PRODUCT_NAME=BorderRouter"
     )
     sudo docker build -t "${OTBR_DOCKER_IMAGE}" \
         -f ./etc/docker/test/Dockerfile . \
