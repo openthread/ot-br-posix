@@ -30,13 +30,14 @@
 #       This script manipulates DHCPv6-PD-REF configuration.
 #
 
-# TODO: set the upstream interface according to the environment variables of `script/setup`.
-UPSTREAM_INTERFACE="eth0"
-WPAN_INTERFACE="wpan0"
+INFRA_IF="${INFRA_IF_NAME:-eth0}"
+THREAD_IF="wpan0"
 LARGE_METRIC="2048" # A high metric value for loopback to make its routes less preferred.
 
 DHCPCD_ENTER_HOOK="/etc/dhcpcd.enter-hook"
 DHCPCD_EXIT_HOOK="/etc/dhcpcd.exit-hook"
+
+RADVD_CONF="/etc/radvd.conf"
 
 PD_DAEMON_DIR="/opt/pd-daemon"
 PD_DAEMON_PATH="${PD_DAEMON_DIR}/dhcp6_pd_daemon.py"
@@ -57,14 +58,14 @@ noipv6rs # disable router solicitation
 # default reject route for unassigned delegated prefixes on loopback interface,
 # are less preferred.
 # OpenThread will later install an active route for the delegated prefix on
-# ${WPAN_INTERFACE} with a standard (lower) metric, ensuring it takes precedence.
+# ${THREAD_IF} with a standard (lower) metric, ensuring it takes precedence.
 interface lo
   metric ${LARGE_METRIC}
-interface ${UPSTREAM_INTERFACE}
+interface ${INFRA_IF}
   iaid 1
   ia_pd 2/::/64
 release
-# Disable Router Solicitations (RS) again, specifically for ${UPSTREAM_INTERFACE}.
+# Disable Router Solicitations (RS) again, specifically for ${INFRA_IF}.
 # This ensures that accept_ra is prevented from being set to 0, allowing
 # the interface to accepting Router Advertisements and configuring IPv6
 # based on them. The exact reason for requiring 'noipv6rs' twice
@@ -80,6 +81,157 @@ create_dhcpcd_conf_no_pd()
     sudo tee ${DHCP_CONFIG_NO_PD_PATH} >/dev/null <<EOF
 noipv6rs # disable router solicitation
 EOF
+}
+
+create_dhcpcd_enter_hook()
+{
+
+    sudo tee ${DHCPCD_ENTER_HOOK} >/dev/null <<EOF
+#!/bin/bash
+
+INFRA_IF="${INFRA_IF}"
+THREAD_IF="${THREAD_IF}"
+
+RADVD_CONF="${RADVD_CONF}"
+LOG_TAG="dhcpcd.enter.hook:"
+
+EOF
+
+    sudo tee -a ${DHCPCD_ENTER_HOOK} >/dev/null <<'EOF'
+config_ra()
+{
+    local old_prefix="$1"
+    local old_prefix_len="$2"
+    local new_prefix="$3"
+    local new_prefix_len="$4"
+    local new_pltime="$5"
+    local new_vltime="$6"
+
+    local deprecate_old_prefix=false
+    if [[ -n "$old_prefix" && "$old_prefix/$old_prefix_len" != "$new_prefix/$new_prefix_len" ]]; then
+        deprecate_old_prefix=true
+    fi
+
+    local publish_new_prefix=false
+    if [[ -n "$new_prefix" && -n "$new_prefix_len" && -n "$new_pltime" && -n "$new_vltime" ]]; then
+        publish_new_prefix=true
+    fi
+
+    logger "$LOG_TAG $reason start config radvd"
+
+tee "${RADVD_CONF}" > /dev/null <<EEOOFF
+interface ${THREAD_IF}
+{
+    IgnoreIfMissing on;
+    AdvSendAdvert on;
+EEOOFF
+
+    if $deprecate_old_prefix; then
+        logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
+tee -a "${RADVD_CONF}" > /dev/null <<EEOOFF
+    prefix "$old_prefix"/"$old_prefix_len"
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+        AdvPreferredLifetime 0;
+        AdvValidLifetime 0;
+    };
+EEOOFF
+    fi
+
+    if $publish_new_prefix; then
+        logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
+tee -a "${RADVD_CONF}" > /dev/null <<EEOOFF
+    prefix "$new_prefix"/"$new_prefix_len"
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+        AdvPreferredLifetime "$new_pltime";
+        AdvValidLifetime "$new_vltime";
+    };
+EEOOFF
+    fi
+
+tee -a "${RADVD_CONF}" > /dev/null <<EEOOFF
+};
+EEOOFF
+}
+
+
+if [ "$interface" = "${INFRA_IF}" ]; then
+    case $reason in
+        DELEGATED6 | REBIND6 | RENEW6 | BOUND6 )
+            if [[ (-n "$new_dhcp6_ia_pd1_prefix1" && -n "$new_dhcp6_ia_pd1_prefix1_length") || \
+               (-n "$old_dhcp6_ia_pd1_prefix1" && -n "$old_dhcp6_ia_pd1_prefix1_length") ]]; then
+                config_ra "$old_dhcp6_ia_pd1_prefix1" "$old_dhcp6_ia_pd1_prefix1_length" \
+                    "$new_dhcp6_ia_pd1_prefix1" "$new_dhcp6_ia_pd1_prefix1_length" "$new_dhcp6_ia_pd1_prefix1_pltime"  "$new_dhcp6_ia_pd1_prefix1_vltime"
+                if systemctl is-active network.target; then
+                    sudo systemctl reload-or-restart radvd || logger "$LOG_TAG Failed to reload radvd"
+                fi
+            fi
+            ;;
+    esac
+fi
+EOF
+    sudo chmod 755 ${DHCPCD_ENTER_HOOK}
+}
+
+create_dhcpcd_exit_hook()
+{
+    sudo tee ${DHCPCD_EXIT_HOOK} >/dev/null <<EOF
+#!/bin/bash
+
+INFRA_IF="${INFRA_IF}"
+THREAD_IF="${THREAD_IF}"
+
+RADVD_CONF="${RADVD_CONF}"
+LOG_TAG="dhcpcd.exit.hook:"
+
+EOF
+
+    sudo tee -a ${DHCPCD_EXIT_HOOK} >/dev/null <<'EOF'
+config_ra()
+{
+    logger "$LOG_TAG $reason start config radvd"
+
+tee "${RADVD_CONF}" > /dev/null <<EEOOFF
+interface ${THREAD_IF}
+{
+    AdvSendAdvert on;
+    prefix "$1"/"$2"
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+        AdvPreferredLifetime "$3";
+        AdvValidLifetime "$4";
+    };
+};
+EEOOFF
+}
+
+
+if [ "$interface" = "${INFRA_IF}" ]; then
+
+    case $reason in
+        EXPIRE6 | STOP6 | RELEASE6 )
+            # TODO: Handle multiple IA_PD prefixes (new_dhcp6_ia_pd{i}_prefix{j}, new_dhcp6_ia_pd{i}_prefix{j}_length, etc.)
+            #       and deprecate old prefixes properly for each.  Currently, only one prefix is handled.)
+            if [[ -z "$old_dhcp6_ia_pd1_prefix1" || -z "$old_dhcp6_ia_pd1_prefix1_length" ]]; then
+                logger "$LOG_TAG WARNING: Missing DHCPv6 prefix information. Skipping radvd configuration."
+            else
+                config_ra "$old_dhcp6_ia_pd1_prefix1" "$old_dhcp6_ia_pd1_prefix1_length" 0 0
+                if systemctl is-active network.target; then
+                    sudo systemctl reload-or-restart radvd || logger "$LOG_TAG Failed to reload radvd"
+                fi
+            fi
+            ;;
+    esac
+fi
+EOF
+    sudo chmod 755 ${DHCPCD_EXIT_HOOK}
 }
 
 create_dhcp6_pd_daemon_service()
@@ -136,11 +288,11 @@ dhcpcd_install()
         sudo mv ${DHCP_CONFIG_PATH} ${DHCP_CONFIG_ORIG_PATH}
     fi
 
-    # Add dhcpcd.hooks
-    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.enter-hook ${DHCPCD_ENTER_HOOK}
-    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.exit-hook ${DHCPCD_EXIT_HOOK}
     sudo mkdir -p ${PD_DAEMON_DIR}
     sudo install -m 755 "$(dirname "$0")"/reference-device/dhcp6_pd_daemon.py ${PD_DAEMON_PATH}
+
+    create_dhcpcd_enter_hook
+    create_dhcpcd_exit_hook
 
     create_dhcpcd_conf_pd
     create_dhcpcd_conf_no_pd
