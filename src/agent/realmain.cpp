@@ -89,7 +89,7 @@ enum
     OTBR_OPT_VENDOR_NAME,
 #endif
 #ifndef OTBR_PRODUCT_NAME
-    OTBR_OPT_PRODUCT_NAME,
+    OTBR_OPT_MODEL_NAME,
 #endif
 #endif
 };
@@ -117,7 +117,7 @@ static const struct option kOptions[] = {
     {"vendor-name", required_argument, nullptr, OTBR_OPT_VENDOR_NAME},
 #endif
 #ifndef OTBR_PRODUCT_NAME
-    {"product-name", required_argument, nullptr, OTBR_OPT_PRODUCT_NAME},
+    {"model-name", required_argument, nullptr, OTBR_OPT_MODEL_NAME},
 #endif
 #endif
     {0, 0, 0, 0}};
@@ -184,7 +184,7 @@ static void PrintHelp(const char *aProgramName)
     fprintf(stderr, "     --vendor-name          Vendor Name.\n");
 #endif
 #ifndef OTBR_PRODUCT_NAME
-    fprintf(stderr, "     --product-name         Product Name.\n");
+    fprintf(stderr, "     --model-name           Model Name.\n");
 #endif
 #endif
     fprintf(stderr, "\n");
@@ -340,7 +340,7 @@ static int realmain(int argc, char *argv[])
             break;
 #endif
 #ifndef OTBR_PRODUCT_NAME
-        case OTBR_OPT_PRODUCT_NAME:
+        case OTBR_OPT_MODEL_NAME:
             productName = optarg;
             break;
 #endif
@@ -363,7 +363,7 @@ static int realmain(int argc, char *argv[])
 #ifndef OTBR_PRODUCT_NAME
     if (productName == nullptr)
     {
-        fprintf(stderr, "Product name must be set.\n");
+        fprintf(stderr, "Model name must be set.\n");
         ExitNow(ret = EXIT_FAILURE);
     }
 #endif
