@@ -103,7 +103,7 @@ proc spawn_node {id type sim_app} {
             expect "app#"
         }
         otbr {
-            spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -d7 --vendor-name="OpenThreadTest" --product-name="BorderRouter" "spinel+hdlc+forkpty://${sim_app}?forkpty-arg=${id}"
+            spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -d7 --vendor-name="OpenThreadTest" --model-name="BorderRouter" "spinel+hdlc+forkpty://${sim_app}?forkpty-arg=${id}"
         }
     }
 
