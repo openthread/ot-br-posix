@@ -33,8 +33,13 @@ add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wuninitialized -Wno-mi
 
 add_library(otbr-config INTERFACE)
 
+if(OTBR_VENDOR_NAME AND OTBR_PRODUCT_NAME)
+    set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
+else()
+    set(OTBR_NAME "OpenThread_BorderRouter" CACHE STRING "The package name")
+endif()
+
 set(OTBR_INFRA_IF_NAME "wlan0" CACHE STRING "The infrastructure interface name")
-set(OTBR_NAME "OpenThread_BorderRouter" CACHE STRING "The package name")
 set(OTBR_MDNS "openthread" CACHE STRING "mDNS publisher provider")
 set(OTBR_SYSLOG_FACILITY_ID LOG_USER CACHE STRING "Syslog logging facility")
 set(OTBR_RADIO_URL "spinel+hdlc+uart:///dev/ttyACM0" CACHE STRING "The radio URL")
