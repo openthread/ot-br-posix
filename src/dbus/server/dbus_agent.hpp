@@ -68,6 +68,8 @@ public:
      */
     void Init(void);
 
+    void Deinit(void);
+
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
 

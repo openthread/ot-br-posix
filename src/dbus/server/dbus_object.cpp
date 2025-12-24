@@ -82,7 +82,28 @@ otbrError DBusObject::Initialize(bool aIsAsyncPropertyHandler)
     }
 
 exit:
+    if (error == OTBR_ERROR_DBUS)
+    {
+        otbrLogCrit("Failed to register d-bus object path: %s", mObjectPath.c_str());
+    }
+
     return error;
+}
+
+void DBusObject::Deinit(void)
+{
+    if ((mConnection != nullptr) && !mMethodHandlers.empty())
+    {
+        if (!dbus_connection_unregister_object_path(mConnection, mObjectPath.c_str()))
+        {
+            otbrLogWarning("Failed to unregister d-bus object path: %s", mObjectPath.c_str());
+        }
+    }
+
+    mMethodHandlers.clear();
+    mGetPropertyHandlers.clear();
+    mSetPropertyHandlers.clear();
+    mAsyncGetPropertyHandlers.clear();
 }
 
 void DBusObject::RegisterMethod(const std::string       &aInterfaceName,
