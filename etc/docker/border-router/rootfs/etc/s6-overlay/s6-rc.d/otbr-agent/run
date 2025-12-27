@@ -27,6 +27,12 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+OT_VENDOR_NAME="${OT_VENDOR_NAME:-OpenThread}"
+readonly OT_VENDOR_NAME
+
+OT_VENDOR_MODEL="${OT_VENDOR_MODEL:-BorderRouter}"
+readonly OT_VENDOR_MODEL
+
 OT_LOG_LEVEL="${OT_LOG_LEVEL:-7}"
 readonly OT_LOG_LEVEL
 
@@ -84,6 +90,8 @@ echo "Starting otbr-agent..."
 exec s6-notifyoncheck -d -s 300 -w 300 -n 0 stdbuf -oL \
      "/usr/sbin/otbr-agent" \
         -d"${OT_LOG_LEVEL}" -v -s \
+        --vendor-name "${OT_VENDOR_NAME}" \
+        --model-name "${OT_VENDOR_MODEL}" \
         -I "${OT_THREAD_IF}" \
         -B "${OT_INFRA_IF}" \
         "${OT_RCP_DEVICE}" \
