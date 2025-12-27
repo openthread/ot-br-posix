@@ -123,6 +123,10 @@ void Application::Init(const std::string &aRestListenAddress, int aRestListenPor
 
 void Application::Deinit(void)
 {
+#if OTBR_ENABLE_DBUS_SERVER
+    mDBusAgent.Deinit();
+#endif
+
     switch (mHost.GetCoprocessorType())
     {
     case OT_COPROCESSOR_RCP:
