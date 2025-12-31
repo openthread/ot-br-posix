@@ -159,7 +159,7 @@ jobs:
         echo "id=${GITHUB_WORKFLOW}-${GITHUB_JOB}-${GITHUB_RUN_ID}-${{matrix.name}}" >> $GITHUB_OUTPUT
     - name: Check cached result
       id: check_cache_result
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           _test_complete_
