@@ -63,13 +63,14 @@ class RcpHost;
 class ThreadHelper
 {
 public:
-    using DeviceRoleHandler       = std::function<void(otDeviceRole)>;
-    using ScanHandler             = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
-    using EnergyScanHandler       = std::function<void(otError, const std::vector<otEnergyScanResult> &)>;
-    using ResultHandler           = std::function<void(otError)>;
-    using AttachHandler           = std::function<void(otError, int64_t)>;
-    using UpdateMeshCopTxtHandler = std::function<void(std::map<std::string, std::vector<uint8_t>>)>;
-    using DatasetChangeHandler    = std::function<void(const otOperationalDatasetTlvs &)>;
+    using DeviceRoleHandler        = std::function<void(otDeviceRole)>;
+    using ScanHandler              = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
+    using EnergyScanHandler        = std::function<void(otError, const std::vector<otEnergyScanResult> &)>;
+    using NetworkDiagnosticHandler = std::function<void(otError, const std::vector<uint8_t> &)>;
+    using ResultHandler            = std::function<void(otError)>;
+    using AttachHandler            = std::function<void(otError, int64_t)>;
+    using UpdateMeshCopTxtHandler  = std::function<void(std::map<std::string, std::vector<uint8_t>>)>;
+    using DatasetChangeHandler     = std::function<void(const otOperationalDatasetTlvs &)>;
 #if OTBR_ENABLE_DHCP6_PD
     using Dhcp6PdStateCallback = std::function<void(otBorderRoutingDhcp6PdState)>;
 #endif
@@ -129,6 +130,19 @@ public:
      * @param[in] aHandler       The scan result handler.
      */
     void EnergyScan(uint32_t aScanDuration, EnergyScanHandler aHandler);
+
+    /**
+     * Send a network diagnostic request to retrieve TLVs
+     * 
+     * @param[in] aDest     IPv6 address of device to perform request on.
+     * @param[in] aTypes    Buffer of the types of TLVs to request.
+     * @param[in] count     The number of TLV types in the buffer.
+     * @param[in] aHandler  The function to call when a response is received.
+     */
+    void GetNetworkDiagnosticTlvs(otIp6Address aDest,
+                                  uint8_t *aTypes,
+                                  uint8_t count,
+                                  NetworkDiagnosticHandler aHandler);
 
     /**
      * This method attaches the device to the Thread network.
@@ -260,6 +274,9 @@ private:
     static void EnergyScanCallback(otEnergyScanResult *aResult, void *aThreadHelper);
     void        EnergyScanCallback(otEnergyScanResult *aResult);
 
+    static void NetDiagCallback(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aThreadHelper);
+    void        NetDiagCallback(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo);
+
     static void JoinerCallback(otError aError, void *aThreadHelper);
     void        JoinerCallback(otError aResult);
 
@@ -287,6 +304,9 @@ private:
     std::vector<otActiveScanResult> mScanResults;
     EnergyScanHandler               mEnergyScanHandler;
     std::vector<otEnergyScanResult> mEnergyScanResults;
+
+    NetworkDiagnosticHandler mDiagHandler;
+    std::vector<uint8_t>     mNetworkDiagTlvResults;
 
     std::vector<DeviceRoleHandler>    mDeviceRoleHandlers;
     std::vector<DatasetChangeHandler> mActiveDatasetChangeHandlers;
