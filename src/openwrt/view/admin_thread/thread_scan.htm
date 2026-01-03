@@ -17,17 +17,17 @@
 		end
 
 		if info.NetworkName == nil then
-			icon = resource .. "/icons/signal-none.png"
+			icon = resource .. "/icons/signal-none.svg"
 		elseif scale < 15 then
-			icon = resource .. "/icons/signal-0.png"
+			icon = resource .. "/icons/signal-000.svg"
 		elseif scale < 35 then
-			icon = resource .. "/icons/signal-0-25.png"
+			icon = resource .. "/icons/signal-000-025.svg"
 		elseif scale < 55 then
-			icon = resource .. "/icons/signal-25-50.png"
+			icon = resource .. "/icons/signal-025-050.svg"
 		elseif scale < 75 then
-			icon = resource .. "/icons/signal-50-75.png"
+			icon = resource .. "/icons/signal-050-075.svg"
 		else
-			icon = resource .. "/icons/signal-75-100.png"
+			icon = resource .. "/icons/signal-075-100.svg"
 		end
 
 		return icon

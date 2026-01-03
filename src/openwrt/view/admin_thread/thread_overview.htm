@@ -32,7 +32,7 @@
 		<!-- physical device -->
 		<div class="tr cbi-rowstyle-2">
 			<div class="td col-1 center middle">
-				<span class="ifacebadge"><img src="<%=resource .. "/icons/wifi.png"%>" id="wpan0" /> <%=threadget("interfacename").InterfaceName%></span>
+				<span class="ifacebadge"><img src="<%=resource .. "/icons/wifi.svg"%>" id="wpan0" /> <%=threadget("interfacename").InterfaceName%></span>
 			</div>
 			<div class="td col-7 left middle">
 				<big><strong><%:Generic MAC 802.15.4 Thread%></strong></big><br />
@@ -164,13 +164,13 @@
 		var scale = percent_thread_signal(info);
 
 		if (scale == 0)
-			icon = "<%=resource%>/icons/signal-0.png";
+			icon = "<%=resource%>/icons/signal-000.svg";
 		else if (scale == 30)
-			icon = "<%=resource%>/icons/signal-25-50.png";
+			icon = "<%=resource%>/icons/signal-025-050.svg";
 		else if (scale == 50)
-			icon = "<%=resource%>/icons/signal-50-75.png";
+			icon = "<%=resource%>/icons/signal-050-075.svg";
 		else
-			icon = "<%=resource%>/icons/signal-75-100.png";
+			icon = "<%=resource%>/icons/signal-075-100.svg";
 
 		return icon;
 	}
