@@ -349,6 +349,22 @@ public:
      */
     virtual const char *GetInterfaceName(void) const = 0;
 
+#if OTBR_ENABLE_BORDER_AGENT && (!defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME))
+    /**
+     * This method sets or updates the netdiag vendor name.
+     *
+     * @param[in] aVendorName   The vendor name.
+     */
+    virtual void SetVendorName(const char *aVendorName) = 0;
+
+    /**
+     * This method sets or updates the netdiag vendor model.
+     *
+     * @param[in] aVendorModel   The vendor model.
+     */
+    virtual void SetVendorModel(const char *aVendorModel) = 0;
+#endif
+
     /**
      * Initializes the Thread controller.
      */

@@ -337,6 +337,20 @@ void NcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
 }
 #endif
 
+#if OTBR_ENABLE_BORDER_AGENT && (!defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME))
+void NcpHost::SetVendorName(const char *aVendorName)
+{
+    // TODO: Implement SetVendorName under NCP mode.
+    OTBR_UNUSED_VARIABLE(aVendorName);
+}
+
+void NcpHost::SetVendorModel(const char *aVendorModel)
+{
+    // TODO: Implement SetVendorModel under NCP mode.
+    OTBR_UNUSED_VARIABLE(aVendorModel);
+}
+#endif
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);

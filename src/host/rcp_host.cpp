@@ -43,6 +43,7 @@
 #include <openthread/link_metrics.h>
 #include <openthread/logging.h>
 #include <openthread/nat64.h>
+#include <openthread/netdiag.h>
 #include <openthread/srp_server.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
@@ -906,6 +907,24 @@ void RcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
 {
     VerifyOrExit(mInstance != nullptr);
     otBorderAgentSetVendorTxtData(mInstance, aVendorTxtData.data(), aVendorTxtData.size());
+exit:
+    return;
+}
+#endif
+
+#if OTBR_ENABLE_BORDER_AGENT && (!defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME))
+void RcpHost::SetVendorName(const char *aVendorName)
+{
+    VerifyOrExit(mInstance != nullptr);
+    otThreadSetVendorName(mInstance, aVendorName);
+exit:
+    return;
+}
+
+void RcpHost::SetVendorModel(const char *aVendorModel)
+{
+    VerifyOrExit(mInstance != nullptr);
+    otThreadSetVendorModel(mInstance, aVendorModel);
 exit:
     return;
 }

@@ -66,6 +66,12 @@ readonly OTBR_DHCP6_PD_CLIENT
 OTBR_MDNS="${OTBR_MDNS:-openthread}"
 readonly OTBR_MDNS
 
+OTBR_VENDOR_NAME="${OTBR_VENDOR_NAME:-OpenThread}"
+readonly OTBR_VENDOR_NAME
+
+OTBR_PRODUCT_NAME="${OTBR_PRODUCT_NAME:-BorderRouter}"
+readonly OTBR_PRODUCT_NAME
+
 OTBR_OPTIONS="${OTBR_OPTIONS-}"
 readonly OTBR_OPTIONS
 
@@ -104,8 +110,8 @@ otbr_install()
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "-DOTBR_DHCP6_PD_CLIENT=${OTBR_DHCP6_PD_CLIENT}"
         "-DOTBR_MDNS=${OTBR_MDNS}"
-        "-DOTBR_VENDOR_NAME=OpenThread"
-        "-DOTBR_PRODUCT_NAME=BorderRouter"
+        "-DOTBR_VENDOR_NAME=${OTBR_VENDOR_NAME}"
+        "-DOTBR_PRODUCT_NAME=${OTBR_PRODUCT_NAME}"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="

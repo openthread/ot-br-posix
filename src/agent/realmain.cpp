@@ -427,6 +427,12 @@ static int realmain(int argc, char *argv[])
 #endif
 
         app.Init(restListenAddress, restListenPort);
+
+#if OTBR_ENABLE_BORDER_AGENT && (!defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME))
+        app.GetHost().SetVendorName(vendorName);
+        app.GetHost().SetVendorModel(productName);
+#endif
+
 #if __linux__
         app.SetErrorCondition(errorCondition);
 #endif
