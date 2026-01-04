@@ -912,7 +912,7 @@ exit:
 }
 #endif
 
-#if OTBR_ENABLE_BORDER_AGENT && (!defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME))
+#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
 void RcpHost::SetVendorName(const char *aVendorName)
 {
     VerifyOrExit(mInstance != nullptr);

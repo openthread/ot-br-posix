@@ -128,7 +128,7 @@ public:
 #if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     void SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData) override;
 #endif
-#if OTBR_ENABLE_BORDER_AGENT && (!defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME))
+#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
     void SetVendorName(const char *aVendorName) override;
     void SetVendorModel(const char *aVendorModel) override;
 #endif

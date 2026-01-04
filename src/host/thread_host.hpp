@@ -349,7 +349,7 @@ public:
      */
     virtual const char *GetInterfaceName(void) const = 0;
 
-#if OTBR_ENABLE_BORDER_AGENT && (!defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME))
+#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
     /**
      * This method sets or updates the netdiag vendor name.
      *
