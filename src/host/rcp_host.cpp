@@ -912,7 +912,7 @@ exit:
 }
 #endif
 
-#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
+#ifndef OTBR_VENDOR_NAME
 void RcpHost::SetVendorName(const char *aVendorName)
 {
     VerifyOrExit(mInstance != nullptr);
@@ -920,7 +920,9 @@ void RcpHost::SetVendorName(const char *aVendorName)
 exit:
     return;
 }
+#endif
 
+#ifndef OTBR_PRODUCT_NAME
 void RcpHost::SetVendorModel(const char *aVendorModel)
 {
     VerifyOrExit(mInstance != nullptr);

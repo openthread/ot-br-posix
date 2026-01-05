@@ -413,11 +413,14 @@ static int realmain(int argc, char *argv[])
 
         app.Init(restListenAddress, restListenPort);
 
-#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
+#ifndef OTBR_VENDOR_NAME
         app.GetHost().SetVendorName(vendorName);
-        app.GetHost().SetVendorModel(productName);
 #else
         OT_UNUSED_VARIABLE(vendorName);
+#endif
+#ifndef OTBR_PRODUCT_NAME
+        app.GetHost().SetVendorModel(productName);
+#else
         OT_UNUSED_VARIABLE(productName);
 #endif
 

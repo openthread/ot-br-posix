@@ -349,14 +349,16 @@ public:
      */
     virtual const char *GetInterfaceName(void) const = 0;
 
-#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
+#ifndef OTBR_VENDOR_NAME
     /**
      * This method sets or updates the netdiag vendor name.
      *
      * @param[in] aVendorName   The vendor name.
      */
     virtual void SetVendorName(const char *aVendorName) = 0;
+#endif
 
+#ifndef OTBR_PRODUCT_NAME
     /**
      * This method sets or updates the netdiag vendor model.
      *
