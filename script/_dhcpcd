@@ -119,44 +119,40 @@ config_ra()
 
     logger "$LOG_TAG $reason start config radvd"
 
-tee "${RADVD_CONF}" > /dev/null <<EEOOFF
-interface ${THREAD_IF}
-{
-    IgnoreIfMissing on;
-    AdvSendAdvert on;
-EEOOFF
-
-    if $deprecate_old_prefix; then
-        logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
-tee -a "${RADVD_CONF}" > /dev/null <<EEOOFF
-    prefix "$old_prefix"/"$old_prefix_len"
-    {
-        AdvOnLink on;
-        AdvAutonomous on;
-        AdvRouterAddr off;
-        AdvPreferredLifetime 0;
-        AdvValidLifetime 0;
-    };
-EEOOFF
-    fi
-
-    if $publish_new_prefix; then
-        logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
-tee -a "${RADVD_CONF}" > /dev/null <<EEOOFF
-    prefix "$new_prefix"/"$new_prefix_len"
-    {
-        AdvOnLink on;
-        AdvAutonomous on;
-        AdvRouterAddr off;
-        AdvPreferredLifetime "$new_pltime";
-        AdvValidLifetime "$new_vltime";
-    };
-EEOOFF
-    fi
-
-tee -a "${RADVD_CONF}" > /dev/null <<EEOOFF
-};
-EEOOFF
+        (cat <<-EEOOFF
+	interface
+	{
+	    IgnoreIfMissing on;
+	    AdvSendAdvert on;
+	EEOOFF
+            if [ "$deprecate_old_prefix" = "true" ]; then
+                logger "$LOG_TAG Deprecating old prefix $old_prefix/$old_prefix_len"
+                cat <<-EEOOFF
+	    prefix "$old_prefix"/"$old_prefix_len"
+	    {
+	        AdvOnLink on;
+	        AdvAutonomous on;
+	        AdvRouterAddr off;
+	        AdvPreferredLifetime 0;
+	        AdvValidLifetime 0;
+	    };
+	EEOOFF
+            fi
+            if [ "$publish_new_prefix" = "true" ]; then
+                logger "$LOG_TAG Publishing new prefix $new_prefix/$new_prefix_len  PLTime: $new_pltime  VLTime: $new_vltime"
+                cat <<-EEOOFF
+	    prefix "$new_prefix"/"$new_prefix_len"
+	    {
+	        AdvOnLink on;
+	        AdvAutonomous on;
+	        AdvRouterAddr off;
+	        AdvPreferredLifetime "$new_pltime";
+	        AdvValidLifetime "$new_vltime";
+	    };
+	EEOOFF
+            fi
+            echo "};"
+        ) > "${RADVD_CONF}"
 }
 
 
@@ -196,20 +192,20 @@ config_ra()
 {
     logger "$LOG_TAG $reason start config radvd"
 
-tee "${RADVD_CONF}" > /dev/null <<EEOOFF
-interface ${THREAD_IF}
-{
-    AdvSendAdvert on;
-    prefix "$1"/"$2"
-    {
-        AdvOnLink on;
-        AdvAutonomous on;
-        AdvRouterAddr off;
-        AdvPreferredLifetime "$3";
-        AdvValidLifetime "$4";
-    };
-};
-EEOOFF
+    cat > "${RADVD_CONF}" <<-EEOOFF
+	interface ${THREAD_IF}
+	{
+	    AdvSendAdvert on;
+	    prefix "$1"/"$2"
+	    {
+	        AdvOnLink on;
+	        AdvAutonomous on;
+	        AdvRouterAddr off;
+	        AdvPreferredLifetime "$3";
+	        AdvValidLifetime "$4";
+	    };
+	};
+	EEOOFF
 }
 
 

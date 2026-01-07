@@ -33,11 +33,13 @@ add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wuninitialized -Wno-mi
 
 add_library(otbr-config INTERFACE)
 
+if(OTBR_VENDOR_NAME AND OTBR_PRODUCT_NAME)
+    set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
+else()
+    set(OTBR_NAME "OpenThread_BorderRouter" CACHE STRING "The package name")
+endif()
+
 set(OTBR_INFRA_IF_NAME "wlan0" CACHE STRING "The infrastructure interface name")
-set(OTBR_VENDOR_NAME "OpenThread" CACHE STRING "The vendor name")
-set(OTBR_PRODUCT_NAME "BorderRouter" CACHE STRING "The product name")
-set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
-set(OTBR_MESHCOP_SERVICE_INSTANCE_NAME "${OTBR_VENDOR_NAME} ${OTBR_PRODUCT_NAME}" CACHE STRING "The OTBR MeshCoP service instance name")
 set(OTBR_MDNS "openthread" CACHE STRING "mDNS publisher provider")
 set(OTBR_SYSLOG_FACILITY_ID LOG_USER CACHE STRING "Syslog logging facility")
 set(OTBR_RADIO_URL "spinel+hdlc+uart:///dev/ttyACM0" CACHE STRING "The radio URL")
@@ -88,13 +90,20 @@ target_include_directories(otbr-config INTERFACE
     ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_definitions(otbr-config INTERFACE
-    "OTBR_VENDOR_NAME=\"${OTBR_VENDOR_NAME}\""
-    "OTBR_PRODUCT_NAME=\"${OTBR_PRODUCT_NAME}\""
     "OTBR_PACKAGE_NAME=\"${OTBR_NAME}\""
     "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
-    "OTBR_MESHCOP_SERVICE_INSTANCE_NAME=\"${OTBR_MESHCOP_SERVICE_INSTANCE_NAME}\""
     "OTBR_SYSLOG_FACILITY_ID=${OTBR_SYSLOG_FACILITY_ID}"
 )
+
+if(OTBR_VENDOR_NAME)
+    target_compile_definitions(otbr-config INTERFACE "OTBR_VENDOR_NAME=\"${OTBR_VENDOR_NAME}\"")
+endif()
+if(OTBR_PRODUCT_NAME)
+    target_compile_definitions(otbr-config INTERFACE "OTBR_PRODUCT_NAME=\"${OTBR_PRODUCT_NAME}\"")
+endif()
+if(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
+    target_compile_definitions(otbr-config INTERFACE "OTBR_MESHCOP_SERVICE_INSTANCE_NAME=\"${OTBR_MESHCOP_SERVICE_INSTANCE_NAME}\"")
+endif()
 
 if(BUILD_SHARED_LIBS)
     target_link_libraries(otbr-config INTERFACE -Wl,--unresolved-symbols=ignore-in-shared-libs)

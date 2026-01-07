@@ -150,7 +150,7 @@ jobs:
       MAX_JOBS: 3
       VERBOSE: 1
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         submodules: recursive
     - name: Get Border Router Test ID
@@ -159,7 +159,7 @@ jobs:
         echo "id=${GITHUB_WORKFLOW}-${GITHUB_JOB}-${GITHUB_RUN_ID}-${{matrix.name}}" >> $GITHUB_OUTPUT
     - name: Check cached result
       id: check_cache_result
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           _test_complete_
@@ -198,7 +198,7 @@ jobs:
         export CI_ENV="$(bash <(curl -s https://codecov.io/env)) -e GITHUB_ACTIONS -e OTBR_COVERAGE"
         echo "CI_ENV=${CI_ENV}"
         (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ${{ matrix.cert_scripts }} || (sudo chmod a+r ot_testing/* && false))
-    - uses: actions/upload-artifact@v5
+    - uses: actions/upload-artifact@v6.0.0
       if: ${{ failure() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       with:
         name: thread-1-4-backbone-results

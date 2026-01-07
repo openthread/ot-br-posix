@@ -85,6 +85,15 @@ void DBusAgent::Init(void)
     VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
 }
 
+void DBusAgent::Deinit(void)
+{
+    if (mThreadObject != nullptr)
+    {
+        mThreadObject->Deinit();
+        mThreadObject = nullptr;
+    }
+}
+
 DBusAgent::UniqueDBusConnection DBusAgent::PrepareDBusConnection(void)
 {
     DBusError            dbusError;
