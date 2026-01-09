@@ -90,7 +90,6 @@ proc spawn_node {id type sim_app} {
         }
         ctl {
             spawn $sim_app
-            send "factoryreset\n"
             wait_for "state" "disabled"
             expect "Done"
 
