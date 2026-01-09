@@ -442,6 +442,12 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
 
         SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
 
+        if (status >= SPINEL_STATUS_RESET__BEGIN && status <= SPINEL_STATUS_RESET__END)
+        {
+            HandleNcpUnexpectedReset(status);
+            ExitNow();
+        }
+
         otbrLogInfo("NCP last status: %s", spinel_status_to_cstr(status));
         break;
     }
@@ -1037,6 +1043,13 @@ otbrError NcpSpinel::HandleResponseForPropRemove(spinel_tid_t      aTid,
 exit:
     otbrLogResult(error, "HandleResponseForPropRemove, key:%u", mWaitingKeyTable[aTid]);
     return error;
+}
+
+void NcpSpinel::HandleNcpUnexpectedReset(spinel_status_t aStatus)
+{
+    otbrLogCrit("Unexpected NCP reset: %s", spinel_status_to_cstr(aStatus));
+
+    DieNow("NCP reset detected!");
 }
 
 otbrError NcpSpinel::Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded)
