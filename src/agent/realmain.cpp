@@ -416,12 +416,18 @@ static int realmain(int argc, char *argv[])
         app.Init(restListenAddress, restListenPort);
 
 #ifndef OTBR_VENDOR_NAME
-        SuccessOrExit(app.GetHost().SetVendorName(vendorName), ret = EXIT_FAILURE);
+        if (app.GetHost().GetCoprocessorType() == OT_COPROCESSOR_RCP)
+        {
+            SuccessOrExit(app.GetHost().SetVendorName(vendorName), ret = EXIT_FAILURE);
+        }
 #else
         OT_UNUSED_VARIABLE(vendorName);
 #endif
 #ifndef OTBR_PRODUCT_NAME
-        SuccessOrExit(app.GetHost().SetVendorModel(productName), ret = EXIT_FAILURE);
+        if (app.GetHost().GetCoprocessorType() == OT_COPROCESSOR_RCP)
+        {
+            SuccessOrExit(app.GetHost().SetVendorModel(productName), ret = EXIT_FAILURE);
+        }
 #else
         OT_UNUSED_VARIABLE(productName);
 #endif
