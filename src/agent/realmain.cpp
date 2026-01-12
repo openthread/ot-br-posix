@@ -401,12 +401,14 @@ static int realmain(int argc, char *argv[])
 #if OTBR_ENABLE_BORDER_AGENT
 #if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
 #ifdef OTBR_MESHCOP_SERVICE_INSTANCE_NAME
-        app.GetBorderAgent().SetMeshCoPServiceValues(OTBR_MESHCOP_SERVICE_INSTANCE_NAME, productName, vendorName, {},
-                                                     {});
+        SuccessOrExit(app.GetBorderAgent().SetMeshCoPServiceValues(OTBR_MESHCOP_SERVICE_INSTANCE_NAME, productName,
+                                                                   vendorName, {}, {}),
+                      ret = EXIT_FAILURE);
 #else
         char instanceName[otbr::kMaxVendorNameLength + 1 + otbr::kMaxProductNameLength + 1];
         snprintf(instanceName, sizeof(instanceName), "%s %s", vendorName, productName);
-        app.GetBorderAgent().SetMeshCoPServiceValues(instanceName, productName, vendorName, {}, {});
+        SuccessOrExit(app.GetBorderAgent().SetMeshCoPServiceValues(instanceName, productName, vendorName, {}, {}),
+                      ret = EXIT_FAILURE);
 #endif
 #endif
 #endif
@@ -414,12 +416,12 @@ static int realmain(int argc, char *argv[])
         app.Init(restListenAddress, restListenPort);
 
 #ifndef OTBR_VENDOR_NAME
-        app.GetHost().SetVendorName(vendorName);
+        SuccessOrExit(app.GetHost().SetVendorName(vendorName), ret = EXIT_FAILURE);
 #else
         OT_UNUSED_VARIABLE(vendorName);
 #endif
 #ifndef OTBR_PRODUCT_NAME
-        app.GetHost().SetVendorModel(productName);
+        SuccessOrExit(app.GetHost().SetVendorModel(productName), ret = EXIT_FAILURE);
 #else
         OT_UNUSED_VARIABLE(productName);
 #endif

@@ -225,10 +225,10 @@ public:
     void SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData) override;
 #endif
 #ifndef OTBR_VENDOR_NAME
-    void SetVendorName(const char *aVendorName) override;
+    otError SetVendorName(const char *aVendorName) override;
 #endif
 #ifndef OTBR_PRODUCT_NAME
-    void SetVendorModel(const char *aVendorModel) override;
+    otError SetVendorModel(const char *aVendorModel) override;
 #endif
 
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_RCP; }

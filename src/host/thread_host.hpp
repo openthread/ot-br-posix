@@ -351,20 +351,30 @@ public:
 
 #ifndef OTBR_VENDOR_NAME
     /**
-     * This method sets or updates the netdiag vendor name.
+     * This method sets the netdiag vendor name.
      *
      * @param[in] aVendorName   The vendor name.
+     *
+     * @retval OT_ERROR_NONE             Successfully set the vendor name.
+     * @retval OT_ERROR_INVALID_ARGS     @p aVendorName is not valid (too long or not UTF8).
+     * @retval OT_ERROR_INVALID_STATE    otInstance is in invalid state.
+     * @retval OT_ERROR_NOT_IMPLEMENTED  Not implemented.
      */
-    virtual void SetVendorName(const char *aVendorName) = 0;
+    virtual otError SetVendorName(const char *aVendorName) = 0;
 #endif
 
 #ifndef OTBR_PRODUCT_NAME
     /**
-     * This method sets or updates the netdiag vendor model.
+     * This method sets the netdiag vendor model.
      *
      * @param[in] aVendorModel   The vendor model.
+     *
+     * @retval OT_ERROR_NONE             Successfully set the vendor model.
+     * @retval OT_ERROR_INVALID_ARGS     @p aVendorModel is not valid (too long or not UTF8).
+     * @retval OT_ERROR_INVALID_STATE    otInstance is in invalid state.
+     * @retval OT_ERROR_NOT_IMPLEMENTED  Not implemented.
      */
-    virtual void SetVendorModel(const char *aVendorModel) = 0;
+    virtual otError SetVendorModel(const char *aVendorModel) = 0;
 #endif
 
     /**

@@ -338,18 +338,20 @@ void NcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
 #endif
 
 #ifndef OTBR_VENDOR_NAME
-void NcpHost::SetVendorName(const char *aVendorName)
+otError NcpHost::SetVendorName(const char *aVendorName)
 {
     // TODO: Implement SetVendorName under NCP mode.
     OTBR_UNUSED_VARIABLE(aVendorName);
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
 #endif
 
 #ifndef OTBR_PRODUCT_NAME
-void NcpHost::SetVendorModel(const char *aVendorModel)
+otError NcpHost::SetVendorModel(const char *aVendorModel)
 {
     // TODO: Implement SetVendorModel under NCP mode.
     OTBR_UNUSED_VARIABLE(aVendorModel);
+    return OT_ERROR_NOT_IMPLEMENTED;
 }
 #endif
 

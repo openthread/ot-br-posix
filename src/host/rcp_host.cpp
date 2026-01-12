@@ -913,22 +913,24 @@ exit:
 #endif
 
 #ifndef OTBR_VENDOR_NAME
-void RcpHost::SetVendorName(const char *aVendorName)
+otError RcpHost::SetVendorName(const char *aVendorName)
 {
-    VerifyOrExit(mInstance != nullptr);
-    otThreadSetVendorName(mInstance, aVendorName);
+    otError error = OT_ERROR_NONE;
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    SuccessOrExit(error = otThreadSetVendorName(mInstance, aVendorName));
 exit:
-    return;
+    return error;
 }
 #endif
 
 #ifndef OTBR_PRODUCT_NAME
-void RcpHost::SetVendorModel(const char *aVendorModel)
+otError RcpHost::SetVendorModel(const char *aVendorModel)
 {
-    VerifyOrExit(mInstance != nullptr);
-    otThreadSetVendorModel(mInstance, aVendorModel);
+    otError error = OT_ERROR_NONE;
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    SuccessOrExit(error = otThreadSetVendorModel(mInstance, aVendorModel));
 exit:
-    return;
+    return error;
 }
 #endif
 
