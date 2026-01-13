@@ -72,6 +72,16 @@ readonly OTBR_OPTIONS
 REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
 readonly REFERENCE_DEVICE
 
+if [[ ${REFERENCE_DEVICE} == "0" ]]; then
+    OTBR_VENDOR_NAME="${OTBR_VENDOR_NAME:-OpenThread}"
+else
+    OTBR_VENDOR_NAME="${OTBR_VENDOR_NAME:-RD:OpenThread}"
+fi
+readonly OTBR_VENDOR_NAME
+
+OTBR_PRODUCT_NAME="${OTBR_PRODUCT_NAME:-BorderRouter}"
+readonly OTBR_PRODUCT_NAME
+
 otbr_uninstall()
 {
     if have systemctl; then
@@ -104,8 +114,8 @@ otbr_install()
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "-DOTBR_DHCP6_PD_CLIENT=${OTBR_DHCP6_PD_CLIENT}"
         "-DOTBR_MDNS=${OTBR_MDNS}"
-        "-DOTBR_VENDOR_NAME=OpenThread"
-        "-DOTBR_PRODUCT_NAME=BorderRouter"
+        "-DOTBR_VENDOR_NAME=${OTBR_VENDOR_NAME}"
+        "-DOTBR_PRODUCT_NAME=${OTBR_PRODUCT_NAME}"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="

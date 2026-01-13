@@ -43,6 +43,7 @@
 #include <openthread/link_metrics.h>
 #include <openthread/logging.h>
 #include <openthread/nat64.h>
+#include <openthread/netdiag.h>
 #include <openthread/srp_server.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
@@ -908,6 +909,28 @@ void RcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
     otBorderAgentSetVendorTxtData(mInstance, aVendorTxtData.data(), aVendorTxtData.size());
 exit:
     return;
+}
+#endif
+
+#ifndef OTBR_VENDOR_NAME
+otError RcpHost::SetVendorName(const char *aVendorName)
+{
+    otError error = OT_ERROR_NONE;
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    SuccessOrExit(error = otThreadSetVendorName(mInstance, aVendorName));
+exit:
+    return error;
+}
+#endif
+
+#ifndef OTBR_PRODUCT_NAME
+otError RcpHost::SetVendorModel(const char *aVendorModel)
+{
+    otError error = OT_ERROR_NONE;
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    SuccessOrExit(error = otThreadSetVendorModel(mInstance, aVendorModel));
+exit:
+    return error;
 }
 #endif
 

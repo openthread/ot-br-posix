@@ -349,6 +349,34 @@ public:
      */
     virtual const char *GetInterfaceName(void) const = 0;
 
+#ifndef OTBR_VENDOR_NAME
+    /**
+     * This method sets the vendor name.
+     *
+     * @param[in] aVendorName   The vendor name.
+     *
+     * @retval OT_ERROR_NONE             Successfully set the vendor name.
+     * @retval OT_ERROR_INVALID_ARGS     @p aVendorName is not valid (too long or not UTF8).
+     * @retval OT_ERROR_INVALID_STATE    otInstance is in invalid state.
+     * @retval OT_ERROR_NOT_IMPLEMENTED  Not implemented.
+     */
+    virtual otError SetVendorName(const char *aVendorName) = 0;
+#endif
+
+#ifndef OTBR_PRODUCT_NAME
+    /**
+     * This method sets the vendor model.
+     *
+     * @param[in] aVendorModel   The vendor model.
+     *
+     * @retval OT_ERROR_NONE             Successfully set the vendor model.
+     * @retval OT_ERROR_INVALID_ARGS     @p aVendorModel is not valid (too long or not UTF8).
+     * @retval OT_ERROR_INVALID_STATE    otInstance is in invalid state.
+     * @retval OT_ERROR_NOT_IMPLEMENTED  Not implemented.
+     */
+    virtual otError SetVendorModel(const char *aVendorModel) = 0;
+#endif
+
     /**
      * Initializes the Thread controller.
      */
