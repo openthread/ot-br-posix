@@ -351,7 +351,7 @@ public:
 
 #ifndef OTBR_VENDOR_NAME
     /**
-     * This method sets the netdiag vendor name.
+     * This method sets the vendor name.
      *
      * @param[in] aVendorName   The vendor name.
      *
@@ -365,7 +365,7 @@ public:
 
 #ifndef OTBR_PRODUCT_NAME
     /**
-     * This method sets the netdiag vendor model.
+     * This method sets the vendor model.
      *
      * @param[in] aVendorModel   The vendor model.
      *
