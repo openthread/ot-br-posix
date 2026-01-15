@@ -526,6 +526,7 @@ private:
                                           spinel_prop_key_t aKey,
                                           const uint8_t    *aData,
                                           uint16_t          aLength);
+    void      HandleNcpUnexpectedReset(spinel_status_t aStatus);
 
     spinel_tid_t GetNextTid(void);
     void         FreeTidTableItem(spinel_tid_t aTid);
