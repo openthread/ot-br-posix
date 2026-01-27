@@ -100,12 +100,14 @@ public:
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
      * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
+     * @param[in]   aDataPath               Path of directory to store data.
      */
     RcpHost(const char                      *aInterfaceName,
             const std::vector<const char *> &aRadioUrls,
             const char                      *aBackboneInterfaceName,
             bool                             aDryRun,
-            bool                             aEnableAutoAttach);
+            bool                             aEnableAutoAttach,
+            const char                      *aDataPath = "");
 
     /**
      * This method initialize the Thread controller.
