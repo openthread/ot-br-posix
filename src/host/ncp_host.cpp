@@ -142,6 +142,10 @@ void NcpHost::Init(void)
     mNcpSpinel.SrpServerSetEnabled(/* aEnabled */ true);
 #endif
 #endif
+
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    mNcpSpinel.BorderRoutingSetDhcp6PdEnabled(true);
+#endif
     mIsInitialized = true;
 }
 
@@ -448,6 +452,13 @@ otbrError NcpHost::HandleIcmp6Nd(uint32_t          aInfraIfIndex,
 {
     return mNcpSpinel.HandleIcmp6Nd(aInfraIfIndex, aIp6Address, aData, aDataLen);
 }
+
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+otbrError NcpHost::BorderRoutingProcessDhcp6PdPrefix(const otBorderRoutingPrefixTableEntry *aPrefixInfo)
+{
+    return mNcpSpinel.BorderRoutingProcessDhcp6PdPrefix(aPrefixInfo);
+}
+#endif // OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
 
 } // namespace Host
 } // namespace otbr
