@@ -81,6 +81,7 @@ enum
     OTBR_OPT_SYSLOG_DISABLE          = 's',
     OTBR_OPT_VERSION                 = 'V',
     OTBR_OPT_SHORTMAX                = 128,
+    OTBR_OPT_DATA_PATH,
     OTBR_OPT_RADIO_VERSION,
     OTBR_OPT_AUTO_ATTACH,
     OTBR_OPT_REST_LISTEN_ADDR,
@@ -101,6 +102,7 @@ static otbr::Application *gApp = nullptr;
 void                       __gcov_flush();
 static const struct option kOptions[] = {
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
+    {"data-path", required_argument, nullptr, OTBR_OPT_DATA_PATH},
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
     {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
@@ -162,6 +164,7 @@ static void PrintHelp(const char *aProgramName)
     fprintf(stderr,
             "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-s] [--auto-attach[=0/1]] "
             "RADIO_URL [RADIO_URL]\n"
+            "         --data-path        Path of directory to store data.\n"
             "     -I, --thread-ifname    Name of the Thread network interface (default: " DEFAULT_INTERFACE_NAME ").\n"
             "     -B, --backbone-ifname  Name of the backbone network interfaces (can be specified multiple times).\n"
             "     -d, --debug-level      The log level (EMERG=0, ALERT=1, CRIT=2, ERR=3, WARNING=4, NOTICE=5, INFO=6, "
@@ -249,6 +252,7 @@ static int realmain(int argc, char *argv[])
     bool                      enableAutoAttach  = true;
     const char               *restListenAddress = "127.0.0.1";
     int                       restListenPort    = kPortNumber;
+    const char               *dataPath          = "";
     std::vector<const char *> radioUrls;
     std::vector<const char *> backboneInterfaceNames;
     long                      parseResult;
@@ -336,6 +340,10 @@ static int realmain(int argc, char *argv[])
             productName = optarg;
             break;
 #endif
+        case OTBR_OPT_DATA_PATH:
+            dataPath = optarg;
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -392,7 +400,7 @@ static int realmain(int argc, char *argv[])
         const std::string backboneInterfaceName = backboneInterfaceNames.empty() ? "" : backboneInterfaceNames.front();
 #endif
         std::unique_ptr<otbr::Host::ThreadHost> host = otbr::Host::ThreadHost::Create(
-            interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach);
+            interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach, dataPath);
 
         otbr::Application app(*host, interfaceName, backboneInterfaceName);
 
