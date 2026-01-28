@@ -73,6 +73,14 @@
 #if OTBR_ENABLE_TREL_DNSSD
 #include "trel_dnssd/trel_dnssd.hpp"
 #endif
+
+// ============================================================================= //
+#if OTBR_ENABLE_IPFIX
+#include "ipfix/ipfix_exporter.hpp"
+#endif
+// ============================================================================//
+
+
 #include "host/posix/multicast_routing_manager.hpp"
 #include "host/posix/netif.hpp"
 #include "utils/infra_link_selector.hpp"
@@ -300,6 +308,11 @@ private:
 #if OTBR_ENABLE_VENDOR_SERVER
     std::shared_ptr<vendor::VendorServer> mVendorServer;
 #endif
+/* ========================================================= */
+#if OTBR_ENABLE_IPFIX
+    std::unique_ptr<IpfixExporter> mIpfixExporter;
+#endif
+/* ========================================================= */
 
     static std::atomic_bool sShouldTerminate;
     ErrorCondition          mErrorCondition;
