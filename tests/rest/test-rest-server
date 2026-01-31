@@ -73,12 +73,28 @@ expect {
     -i \$otbr_agent eof { error "unexpected exit" }
 }
 
-if {\$error == 0} {
-    exit \$status
-} else {
+if {\$error != 0} {
     system errno \$status
     error "failed to run the test"
 }
+
+# Test that server can restart after abrupt shutdown (SO_REUSEADDR)
+send_user "Testing server restart after abrupt shutdown...\r\n"
+set agent_pid [exp_pid -i \$otbr_agent]
+exec kill -9 \$agent_pid
+expect -i \$otbr_agent eof
+
+spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 -B lo "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
+expect "Start Thread Border Agent"
+
+spawn curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8081/node/state
+expect {
+    "200" { send_user "Server restart test passed\r\n" }
+    timeout { error "REST API did not respond after restart" }
+    eof { error "curl failed" }
+}
+
+exit 0
 EOF
 }
 
