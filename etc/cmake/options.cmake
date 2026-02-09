@@ -275,3 +275,15 @@ if(OTBR_MULTI_AIL)
 else()
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MULTI_AIL=0)
 endif()
+
+# ====================================================================================================
+
+option(OTBR_TIME_EXCEEDED_DETECTION "enable Time Exceeded Detection" OFF)
+if (OTBR_TIME_EXCEEDED_DETECTION)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TIME_EXCEEDED_DETECTION=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TIME_EXCEEDED_DETECTION=0)
+endif()
+
+# ====================================================================================================
+
