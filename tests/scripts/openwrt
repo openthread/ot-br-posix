@@ -41,6 +41,13 @@ readonly PACKAGE_NAME
 CONTAINER_NAME=openwrt-sdk
 readonly CONTAINER_NAME
 
+do_feeds_update()
+{
+    echo "Do feeds update attempt $1.."
+    docker exec "${CONTAINER_NAME}" scripts/feeds update base
+    docker exec "${CONTAINER_NAME}" scripts/feeds update packages
+}
+
 do_prepare()
 {
     docker create --name "${CONTAINER_NAME}" --rm -v openwrt-bin:/home/build/openwrt/bin -it openwrt/sdk:22.03.3
@@ -48,8 +55,16 @@ do_prepare()
     echo 'src-link openthread /home/build/ot-br-posix/etc/openwrt' >feeds.conf
 
     docker start "${CONTAINER_NAME}"
-    docker exec "${CONTAINER_NAME}" scripts/feeds update base
-    docker exec "${CONTAINER_NAME}" scripts/feeds update packages
+    docker exec "${CONTAINER_NAME}" sed -i 's/src-git-full/src-git/' feeds.conf.default
+
+    for i in 1 2 3 4 5; do
+        if do_feeds_update "$i"; then
+            break
+        elif [[ $i == 5 ]]; then
+            false
+        fi
+    done
+
     docker exec "${CONTAINER_NAME}" scripts/feeds install libjson-c libubox libubus libavahi-client
 
     docker cp feeds.conf "${CONTAINER_NAME}":/home/build/openwrt/feeds.conf
