@@ -33,6 +33,8 @@
 # fail fast on errors
 set -euo pipefail
 
+OT_CTL="${1:-ot-ctl}"
+
 # Check DELETE collections
 bru run actions/Delete_Actions_Collection.bru --env localhost --output results_$LINENO.json
 bru run devices/Delete_Devices_Collection.bru --env localhost --output results_$LINENO.json
@@ -62,7 +64,7 @@ bru run devices/Get_Node_json.bru --env localhost --output results_$LINENO.json
 # GET a non-existing item
 bru run devices/Get_DeviceItem_by_ItemId_404.bru --env localhost --output results_$LINENO.json
 
-./setDUTdestination.sh || true # continue on error, DUT may be configured already
+./setDUTdestination.sh "${OT_CTL}" || true # continue on error, DUT may be configured already
 
 ##############################################################
 ## Actions ##
