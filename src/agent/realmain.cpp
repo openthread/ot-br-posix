@@ -170,7 +170,7 @@ static void PrintHelp(const char *aProgramName)
             "     -d, --debug-level      The log level (EMERG=0, ALERT=1, CRIT=2, ERR=3, WARNING=4, NOTICE=5, INFO=6, "
             "DEBUG=7).\n"
             "     -v, --verbose          Enable verbose logging.\n"
-            "     -s, --syslog-disable   Disable syslog and print to standard out.\n"
+            "     -s, --syslog-disable   Disable syslog and print to standard error.\n"
             "     -h, --help             Show this help text.\n"
             "     -V, --version          Print the application's version and exit.\n"
             "     --radio-version        Print the radio coprocessor version and exit.\n"
