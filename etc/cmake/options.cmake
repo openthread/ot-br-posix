@@ -32,6 +32,7 @@ find_package(PkgConfig)
 option(OTBR_DOC "Build documentation" OFF)
 
 if (OTBR_MDNS STREQUAL "avahi")
+    message(DEPRECATION "OTBR_MDNS=avahi is deprecated. Use OTBR_MDNS=openthread or OTBR_MDNS=mDNSResponder instead.")
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_AVAHI=1)
 elseif (OTBR_MDNS STREQUAL "mDNSResponder")
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_MDNSSD=1)
