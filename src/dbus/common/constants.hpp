@@ -69,6 +69,7 @@
 #define OTBR_DBUS_DEACTIVATE_EPHEMERAL_KEY_MODE_METHOD "DeactivateEphemeralKeyMode"
 #define OTBR_DBUS_SCHEDULE_MIGRATION_METHOD "ScheduleMigration"
 #define OTBR_DBUS_HOST_POWER_STATE_METHOD "SetHostPowerState"
+#define OTBR_DBUS_GET_NETDIAG_TLVS "GetNetworkDiagnosticTlvs"
 
 #define OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX "MeshLocalPrefix"
 #define OTBR_DBUS_PROPERTY_LINK_MODE "LinkMode"
