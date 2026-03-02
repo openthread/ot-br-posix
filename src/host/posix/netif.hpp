@@ -90,7 +90,7 @@ private:
 
     void      PlatformSpecificInit(void);
     void      SetAddrGenModeToNone(void);
-    void      ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
+    otbrError ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
     otbrError ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded);
     void      ProcessIp6Send(void);
     void      ProcessMldEvent(void);
