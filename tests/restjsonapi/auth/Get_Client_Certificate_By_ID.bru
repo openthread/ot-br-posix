@@ -1,0 +1,42 @@
+meta {
+  name: GET Client Certificate by ID
+  type: http
+  seq: 1009
+  tags: client-certificate-mtls
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs/{{client_cert_id}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/x-pem-file
+}
+
+assert {
+  res.status: in [200, 401, 404]
+}
+
+tests {
+  test("GET specific client certificate", function() {
+    if (res.status === 200) {
+      const cert = res.getBody();
+      expect(cert).to.be.a('string');
+      expect(cert).to.contain('BEGIN CERTIFICATE');
+      console.log("Certificate retrieved successfully");
+    } else if (res.status === 404) {
+      console.log("Certificate not found (expected if not enrolled yet)");
+    } else if (res.status === 401) {
+      console.log("Authentication required");
+    }
+  });
+}
+
+docs {
+  Test: GET /api/auth/certs/{id}
+  
+  Retrieves a single client certificate by its ID (first 32 chars of SHA-256 fingerprint).
+  Returns the certificate in PEM format.
+}

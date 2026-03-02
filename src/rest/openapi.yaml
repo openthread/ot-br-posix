@@ -7,6 +7,193 @@ info:
 
     Some useful links:
     - [OpenThread Border Router repository](github.com/openthread/ot-br-posix/)
+
+    ## Discovery through DNS-SD
+    The REST API is discoverable via the following DNS-SD service:
+    * Service Instance Name: `<serial-no>`
+    * Service Type: `_thread._tcp`
+      * Subtype for all TBRs: `_tbr._sub._thread._tcp`
+      * Subtype for individual: `_<serial-no>._sub._thread._tcp`
+    * Domain: `.local`
+
+    DNS-SD returns the following information:
+    * Hostname: FQDN of the TBR (e.g., `knx-<serial-no>.local` or `thread-<serial-no>.local`)
+      * Used by IDevID and LDevID certificates as Subject Alternative Name `subjectAltName` for HTTPS
+    * Address: IPv6 address of the TBR
+    * Port: Port of the Web server (443 for HTTPS)
+
+    ## Security Enrollment
+    ### Authentication Methods
+    TBR shall implement following authentication methods for all REST API endpoints:
+    * Basic Authentication using HTTPS and the user `admin` and a password in ex-factory and operational state
+    * Mutual Authentication using HTTPS with client certificate verification in ex-factory (if a client certificate is pre-configured) and operational state
+
+    Clients must authenticate using at least one of the supported methods for each request. If a client attempts authentication using a method that is not configured, the TBR must reject the request with 401 Unauthorized.
+
+    ### States
+    The TBR operates in two states: `ex-factory` and `operational`.
+
+    #### Ex-Factory State
+    The TBR must be enrolled first before it can be used in operational state.
+    During enrollment, the TBR must switch from ex-factory to operational state.
+  
+    * In ex-factory state, the TBR uses the IDevID manufacturer device certificate as HTTPS server certificate
+    * The manufacturer may provide a manufacturer-specific access method to activate an Ephemeral REST API Credential Sharing Code for other clients to gain initial access to the TBR for REST API enrollment.
+    * e.g. Clients may authenticate over Basic Authentication using the user `admin` and a password. The password may equal the Ephemeral REST API Credential Sharing Code or be printed on the device label humanly readable and/or included in the Data Matrix Code (DMC).
+
+    #### Operational State
+    Mutual authentication is required for any endpoint if not otherwise noted.
+    * Using a LDevID certificate in operational state as HTTPS server certificate may require certificate renewal before expiration.
+        * Clients may renew the LDevID device certificate by repeating enrollment steps as described below.
+        * Clients must renew the LDevID before the LDevID expiration date
+    * Clients must authenticate using one of the methods configured during enrollment:
+        * Basic Authentication using the user `admin` and the password set during enrollment
+            * Clients may change the password during operation using the corresponding *Security* endpoint `/api/auth/password`
+        * Mutual authentication using HTTPS and with a client certificate stored under the *Security* endpoint `/api/auth/certs`
+            * Clients may add additional client certificates or remove existing client certificates using the corresponding *Security* endpoint `/api/auth/certs`
+            * Clients may retrieve certificate information using GET on `/api/auth/certs` with appropriate Accept header
+
+
+    ### Enrollment Procedures
+    The enrollment process comprises enrollment for server authentication (TBR identity) and enrollment for client authentication (how clients access the TBR).
+    The LDevID certificate enrollment process shares concepts with EST (Enrollment over Secure Transport, [RFC 7030](https://tools.ietf.org/html/rfc7030)), but is kept deliberately simple for deployments without a full PKI infrastructure.
+
+    #### Server Authentication (TBR Identity)
+    The TBR presents a server certificate for HTTPS. Choose one of the following options:
+
+    **Option 1: Keep IDevID (manufacturer certificate)**
+    - No action required
+    - TBR continues using the factory-installed IDevID certificate
+    - Skip to Client Authentication section
+
+    **Option 2: Self-signed LDevID**
+    1. Generate an LDevID certificate by POSTing the `generateLDevIdTask` to `/api/actions`
+    2. Retrieve the LDevID certificate from `/.well-known/thread/ldevid`
+    3. Activate by POSTing to `/api/auth/enroll` with empty payload or `{"est_mode": "push"}`
+
+    **Option 3: External CA - Manual Provisioning**
+    1. Generate certificate offline with the full chain (including issuing CA and root CA); must include Subject Alternative Name matching hostname, e.g., `otbr-<serial-no>.local`
+    2. PUT the certificate, private key, and chain to `/.well-known/thread/ldevid`
+    3. Activate by POSTing to `/api/auth/enroll` with empty payload or `{"est_mode": "push"}`
+
+    **Option 4: External CA - CSR Workflow**
+    1. GET the Certificate Signing Request from `/.well-known/thread/csr`
+    2. Generate the LDevID certificate signed by a CA; must include Subject Alternative Name matching hostname, e.g., `otbr-<serial-no>.local`
+    3. PUT the certificate with full chain to `/.well-known/thread/ldevid`
+    4. Activate by POSTing to `/api/auth/enroll` with empty payload or `{"est_mode": "push"}`
+
+    **Option 5: EST Enrollment (Automatic)**
+    1. POST to `/api/auth/enroll` with `{"est_server": "https://est.example.com"}`
+    2. TBR automatically:
+       - Fetches CA certificates from EST server
+       - Generates CSR with hostname as Subject Alternative Name
+       - Submits CSR using IDevID for authentication
+       - Receives and activates LDevID certificate
+
+    #### Client Authentication and Authorization
+    Configure how clients authenticate to the TBR and what access they have. Multiple authentication methods can be enabled simultaneously.
+
+    **Basic Authentication (Password)**
+    1. Change the initial password by PUTting a new password to `/api/auth/password`
+       - Client may request the TBR propose a password by POSTing empty body to `/api/auth/password`
+    2. Clients authenticate using `Authorization: Basic` header with `admin` username
+
+    **Mutual TLS Authentication (Client Certificates)**
+    1. PUT client certificate with full chain (including issuing CA and root CA) to `/api/auth/certs`
+       - Certificate chain must include all intermediate CAs up to the root CA
+       - Repeat to add additional client certificates or update before expiration
+       - Authentication is based on trust chain validation
+       - First certificate auto-enrolls as admin with full access
+    2. Clients authenticate by presenting their certificate during TLS handshake
+       - TBR validates certificate chain against trusted CA bundle
+       - Authentication based on trust chain validation only
+       - Authorization (access control) based on Subject Alternative Names (SANs) and assigned roles
+
+    **Authentication Mode Transition (Basic Auth → mTLS)**
+    
+    The TBR supports transitioning from Basic Authentication to Mutual TLS mode for production deployments:
+    
+    1. **Initial State**: In Ex-factory state, TBR starts in Basic Auth mode
+       - Initial password MUST be changed immediately
+       - All API endpoints accessible with HTTP Basic Authentication
+       - Well-known endpoints (`.well-known/thread/*`) accessible without authentication
+    
+    2. **Bootstrap Phase**: Register first client certificate while in Basic Auth mode
+       - PUT client certificate to `/api/auth/certs` using Basic Auth
+       - First certificate automatically receives admin role with full access
+       - Certificate stored in authorization database but Basic Auth remains active
+       - Endpoint: `PUT /api/auth/certs` with `Content-Type: application/x-pem-file`
+    
+    3. **Trigger Transition**: Activate mTLS mode
+       - POST to `/api/auth/enroll` (empty body) using Basic Auth
+       - TBR switches reverse proxy configuration to require client certificates
+    
+    4. **Final State**: mTLS-only mode active
+       - All endpoints (including `.well-known/thread/*`) require valid client certificates
+       - Basic Authentication no longer accepted (TLS handshake fails without client cert)
+       - Only enrolled certificates in `/api/auth/certs` database can authenticate
+       - Unauthorized clients without any certificates receive SSL/TLS handshake error (not HTTP 401)
+    
+    5. **Operational Mode**: Managing additional clients
+       - Use existing enrolled client certificate to authenticate
+       - PUT additional client certificates to `/api/auth/certs` endpoint
+       - Each certificate validated against CA bundle and assigned authorization scope
+       - DELETE certificates via `DELETE /api/auth/certs/{id}` to revoke access
+    
+    **Implementation Notes**:
+    - Configuration switch is idempotent (safe to trigger multiple times)
+    - Reverse proxy (e.g., Traefik) handles TLS termination and certificate validation
+    - Middleware validates Subject Alternative Names (SANs) and authorization roles/scopes
+    - Backend receives X-Auth-Roles and X-Auth-Scopes headers for granular access control
+    - Transition is one-way: reverting to Basic Auth requires manual configuration changes
+    
+    **Client Authorization Process**
+    
+    Authorization in mTLS mode uses a layered validation approach:
+    
+    1. **TLS Layer (Reverse Proxy)**:
+       - Validates client certificate against CA bundle (trust chain)
+       - Checks certificate expiration dates
+       - Rejects connections with missing, expired, or untrusted certificates at TLS handshake
+       - Extracts certificate information (Subject DN, Issuer DN, SANs) and passes to middleware
+    
+    2. **Authorization Layer (ForwardAuth Middleware)**:
+       - Receives certificate information from reverse proxy via HTTP headers
+       - Queries local authorization database file (certificate metadata storage)
+       - Validates Subject Alternative Names (SANs) against stored certificate metadata
+       - Extracts authorization role and scopes from database entry
+       - Returns HTTP 403 Forbidden with JSON error if:
+         - SANs do not match stored values
+         - Issuer DN does not match stored issuer
+       - Sets response headers for backend:
+         - `X-Auth-Role`: Authorization role (currently only `admin` or `user`)
+         - `X-Auth-Scopes`: Comma-separated scopes (e.g., `read,write` or `write`)
+    
+    3. **Application Layer (Backend REST API)**:
+       - Receives validated requests with `X-Auth-Role` and `X-Auth-Scopes` headers
+       - Enforces granular access control based on headers:
+         - `admin` role: Full access to all endpoints including security material
+         - `user` role (future): Access to operational endpoints only, no security material
+         - Scopes control data visibility: `redacted` prevents sensitive data in responses
+       - Returns HTTP 403 Forbidden if role/scope insufficient for requested operation
+    
+    **Authorization Database Structure**:
+    ```json
+    {
+      "clients": {
+        "<32-char-fingerprint>": {
+          "subject": "CN=client1.example.com,O=Example Org",
+          "issuer": "CN=Issuing CA,O=Example Org",
+          "sans": ["client1.example.com", "192.168.1.100"],
+          "role": "admin",
+          "scope": ["read", "write"],
+          "notBefore": "2026-01-01T00:00:00Z",
+          "notAfter": "2027-01-01T00:00:00Z"
+        }
+      }
+    }
+    ```
+
   license:
     name: BSD 3-Clause
     url: https://github.com/openthread/ot-br-posix/blob/main/LICENSE
@@ -14,6 +201,10 @@ info:
 servers:
   - url: http://localhost:8081
 tags:
+  - name: Well-Known
+    description: RFC 8615 Well-Known URIs for API discovery and security enrollment.
+  - name: Security
+    description: Security and enrollment endpoints.
   - name: Actions
     description: Task queue.
   - name: node
@@ -24,6 +215,581 @@ tags:
     description: Collection of Thread network diagnostic responses.
 paths:
 
+  ### Well-Known ##############################################################
+  #############################################################################
+
+  /.well-known/thread:
+    get:
+      operationId: getWellKnownThread
+      summary: Read API version and entry points
+      description: |
+        Information about the supported API version (see gray tag at the top of this specification), API location (base path), and links to its entry points.
+
+        ## Static
+        API version, location, and entry points are known at compile time.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="self" type="application/json"`
+      tags:
+        - Well-Known
+      responses:
+        "200":
+          $ref: "#/components/responses/WellKnownThread200"
+
+  /.well-known/thread/idevid:
+    get:
+      operationId: getIDevID
+      summary: Read factory-assigned IDevID certificate
+      description: |
+        Manufacturer device certificate (X.509) following IEEE 802.1AR.
+
+        This certificate is used for the HTTPS server in ex-factory state.
+
+        Devices without imprinted IDevID certificate may return 500 Internal Server Error.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="idevid" type="application/pkcs7-mime; smime-type=certs-only"`
+      tags:
+        - Well-Known
+      responses:
+        "200":
+          $ref: "#/components/responses/ManufacturerCertificate200"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /.well-known/thread/ldevid:
+    get:
+      operationId: getLDevID
+      summary: Read generated LDevID certificate used for operation
+      description: |
+        This certificate is used for the HTTPS server when enrolled with the upstream system.
+
+        Self-signed operational certificate (X.509) when generated by the TBR using the `generateLDevIdTask`.
+
+        ## Condition
+        Requires the most recent `generateLDevIdTask` to be `completed` to provide the LDevID certificate; or
+        requires an operational LDevID certificate to be previously assigned using the PUT method;
+        otherwise returns 404 Not Found.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="ldevid" type="application/pkcs7-mime; smime-type=certs-only"`
+      tags:
+        - Well-Known
+      responses:
+        "200":
+          $ref: "#/components/responses/OperationalCertificate200"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      operationId: putLDevID
+      summary: Write certificate and private key for use in operational state
+      description: |
+        Write an offline generated signed operational certificate (X.509) and its private key.
+
+        This certificate is used for the HTTPS server when enrolled with the upstream system.
+
+        ## Condition
+        Requires ex-factory state or previous enrollment using the same method (no use of `generateLDevIdTask`);
+        otherwise returns 409 Conflict.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="ldevid" type="application/x-pem-file"`
+        `rel="ldevid" type="application/x-pkcs12"`
+
+      tags:
+        - Well-Known
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/LDevIDPutReq"
+      responses:
+        "204":
+          description: Indicates successful change of LDevID and private key.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /.well-known/thread/csr:
+    get:
+      operationId: getCSR
+      summary: Read Certificate Signing Request for LDevID generation
+      description: |
+        Certificate Signing Request (CSR) in PKCS#10 format for the TBR's LDevID certificate.
+        
+        The CSR includes:
+        - A public key generated by the TBR
+        - Subject information with the TBR's hostname
+        - Subject Alternative Name (SAN) matching the TBR's hostname (e.g., `otbr-<serial-no>.local`)
+        
+        This endpoint enables external CA-signed certificate enrollment as described in Variant C.
+        The client retrieves the CSR, has it signed by a CA, and then PUTs the resulting certificate back to `/.well-known/thread/ldevid`.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="csr" type="application/pkcs10"`
+      tags:
+        - Well-Known
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/CSR200"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  ### Security ################################################################
+  #############################################################################
+
+  /api/auth/password:
+    post:
+      operationId: getProposedPassword
+      summary: Generate password
+      description: |
+        Trigger to generate a password proposal for client authentication that fulfills the password policy.
+
+        The device generates a UTF-8 string without any UTF-8 control characters of 16 to 24 bytes in length.
+        It is not applied and the client may set it using a PUT request with a copy of the body to confirm the proposal.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="password" type="text/plain; charset=UTF-8"`
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/Password200"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      operationId: setPassword
+      summary: Change password
+      description: |
+        Input to set a new UTF-8 based REST API password for client authentication. The string is also applied as Thread *Commissioning Credential*.
+
+        ## Condition
+        - minimum 12 characters
+        - maximum 255 bytes (UTF-8 characters may consist of multiple bytes)
+        - no control characters (e.g., not lower than `\x20`)
+        - three out of four must be met:
+          - at least one uppercase alphabetic character
+          - at least one lowercase alphabetic character
+          - at least one digit
+          - at least one non-alphanumeric character
+
+        ## On Success
+        - changes the password for the user `admin` used for *Basic Auth*
+        - returns 204 No Content
+
+        ## On Failure
+        Returns one of the following:
+          - 415 Unsupported Media Type, when the request content type is not `text/plain; charset=UTF-8`, `application/json`, nor empty (tolerant server)
+          - 422 Unprocessable Content, when the request body does not respect the password format or policies
+          - 500 Internal Server Error, if the server fails to change the password
+
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/PasswordReq"
+      responses:
+        "204":
+          description: Indicates successful password change.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeError"
+        "422":
+          $ref: "#/components/responses/UnprocessableError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      operationId: deletePassword
+      summary: Remove password
+      description: |
+        Remove the password for the user `admin`, thereby disabling Basic Authentication. Note that the *Commissioning Credential* remains unchanged.
+
+        ## Condition
+        Requires at least one other authentication method (mutual certificate authentication) to be configured;
+        otherwise returns 409 Conflict.
+
+        ## On Success
+        - removes the password for the user `admin`
+        - disables Basic Authentication
+        - returns 204 No Content
+
+        ## On Failure
+        Returns one of the following:
+          - 409 Conflict, if no other authentication method is configured
+          - 500 Internal Server Error, if the server fails to remove the password
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      responses:
+        "204":
+          description: Indicates successful password removal.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/auth/enroll:
+    post:
+      operationId: invokeEnrollment
+      summary: Enrollment trigger
+      description: |
+        Trigger enrollment with upstream system by switching to the operational certificate (or its renewal).
+
+        ## Modes
+
+        ### Push Mode (preloaded LDevID)
+        Switch to a preloaded LDevID certificate that was previously uploaded via `/.well-known/thread/ldevid`.
+
+        #### Request Body
+        ```json
+        {
+          "est_mode": "push"
+        }
+        ```
+        Or empty POST treated as push mode.
+
+        #### Condition
+        Requires the operational LDevID certificate generated and the initial password changed;
+        otherwise returns 409 Conflict.
+
+        #### Background Logic
+        - closes the TLS session of potential keep-alive connections
+        - changes the HTTPS server certificate to the latest LDevID certificate provided in the *Well-Known* endpoint `/.well-known/thread/ldevid`
+        - may reboot the Web server or devices to apply changes
+
+        ### Pull Mode (EST enrollment)
+        Automatically enroll with an EST (Enrollment over Secure Transport, RFC 7030) server to obtain an LDevID certificate.
+
+        #### Request Body
+        ```json
+        {
+          "est_server": "https://est.example.com"
+        }
+        ```
+
+        #### Background Logic
+        The TBR performs the following operations automatically:
+        1. Validates the EST server URL (HTTPS required)
+        2. Fetches CA certificates from `{est_server}/.well-known/est/cacerts` using IDevID for mTLS authentication
+        3. Updates the local CA trust bundle with received CA certificates
+        4. Generates a Certificate Signing Request (CSR) for LDevID with Subject Alternative Name matching the TBR's hostname (e.g., `hostname.local`)
+        5. Submits the CSR to `{est_server}/.well-known/est/simpleenroll` using IDevID for mTLS authentication
+        6. Receives and stores the issued LDevID certificate
+        7. Switches the active HTTPS server certificate to the new LDevID certificate
+        8. Reloads the TLS configuration without service interruption
+
+        #### Conditions
+        - Requires IDevID certificate and private key to be available for EST server authentication
+        - EST server must be accessible via HTTPS
+        - EST server must support RFC 7030 endpoints: `/cacerts` and `/simpleenroll`
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="enroll" type="application/json"`
+      tags:
+        - Security
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+                - required:
+                    - est_mode
+                  properties:
+                    est_mode:
+                      type: string
+                      enum:
+                        - push
+                      description: Push mode - use preloaded LDevID certificate
+                      example: push
+                - required:
+                    - est_server
+                  properties:
+                    est_server:
+                      type: string
+                      format: uri
+                      description: Pull mode - HTTPS URL of the EST server to fetch LDevID from
+                      example: https://est.example.com
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      responses:
+        "204":
+          description: Indicates successful enrollment trigger or EST enrollment completion.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/auth/certs:
+    get:
+      operationId: getClientCerts
+      summary: Retrieve stored client certificates
+      description: |
+        Retrieve all client certificates currently stored by the TBR for mutual authentication.
+
+        Supports content negotiation via the Accept header:
+        - `application/json` - Returns a JSON array of certificate metadata (ID, subject, issuer, expiration)
+        - `application/pkcs7-mime` - Returns PKCS#7 certificate bundle (EST-compatible)
+
+        The default (no Accept header) returns PKCS#7 format for EST compatibility.
+        Certificate IDs are the first 32 characters of the SHA-256 fingerprint.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="certs" type="application/json"`
+        `rel="certs" type="application/pkcs7-mime; smime-type=certs-only"`
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      parameters:
+        - name: Accept
+          in: header
+          description: Requested response format
+          schema:
+            type: string
+            enum:
+              - application/json
+              - application/pkcs7-mime
+      responses:
+        "200":
+          $ref: "#/components/responses/ClientCertificates200"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      operationId: putClientCert
+      summary: Store a client certificate (server-generated ID)
+      description: |
+        Store a client certificate where the server generates the ID from the 
+        certificate's SHA-256 fingerprint (first 32 characters, lowercase hex).
+        This is the recommended enrollment method as it ensures ID consistency.
+        
+        ## Enrollment Behavior
+        - **First certificate**: Automatically enrolled as admin with full access scope
+        - **Subsequent certificates**: Enrolled with scope determined by the authenticating client
+        
+        **Role/Scope Configuration** (optional future extensions, not yet implemented):
+        - Certificate-embedded: Extract role/scope from X.509 extensions, Subject Alternative Names, or Subject DN fields
+        - Authorization endpoint: Use `PATCH /api/auth/certs/{id}` to update role/scope after enrollment
+        
+        ## Certificate Format
+        The client certificate must:
+        - Be in PEM format (application/x-pem-file)
+        - Include the full certificate chain (client cert + intermediate CA(s) + root CA)
+        - **NOT include the private key** (private key remains with the client)
+        - Be signed by any trusted CA
+          - Exception: If the first client certificate is enrolled after transitioning to mTLS mode, it must be validated against the TBR's CA bundle.
+          - Subsequent certificates can be signed by any CA (validation by Traefik/TLS layer)
+        
+        ## Server Processing
+        1. Extracts certificate from PEM format
+        2. Calculates SHA-256 fingerprint (first 32 chars as ID)
+        3. Validates certificate chain and expiration
+        4. Extracts Subject DN, Issuer DN, and Subject Alternative Names (SANs)
+        5. Stores certificate metadata in authorization database with generated ID
+        6. Returns the generated certificate ID in response
+        
+        ## Condition
+        The client certificate must be valid and parseable;
+        otherwise returns 422 Unprocessable Content.
+        
+        ## On Success
+        Returns 201 Created with the generated certificate ID in the response body.
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/ClientCertPutReq"
+      responses:
+        "201":
+          description: Certificate stored successfully with server-generated ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    pattern: '^[a-f0-9]{32}$'
+                    description: Server-generated certificate ID (first 32 chars of SHA-256 fingerprint)
+                  message:
+                    type: string
+                    description: Success message
+                example:
+                  id: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+                  message: "Client certificate enrolled successfully"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "422":
+          $ref: "#/components/responses/UnprocessableError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/auth/certs/{id}:
+    get:
+      operationId: getClientCert
+      summary: Retrieve a specific client certificate
+      description: |
+        Retrieve a single client certificate by its ID (first 32 chars of SHA-256 fingerprint).
+        Returns the certificate in PEM format.
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Certificate ID (first 32 characters of SHA-256 fingerprint)
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{32}$'
+      responses:
+        "200":
+          description: Certificate in PEM format
+          content:
+            application/x-pem-file:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      operationId: putClientCertById
+      summary: Store or update a client certificate
+      description: |
+        Store a client certificate with a specific ID.
+        The certificate's SHA-256 fingerprint must match the provided ID.
+        Additional certificates may be added by repeating this operation.
+
+        ## Condition
+        The client certificate must be valid and parseable;
+        otherwise returns 422 Unprocessable Content.
+        The certificate's fingerprint must match the provided ID;
+        otherwise returns 400 Bad Request.
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Certificate ID (first 32 characters of SHA-256 fingerprint)
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{32}$'
+      requestBody:
+        description: Certificate chain in PEM format
+        required: true
+        content:
+          application/x-pem-file; charset=ASCII:
+            schema:
+              $ref: "#/components/schemas/ClientCert"
+      responses:
+        "204":
+          description: Indicates successful storage of client certificate.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "422":
+          $ref: "#/components/responses/UnprocessableError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      operationId: deleteClientCertById
+      summary: Remove a specific client certificate
+      description: |
+        Remove a client certificate by its ID (first 32 chars of SHA-256 fingerprint).
+
+        ## Condition
+        Requires the certificate to exist;
+        otherwise returns 404 Not Found.
+      tags:
+        - Security
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Certificate ID (first 32 characters of SHA-256 fingerprint)
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{32}$'
+      responses:
+        "204":
+          description: Indicates successful removal of client certificate.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   ### Information #############################################################
   #############################################################################
   /api/node:
@@ -32,6 +798,9 @@ paths:
       tags:
         - node
       summary: Read border router device item of this node.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Shortcut into the *Devices* collection returning the `threadBorderRouter` item representing this Thread Border Router.
 
@@ -121,6 +890,10 @@ paths:
                         created: '2025-02-25T17:31:54+02:00'
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "406":
@@ -135,6 +908,9 @@ paths:
       tags:
         - Actions
       summary: Read Actions collection.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         *Actions* collection with items of the following *Task* types:
         - `discoverThreadNetworksTask` **TODO**
@@ -143,6 +919,7 @@ paths:
         - `resetNetworkDiagCounterTask`
         - `getEnergyScanTask`
         - `updateDeviceCollectionTask`
+        - `generateLDevIdTask`
 
         The items contain all the attributes as given by a client in a POST request (values are not changed, except for timeout which counts down).
         The items contain at least two additional server-added attributes (`id` and `status`); while the `id` must not change once assigned, the other server-added attributes may change according to the *Task* state.
@@ -228,6 +1005,10 @@ paths:
                     pending: 2  
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "406":
           $ref: "#/components/responses/NotAcceptableError"
     post:
@@ -235,6 +1016,9 @@ paths:
       tags:
         - Actions
       summary: Add task(s) to the Actions collection.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Input to add one or more *Task* items to the *Actions* collection (in other words, enqueue).
 
@@ -458,6 +1242,35 @@ paths:
                         maxRetries: 5
                         deviceCount: 50
                         timeout: 60
+              generateLDevIdTask:
+                summary: Generate Self-Signed LDevID Certificate
+                description: |
+                  Generates a new operational certificate (LDevID) for the Thread Border Router.
+
+                  The `currentDateTime` attribute is **optional** and can be provided in ISO 8601 format (e.g., `2026-02-16T12:00:00Z`).
+                  This is intended for constrained servers without time synchronization services (NTP, PTP, etc.) where a client
+                  with accurate time knowledge can provide the current datetime to ensure valid certificate timestamps.
+                  
+                  **Note:** This parameter is currently not used in certificate generation; the certificate validity period is based on the system's current time.
+
+                  ### Background Logic
+                  - when the task is enqueued:
+                    - the new task is enqueued with status `pending`
+                  - when the task status becomes `active`:
+                    - a new EC keypair (secp256r1) is generated
+                    - a self-signed X.509 certificate is created with:
+                      - Subject DN including the TBR's hostname
+                      - Subject Alternative Name (SAN) matching the TBR's hostname (e.g., `<hostname>.local`)
+                      - Validity period of 365 days (from current system time)
+                      - Extensions: basicConstraints=CA:FALSE, keyUsage=digitalSignature,keyEncipherment, extendedKeyUsage=serverAuth,clientAuth
+                    - both the private key and certificate are saved to the local filesystem (`/var/lib/traefik/certs/`)
+                    - the task status is set to `completed`
+                  - when the certificate generation is successful, the client can activate it by POSTing to `/api/auth/enroll` with `{"est_mode":"push"}`
+                  - when an error occurs during generation, the task status is set to `failed`
+                value:
+                  data:
+                    - type: generateLDevIdTask
+                      attributes: {}
       responses:
         "200":
           description: Task accepted and queue for execution.
@@ -483,6 +1296,10 @@ paths:
                       status: pending
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "408":
           $ref: "#/components/responses/RequestTimeout"
         "409":
@@ -501,6 +1318,9 @@ paths:
       tags:
         - Actions
       summary: List of allowed operations.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Lists allowed operations.
       responses:
@@ -512,24 +1332,37 @@ paths:
               schema:
                 type: string
                 example: "GET, POST, DELETE, OPTIONS"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 
     delete:
       operationId: deleteActions
       tags:
         - Actions
       summary: Stop and remove all tasks from the queue of actions.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Removes all Tasks.
       responses:
         "204":
           description: Task(s) deleted.
-
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
   /api/actions/{actionId}:
     get:
       operationId: getAction
       tags:
         - Actions
       summary: Read Actions item
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         *Task* item in the *Actions* collection selected by its `id`.
 
@@ -613,6 +1446,10 @@ paths:
                             id: 688f881a-b3d5-4261-949c-9c18dfdd7fca
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "406":
@@ -665,6 +1502,9 @@ paths:
         - baId
       tags:
         - Devices
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       parameters:
         - $ref: "#/components/parameters/SparseFieldset"
         - $ref: "#/components/parameters/AcceptJsonApi"
@@ -729,6 +1569,10 @@ paths:
                           created: '2025-02-25T17:31:54+02:00'
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "406":
@@ -739,6 +1583,9 @@ paths:
       tags:
         - Devices
       summary: List of allowed operations.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Lists allowed operations.
       responses:
@@ -750,10 +1597,17 @@ paths:
               schema:
                 type: string
                 example: "GET, POST, DELETE, OPTIONS"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 
     delete:
       operationId: deleteDevices
       summary: Delete Devices collection
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Removes all *threadDevice* items from the *Devices* collection.
       tags:
@@ -761,6 +1615,10 @@ paths:
       responses:
         "204":
           description: Devices collection deleted.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 
   /api/devices/{deviceId}:
     get:
@@ -768,6 +1626,9 @@ paths:
       tags:
         - Devices
       summary: Read Devices item
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         *threadDevice* item in the *Devices* collection selected by its `id`.
 
@@ -836,6 +1697,10 @@ paths:
                         created: '2025-02-25T17:31:54+02:00'
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "406":
@@ -845,6 +1710,9 @@ paths:
       tags:
         - Devices
       summary: Delete Devices item
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Removes a *threadDevice* item from the *Devices* collection.
         Requires a *threadDevice* item with the given `id` to exist;
@@ -856,6 +1724,10 @@ paths:
           description: Device item deleted.
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
 
@@ -877,6 +1749,9 @@ paths:
         - all *Diagnostic* items are created through their corresponding *Task*
       tags:
         - Diagnostics
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       parameters:
         - $ref: "#/components/parameters/SparseFieldset"
         - $ref: "#/components/parameters/AcceptJsonApi"
@@ -1082,6 +1957,10 @@ paths:
                           created: '2023-10-31T15:32:29Z'
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "406":
           $ref: "#/components/responses/NotAcceptableError"
         "500":
@@ -1092,6 +1971,9 @@ paths:
       tags:
         - Diagnostics
       summary: List of allowed operations.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Lists allowed operations.
       responses:
@@ -1103,10 +1985,17 @@ paths:
               schema:
                 type: string
                 example: "GET, POST, DELETE, OPTIONS"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 
     delete:
       operationId: deleteDiagnostics
       summary: Delete Diagnostics collection
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         Removes all *diagnostics* items from the *Diagnostics* collection.
       tags:
@@ -1114,11 +2003,18 @@ paths:
       responses:
         "204":
           description: Diagnostics collection deleted.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
 
   /api/diagnostics/{diagnosticsId}:
     get:
       operationId: getDiagnostic
       summary: Diagnostic item.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
       description: |
         *Diagnostic* item in the *Diagnostics* collection selected by its `id`.
 
@@ -1178,28 +2074,39 @@ paths:
                         created: '2023-10-31T15:32:29Z'
         "400":
           $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "406":
           $ref: "#/components/responses/NotAcceptableError"
-      delete:
-        operationId: deleteDiagnostic
-        summary: Delete Diagnostic item.
-        description: |
-          Removes a *Diagnostic* item from the *Diagnostics* collection.
-          Requires a *Diagnostic* item with the given `id` to exist;
-          otherwise returns 404 Not Found.
-        tags:
-          - Diagnostics
-        parameters:
-          - $ref: "#/components/parameters/diagnosticsId"
-        responses:
-          "204":
-            description: Diagnostic item deleted.
-          "400":
-            $ref: "#/components/responses/BadRequestError"
-          "404":
-            $ref: "#/components/responses/NotFoundError"
+    delete:
+      operationId: deleteDiagnostic
+      summary: Delete Diagnostic item.
+      security:
+        - basicAuth: []
+        - mutualCertAuth: []
+      description: |
+        Removes a *Diagnostic* item from the *Diagnostics* collection.
+        Requires a *Diagnostic* item with the given `id` to exist;
+        otherwise returns 404 Not Found.
+      tags:
+        - Diagnostics
+      parameters:
+        - $ref: "#/components/parameters/diagnosticsId"
+      responses:
+        "204":
+          description: Diagnostic item deleted.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   /node:
     get:
@@ -1869,6 +2776,29 @@ components:
               default: 93
               description: Timeout in seconds for the update device collection task.  
 
+    Actions_generateLDevIdTask:
+      type: object
+      properties:
+        type:
+          enum: [generateLDevIdTask]
+        attributes:
+          type: object
+          properties:
+            currentDateTime:
+              type: string
+              format: date-time
+              description: |
+                ISO 8601 datetime string (e.g., '2026-02-16T12:00:00Z').
+                
+                **Use Case:** Intended for constrained servers without time synchronization services (NTP, PTP, etc.).
+                When the TBR lacks accurate system time, a client with knowledge of the current time can provide
+                it via this parameter. The implementation may use it to set the system time before generating
+                certificates, ensuring valid notBefore/notAfter timestamps.
+                
+                **Note:** This parameter is currently not used in certificate generation.
+                The generated certificate uses the system's current time for validity period.
+              example: '2026-02-16T12:00:00Z'
+
     ### Actions Requests ########################################################
     ActionsClient:
       type: object
@@ -1885,6 +2815,7 @@ components:
               - $ref: "#/components/schemas/ActionsClient_resetNetworkDiagCounterTask"
               - $ref: "#/components/schemas/ActionsClient_getEnergyScanTask"
               - $ref: "#/components/schemas/ActionsClient_updateDeviceCollectionTask"
+              - $ref: "#/components/schemas/ActionsClient_generateLDevIdTask"
         additionalProperties: false
 
     ActionsClient_addThreadDeviceTask:
@@ -1965,6 +2896,20 @@ components:
               additionalProperties: false
             additionalProperties: false
 
+    ActionsClient_generateLDevIdTask:
+      allOf:
+        - $ref: "#/components/schemas/Actions_generateLDevIdTask"
+        - type: object
+          required:
+            - type
+            - attributes
+          properties:
+            attributes:
+              type: object
+              # currentDateTime is optional - no required fields
+              additionalProperties: false
+          additionalProperties: false
+
     ### Actions Responses #######################################################
     Meta:
       type: object
@@ -2014,6 +2959,7 @@ components:
               - $ref: "#/components/schemas/ActionsServer_resetNetworkDiagCounterTask"
               - $ref: "#/components/schemas/ActionsServer_getEnergyScanTask"
               - $ref: "#/components/schemas/ActionsServer_updateDeviceCollectionTask"
+              - $ref: "#/components/schemas/ActionsServer_generateLDevIdTask"
 
     ActionItem:
       type: object
@@ -2027,6 +2973,7 @@ components:
             - $ref: "#/components/schemas/ActionsServer_resetNetworkDiagCounterTask"
             - $ref: "#/components/schemas/ActionsServer_getEnergyScanTask"
             - $ref: "#/components/schemas/ActionsServer_updateDeviceCollectionTask"
+            - $ref: "#/components/schemas/ActionsServer_generateLDevIdTask"
 
     ActionsServer:
       type: object
@@ -2135,6 +3082,17 @@ components:
                 - deviceCount
                 - timeout
 
+    ActionsServer_generateLDevIdTask:
+      allOf:
+        - $ref: "#/components/schemas/ActionsServer"
+        - $ref: "#/components/schemas/Actions_generateLDevIdTask"
+        - type: object
+          properties:
+            attributes:
+              type: object
+              # currentDateTime is optional, status is added by server
+              # No required attributes beyond those inherited from ActionsServer
+
     ##########################################################
     Errors:
       description: |
@@ -2192,6 +3150,12 @@ components:
       type: string
       pattern: ^[0-9ABCDEFGHJKLMNPRSTUVWXY]{6,32}$
       example: J01NME
+
+    Password:
+      type: string
+      minLength: 12
+      maxLength: 255
+      description: 'UTF-8 string 12-255 bytes, three out of four must be met: at least one uppercase alphabetic character, at least one lowercase alphabetic character, at least one digit, at least one non-alphanumeric character.'
 
     Channel:
       type: integer
@@ -2397,7 +3361,189 @@ components:
         timeout:
           type: integer
           description: Joiner expiration time in milliseconds on response and seconds on request 
-          default: 60 
+          default: 60
+
+    ### Security Enrollment ####################################################
+    LDevIdCertKey:
+      description: X.509 Certificate and private key for operational state.
+      type: string
+      example: '-----BEGIN PRIVATE KEY-----
+
+        <base64-encoded private key>
+
+        -----END PRIVATE KEY-----
+
+        -----BEGIN CERTIFICATE-----
+
+        <base64-encoded certificate>
+
+        -----END CERTIFICATE-----
+
+        '
+
+    CACert:
+      description: X.509 Certificate Authority certificate.
+      type: string
+      example: '-----BEGIN CERTIFICATE-----
+
+        <base64-encoded CA certificate>
+
+        -----END CERTIFICATE-----
+
+        '
+
+    ClientCert:
+      description: |
+        X.509 Certificate for client authentication.
+      type: string
+      example: '-----BEGIN CERTIFICATE-----
+
+        <base64-encoded certificate>
+
+        -----END CERTIFICATE-----
+
+        '
+
+    WellKnownThread:
+      type: object
+      required:
+        - api
+        - links
+      properties:
+        api:
+          type: object
+          required:
+            - version
+            - base
+          properties:
+            version:
+              type: string
+              pattern: ^[0-9]+\.[0-9]+(\.[0-9]+)?$
+            base:
+              type: string
+              pattern: ^/[/.a-zA-Z0-9-_]*$
+        links:
+          type: array
+          items:
+            type: object
+            required:
+              - href
+            properties:
+              href:
+                type: string
+                format: uri-reference
+              rel:
+                type: string
+              type:
+                type: array
+                minItems: 1
+                items:
+                  type: string
+              title:
+                type: string
+
+  ### Request Bodies #########################################################
+  #############################################################################
+  requestBodies:
+
+    PasswordReq:
+      description: |
+        UTF-8 string without any UTF-8 control characters of 12 to 255 bytes in length.
+        
+        Supports two content types:
+        - `text/plain; charset=UTF-8` - Raw password string
+        - `application/json` - JSON object with "password" field (recommended)
+      required: true
+      content:
+        text/plain; charset=UTF-8:
+          schema:
+            $ref: "#/components/schemas/Password"
+          example: 'ΣA7sWZtÜvMa^&p6S+*ybHVR!EX#15C'
+        application/json:
+          schema:
+            type: object
+            required:
+              - password
+            properties:
+              password:
+                $ref: "#/components/schemas/Password"
+          example:
+            password: 'ΣA7sWZtÜvMa^&p6S+*ybHVR!EX#15C'
+
+    LDevIDPutReq:
+      description: |
+        Base64-encocded ASCII string containing `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` holding the private key and concatenated `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` for the LDevID certificate and concatenated one intermediate and one root certificate.
+      required: true
+      content:
+        application/x-pem-file; charset=ASCII:
+          schema:
+            $ref: "#/components/schemas/LDevIdCertKey"
+        application/x-pkcs12; charset=ASCII:
+          schema:
+            $ref: "#/components/schemas/LDevIdCertKey"
+    
+    CACertPutReq:
+      description: |
+        Base64-encocded ASCII string containing one or more concatenated `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` holding the CA certificate(s) to be stored for client certificate validation.
+      required: true
+      content:
+        application/x-pem-file; charset=ASCII:
+          schema:
+            $ref: "#/components/schemas/CACert"
+        application/x-pkcs12; charset=ASCII:
+          schema:
+            $ref: "#/components/schemas/CACert"
+
+    CACertDeleteReq:
+      description: |
+        Empty request body.
+      required: true
+      content:
+        application/vnd.api+json:
+          schema:
+            type: object
+          example: {} 
+
+    ClientCertPutReq:
+      description: |
+        Client certificate chain in PEM or PKCS#12 format for mutual TLS authentication.
+        
+        **Certificate chain must include**:
+        - Client certificate
+        - All intermediate CA certificates
+        - Root CA certificate
+        
+        **The private key is NOT included** - it remains with the client and is presented during the TLS handshake.
+        
+        The certificate is stored in the TBR's authorization database and used to authenticate future mTLS connections.
+      required: true
+      content:
+        application/x-pem-file; charset=ASCII:
+          schema:
+            $ref: "#/components/schemas/ClientCert"
+          example: |
+            -----BEGIN CERTIFICATE-----
+            MIICxzCCAa+gAwIBAgIUXxw...(client cert)...==
+            -----END CERTIFICATE-----
+            -----BEGIN CERTIFICATE-----
+            MIIDVzCCAj+gAwIBAgIUYzA...(intermediate CA)...==
+            -----END CERTIFICATE-----
+            -----BEGIN CERTIFICATE-----
+            MIIDazCCAlOgAwIBAgIUZWI...(root CA)...==
+            -----END CERTIFICATE-----
+        application/x-pkcs12; charset=ASCII:
+          schema:
+            $ref: "#/components/schemas/ClientCert"
+  
+    ClientCertDeleteReq:
+      description: |
+        Empty request body.
+      required: true
+      content:
+        application/vnd.api+json:
+          schema:
+            type: object
+          example: {}
 
   ### Parameters ##############################################################
   #############################################################################
@@ -2516,6 +3662,271 @@ components:
   ### Responses ###############################################################
   #############################################################################
   responses:
+
+  ### Well-Known ##############################################################
+  #############################################################################
+
+    WellKnownThread200:
+      description: |
+        JSON (RFC 8259) providing the API version resource object and links to the API entry points.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/WellKnownThread"
+          example:
+            api:
+              version: 0.3.0
+              base: /api/
+            links:
+              - href: /.well-known/thread
+                rel: self
+                type:
+                  - application/json
+              - href: /.well-known/thread/idevid
+                rel: idevid
+                type:
+                  - application/pkcs7-mime; smime-type=certs-only
+              - href: /.well-known/thread/ldevid
+                rel: ldevid
+                type:
+                  - application/pkcs7-mime; smime-type=certs-only
+                  - application/x-pem-file
+              - href: /.well-known/thread/csr
+                rel: csr
+                type:
+                  - application/pkcs10
+              - href: /api/auth/password
+                rel: password
+                type:
+                  - text/plain; charset=UTF-8
+              - href: /api/auth/enroll
+                rel: enroll
+              - href: /api/auth/certs
+                rel: certs
+                type:
+                  - application/pkcs7-mime; smime-type=certs-only
+              - href: /api/node
+                rel: node
+                type:
+                  - application/vnd.api+json
+              - href: /api/actions
+                rel: task
+                type:
+                  - application/vnd.api+json
+              - href: /api/devices
+                rel: device
+                type:
+                  - application/vnd.api+json
+              - href: /api/diagnostics
+                rel: diagnostic
+                type:
+                  - application/vnd.api+json
+
+    ManufacturerCertificate200:
+      description: |
+        Base64-encoded PKCS#7 certificate chain containing the factory-installed IDevID certificate.
+      content:
+        application/pkcs7-mime; smime-type=certs-only:
+          schema:
+            type: string
+            format: byte
+
+    OperationalCertificate200:
+      description: |
+        Base64-encoded PKCS#7 certificate containing the operational LDevID certificate.
+      content:
+        application/pkcs7-mime; smime-type=certs-only:
+          schema:
+            type: string
+            format: byte
+
+    CSR200:
+      description: |
+        Base64-encoded PKCS#10 Certificate Signing Request.
+      content:
+        application/pkcs10:
+          schema:
+            type: string
+            format: byte
+
+    CACertificates200:
+      description: |
+        Base64-encoded PKCS#7 certificate bundle containing all trusted CA certificates.
+      content:
+        application/pkcs7-mime; smime-type=certs-only:
+          schema:
+            type: string
+            format: byte
+
+    ClientCertificates200:
+      description: |
+        Client certificate information in multiple formats based on Accept header.
+        - `application/json`: Array of certificate metadata (ID, subject, issuer, expiration)
+        - `application/vnd.api+json`: JSON:API format with authentication details (role, scope=[read,write,redacted], SANs)
+        - `application/pkcs7-mime`: PKCS#7 certificate bundle (EST-compatible, default)
+        
+        Certificate IDs are the first 32 characters of the SHA-256 fingerprint.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: First 32 characters of SHA-256 fingerprint
+                  pattern: '^[a-f0-9]{32}$'
+                subject:
+                  type: string
+                  description: Certificate subject DN
+                issuer:
+                  type: string
+                  description: Certificate issuer DN
+                notBefore:
+                  type: string
+                  format: date-time
+                  description: Certificate validity start
+                notAfter:
+                  type: string
+                  format: date-time
+                  description: Certificate validity end
+          example:
+            - id: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+              subject: "CN=rest-api-client-demo"
+              issuer: "CN=Demo Issuing CA 2026"
+              notBefore: "2026-01-13T15:41:29Z"
+              notAfter: "2056-01-14T15:41:29Z"
+        application/vnd.api+json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [clientCertAuthDetails]
+                    id:
+                      type: string
+                      pattern: '^[a-f0-9]{32}$'
+                    attributes:
+                      type: object
+                      properties:
+                        subject:
+                          type: string
+                        issuer:
+                          type: string
+                        notBefore:
+                          type: string
+                          format: date-time
+                        notAfter:
+                          type: string
+                          format: date-time
+                        role:
+                          type: string
+                          description: Authorization role (currently only "admin" implemented with full access)
+                        scope:
+                          type: array
+                          description: Access permissions for the certificate
+                          items:
+                            type: string
+                            enum: [read, write, redacted]
+                          uniqueItems: true
+                          minItems: 1
+                        sans:
+                          type: array
+                          description: Subject Alternative Names from certificate
+                          items:
+                            type: string
+          example:
+            data:
+              - type: "clientCertAuthDetails"
+                id: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+                attributes:
+                  subject: "CN=rest-api-client-demo"
+                  issuer: "CN=Demo Issuing CA 2026"
+                  notBefore: "2026-01-13T15:41:29Z"
+                  notAfter: "2056-01-14T15:41:29Z"
+                  role: "admin"
+                  scope:
+                    - "read"
+                    - "write"
+                  sans:
+                    - "DNS:rest-api-client-demo.local"
+        application/pkcs7-mime; smime-type=certs-only:
+          schema:
+            type: string
+          example: '-----BEGIN PKCS7-----
+
+            MIIFhAYJKoZIhvcNAQcCoIIFdTCCBXECAQExADALBgkqhkiG9w0BBwGgggVZMIIC
+
+            ...(base64 encoded PKCS#7 certificate bundle)...
+
+            -----END PKCS7-----
+
+            '
+
+  ### Security ################################################################
+  #############################################################################
+
+    Password200:
+      description: |
+        UTF-8 string suggesting a secure password of 16 to 24 bytes in length.
+      content:
+        text/plain; charset=UTF-8:
+          schema:
+            $ref: "#/components/schemas/Password"
+          example: 'ΣA7sWZtÜvMa^&p6S'
+
+    UnauthorizedError:
+      description: |
+        The client could not be authenticated.
+        The client SHOULD perform action(s) to authenticate itself before retrying the request.
+      content:
+        text/plain; charset=UTF-8:
+          example: 401 Unauthorized
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: "Unauthorized"
+            status: 401
+        application/vnd.api+json:
+          example:
+            errors:
+              - title: Unauthorized
+                status: 401
+                detail: The client could not be authenticated.
+          schema:
+            $ref: "#/components/schemas/Errors"
+
+    ForbiddenError:
+      description: |
+        The server understands the request, but refuses to authorize it.
+        The client SHOULD complete enrollment before continuing.
+      content:
+        text/plain; charset=UTF-8:
+          example: 403 Forbidden
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: "Forbidden"
+            status: 403
+        application/vnd.api+json:
+          example:
+            errors:
+              - title: Forbidden
+                status: 403
+                detail: The request was not authorized.
+          schema:
+            $ref: "#/components/schemas/Errors"
+
+  ### Common Errors ###########################################################
+  #############################################################################
 
     BadRequestError:
       description: |
@@ -2719,3 +4130,45 @@ components:
               - title: Service Unavailable
                 status: 503
                 detail: The server is not ready to handle the request.
+  ### Security Schemes ########################################################
+  #############################################################################
+
+  securitySchemes:
+
+    basicAuth:
+      type: http
+      scheme: basic
+      description: |
+        HTTP Basic Authentication (RFC 7617):
+
+        - Security scheme used for enrollment of ex-factory devices using the `admin` user and the initial password encoded within the printed DMC.
+        - Clients must include the HTTP `Authorization` header containing `Basic <base64(username:password)>`.
+        - If the device receives no or invalid credentials, it shall respond with 401 Unauthorized.
+    mutualCertAuth:
+      type: mutualTLS
+      description: |
+        Mutual TLS Authentication (mTLS):
+        
+        - Security scheme used for client authentication using X.509 certificates during TLS handshake.
+        - Clients must present a valid client certificate signed by a trusted CA during the TLS handshake.
+        - Client certificates must be enrolled via `PUT /api/auth/certs` before use:
+          - First client certificate auto-enrolls as admin with full access
+          - Subsequent certificates are enrolled by existing admin clients
+          - Certificate ID is the first 32 characters of the SHA-256 fingerprint (lowercase hex)
+        - The TBR validates:
+          1. Certificate chain against trusted CA bundle
+          2. Certificate is not expired
+          3. Certificate fingerprint exists in the authorization database (`/api/auth/certs`)
+        - Authorization is based on:
+          - Trust chain validation (certificate signed by trusted CA)
+          - Subject Alternative Names (SANs)
+        - **Authorization Model** (potential future enhancement):
+          - Role-based access (admin, user) for security material vs operational endpoints
+          - Scope-based permissions (read, write, redacted) for granular access control
+          - Currently, only admin role with full access is implemented
+          - Configuration methods under consideration:
+            - Extract role/scope from certificate attributes (X.509 extensions, SANs, Subject DN)
+            - Separate authorization endpoint (`PATCH /api/auth/certs/{id}`) for post-enrollment updates
+        - If the device receives no certificate, an invalid certificate, or an unenrolled certificate:
+          - TLS handshake fails with SSL/TLS error (e.g., "certificate required" or "bad certificate")
+          - Or HTTP 401 Unauthorized / 403 Forbidden if handshake succeeds but authorization fails

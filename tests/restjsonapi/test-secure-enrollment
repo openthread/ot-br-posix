@@ -1,0 +1,523 @@
+#!/bin/bash
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+# Run Bruno tests for OpenThread REST API Secure Enrollment for server authentication and client authentication.
+#
+# This script runs the Bruno-based tests for secure enrollment and mTLS authentication.
+# It requires:
+# - OpenThread Border Router running with REST API
+# - Traefik reverse proxy configured and test certificates generated
+#   in repo root dir -> sudo ./script/setup-reverseproxy.sh
+# - Bruno CLI installed (./install_bruno_cli)
+# - executing this script from the tests/restjsonapi directory on a system with the above setup
+# - the user should reset the configuration to initial default state to ensure
+#   consistent results on repeated test runs (e.g. sudo ./traefik/switch-config.sh basicauth default-state)
+#
+# The script uses workflow-based test collections (workflows/) organized by enrollment phases.
+#
+# Environment Progression:
+#
+# ┌─────────────────┐
+# │  baseline.bru   │  System has no auth configured
+# ├─────────────────┤  • discovery endpoints: 200
+# │  auth_mode: none│  • protected endpoints: 401 (no auth system)
+# └─────────────────┘
+#         ↓
+# ┌──────────────────────┐
+# │ initial-state.bru    │  Fresh install, default password "thread"
+# ├──────────────────────┤  • discovery endpoints: 200
+# │ auth_mode: basic     │  • protected WITHOUT creds: 401
+# │ admin_pass: thread   │  • protected WITH creds: 200/204
+# └──────────────────────┘
+#         ↓ (password changed)
+# ┌──────────────────────────────┐
+# │ enrolled.bru                 │  Password changed to "NewSecurePassword123!"
+# ├──────────────────────────────┤  • All operations authenticated
+# │ auth_mode: basic             │  • Old password: 401
+# │ admin_pass: NewSecurePassword│  • New password: 200/204
+# └──────────────────────────────┘
+#         ↓ (enable mTLS)
+# ┌──────────────────────┐
+# │  mtls-mode.bru       │  Client certificates required
+# ├──────────────────────┤  • Client cert configured
+# │  auth_mode: mtls     │  • All endpoints require cert
+# │ + clientCertificates │  • Basic auth is NOT accepted
+# └──────────────────────┘
+
+source ./setup-sec-enroll-test-env.sh
+rm results-sec-enroll*.json 2>/dev/null || true
+
+# Initialize CA bundle variable (will be updated after self-signed cert generation)
+TEMP_CA_BUNDLE="${TEST_CERTS_DIR}/ca-bundle.pem"
+
+# Source unified path configuration from working directory
+PATHS_ENV="${SCRIPT_DIR}/../../traefik/wsgi_app/paths.env"
+if [ -f "$PATHS_ENV" ]; then
+    source "$PATHS_ENV"
+else
+    echo "Error: paths.env not found at $PATHS_ENV"
+    exit 1
+fi
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}=================================${NC}"
+echo -e "${BLUE}OpenThread REST API${NC}"
+echo -e "${BLUE}Enrollment & mTLS Test Suite${NC}"
+echo -e "${BLUE}=================================${NC}"
+echo ""
+echo "Test Environment:"
+echo "  - Host: ${MDNS_HOSTNAME}.local"
+echo "  - Protocol: HTTPS"
+echo "  - Port: 443"
+echo "  - Test Certs: $TEST_CERTS_DIR"
+echo ""
+echo "Workflow Structure:"
+echo "  - Phase 1: workflows/01-discovery/ (baseline env, CA bundle)"
+echo "  - Phase 2: workflows/02-basic-auth/ (initial-state env, CA bundle)"
+echo ""
+echo "  Server Authentication - LDevID Enrollment (self-signed or upload CA-signed cert+key):"
+echo "  - Phase 3: workflows/03-ldevid-selfsigned/ (enrolled env, CA bundle)"
+echo "  - Phase 3a: workflows/03a-verify-selfsigned/ (enrolled env, temp CA bundle with self-signed)"
+echo "  - Phase 4: workflows/04-ldevid-ca-signed/ (enrolled env, temp CA bundle)"
+echo "  - Phase 4a: workflows/04a-verify-ca-signed/ (enrolled env, CA bundle)"
+echo ""
+echo "  Server Authentication - LDevID Enrollment (EST push/pull mode):"
+echo "  - Phase 5: workflows/05-ldevid-csr-based/ (enrolled env, CA bundle)"
+echo "  - Phase 6: workflows/06-est-pull-mode/ (enrolled env, CA bundle)"
+echo ""
+echo "  Client Authentication - mTLS Enrollment:"
+echo "  - Phase 7: workflows/07-client-cert-management/ (enrolled env, enrolls cert + activates mTLS)"
+echo "  - Phase 8: workflows/08-authenticated-api-access/ (any auth mode, CA bundle)"
+echo ""
+
+# Check if Bruno CLI is installed
+if ! command -v bru &>/dev/null; then
+    echo -e "${RED}Error: Bruno CLI not installed${NC}"
+    echo "Install with: cd .. && ./install_bruno_cli"
+    exit 1
+fi
+
+# Function to print success
+test_success()
+{
+    echo "[$(date -Iseconds)] $1"
+    echo -e "${GREEN}✓ $1${NC}"
+}
+
+# Function to print error
+test_error()
+{
+    echo "[$(date -Iseconds)] $1"
+    echo -e "${RED}✗ $1${NC}"
+}
+
+test_https_cert()
+{
+    # Verify HTTPS endpoint serves CA-signed certificate
+    echo "Verifying HTTPS endpoint certificate fingerprint..."
+    if echo | openssl s_client -connect "${MDNS_HOSTNAME}.local:443" -servername "${MDNS_HOSTNAME}.local" -CAfile ${TEMP_CA_BUNDLE} 2>/dev/null | openssl x509 -outform PEM >/tmp/https-cert.pem 2>/dev/null; then
+        HTTPS_CERT_FINGERPRINT=$(openssl x509 -in /tmp/https-cert.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+
+        if [ "$LDEVID_FINGERPRINT" = "$HTTPS_CERT_FINGERPRINT" ]; then
+            test_success "HTTPS endpoint serves the uploaded CA-signed LDevID (fingerprint: $HTTPS_CERT_FINGERPRINT)"
+        else
+            test_error "HTTPS certificate mismatch (uploaded: $LDEVID_FINGERPRINT, HTTPS: $HTTPS_CERT_FINGERPRINT)"
+        fi
+
+        test_cert_chain /tmp/https-cert.pem
+    else
+        test_error "Failed to retrieve certificate from HTTPS endpoint"
+    fi
+}
+
+test_cert_chain()
+{
+    local CERT_PATH=$1
+    # Verify LDevID certificate chain is valid and trusted
+    if openssl verify -CAfile ${TEMP_CA_BUNDLE} $CERT_PATH 2>/dev/null | grep -q ": OK$"; then
+        test_success "Certificate chain is valid and trusted"
+    else
+        test_error "Certificate chain verification failed"
+    fi
+}
+
+##############################################################
+## Phase 1: Discovery (Well-Known URIs, no access to protected endpoints)
+##############################################################
+echo -e "\n${BLUE}=== Phase 1: Discovery (Well-Known URIs) ===${NC}"
+
+echo "Running Phase 1: Discovery workflow collection..."
+bru run workflows/01-discovery/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+# check access to protected endpoints returns 401
+bru run workflows/02-basic-auth/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/03-ldevid-selfsigned/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/04-ldevid-ca-signed/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/05-ldevid-csr-based/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/06-est-pull-mode/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/07-client-cert-management/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/08-authenticated-api-access/ --env baseline --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+##############################################################
+## Phase 2: Basic Client Authentication
+##############################################################
+echo -e "\n${BLUE}=== Phase 2: Basic Client Authentication ===${NC}"
+
+echo "Running Phase 2: Complete basic auth workflow (initial-state)..."
+bru run workflows/02-basic-auth/ --env initial-state --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+##############################################################
+## Phase 3: Server Authentication - LDevID Enrollment via API
+##############################################################
+echo -e "\n${BLUE}=== Phase 3: Server Authentication - Self-Signed LDevID ===${NC}"
+
+echo "Running Phase 3 workflow: Generate and activate self-signed LDevID..."
+bru run workflows/03-ldevid-selfsigned/ --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+PHASE3_WORKFLOW_LINE=$((LINENO - 1))
+
+echo "Waiting for LDevID generation and activation to complete..."
+sleep 5
+
+# Fetch LDevID certificate directly from server after Bruno test verifies endpoint works
+# (Bruno corrupts binary PKCS#7 data when converting HTTP response to string)
+echo "Fetching self-signed LDevID certificate from server..."
+if curl -sk --cacert ${TEST_CERTS_DIR}/ca-bundle.pem \
+    "https://${MDNS_HOSTNAME}.local:443/.well-known/thread/ldevid" 2>/dev/null \
+    | openssl pkcs7 -inform DER -print_certs -outform PEM >/tmp/phase3-ldevid.pem 2>/dev/null; then
+    if [ -s /tmp/phase3-ldevid.pem ]; then
+        echo "✓ LDevID certificate fetched and extracted from server"
+    else
+        echo "⚠ Failed to extract certificate from PKCS#7 response"
+    fi
+else
+    echo "⚠ Failed to fetch LDevID certificate from server"
+fi
+
+# After enrollment, server is now using the self-signed LDevID certificate
+# Create temporary CA bundle with the self-signed LDevID for verification
+if [ -s /tmp/phase3-ldevid.pem ]; then
+    cat /tmp/phase3-ldevid.pem >/tmp/ca-bundle-with-selfsigned.pem
+    TEMP_CA_BUNDLE="/tmp/ca-bundle-with-selfsigned.pem"
+    echo "✓ Created temporary CA bundle with self-signed LDevID: /tmp/ca-bundle-with-selfsigned.pem"
+    openssl x509 -in /tmp/phase3-ldevid.pem -noout -subject -dates 2>/dev/null | sed 's/^/  /'
+    LDEVID_FINGERPRINT=$(openssl x509 -in /tmp/phase3-ldevid.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+else
+    TEMP_CA_BUNDLE="${TEST_CERTS_DIR}/ca-bundle.pem"
+    LDEVID_FINGERPRINT=""
+    echo "⚠ Warning: Failed to fetch LDevID certificate, using original CA bundle"
+fi
+
+echo "Running Phase 3a verification: Verify self-signed LDevID is active..."
+bru run workflows/03a-verify-selfsigned/ --env enrolled --cacert ${TEMP_CA_BUNDLE} --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+test_https_cert
+
+##############################################################
+## Phase 4: Server Authentication - CA-Signed LDevID Enrollment
+##############################################################
+echo -e "\n${BLUE}=== Phase 4: Server Authentication - Push CA-Signed LDevID cert+key ===${NC}"
+
+# Generate EC key pair and CSR (consistent with certificate infrastructure)
+openssl ecparam -genkey -name secp256r1 -out /tmp/ca-ldevid-key.pem 2>/dev/null
+openssl req -new \
+    -key /tmp/ca-ldevid-key.pem \
+    -out /tmp/ca-ldevid.csr \
+    -subj "/C=CH/O=OpenThread/serialNumber=SN-$(date +%s)/CN=${MDNS_HOSTNAME}.local"
+
+# Sign the CSR with the issuing CA to create operational LDevID
+openssl x509 -req -in /tmp/ca-ldevid.csr \
+    -CA "${TEST_CERTS_DIR}/issuing-ca-cert.pem" \
+    -CAkey "${TEST_CERTS_DIR}/issuing-ca-key.pem" \
+    -CAcreateserial -out /tmp/ca-ldevid-cert.pem \
+    -days 365 -sha256 \
+    -extensions v3_ldevid -extfile <(
+        cat <<EOF
+[v3_ldevid]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth,clientAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+subjectAltName = DNS:${MDNS_HOSTNAME},DNS:${MDNS_HOSTNAME}.local,DNS:localhost
+EOF
+    )
+
+# Concatenate key+cert as PEM (per OpenAPI spec)
+cat /tmp/ca-ldevid-key.pem /tmp/ca-ldevid-cert.pem >/tmp/ca-signed-ldevid.pem
+export LDEVID_CERT_PEM=$(cat /tmp/ca-signed-ldevid.pem)
+
+if [ -n "${LDEVID_CERT_PEM:-}" ]; then
+    echo "Running Phase 4 workflow: Upload and activate CA-signed LDevID..."
+    # Use temp CA bundle since server still has self-signed cert from Phase 3
+    bru run workflows/04-ldevid-ca-signed/ --env enrolled --cacert ${TEMP_CA_BUNDLE} --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+    echo "Waiting for certificate activation to complete..."
+    sleep 5
+
+    # Server now has CA-signed certificate, switch back to original CA bundle
+    TEMP_CA_BUNDLE="${TEST_CERTS_DIR}/ca-bundle.pem"
+
+    echo "Running Phase 4a verification: Verify CA-signed LDevID is active..."
+    bru run workflows/04a-verify-ca-signed/ --env enrolled --cacert ${TEMP_CA_BUNDLE} --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+    LDEVID_FINGERPRINT=$(openssl x509 -in /tmp/ca-ldevid-cert.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+    test_https_cert
+else
+    echo "Skipped: CA-signed LDevID tests (certificate generation failed)"
+fi
+
+##############################################################
+## Phase 5: Server Authentication - EST Push Mode (CSR-Based Enrollment)
+##############################################################
+echo -e "\n${BLUE}=== Phase 5: Server Authentication - Push CA-Signed LDevID cert ===${NC}"
+
+# Test 5.1: Get CSR from device via Bruno (uses enrolled environment with admin credentials)
+echo "Running Phase 5 Test 5.1: GET CSR from device..."
+bru run workflows/05-ldevid-csr-based/01_get_csr.bru --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+CSR_RESULT_LINE=$((LINENO - 1))
+
+# Extract CSR from Bruno response (CSR is PEM text, not corrupted by JSON storage)
+echo "Extracting CSR from Bruno response..."
+CSR_RESULT_FILE="results-sec-enroll_${CSR_RESULT_LINE}.json"
+if [ -f "$CSR_RESULT_FILE" ]; then
+    jq -r '.[0].results[] | select(.request.url | contains("/.well-known/thread/csr")) | .response.data // empty' "$CSR_RESULT_FILE" >/tmp/device-csr.pem 2>/dev/null || true
+
+    if [ -s /tmp/device-csr.pem ]; then
+        echo "✓ CSR extracted from Bruno response (PEM text format)"
+        openssl req -in /tmp/device-csr.pem -noout -subject -verify 2>/dev/null | sed 's/^/  /'
+    else
+        echo "⚠ Failed to extract CSR from Bruno response"
+    fi
+else
+    echo "⚠ Bruno result file not found: $CSR_RESULT_FILE"
+fi
+
+# Test 5.2: Sign CSR with issuing CA
+echo ""
+echo "Test 5.2: Signing CSR with issuing CA..."
+export LDEVID_CERT_PEM=""
+if [ -s /tmp/device-csr.pem ]; then
+    openssl x509 -req -in /tmp/device-csr.pem \
+        -CA "${TEST_CERTS_DIR}/issuing-ca-cert.pem" \
+        -CAkey "${TEST_CERTS_DIR}/issuing-ca-key.pem" \
+        -CAcreateserial -out /tmp/csr-ldevid-cert.pem \
+        -days 365 -sha256 \
+        -extensions v3_ldevid -extfile <(
+            cat <<EOF
+[v3_ldevid]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth,clientAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+subjectAltName = DNS:${MDNS_HOSTNAME},DNS:${MDNS_HOSTNAME}.local,DNS:localhost
+EOF
+        ) 2>/dev/null
+
+    if [ -s /tmp/csr-ldevid-cert.pem ]; then
+        export LDEVID_CERT_PEM=$(cat /tmp/csr-ldevid-cert.pem)
+        echo "✓ CSR signed successfully with issuing CA"
+        openssl x509 -in /tmp/csr-ldevid-cert.pem -noout -subject -dates -fingerprint 2>/dev/null | sed 's/^/  /'
+    else
+        echo "⚠ Failed to sign CSR"
+    fi
+fi
+
+# Test 5.3-5.5: Upload, activate, and verify CSR-based certificate
+if [ -n "${LDEVID_CERT_PEM:-}" ]; then
+    echo ""
+    echo "Running Phase 5 Tests 5.3-5.5: Upload, activate, and verify..."
+    bru run workflows/05-ldevid-csr-based/02_upload_signed_cert.bru --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+    sleep 3
+
+    bru run workflows/05-ldevid-csr-based/03_activate_signed_cert.bru --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+    echo "Waiting for certificate activation to complete..."
+    sleep 5
+
+    LDEVID_FINGERPRINT=$(openssl x509 -in /var/lib/traefik/certs/ldevid-chain.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+    test_https_cert
+
+    bru run workflows/05-ldevid-csr-based/04_verify_signed_active.bru --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json
+else
+    echo "⚠ Skipping Phase 5 tests 5.3-5.5 (CSR signing failed)"
+fi
+
+##############################################################
+## Phase 6: Server Authentication - EST Pull Mode
+##############################################################
+# check re-enrollment via EST pull mode (with server in mTLS mode)
+OLD_LDEVID_FINGERPRINT=$(openssl x509 -in /var/lib/traefik/certs/ldevid-chain.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+./test-secure-enrollment-EST-pull --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client-cert-config.json
+# validate new certificate is now active after EST pull re-enrollment
+LDEVID_FINGERPRINT=$(openssl x509 -in /var/lib/traefik/certs/ldevid-chain.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+if [ "$LDEVID_FINGERPRINT" != "$OLD_LDEVID_FINGERPRINT" ]; then
+    test_success "EST pull mode re-enrollment succeeded with new LDevID certificate (fingerprint: $LDEVID_FINGERPRINT)"
+else
+    test_error "EST pull mode re-enrollment failed, LDevID certificate did not change"
+fi
+test_https_cert
+
+# check basic auth to api endpoints (with server in basic auth mode)
+bru run workflows/08-authenticated-api-access --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --noproxy --reporter-json results-sec-enroll_$LINENO.json || true
+
+##############################################################
+## Phase 7: Client Certificate Management (Basic Auth Mode -> mTLS Mode)
+##############################################################
+echo -e "\n${BLUE}=== Phase 7: Client Certificate Management ===${NC}"
+
+echo "Running Phase 7 workflow: Client certificate management..."
+bru run workflows/07-client-cert-management --env enrolled --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json || true
+
+##############################################################
+## Phase 8: mTLS Authenticated API Access Tests
+##############################################################
+echo -e "\n${BLUE}=== Phase 8: Authenticated API Access ===${NC}"
+
+echo "Running Phase 8 workflow: Authenticated API access tests (mTLS mode)..."
+# check mtls auth to api endpoints (with server in mTLS mode)
+bru run workflows/08-authenticated-api-access --env mtls-mode --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json || true
+
+# check re-enrollment via EST pull mode (with server in mTLS mode)
+OLD_LDEVID_FINGERPRINT=$(openssl x509 -in /var/lib/traefik/certs/ldevid-chain.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+./test-secure-enrollment-EST-pull --env mtls-mode --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client-cert-config.json
+# validate new certificate is now active after EST pull re-enrollment
+LDEVID_FINGERPRINT=$(openssl x509 -in /var/lib/traefik/certs/ldevid-chain.pem -noout -fingerprint -sha256 2>/dev/null | cut -d= -f2)
+if [ "$LDEVID_FINGERPRINT" != "$OLD_LDEVID_FINGERPRINT" ]; then
+    test_success "EST pull mode re-enrollment succeeded with new LDevID certificate (fingerprint: $LDEVID_FINGERPRINT)"
+else
+    test_error "EST pull mode re-enrollment failed, LDevID certificate did not change"
+fi
+test_https_cert
+
+# check client certificate management (with server in mTLS mode)
+bru run workflows/07-client-cert-management/06_put_client2_cert.bru --env mtls-mode --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json || true
+bru run workflows/07-client-cert-management/07_delete_client2_cert_by_id.bru --env mtls-mode --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json || true
+
+# check access to protected endpoints from unauthorized client2 returns 403 (with server in mTLS mode)
+bru run workflows/01-discovery/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/02-basic-auth/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/03-ldevid-selfsigned/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/04-ldevid-ca-signed/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/05-ldevid-csr-based/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/06-est-pull-mode/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/07-client-cert-management/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+bru run workflows/08-authenticated-api-access/ --env mtls-mode-403 --cacert ${TEST_CERTS_DIR}/ca-bundle.pem --client-cert-config client2-cert-config.json --noproxy --reporter-json results-sec-enroll_$LINENO.json
+
+##############################################################
+## Test Summary
+##############################################################
+echo -e "\n${BLUE}=== Test Summary ===${NC}"
+
+# Count individual test results from all result files
+TOTAL_ASSERTIONS=0
+PASSED_ASSERTIONS=0
+FAILED_ASSERTIONS=0
+TLS_ERRORS=0
+RESULT_FILE_COUNT=$(ls results-sec-enroll*.json 2>/dev/null | wc -l)
+
+if [ "$RESULT_FILE_COUNT" -gt 0 ]; then
+    # Parse each result file and count individual assertions
+    for result_file in results-sec-enroll*.json; do
+        if [ -f "$result_file" ]; then
+            # Count assertions in this file (Bruno format: array of collections, each with results array)
+            # Each result has assertionResults array
+            FILE_TOTAL=$(jq '[.[].results[].assertionResults[] // []] | length' "$result_file" 2>/dev/null || echo "0")
+            FILE_PASSED=$(jq '[.[].results[].assertionResults[] | select(.status == "pass")] | length' "$result_file" 2>/dev/null || echo "0")
+            FILE_FAILED=$(jq '[.[].results[].assertionResults[] | select(.status == "fail")] | length' "$result_file" 2>/dev/null || echo "0")
+
+            # Count TLS/network errors (status: "error" with no assertionResults)
+            FILE_TLS_ERRORS=$(jq '[.[].results[] | select(.status == "error")] | length' "$result_file" 2>/dev/null || echo "0")
+
+            TOTAL_ASSERTIONS=$((TOTAL_ASSERTIONS + FILE_TOTAL))
+            PASSED_ASSERTIONS=$((PASSED_ASSERTIONS + FILE_PASSED))
+            FAILED_ASSERTIONS=$((FAILED_ASSERTIONS + FILE_FAILED))
+            TLS_ERRORS=$((TLS_ERRORS + FILE_TLS_ERRORS))
+        fi
+    done
+
+    echo -e "${GREEN}Test Results from $RESULT_FILE_COUNT result file(s):${NC}"
+    echo "  Assertions:"
+    echo "    - Total: $TOTAL_ASSERTIONS"
+    echo "    - Passed: $PASSED_ASSERTIONS"
+    echo "    - Failed: $FAILED_ASSERTIONS"
+
+    if [ "$TLS_ERRORS" -gt 0 ]; then
+        echo -e "  ${RED}TLS/Network Errors: $TLS_ERRORS${NC}"
+        echo "    (Tests that failed to connect - likely certificate validation issues)"
+    fi
+
+    if [ "$FAILED_ASSERTIONS" -gt 0 ]; then
+        echo ""
+        echo -e "${RED}Failed Assertions:${NC}"
+        for result_file in results-sec-enroll*.json; do
+            if [ -f "$result_file" ]; then
+                # Extract failed assertions with test name and error
+                jq -r '.[].results[] | select(.assertionResults[] | select(.status == "fail")) | "  - \(.test.filename): \(.assertionResults[] | select(.status == "fail") | .error)"' "$result_file" 2>/dev/null
+            fi
+        done
+    fi
+
+    if [ "$TLS_ERRORS" -gt 0 ]; then
+        echo ""
+        echo -e "${RED}TLS/Network Errors (sample):${NC}"
+        # Show first 5 unique error messages
+        for result_file in results-sec-enroll*.json; do
+            if [ -f "$result_file" ]; then
+                jq -r '.[].results[] | select(.status == "error") | "  - \(.test.filename): \(.error)"' "$result_file" 2>/dev/null
+            fi
+        done | sort -u | head -5
+    fi
+
+    echo ""
+    echo "  - Result files: results-sec-enroll*.json"
+else
+    echo -e "${YELLOW}No test results found${NC}"
+fi
+
+echo ""
+echo -e "${BLUE}Test suite completed.${NC}"
+echo ""
+
+# Cleanup EST server if running
+if [ -n "${EST_SERVER_PID:-}" ] && kill -0 $EST_SERVER_PID 2>/dev/null; then
+    echo "Stopping EST server (PID: $EST_SERVER_PID)..."
+    kill $EST_SERVER_PID 2>/dev/null || true
+    wait $EST_SERVER_PID 2>/dev/null || true
+fi
+
+# Cleanup temporary EST server directory
+if [ -n "${EST_DIR:-}" ] && [ -d "$EST_DIR" ]; then
+    rm -rf "$EST_DIR"
+fi

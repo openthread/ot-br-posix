@@ -31,6 +31,7 @@ add_library(otbr-rest
     actions/add_thread_device.cpp
     actions/discover_network.cpp
     actions/energy_scan.cpp
+    actions/generate_ldevid.cpp
     actions/handler.cpp
     actions/network_diagnostic.cpp
     actions/reset_diagnostic_counters.cpp
