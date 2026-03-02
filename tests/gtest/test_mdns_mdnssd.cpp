@@ -65,3 +65,21 @@ TEST(MdnsSd, TestDNSErrorToString)
     EXPECT_NE(otbr::Mdns::DNSErrorToString(kDNSServiceErr_PollingMode), nullptr);
     EXPECT_NE(otbr::Mdns::DNSErrorToString(kDNSServiceErr_Timeout), nullptr);
 }
+
+TEST(MdnsSd, TestIsRetryableError)
+{
+    EXPECT_TRUE(otbr::Mdns::IsRetryableError(kDNSServiceErr_Transient));
+    EXPECT_TRUE(otbr::Mdns::IsRetryableError(kDNSServiceErr_ServiceNotRunning));
+    EXPECT_TRUE(otbr::Mdns::IsRetryableError(kDNSServiceErr_Timeout));
+    EXPECT_TRUE(otbr::Mdns::IsRetryableError(kDNSServiceErr_DefunctConnection));
+}
+
+TEST(MdnsSd, TestIsRetryableRegistrationError)
+{
+    EXPECT_TRUE(otbr::Mdns::IsRetryableRegistrationError(kDNSServiceErr_Transient));
+    EXPECT_TRUE(otbr::Mdns::IsRetryableRegistrationError(kDNSServiceErr_ServiceNotRunning));
+    EXPECT_TRUE(otbr::Mdns::IsRetryableRegistrationError(kDNSServiceErr_DefunctConnection));
+
+    // Timeout is treated as terminal for registration operations.
+    EXPECT_FALSE(otbr::Mdns::IsRetryableRegistrationError(kDNSServiceErr_Timeout));
+}
