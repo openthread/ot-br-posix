@@ -154,12 +154,18 @@ void Netif::Deinit(void)
 
 void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)
 {
-    std::vector<Ip6AddressInfo> updatedUnicastAddresses = mIp6UnicastAddresses;
+    std::vector<Ip6AddressInfo> updatedUnicastAddresses;
+
+    updatedUnicastAddresses.reserve(std::max(mIp6UnicastAddresses.size(), aAddrInfos.size()));
 
     // Remove stale addresses
     for (const Ip6AddressInfo &addrInfo : mIp6UnicastAddresses)
     {
-        if (std::find(aAddrInfos.begin(), aAddrInfos.end(), addrInfo) == aAddrInfos.end())
+        if (std::find(aAddrInfos.begin(), aAddrInfos.end(), addrInfo) != aAddrInfos.end())
+        {
+            updatedUnicastAddresses.push_back(addrInfo);
+        }
+        else
         {
             otbrError error;
 
@@ -167,14 +173,12 @@ void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrIn
             error = ProcessUnicastAddressChange(addrInfo, false);
             if (error == OTBR_ERROR_NONE)
             {
-                updatedUnicastAddresses.erase(
-                    std::remove(updatedUnicastAddresses.begin(), updatedUnicastAddresses.end(), addrInfo),
-                    updatedUnicastAddresses.end());
             }
             else
             {
                 otbrLogWarning("Failed to remove unicast address %s: %s",
                                Ip6Address(addrInfo.mAddress).ToString().c_str(), otbrErrorString(error));
+                updatedUnicastAddresses.push_back(addrInfo);
             }
         }
     }
