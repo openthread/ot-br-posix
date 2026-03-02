@@ -625,6 +625,71 @@ test_restapi()
     exit_message="Successful REST API server test."
 }
 
+# test the secure REST API server with enrollment
+test_secure_restapi()
+{
+    exit_message="Error in secure REST API server test"
+
+    exists_or_die ./script/setup-reverseproxy.sh
+    exists_or_die ./traefik/switch-config.sh
+    executable_or_die ./script/setup-reverseproxy.sh
+    executable_or_die ./traefik/switch-config.sh
+
+    # Setup reverse proxy from project root
+    sudo ./script/setup-reverseproxy.sh || die "Failed to setup reverse proxy"
+    # Set to default state (basic auth mode) and create necessary certificates for secure mode
+    sudo ./traefik/switch-config.sh basicauth default-state || die "Failed to reset to default state"
+
+    # Navigate to test directory
+    cd tests/restjsonapi
+    exists_or_die install_bruno_cli
+    exists_or_die test-secure-enrollment
+    executable_or_die test-secure-enrollment
+
+    ./install_bruno_cli || die "Failed to install bruno cli"
+
+    test_setup
+    ba_start
+    # We want a formed network
+    web_start
+    network_form
+
+    ./setDUTdestination.sh "${OT_CTL}" || die "Failed to set DUT destination"
+
+    # Run the test-secure-enrollment script
+    ./test-secure-enrollment || die "test-secure-enrollment failed"
+
+    cd ../..
+    # Validate conformance of openapi.yaml specification with the secure REST API server implementation.
+    python3 -m pip install --user "schemathesis>=4.0.5" || die "Failed to install schemathesis"
+    # validate enrolled mtls mode with client certificate authentication
+
+    # Unauthorized client
+    schemathesis run src/rest/openapi.yaml \
+        --url=https://$HOSTNAME.local \
+        --include-path-regex="/api/.*" \
+        --exclude-path-regex="/api/auth/certs.*|/api/devices/\{.*\}" \
+        --phases=examples \
+        --tls-verify="traefik/test-certs/ca-bundle.pem" \
+        --request-cert="traefik/test-certs/clients/client2-chain.pem" \
+        --request-cert-key="traefik/test-certs/clients/client2-key.pem" \
+        --workers=1
+
+    # Authorized client
+    schemathesis run src/rest/openapi.yaml \
+        --url=https://$HOSTNAME.local \
+        --include-path-regex="/api/.*" \
+        --exclude-path-regex="/api/auth/certs.*|/api/devices/\{.*\}|/api/auth/password" \
+        --phases=examples \
+        --tls-verify="traefik/test-certs/ca-bundle.pem" \
+        --request-cert="traefik/test-certs/clients/client-chain.pem" \
+        --request-cert-key="traefik/test-certs/clients/client-key.pem" \
+        --exclude-checks=ignored_auth \
+        --workers=1
+
+    exit_message="Successful secure REST API server test."
+}
+
 test_commissioning()
 {
     test_setup
@@ -645,6 +710,7 @@ main()
         test_meshcop_service
     elif [ "${TEST_CASE}" == "http_restapi" ]; then
         test_restapi
+        test_secure_restapi
     else
         test_commissioning
     fi

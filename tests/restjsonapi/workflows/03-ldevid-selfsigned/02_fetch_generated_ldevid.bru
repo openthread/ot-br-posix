@@ -1,0 +1,63 @@
+meta {
+  name: GET Generated LDevID Certificate
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread/ldevid
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/pkcs7-mime
+}
+
+assert {
+  res.status: eq {{ldevid_get_expected_status}}
+}
+
+tests {
+  test("LDevID certificate retrieved successfully", function() {
+    const expectedStatus = Number(bru.getEnvVar("ldevid_get_expected_status"));
+    
+    expect(res.status).to.equal(expectedStatus);
+    
+    if (res.status === 200) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+
+      expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+      const bodyLength = res.getBody().length;
+      expect(bodyLength).to.be.greaterThan(0);
+      console.log(`✓ LDevID certificate retrieved (${bodyLength} bytes)`);
+    } else if (res.status === 404) {
+      console.log("⚠ LDevID not found - task may still be processing");
+    }
+  });
+  
+  test("Response format is PKCS#7", function() {
+    if (res.status === 200) {
+      expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+      // Response body is binary PKCS#7 DER format
+      // Note: Bruno converts binary response to UTF-8 string, corrupting the data
+      // External scripts should fetch directly via curl for binary integrity
+    }
+  });
+}
+
+docs {
+  Fetches generated LDevID certificate in PKCS#7 format.
+}

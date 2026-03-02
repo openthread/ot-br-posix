@@ -102,7 +102,7 @@ do_markdown_format()
     echo -e '======================'
 
     git ls-files "${OT_MARKDOWN_SOURCES[@]}" | grep -v -E "^($(echo "${OT_EXCLUDE_DIRS[@]}" | tr ' ' '|'))" \
-        | xargs -n10 -P"$OT_BUILD_JOBS" npx prettier@2.0.4 --write
+        | xargs -n10 -P"$OT_BUILD_JOBS" npx --yes prettier@2.0.4 --write
 }
 
 do_markdown_check()
@@ -112,7 +112,7 @@ do_markdown_check()
     echo -e '======================'
 
     git ls-files "${OT_MARKDOWN_SOURCES[@]}" | grep -v -E "^($(echo "${OT_EXCLUDE_DIRS[@]}" | tr ' ' '|'))" \
-        | xargs -n10 -P"$OT_BUILD_JOBS" npx prettier@2.0.4 --check
+        | xargs -n10 -P"$OT_BUILD_JOBS" npx --yes prettier@2.0.4 --check
 }
 
 do_python_format()
@@ -163,7 +163,6 @@ do_check()
     if [ $# == 0 ]; then
         do_clang_check
         do_markdown_check
-        # python not currently used in this project
         # do_python_check
         do_shell_check
     elif [ "$1" == 'clang' ]; then
@@ -186,7 +185,6 @@ main()
     if [ $# == 0 ]; then
         do_clang_format
         do_markdown_format
-        # python not currently used in this project
         # do_python_format
         do_shell_format
     elif [ "$1" == 'clang' ]; then
