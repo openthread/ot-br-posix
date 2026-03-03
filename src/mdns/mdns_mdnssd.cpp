@@ -252,6 +252,12 @@ bool IsRetryableError(DNSServiceErrorType aError)
     return ret;
 }
 
+bool IsRetryableRegistrationError(DNSServiceErrorType aError)
+{
+    // Timeout indicates an unresponsive mDNSResponder during registration and should fail fast.
+    return aError != kDNSServiceErr_Timeout && IsRetryableError(aError);
+}
+
 PublisherMDnsSd::PublisherMDnsSd(StateCallback aCallback)
     : mHostsRef(nullptr)
     , mState(State::kIdle)
@@ -516,8 +522,7 @@ otbrError PublisherMDnsSd::DnssdServiceRegistration::Register(void)
 
     // Note: If the mDNSResponder service is in some bad state, `DNSServiceRegister` may block here for 60 seconds at
     // most.
-    // TODO: Abort on `Timeout` error, as it indicates an unresponsive mDNSResponder. This may require removing
-    // `kDNSServiceErr_Timeout` from `IsRetryableError` and adding specific handling for it.
+    // Timeout is treated as non-retryable in registration callbacks to fail fast.
     dnsError = DNSServiceRegister(&mServiceRef, kDNSServiceFlagsNoAutoRename, kDNSServiceInterfaceIndexAny,
                                   serviceNameCString, regType.c_str(),
                                   /* domain */ nullptr, hostNameCString, htons(mPort), mTxtData.size(), mTxtData.data(),
@@ -598,7 +603,7 @@ void PublisherMDnsSd::DnssdServiceRegistration::HandleRegisterResult(DNSServiceF
         otbrLogInfo("Successfully registered service %s.%s", mName.c_str(), mType.c_str());
         Complete(OTBR_ERROR_NONE);
     }
-    else if (IsRetryableError(aError))
+    else if (IsRetryableRegistrationError(aError))
     {
         otbrLogInfo("Will re-register service %s.%s on the retryable error: %s", mName.c_str(), mType.c_str(),
                     DNSErrorToString(aError));
@@ -698,7 +703,7 @@ void PublisherMDnsSd::DnssdHostRegistration::HandleRegisterResult(DNSServiceRef 
 
 void PublisherMDnsSd::DnssdHostRegistration::HandleRegisterResult(DNSRecordRef aRecordRef, DNSServiceErrorType aError)
 {
-    if (IsRetryableError(aError))
+    if (IsRetryableRegistrationError(aError))
     {
         otbrLogInfo("Will re-register host %s on the retryable error: %s", mName.c_str(), DNSErrorToString(aError));
         GetPublisher().ScheduleRetry<DnssdHostRegistration>(this, [](DnssdHostRegistration *aHostReg) {
@@ -848,7 +853,7 @@ void PublisherMDnsSd::DnssdKeyRegistration::HandleRegisterResult(DNSServiceError
         otbrLogInfo("Successfully registered key %s", mName.c_str());
         Complete(OTBR_ERROR_NONE);
     }
-    else if (IsRetryableError(aError))
+    else if (IsRetryableRegistrationError(aError))
     {
         otbrLogInfo("Will re-register key %s on the retryable error: %s", mName.c_str(), DNSErrorToString(aError));
         GetPublisher().ScheduleRetry<DnssdKeyRegistration>(this, [](DnssdKeyRegistration *aKeyReg) {
