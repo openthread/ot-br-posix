@@ -1329,7 +1329,7 @@ paths:
         Enable and disable the Thread protocol operation. If network interface
         hasn't been started yet, it will get started automatically.
       responses:
-        "204":
+        "200":
           description: Successful operation.
         "400":
           $ref: "#/components/responses/BadRequestError"
@@ -1439,7 +1439,7 @@ paths:
             schema:
               $ref: "#/components/schemas/DatasetTlv"
       responses:
-        "204":
+        "200":
           description: Successfully updated the active operational dataset.
         "201":
           description: Successfully created the active operational dataset.
@@ -1447,6 +1447,8 @@ paths:
           description: Invalid request body.
         "409":
           description: Writing active operational dataset rejected because Thread network is active.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /node/dataset/pending:
     get:
       tags:
@@ -1484,7 +1486,7 @@ paths:
             schema:
               $ref: "#/components/schemas/DatasetTlv"
       responses:
-        "204":
+        "200":
           description: Successfully updated the pending operational dataset.
         "201":
           description: Successfully created the pending operational dataset.
@@ -1522,8 +1524,6 @@ paths:
       responses:
         "200":
           description: Successful operation.
-        "204":
-          description: Already in state.
         "400":
           $ref: "#/components/responses/BadRequestError"
         "409":

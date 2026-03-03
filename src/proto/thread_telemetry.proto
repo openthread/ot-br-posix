@@ -25,10 +25,12 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
 syntax = "proto2";
-option optimize_for = LITE_RUNTIME;
 
 package threadnetwork;
+
+option optimize_for = LITE_RUNTIME;
 
 // Thread Telemetry data definition.
 // The field range for your data definition is determined as:
@@ -496,7 +498,8 @@ message TelemetryData {
     optional uint32 link_local_address_count = 5;
     optional uint32 unique_local_address_count = 6;
     optional uint32 global_unicast_address_count = 7;
-    // Indicates how many peer BRs (connected to the same Thread mesh network) are on the infra link.
+    // Indicates how many peer BRs (connected to the same Thread mesh
+    // network) are on the infra link.
     optional uint32 peer_br_count = 8;
   }
 
@@ -508,8 +511,9 @@ message TelemetryData {
     // Indicates whether the a ULA prefix (fc00::/7) added from this BR
     optional bool has_ula_route_added = 2;
 
-    // Indicates whether the other prefixes (other than "::/0" or "fc00::/7") added
-    // from this BR. (BR is a managed infrastructure router).
+    // Indicates whether the other prefixes (other than "::/0" or
+    // "fc00::/7") added from this BR. (BR is a managed infrastructure
+    // router).
     optional bool has_others_route_added = 3;
   }
 
@@ -529,13 +533,15 @@ message TelemetryData {
     // The number of ePSKc deactivations due to commissioner disconnected
     optional uint32 epskc_deactivation_disconnects = 5;
 
-    // The number of ePSKc activation failures caused by invalid border agent state
+    // The number of ePSKc activation failures caused by invalid border
+    // agent state
     optional uint32 epskc_invalid_ba_state_errors = 6;
 
     // The number of ePSKc activation failures caused by invalid argument
     optional uint32 epskc_invalid_args_errors = 7;
 
-    // The number of ePSKc activation failures caused by failed to start secure session
+    // The number of ePSKc activation failures caused by failed to start
+    // secure session
     optional uint32 epskc_start_secure_session_errors = 8;
 
     // The number of successful secure session establishment with ePSKc
@@ -544,7 +550,8 @@ message TelemetryData {
     // The number of failed secure session establishement with ePSKc
     optional uint32 epskc_secure_session_failures = 10;
 
-    // The number of active commissioner petitioned over secure session establishment with ePSKc
+    // The number of active commissioner petitioned over secure session
+    // establishment with ePSKc
     optional uint32 epskc_commissioner_petitions = 11;
 
     // The number of successful secure session establishment with PSKc
@@ -553,7 +560,8 @@ message TelemetryData {
     // The number of failed secure session establishement with PSKc
     optional uint32 pskc_secure_session_failures = 13;
 
-    // The number of active commissioner petitioned over secure session establishment with PSKc
+    // The number of active commissioner petitioned over secure session
+    // establishment with PSKc
     optional uint32 pskc_commissioner_petitions = 14;
 
     // The number of MGMT_ACTIVE_GET.req received
@@ -564,26 +572,32 @@ message TelemetryData {
   }
 
   enum EpskcDeactivatedReason {
-      EPSKC_DEACTIVATED_REASON_UNKNOWN = 0;         ///< Deactivated for an unknown reason.
-      EPSKC_DEACTIVATED_REASON_LOCAL_CLOSE = 1;     ///< Deactivated by a call to the API.
-      EPSKC_DEACTIVATED_REASON_REMOTE_CLOSE = 2;    ///< Disconnected by the peer.
-      EPSKC_DEACTIVATED_REASON_SESSION_ERROR = 3;   ///< Disconnected due to some error.
-      EPSKC_DEACTIVATED_REASON_SESSION_TIMEOUT = 4; ///< Disconnected due to timeout.
-      EPSKC_DEACTIVATED_REASON_MAX_ATTEMPTS = 5;    ///< Max allowed attempts reached.
-      EPSKC_DEACTIVATED_REASON_EPSKC_TIMEOUT = 6;   ///< The ePSKc mode timed out.
+    // Deactivated for an unknown reason.
+    EPSKC_DEACTIVATED_REASON_UNKNOWN = 0;
+    // Deactivated by a call to the API.
+    EPSKC_DEACTIVATED_REASON_LOCAL_CLOSE = 1;
+    // Disconnected by the peer.
+    EPSKC_DEACTIVATED_REASON_REMOTE_CLOSE = 2;
+    // Disconnected due to some error.
+    EPSKC_DEACTIVATED_REASON_SESSION_ERROR = 3;
+    // Disconnected due to timeout.
+    EPSKC_DEACTIVATED_REASON_SESSION_TIMEOUT = 4;
+    // Max allowed attempts reached.
+    EPSKC_DEACTIVATED_REASON_MAX_ATTEMPTS = 5;
+    // The ePSKc mode timed out.
+    EPSKC_DEACTIVATED_REASON_EPSKC_TIMEOUT = 6;
   }
 
   message BorderAgentEpskcJourneyInfo {
-
-      // The timestamp of different events during the ePSKc journey.
-      optional uint32 activated_msec = 1;
-      optional uint32 connected_msec = 2;
-      optional uint32 petitioned_msec = 3;
-      optional uint32 retrieved_active_dataset_msec = 4;
-      optional uint32 retrieved_pending_dataset_msec = 5;
-      optional uint32 keep_alive_msec = 6;
-      optional uint32 deactivated_msec = 7;
-      optional EpskcDeactivatedReason deactivated_reason = 8;
+    // The timestamp of different events during the ePSKc journey.
+    optional uint32 activated_msec = 1;
+    optional uint32 connected_msec = 2;
+    optional uint32 petitioned_msec = 3;
+    optional uint32 retrieved_active_dataset_msec = 4;
+    optional uint32 retrieved_pending_dataset_msec = 5;
+    optional uint32 keep_alive_msec = 6;
+    optional uint32 deactivated_msec = 7;
+    optional EpskcDeactivatedReason deactivated_reason = 8;
   }
 
   message BorderAgentInfo {
@@ -623,7 +637,7 @@ message TelemetryData {
     optional bytes hashed_pd_prefix = 9;
 
     // DHCPv6 PD processed RA Info
-    optional PdProcessedRaInfo pd_processed_ra_info= 10;
+    optional PdProcessedRaInfo pd_processed_ra_info = 10;
 
     // Information about TREL.
     optional TrelInfo trel_info = 11;

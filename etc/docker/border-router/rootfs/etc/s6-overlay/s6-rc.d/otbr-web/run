@@ -1,5 +1,6 @@
+#!/command/with-contenv bash
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2026, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,30 +27,15 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-name: OpenWrt
+OT_THREAD_IF="${OT_THREAD_IF:-wpan0}"
+readonly OT_THREAD_IF
 
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
-    branches:
-      - 'main'
+OT_WEB_LISTEN_ADDR="${OT_WEB_LISTEN_ADDR:-127.0.0.1}"
+readonly OT_WEB_LISTEN_ADDR
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
-  cancel-in-progress: true
+OT_WEB_LISTEN_PORT="${OT_WEB_LISTEN_PORT:-8080}"
+readonly OT_WEB_LISTEN_PORT
 
-jobs:
-  openwrt:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      with:
-        submodules: recursive
-    - name: Bootstrap
-      env:
-        BUILD_TARGET: "openwrt-check"
-      run: tests/scripts/bootstrap.sh
-    - name: Check
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test openwrt
+echo "Starting otbr-web..."
+
+exec stdbuf -oL /usr/sbin/otbr-web -I "${OT_THREAD_IF}" -d6 -s -a "${OT_WEB_LISTEN_ADDR}" -p "${OT_WEB_LISTEN_PORT}"

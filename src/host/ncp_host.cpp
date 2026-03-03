@@ -142,6 +142,10 @@ void NcpHost::Init(void)
     mNcpSpinel.SrpServerSetEnabled(/* aEnabled */ true);
 #endif
 #endif
+
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    mNcpSpinel.BorderRoutingSetDhcp6PdEnabled(true);
+#endif
     mIsInitialized = true;
 }
 
@@ -337,6 +341,24 @@ void NcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
 }
 #endif
 
+#ifndef OTBR_VENDOR_NAME
+otError NcpHost::SetVendorName(const char *aVendorName)
+{
+    // TODO: Implement SetVendorName under NCP mode.
+    OTBR_UNUSED_VARIABLE(aVendorName);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+#endif
+
+#ifndef OTBR_PRODUCT_NAME
+otError NcpHost::SetVendorModel(const char *aVendorModel)
+{
+    // TODO: Implement SetVendorModel under NCP mode.
+    OTBR_UNUSED_VARIABLE(aVendorModel);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+#endif
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
@@ -430,6 +452,13 @@ otbrError NcpHost::HandleIcmp6Nd(uint32_t          aInfraIfIndex,
 {
     return mNcpSpinel.HandleIcmp6Nd(aInfraIfIndex, aIp6Address, aData, aDataLen);
 }
+
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+otbrError NcpHost::BorderRoutingProcessDhcp6PdPrefix(const otBorderRoutingPrefixTableEntry *aPrefixInfo)
+{
+    return mNcpSpinel.BorderRoutingProcessDhcp6PdPrefix(aPrefixInfo);
+}
+#endif // OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
 
 } // namespace Host
 } // namespace otbr

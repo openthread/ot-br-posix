@@ -128,6 +128,12 @@ public:
 #if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     void SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData) override;
 #endif
+#ifndef OTBR_VENDOR_NAME
+    otError SetVendorName(const char *aVendorName) override;
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    otError SetVendorModel(const char *aVendorModel) override;
+#endif
 
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
@@ -176,6 +182,9 @@ private:
                             const Ip6Address &aIp6Address,
                             const uint8_t    *aData,
                             uint16_t          aDataLen) override;
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    otbrError BorderRoutingProcessDhcp6PdPrefix(const otBorderRoutingPrefixTableEntry *aPrefixInfo) override;
+#endif
 
     bool                      mIsInitialized;
     ot::Spinel::SpinelDriver &mSpinelDriver;

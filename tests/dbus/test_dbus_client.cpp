@@ -367,6 +367,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_default_route_added() == false);
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_ula_route_added());
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_others_route_added() == false);
+    TEST_ASSERT(telemetryData.wpan_border_router().has_multi_ail_detected());
     TEST_ASSERT(telemetryData.wpan_border_router().multi_ail_detected() == false);
 #endif
 #if !OTBR_ENABLE_MDNS_OPENTHREAD

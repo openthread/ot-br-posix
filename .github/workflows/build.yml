@@ -45,7 +45,7 @@ jobs:
   pretty:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Bootstrap
       run: BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
@@ -65,7 +65,7 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_DHCP6_PD=ON -DOTBR_SRP_SERVER_ON_INIT=ON"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
     - name: Bootstrap
@@ -73,7 +73,7 @@ jobs:
     - name: Run
       run: script/test build check
     - name: Codecov
-      uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
 
   rest-check:
     runs-on: ubuntu-22.04
@@ -88,7 +88,7 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_SRP_SERVER_ON_INIT=ON"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
     - name: Bootstrap
@@ -96,7 +96,7 @@ jobs:
     - name: Run
       run: script/test build check
     - name: Codecov
-      uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
 
   script-check:
     runs-on: ubuntu-22.04
@@ -104,7 +104,7 @@ jobs:
       BUILD_TARGET: script-check
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
     - name: Bootstrap
@@ -112,7 +112,7 @@ jobs:
     - name: Run
       run: tests/scripts/check-scripts
     - name: Codecov
-      uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
 
   scan-build:
     runs-on: ubuntu-22.04
@@ -121,7 +121,7 @@ jobs:
       CC: clang
       CXX: clang++
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
     - name: Bootstrap
@@ -134,7 +134,7 @@ jobs:
     env:
       BUILD_TARGET: package
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
     - name: Bootstrap
@@ -149,7 +149,7 @@ jobs:
     env:
       BUILD_TARGET: check
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: recursive
     - name: Bootstrap

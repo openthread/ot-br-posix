@@ -184,7 +184,7 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
     {
         if (sSyslogDisabled)
         {
-            printf("%s%s: %s\n", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+            fprintf(stderr, "%s%s: %s\n", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
         }
         else
         {

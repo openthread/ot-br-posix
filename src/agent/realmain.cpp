@@ -81,17 +81,16 @@ enum
     OTBR_OPT_SYSLOG_DISABLE          = 's',
     OTBR_OPT_VERSION                 = 'V',
     OTBR_OPT_SHORTMAX                = 128,
+    OTBR_OPT_DATA_PATH,
     OTBR_OPT_RADIO_VERSION,
     OTBR_OPT_AUTO_ATTACH,
     OTBR_OPT_REST_LISTEN_ADDR,
     OTBR_OPT_REST_LISTEN_PORT,
-#if OTBR_ENABLE_BORDER_AGENT
 #ifndef OTBR_VENDOR_NAME
     OTBR_OPT_VENDOR_NAME,
 #endif
 #ifndef OTBR_PRODUCT_NAME
     OTBR_OPT_MODEL_NAME,
-#endif
 #endif
 };
 
@@ -103,6 +102,7 @@ static otbr::Application *gApp = nullptr;
 void                       __gcov_flush();
 static const struct option kOptions[] = {
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
+    {"data-path", required_argument, nullptr, OTBR_OPT_DATA_PATH},
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
     {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
@@ -113,13 +113,11 @@ static const struct option kOptions[] = {
     {"auto-attach", optional_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
     {"rest-listen-address", required_argument, nullptr, OTBR_OPT_REST_LISTEN_ADDR},
     {"rest-listen-port", required_argument, nullptr, OTBR_OPT_REST_LISTEN_PORT},
-#if OTBR_ENABLE_BORDER_AGENT
 #ifndef OTBR_VENDOR_NAME
     {"vendor-name", required_argument, nullptr, OTBR_OPT_VENDOR_NAME},
 #endif
 #ifndef OTBR_PRODUCT_NAME
     {"model-name", required_argument, nullptr, OTBR_OPT_MODEL_NAME},
-#endif
 #endif
     {0, 0, 0, 0}};
 
@@ -166,12 +164,13 @@ static void PrintHelp(const char *aProgramName)
     fprintf(stderr,
             "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-s] [--auto-attach[=0/1]] "
             "RADIO_URL [RADIO_URL]\n"
+            "         --data-path        Path of directory to store data.\n"
             "     -I, --thread-ifname    Name of the Thread network interface (default: " DEFAULT_INTERFACE_NAME ").\n"
             "     -B, --backbone-ifname  Name of the backbone network interfaces (can be specified multiple times).\n"
             "     -d, --debug-level      The log level (EMERG=0, ALERT=1, CRIT=2, ERR=3, WARNING=4, NOTICE=5, INFO=6, "
             "DEBUG=7).\n"
             "     -v, --verbose          Enable verbose logging.\n"
-            "     -s, --syslog-disable   Disable syslog and print to standard out.\n"
+            "     -s, --syslog-disable   Disable syslog and print to standard error.\n"
             "     -h, --help             Show this help text.\n"
             "     -V, --version          Print the application's version and exit.\n"
             "     --radio-version        Print the radio coprocessor version and exit.\n"
@@ -180,13 +179,11 @@ static void PrintHelp(const char *aProgramName)
             "     --rest-listen-port     Network port to listen on for the REST API "
             "(default: " HELP_DEFAULT_REST_PORT_NUMBER ").\n",
             aProgramName);
-#if OTBR_ENABLE_BORDER_AGENT
 #ifndef OTBR_VENDOR_NAME
     fprintf(stderr, "     --vendor-name          Vendor Name.\n");
 #endif
 #ifndef OTBR_PRODUCT_NAME
     fprintf(stderr, "     --model-name           Model Name.\n");
-#endif
 #endif
     fprintf(stderr, "\n");
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
@@ -255,11 +252,11 @@ static int realmain(int argc, char *argv[])
     bool                      enableAutoAttach  = true;
     const char               *restListenAddress = "127.0.0.1";
     int                       restListenPort    = kPortNumber;
+    const char               *dataPath          = "";
     std::vector<const char *> radioUrls;
     std::vector<const char *> backboneInterfaceNames;
     long                      parseResult;
 
-#if OTBR_ENABLE_BORDER_AGENT
 #ifdef OTBR_VENDOR_NAME
     const char *vendorName = OTBR_VENDOR_NAME;
 #else
@@ -269,7 +266,6 @@ static int realmain(int argc, char *argv[])
     const char *productName = OTBR_PRODUCT_NAME;
 #else
     const char *productName = nullptr;
-#endif
 #endif
 
     std::set_new_handler(OnAllocateFailed);
@@ -334,7 +330,6 @@ static int realmain(int argc, char *argv[])
             VerifyOrExit(ParseInteger(optarg, parseResult), ret = EXIT_FAILURE);
             restListenPort = parseResult;
             break;
-#if OTBR_ENABLE_BORDER_AGENT
 #ifndef OTBR_VENDOR_NAME
         case OTBR_OPT_VENDOR_NAME:
             vendorName = optarg;
@@ -345,7 +340,10 @@ static int realmain(int argc, char *argv[])
             productName = optarg;
             break;
 #endif
-#endif
+        case OTBR_OPT_DATA_PATH:
+            dataPath = optarg;
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -353,7 +351,6 @@ static int realmain(int argc, char *argv[])
         }
     }
 
-#if OTBR_ENABLE_BORDER_AGENT
 #ifndef OTBR_VENDOR_NAME
     if (vendorName == nullptr)
     {
@@ -367,7 +364,6 @@ static int realmain(int argc, char *argv[])
         fprintf(stderr, "Model name must be set.\n");
         ExitNow(ret = EXIT_FAILURE);
     }
-#endif
 #endif
 
     otbrLogInit(argv[0], logLevel, verbose, syslogDisable);
@@ -404,7 +400,7 @@ static int realmain(int argc, char *argv[])
         const std::string backboneInterfaceName = backboneInterfaceNames.empty() ? "" : backboneInterfaceNames.front();
 #endif
         std::unique_ptr<otbr::Host::ThreadHost> host = otbr::Host::ThreadHost::Create(
-            interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach);
+            interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach, dataPath);
 
         otbr::Application app(*host, interfaceName, backboneInterfaceName);
 
@@ -413,20 +409,37 @@ static int realmain(int argc, char *argv[])
 #if OTBR_ENABLE_BORDER_AGENT
 #if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
 #ifdef OTBR_MESHCOP_SERVICE_INSTANCE_NAME
-        app.GetBorderAgent().SetMeshCoPServiceValues(OTBR_MESHCOP_SERVICE_INSTANCE_NAME, productName, vendorName, {},
-                                                     {});
+        SuccessOrExit(app.GetBorderAgent().SetMeshCoPServiceValues(OTBR_MESHCOP_SERVICE_INSTANCE_NAME, productName,
+                                                                   vendorName, {}, {}),
+                      ret = EXIT_FAILURE);
 #else
         char instanceName[otbr::kMaxVendorNameLength + 1 + otbr::kMaxProductNameLength + 1];
         snprintf(instanceName, sizeof(instanceName), "%s %s", vendorName, productName);
-        app.GetBorderAgent().SetMeshCoPServiceValues(instanceName, productName, vendorName, {}, {});
+        SuccessOrExit(app.GetBorderAgent().SetMeshCoPServiceValues(instanceName, productName, vendorName, {}, {}),
+                      ret = EXIT_FAILURE);
 #endif
-#else
-        OT_UNUSED_VARIABLE(vendorName);
-        OT_UNUSED_VARIABLE(productName);
 #endif
 #endif
 
         app.Init(restListenAddress, restListenPort);
+
+#ifndef OTBR_VENDOR_NAME
+        if (app.GetHost().GetCoprocessorType() == OT_COPROCESSOR_RCP)
+        {
+            SuccessOrExit(app.GetHost().SetVendorName(vendorName), ret = EXIT_FAILURE);
+        }
+#else
+        OT_UNUSED_VARIABLE(vendorName);
+#endif
+#ifndef OTBR_PRODUCT_NAME
+        if (app.GetHost().GetCoprocessorType() == OT_COPROCESSOR_RCP)
+        {
+            SuccessOrExit(app.GetHost().SetVendorModel(productName), ret = EXIT_FAILURE);
+        }
+#else
+        OT_UNUSED_VARIABLE(productName);
+#endif
+
 #if __linux__
         app.SetErrorCondition(errorCondition);
 #endif

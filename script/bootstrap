@@ -90,7 +90,7 @@ install_packages_apt()
     # Thread Certification tests require mDNSResponder ('dns-sd') to publish records for testing. Since the
     # same image is used for reference OTBRs and for reference Linux hosts, this needs to be installed here.
     if [[ ${OTBR_MDNS} == "mDNSResponder" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
-        (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2881.0.25 \
+        (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2881.40.18 \
             && cd /tmp \
             && wget -c --tries=3 --no-check-certificate -O "$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
                 "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz" \
