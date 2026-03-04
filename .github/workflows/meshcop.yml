@@ -64,6 +64,12 @@ jobs:
       run: |
         script/bootstrap
         script/test build
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+    - name: Install Bruno CLI
+      run: npm install -g @usebruno/cli
     - name: mDNS service
       env:
         TEST_CASE: "mdns_service"
