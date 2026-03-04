@@ -123,6 +123,13 @@ public:
                                       const Mdns::Publisher::TxtList &aNonStandardTxtEntries = {});
 
     /**
+     * This method returns the base service instance name.
+     *
+     * @returns The base service instance name.
+     */
+    const char *GetBaseServiceInstanceName(void) const { return mBaseServiceInstanceName.c_str(); }
+
+    /**
      * This method enables/disables the Border Agent.
      *
      * @param[in] aIsEnabled  Whether to enable the Border Agent.

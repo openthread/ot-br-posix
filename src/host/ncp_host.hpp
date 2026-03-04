@@ -126,7 +126,8 @@ public:
     void SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback) override;
     const otMeshLocalPrefix *GetMeshLocalPrefix(void) const override;
 #if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
-    void SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData) override;
+    void    SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData) override;
+    otError SetBorderAgentMeshCoPServiceBaseName(const char *aBaseName) override;
 #endif
 #ifndef OTBR_VENDOR_NAME
     otError SetVendorName(const char *aVendorName) override;

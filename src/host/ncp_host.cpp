@@ -339,6 +339,14 @@ void NcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
     // To be implemented
     OTBR_UNUSED_VARIABLE(aVendorTxtData);
 }
+
+otError NcpHost::SetBorderAgentMeshCoPServiceBaseName(const char *aBaseName)
+{
+    // To be implemented
+    OTBR_UNUSED_VARIABLE(aBaseName);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
 #endif
 
 #ifndef OTBR_VENDOR_NAME
