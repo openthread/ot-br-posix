@@ -303,8 +303,15 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     });
     SetBorderAgentOnInitState();
 #else
-    mBorderAgent.SetVendorTxtDataChangedCallback(
-        [this](const BorderAgent::TxtData &aVendorTxtData) { mHost.SetBorderAgentVendorTxtData(aVendorTxtData); });
+    mBorderAgent.SetVendorTxtDataChangedCallback([this](const BorderAgent::TxtData &aVendorTxtData) {
+        otError error = mHost.SetBorderAgentMeshCoPServiceBaseName(mBorderAgent.GetBaseServiceInstanceName());
+        if (error != OT_ERROR_NONE)
+        {
+            otbrLogWarning("Failed to set Border Agent MeshCoP service base name: %s", otThreadErrorToString(error));
+        }
+
+        mHost.SetBorderAgentVendorTxtData(aVendorTxtData);
+    });
 #endif
 #endif // OTBR_ENABLE_BORDER_AGENT
 #if OTBR_ENABLE_BACKBONE_ROUTER

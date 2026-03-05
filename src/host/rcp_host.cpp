@@ -916,6 +916,16 @@ void RcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
 exit:
     return;
 }
+
+otError RcpHost::SetBorderAgentMeshCoPServiceBaseName(const char *aBaseName)
+{
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    error = otBorderAgentSetMeshCoPServiceBaseName(mInstance, aBaseName);
+exit:
+    return error;
+}
 #endif
 
 #ifndef OTBR_VENDOR_NAME
