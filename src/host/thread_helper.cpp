@@ -733,6 +733,7 @@ void ThreadHelper::DetachGracefullyCallback(void)
     if (mDetachGracefullyHandler != nullptr)
     {
         mDetachGracefullyHandler(OT_ERROR_NONE);
+        mDetachGracefullyHandler = nullptr;
     }
 }
 
