@@ -714,7 +714,7 @@ void ThreadHelper::DetachGracefully(ResultHandler aHandler)
     VerifyOrExit(mDetachGracefullyHandler == nullptr, error = OT_ERROR_BUSY);
 
     SuccessOrExit(error = otThreadDetachGracefully(mInstance, &ThreadHelper::DetachGracefullyCallback, this));
-    mDetachGracefullyHandler = aHandler;
+    mDetachGracefullyHandler = std::move(aHandler);
 
 exit:
     if (error != OT_ERROR_NONE)
@@ -732,7 +732,8 @@ void ThreadHelper::DetachGracefullyCallback(void)
 {
     if (mDetachGracefullyHandler != nullptr)
     {
-        mDetachGracefullyHandler(OT_ERROR_NONE);
+        ResultHandler handler = std::move(mDetachGracefullyHandler);
+        handler(OT_ERROR_NONE);
     }
 }
 
