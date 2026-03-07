@@ -84,36 +84,36 @@ private:
     void ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs);
     void NcpResetHandler(void);
 
-    void ScanHandler(DBusRequest &aRequest);
-    void EnergyScanHandler(DBusRequest &aRequest);
-    void AttachHandler(DBusRequest &aRequest);
-    void AttachAllNodesToHandler(DBusRequest &aRequest);
-    void DetachHandler(DBusRequest &aRequest);
-    void LeaveHandler(DBusRequest &aRequest);
-    void FactoryResetHandler(DBusRequest &aRequest);
-    void ResetHandler(DBusRequest &aRequest);
-    void JoinerStartHandler(DBusRequest &aRequest);
-    void JoinerStopHandler(DBusRequest &aRequest);
-    void PermitUnsecureJoinHandler(DBusRequest &aRequest);
-    void AddOnMeshPrefixHandler(DBusRequest &aRequest);
-    void RemoveOnMeshPrefixHandler(DBusRequest &aRequest);
-    void AddExternalRouteHandler(DBusRequest &aRequest);
-    void RemoveExternalRouteHandler(DBusRequest &aRequest);
+    void ScanHandler(std::shared_ptr<DBusRequest> aRequest);
+    void EnergyScanHandler(std::shared_ptr<DBusRequest> aRequest);
+    void AttachHandler(std::shared_ptr<DBusRequest> aRequest);
+    void AttachAllNodesToHandler(std::shared_ptr<DBusRequest> aRequest);
+    void DetachHandler(std::shared_ptr<DBusRequest> aRequest);
+    void LeaveHandler(std::shared_ptr<DBusRequest> aRequest);
+    void FactoryResetHandler(std::shared_ptr<DBusRequest> aRequest);
+    void ResetHandler(std::shared_ptr<DBusRequest> aRequest);
+    void JoinerStartHandler(std::shared_ptr<DBusRequest> aRequest);
+    void JoinerStopHandler(std::shared_ptr<DBusRequest> aRequest);
+    void PermitUnsecureJoinHandler(std::shared_ptr<DBusRequest> aRequest);
+    void AddOnMeshPrefixHandler(std::shared_ptr<DBusRequest> aRequest);
+    void RemoveOnMeshPrefixHandler(std::shared_ptr<DBusRequest> aRequest);
+    void AddExternalRouteHandler(std::shared_ptr<DBusRequest> aRequest);
+    void RemoveExternalRouteHandler(std::shared_ptr<DBusRequest> aRequest);
 #if OTBR_ENABLE_BORDER_AGENT
-    void SetBorderAgentEnabledHandler(DBusRequest &aRequest);
-    void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
+    void SetBorderAgentEnabledHandler(std::shared_ptr<DBusRequest> aRequest);
+    void UpdateMeshCopTxtHandler(std::shared_ptr<DBusRequest> aRequest);
 #endif
-    void SetThreadEnabledHandler(DBusRequest &aRequest);
-    void JoinHandler(DBusRequest &aRequest);
-    void GetPropertiesHandler(DBusRequest &aRequest);
-    void LeaveNetworkHandler(DBusRequest &aRequest);
-    void SetNat64Enabled(DBusRequest &aRequest);
+    void SetThreadEnabledHandler(std::shared_ptr<DBusRequest> aRequest);
+    void JoinHandler(std::shared_ptr<DBusRequest> aRequest);
+    void GetPropertiesHandler(std::shared_ptr<DBusRequest> aRequest);
+    void LeaveNetworkHandler(std::shared_ptr<DBusRequest> aRequest);
+    void SetNat64Enabled(std::shared_ptr<DBusRequest> aRequest);
 #if OTBR_ENABLE_EPSKC
-    void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
-    void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
+    void ActivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest);
+    void DeactivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest);
 #endif
 
-    void IntrospectHandler(DBusRequest &aRequest);
+    void IntrospectHandler(std::shared_ptr<DBusRequest> aRequest);
 
     otError SetMeshLocalPrefixHandler(DBusMessageIter &aIter);
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
@@ -188,8 +188,12 @@ private:
     otError GetTelemetryDataHandler(DBusMessageIter &aIter);
     otError GetCapabilitiesHandler(DBusMessageIter &aIter);
 
-    void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
-    void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
+    void ReplyScanResult(std::shared_ptr<DBusRequest>           aRequest,
+                         otError                                aError,
+                         const std::vector<otActiveScanResult> &aResult);
+    void ReplyEnergyScanResult(std::shared_ptr<DBusRequest>           aRequest,
+                               otError                                aError,
+                               const std::vector<otEnergyScanResult> &aResult);
 
     otbr::Host::RcpHost &mHost;
 #if OTBR_ENABLE_TELEMETRY_DATA_API

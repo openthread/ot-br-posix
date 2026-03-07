@@ -342,13 +342,16 @@ void DBusThreadObjectRcp::NcpResetHandler(void)
                           GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
 
-void DBusThreadObjectRcp::ScanHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::ScanHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto threadHelper = mHost.GetThreadHelper();
-    threadHelper->Scan(std::bind(&DBusThreadObjectRcp::ReplyScanResult, this, aRequest, _1, _2));
+    threadHelper->Scan([this, aRequest](otError aError, const std::vector<otActiveScanResult> &aResult) {
+        ReplyScanResult(aRequest, aError, aResult);
+    });
 }
 
-void DBusThreadObjectRcp::ReplyScanResult(DBusRequest                           &aRequest,
+void DBusThreadObjectRcp::ReplyScanResult(std::shared_ptr<DBusRequest> aRequest,
+
                                           otError                                aError,
                                           const std::vector<otActiveScanResult> &aResult)
 {
@@ -356,7 +359,7 @@ void DBusThreadObjectRcp::ReplyScanResult(DBusRequest                           
 
     if (aError != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     }
     else
     {
@@ -373,11 +376,11 @@ void DBusThreadObjectRcp::ReplyScanResult(DBusRequest                           
             results.emplace_back(result);
         }
 
-        aRequest.Reply(std::tie(results));
+        aRequest->Reply(std::tie(results));
     }
 }
 
-void DBusThreadObjectRcp::EnergyScanHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::EnergyScanHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError  error        = OT_ERROR_NONE;
     auto     threadHelper = mHost.GetThreadHelper();
@@ -385,18 +388,21 @@ void DBusThreadObjectRcp::EnergyScanHandler(DBusRequest &aRequest)
 
     auto args = std::tie(scanDuration);
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
     threadHelper->EnergyScan(scanDuration,
-                             std::bind(&DBusThreadObjectRcp::ReplyEnergyScanResult, this, aRequest, _1, _2));
+                             [this, aRequest](otError aError, const std::vector<otEnergyScanResult> &aResult) {
+                                 ReplyEnergyScanResult(aRequest, aError, aResult);
+                             });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectRcp::ReplyEnergyScanResult(DBusRequest                           &aRequest,
+void DBusThreadObjectRcp::ReplyEnergyScanResult(std::shared_ptr<DBusRequest>           aRequest,
                                                 otError                                aError,
                                                 const std::vector<otEnergyScanResult> &aResult)
 {
@@ -404,7 +410,7 @@ void DBusThreadObjectRcp::ReplyEnergyScanResult(DBusRequest                     
 
     if (aError != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     }
     else
     {
@@ -418,11 +424,11 @@ void DBusThreadObjectRcp::ReplyEnergyScanResult(DBusRequest                     
             results.emplace_back(result);
         }
 
-        aRequest.Reply(std::tie(results));
+        aRequest->Reply(std::tie(results));
     }
 }
 
-void DBusThreadObjectRcp::AttachHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AttachHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto                 threadHelper = mHost.GetThreadHelper();
     std::string          name;
@@ -434,17 +440,17 @@ void DBusThreadObjectRcp::AttachHandler(DBusRequest &aRequest)
 
     auto args = std::tie(networkKey, panid, name, extPanId, pskc, channelMask);
 
-    if (IsDBusMessageEmpty(*aRequest.GetMessage()))
+    if (IsDBusMessageEmpty(*aRequest->GetMessage()))
     {
         threadHelper->Attach([aRequest](otError aError, int64_t aAttachDelayMs) mutable {
             OT_UNUSED_VARIABLE(aAttachDelayMs);
 
-            aRequest.ReplyOtResult(aError);
+            aRequest->ReplyOtResult(aError);
         });
     }
-    else if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
+    else if (DBusMessageToTuple(*aRequest->GetMessage(), args) != OTBR_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
+        aRequest->ReplyOtResult(OT_ERROR_INVALID_ARGS);
     }
     else
     {
@@ -452,37 +458,37 @@ void DBusThreadObjectRcp::AttachHandler(DBusRequest &aRequest)
                              [aRequest](otError aError, int64_t aAttachDelayMs) mutable {
                                  OT_UNUSED_VARIABLE(aAttachDelayMs);
 
-                                 aRequest.ReplyOtResult(aError);
+                                 aRequest->ReplyOtResult(aError);
                              });
     }
 }
 
-void DBusThreadObjectRcp::AttachAllNodesToHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AttachAllNodesToHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     std::vector<uint8_t> dataset;
     otError              error = OT_ERROR_NONE;
 
     auto args = std::tie(dataset);
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
     mHost.GetThreadHelper()->AttachAllNodesTo(dataset, [aRequest](otError error, int64_t aAttachDelayMs) mutable {
-        aRequest.ReplyOtResult<int64_t>(error, aAttachDelayMs);
+        aRequest->ReplyOtResult<int64_t>(error, aAttachDelayMs);
     });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectRcp::DetachHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::DetachHandler(std::shared_ptr<DBusRequest> aRequest)
 {
-    aRequest.ReplyOtResult(mHost.GetThreadHelper()->Detach());
+    aRequest->ReplyOtResult(mHost.GetThreadHelper()->Detach());
 }
 
-void DBusThreadObjectRcp::FactoryResetHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::FactoryResetHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error = OT_ERROR_NONE;
 
@@ -491,41 +497,41 @@ void DBusThreadObjectRcp::FactoryResetHandler(DBusRequest &aRequest)
     mHost.Reset();
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
-void DBusThreadObjectRcp::ResetHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::ResetHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     mHost.Reset();
-    aRequest.ReplyOtResult(OT_ERROR_NONE);
+    aRequest->ReplyOtResult(OT_ERROR_NONE);
 }
 
-void DBusThreadObjectRcp::JoinerStartHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::JoinerStartHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto        threadHelper = mHost.GetThreadHelper();
     std::string pskd, provisionUrl, vendorName, vendorModel, vendorSwVersion, vendorData;
     auto        args = std::tie(pskd, provisionUrl, vendorName, vendorModel, vendorSwVersion, vendorData);
 
-    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
+    if (DBusMessageToTuple(*aRequest->GetMessage(), args) != OTBR_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
+        aRequest->ReplyOtResult(OT_ERROR_INVALID_ARGS);
     }
     else
     {
         threadHelper->JoinerStart(pskd, provisionUrl, vendorName, vendorModel, vendorSwVersion, vendorData,
-                                  [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
+                                  [aRequest](otError aError) mutable { aRequest->ReplyOtResult(aError); });
     }
 }
 
-void DBusThreadObjectRcp::JoinerStopHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::JoinerStopHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto threadHelper = mHost.GetThreadHelper();
 
     otJoinerStop(threadHelper->GetInstance());
-    aRequest.ReplyOtResult(OT_ERROR_NONE);
+    aRequest->ReplyOtResult(OT_ERROR_NONE);
 }
 
-void DBusThreadObjectRcp::PermitUnsecureJoinHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::PermitUnsecureJoinHandler(std::shared_ptr<DBusRequest> aRequest)
 {
 #ifdef OTBR_ENABLE_UNSECURE_JOIN
     auto     threadHelper = mHost.GetThreadHelper();
@@ -533,20 +539,20 @@ void DBusThreadObjectRcp::PermitUnsecureJoinHandler(DBusRequest &aRequest)
     uint32_t timeout;
     auto     args = std::tie(port, timeout);
 
-    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
+    if (DBusMessageToTuple(*aRequest->GetMessage(), args) != OTBR_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
+        aRequest->ReplyOtResult(OT_ERROR_INVALID_ARGS);
     }
     else
     {
-        aRequest.ReplyOtResult(threadHelper->PermitUnsecureJoin(port, timeout));
+        aRequest->ReplyOtResult(threadHelper->PermitUnsecureJoin(port, timeout));
     }
 #else
-    aRequest.ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
+    aRequest->ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
 #endif
 }
 
-void DBusThreadObjectRcp::AddOnMeshPrefixHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AddOnMeshPrefixHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto                 threadHelper = mHost.GetThreadHelper();
     OnMeshPrefix         onMeshPrefix;
@@ -554,7 +560,7 @@ void DBusThreadObjectRcp::AddOnMeshPrefixHandler(DBusRequest &aRequest)
     otError              error = OT_ERROR_NONE;
     otBorderRouterConfig config;
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
     // size is guaranteed by parsing
     std::copy(onMeshPrefix.mPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.mPrefix.end(),
@@ -572,10 +578,10 @@ void DBusThreadObjectRcp::AddOnMeshPrefixHandler(DBusRequest &aRequest)
     SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
-void DBusThreadObjectRcp::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::RemoveOnMeshPrefixHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto        threadHelper = mHost.GetThreadHelper();
     Ip6Prefix   onMeshPrefix;
@@ -583,7 +589,7 @@ void DBusThreadObjectRcp::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
     otError     error = OT_ERROR_NONE;
     otIp6Prefix prefix;
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     // size is guaranteed by parsing
     std::copy(onMeshPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
     prefix.mLength = onMeshPrefix.mLength;
@@ -592,10 +598,10 @@ void DBusThreadObjectRcp::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
     SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
-void DBusThreadObjectRcp::AddExternalRouteHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AddExternalRouteHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto                  threadHelper = mHost.GetThreadHelper();
     ExternalRoute         route;
@@ -604,7 +610,7 @@ void DBusThreadObjectRcp::AddExternalRouteHandler(DBusRequest &aRequest)
     otExternalRouteConfig otRoute;
     otIp6Prefix          &prefix = otRoute.mPrefix;
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
     // size is guaranteed by parsing
     std::copy(route.mPrefix.mPrefix.begin(), route.mPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
@@ -619,10 +625,10 @@ void DBusThreadObjectRcp::AddExternalRouteHandler(DBusRequest &aRequest)
     }
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
-void DBusThreadObjectRcp::RemoveExternalRouteHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::RemoveExternalRouteHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     auto        threadHelper = mHost.GetThreadHelper();
     Ip6Prefix   routePrefix;
@@ -630,7 +636,7 @@ void DBusThreadObjectRcp::RemoveExternalRouteHandler(DBusRequest &aRequest)
     otError     error = OT_ERROR_NONE;
     otIp6Prefix prefix;
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
     // size is guaranteed by parsing
     std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
@@ -640,16 +646,16 @@ void DBusThreadObjectRcp::RemoveExternalRouteHandler(DBusRequest &aRequest)
     SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
-void DBusThreadObjectRcp::IntrospectHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::IntrospectHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     std::string xmlString(
 #include "dbus/server/introspect.hpp"
     );
 
-    aRequest.Reply(std::tie(xmlString));
+    aRequest->Reply(std::tie(xmlString));
 }
 
 otError DBusThreadObjectRcp::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
@@ -1309,27 +1315,27 @@ exit:
 }
 
 #if OTBR_ENABLE_BORDER_AGENT
-void DBusThreadObjectRcp::SetBorderAgentEnabledHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::SetBorderAgentEnabledHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error  = OT_ERROR_NONE;
     bool    enable = false;
     auto    args   = std::tie(enable);
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     mBorderAgent.SetEnabled(enable);
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
-void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError                                     error = OT_ERROR_NONE;
     std::map<std::string, std::vector<uint8_t>> update;
     std::vector<TxtEntry>                       updatedTxtEntries;
     auto                                        args = std::tie(updatedTxtEntries);
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     for (const auto &entry : updatedTxtEntries)
     {
         update[entry.mKey] = entry.mValue;
@@ -1358,7 +1364,7 @@ void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     mBorderAgent.UpdateVendorMeshCoPTxtEntries(update);
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 #endif // OTBR_ENABLE_BORDER_AGENT
 
@@ -1576,9 +1582,9 @@ exit:
     return error;
 }
 
-void DBusThreadObjectRcp::GetPropertiesHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::GetPropertiesHandler(std::shared_ptr<DBusRequest> aRequest)
 {
-    UniqueDBusMessage        reply(dbus_message_new_method_return(aRequest.GetMessage()));
+    UniqueDBusMessage        reply(dbus_message_new_method_return(aRequest->GetMessage()));
     DBusMessageIter          iter;
     DBusMessageIter          replyIter;
     DBusMessageIter          replySubIter;
@@ -1586,7 +1592,7 @@ void DBusThreadObjectRcp::GetPropertiesHandler(DBusRequest &aRequest)
     otError                  error = OT_ERROR_NONE;
 
     VerifyOrExit(reply != nullptr, error = OT_ERROR_NO_BUFS);
-    VerifyOrExit(dbus_message_iter_init(aRequest.GetMessage(), &iter), error = OT_ERROR_FAILED);
+    VerifyOrExit(dbus_message_iter_init(aRequest->GetMessage(), &iter), error = OT_ERROR_FAILED);
     VerifyOrExit(DBusMessageExtract(&iter, propertyNames) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
 
     dbus_message_iter_init_append(reply.get(), &replyIter);
@@ -1609,11 +1615,11 @@ void DBusThreadObjectRcp::GetPropertiesHandler(DBusRequest &aRequest)
 exit:
     if (error == OT_ERROR_NONE)
     {
-        dbus_connection_send(aRequest.GetConnection(), reply.get(), nullptr);
+        dbus_connection_send(aRequest->GetConnection(), reply.get(), nullptr);
     }
     else
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
@@ -1831,27 +1837,27 @@ void DBusThreadObjectRcp::ActiveDatasetChangeHandler(const otOperationalDatasetT
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, value);
 }
 
-void DBusThreadObjectRcp::SetThreadEnabledHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::SetThreadEnabledHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error  = OT_ERROR_NONE;
     bool    enable = false;
     auto    args   = std::tie(enable);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
     mHost.SetThreadEnabled(enable, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectRcp::JoinHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::JoinHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     std::vector<uint8_t>     dataset;
     otOperationalDatasetTlvs activeOpDatasetTlvs;
@@ -1859,7 +1865,7 @@ void DBusThreadObjectRcp::JoinHandler(DBusRequest &aRequest)
 
     auto args = std::tie(dataset);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
     VerifyOrExit(dataset.size() <= sizeof(activeOpDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
     std::copy(dataset.begin(), dataset.end(), activeOpDatasetTlvs.mTlvs);
@@ -1867,17 +1873,17 @@ void DBusThreadObjectRcp::JoinHandler(DBusRequest &aRequest)
 
     mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::LeaveNetworkHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     constexpr int kExitCodeShouldRestart = 7;
 
@@ -1887,7 +1893,7 @@ void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
         SuccessOrExit(error = otInstanceErasePersistentInfo(mHost.GetInstance()));
 
     exit:
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
         if (error == OT_ERROR_NONE)
         {
             Flush();
@@ -1897,17 +1903,17 @@ void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
 }
 
 #if OTBR_ENABLE_NAT64
-void DBusThreadObjectRcp::SetNat64Enabled(DBusRequest &aRequest)
+void DBusThreadObjectRcp::SetNat64Enabled(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error = OT_ERROR_NONE;
     bool    enable;
     auto    args = std::tie(enable);
 
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     otNat64SetEnabled(mHost.GetInstance(), enable);
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
 otError DBusThreadObjectRcp::GetNat64State(DBusMessageIter &aIter)
@@ -2059,7 +2065,7 @@ exit:
 void DBusThreadObjectRcp::SetNat64Enabled(DBusRequest &aRequest)
 {
     OTBR_UNUSED_VARIABLE(aRequest);
-    aRequest.ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
+    aRequest->ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
 }
 
 otError DBusThreadObjectRcp::GetNat64State(DBusMessageIter &aIter)
@@ -2124,14 +2130,14 @@ exit:
     return error;
 }
 
-void DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error        = OT_ERROR_NONE;
     auto    threadHelper = mHost.GetThreadHelper();
     bool    retain_active_session;
     auto    args = std::tie(retain_active_session);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
     // Stop the ephemeral key use if
     //  - there is no active session, or
@@ -2154,10 +2160,10 @@ void DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aReques
     otBorderAgentEphemeralKeyStop(threadHelper->GetInstance());
 
 exit:
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
 }
 
-void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError     error        = OT_ERROR_NONE;
     auto        threadHelper = mHost.GetThreadHelper();
@@ -2168,7 +2174,7 @@ void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
     VerifyOrExit(otBorderAgentEphemeralKeyGetState(threadHelper->GetInstance()) != OT_BORDER_AGENT_STATE_DISABLED,
                  error = OT_ERROR_NOT_CAPABLE);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OT_ERROR_INVALID_ARGS);
 
     SuccessOrExit(mBorderAgent.CreateEphemeralKey(ePskc), error = OT_ERROR_INVALID_ARGS);
@@ -2180,11 +2186,11 @@ void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
 exit:
     if (error == OT_ERROR_NONE)
     {
-        aRequest.Reply(std::tie(ePskc));
+        aRequest->Reply(std::tie(ePskc));
     }
     else
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 #endif // OTBR_ENABLE_EPSKC
