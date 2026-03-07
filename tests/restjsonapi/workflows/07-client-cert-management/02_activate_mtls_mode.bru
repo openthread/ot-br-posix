@@ -1,0 +1,68 @@
+meta {
+  name: POST Enroll - Activate mTLS Mode
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/enroll
+  body: json
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode !== "noAuth") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "est_mode": "push"
+  }
+}
+
+assert {
+  res.status: eq {{enroll_post_expected_status}}
+}
+
+tests {
+  test("mTLS mode activation", function() {
+    const expectedStatus = parseInt(bru.getEnvVar('enroll_post_expected_status'));
+    expect(res.status).to.equal(expectedStatus);
+
+    if (res.status === 204) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+
+      console.log("✓ mTLS mode activation completed");
+      console.log("  Server will close TLS sessions and reconfigure reverse proxy");
+      console.log("  All future requests will require client certificates for authentication");
+      console.log("  Basic Authentication will no longer be accepted");
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      const errorMessage = res.body?.error || res.body?.message || "Unknown error";
+      console.log(`✗ mTLS mode activation failed: ${errorMessage}`);
+    }
+  });
+}
+
+script:post-response {
+  // Wait for reverse proxy reconfiguration to complete
+  await new Promise(resolve => setTimeout(resolve, 5000));
+}
+
+docs {
+  Switches authentication from Basic Auth to mTLS mode.
+}

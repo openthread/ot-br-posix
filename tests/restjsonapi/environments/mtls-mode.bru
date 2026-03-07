@@ -1,0 +1,40 @@
+vars {
+  host: {{process.env.MDNS_HOSTNAME}}.local
+  base_path: /api
+  port: 443
+  protocol: https
+  
+  auth_mode: mtls
+  admin_user: admin
+  admin_pass: NewSecurePassword123!
+  
+  wellknown_expected_status: 200
+  idevid_expected_status: 200
+  ldevid_get_expected_status: 200
+  
+  ldevid_put_expected_status: 204
+  password_post_expected_status: 200
+  password_put_expected_status: 204
+  wrong_password_expected_status: 401
+  csr_get_expected_status: 200 
+  enroll_post_expected_status: 204
+  generate_ldevid_task_expected_status: 200
+  
+  client_cert_put_expected_status: 201
+  client_cert_get_list_expected_status: 200
+  client_cert_get_pkcs7_expected_status: 200
+  client_cert_get_by_id_expected_status: 200
+  client_cert_delete_expected_status: 204
+
+  node_get_expected_status: 200
+  
+  ldevid_cert_pem: {{process.env.LDEVID_CERT_PEM}}
+  client_cert_pem: {{process.env.CLIENT_CERT_PEM}}
+  client_cert_id: {{process.env.CLIENT_CERT_ID}}
+  client2_cert_pem: {{process.env.CLIENT2_CERT_PEM}}
+  client2_cert_id: {{process.env.CLIENT2_CERT_ID}}
+  
+  est_server_url: https://localhost:8888
+  
+  test_certs_dir: {{process.env.TEST_CERTS_DIR}}
+}

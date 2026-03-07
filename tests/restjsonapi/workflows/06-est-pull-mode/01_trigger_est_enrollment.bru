@@ -1,0 +1,65 @@
+meta {
+  name: POST /api/auth/enroll (EST Pull Mode)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/enroll
+  body: json
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "est_server": "{{est_server_url}}"
+  }
+}
+
+assert {
+  res.status: eq {{enroll_post_expected_status}}
+}
+
+tests {
+  test("EST pull mode enrollment initiated", function() {   
+    if (res.status === 204) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+
+      console.log("✓ EST enrolled certificate activation completed");
+      console.log("  Server closing TLS sessions and reloading with new certificate");
+      console.log("  Wait 5 seconds for certificate reload to complete");
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      const errorMessage = res.body?.error || res.body?.message || "Unknown error";
+      console.log(`✗ Certificate activation failed: ${errorMessage}`);
+    }
+
+    const expectedStatus = Number(bru.getEnvVar("enroll_post_expected_status"));
+    expect(res.status).to.equal(expectedStatus);
+  });
+}
+
+script:post-response {
+  await new Promise(resolve => setTimeout(resolve, 5000));
+}
+
+docs {
+  Triggers EST pull mode enrollment with automatic CSR/signing.
+}
