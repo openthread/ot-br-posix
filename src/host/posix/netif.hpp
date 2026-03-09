@@ -79,8 +79,11 @@ public:
     unsigned int GetIfIndex(void) const { return mNetifIndex; }
 
 private:
+    friend class NetifUnicastAddressCacheTestPeer;
+
     // TODO: Retrieve the Maximum Ip6 size from the coprocessor.
     static constexpr size_t kIp6Mtu = 1280;
+    using UnicastAddressChangeHandler = std::function<otbrError(const Ip6AddressInfo &, bool)>;
 
     void Clear(void);
 
@@ -90,6 +93,9 @@ private:
 
     void      PlatformSpecificInit(void);
     void      SetAddrGenModeToNone(void);
+    static std::vector<Ip6AddressInfo> ReconcileIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aCachedAddrInfos,
+                                                                    const std::vector<Ip6AddressInfo> &aDesiredAddrInfos,
+                                                                    const UnicastAddressChangeHandler &aChangeHandler);
     otbrError ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
     otbrError ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded);
     void      ProcessIp6Send(void);

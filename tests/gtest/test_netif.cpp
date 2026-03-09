@@ -62,6 +62,62 @@
 #include "host/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
 
+namespace otbr {
+
+class NetifUnicastAddressCacheTestPeer
+{
+public:
+    static std::vector<Ip6AddressInfo> ReconcileIp6UnicastAddresses(
+        const std::vector<Ip6AddressInfo> &aCachedAddrInfos,
+        const std::vector<Ip6AddressInfo> &aDesiredAddrInfos,
+        const std::function<otbrError(const Ip6AddressInfo &, bool)> &aChangeHandler)
+    {
+        return Netif::ReconcileIp6UnicastAddresses(aCachedAddrInfos, aDesiredAddrInfos, aChangeHandler);
+    }
+};
+
+} // namespace otbr
+
+TEST(Netif, ReconcileUnicastAddressesReplacesStaleMetadataAfterSuccessfulAdd)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x07, 0x7f}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated =
+        otbr::NetifUnicastAddressCacheTestPeer::ReconcileIp6UnicastAddresses(
+            {kCached}, {kDesired}, [&](const otbr::Ip6AddressInfo &aAddrInfo, bool aIsAdded) {
+                if (!aIsAdded)
+                {
+                    EXPECT_EQ(aAddrInfo, kCached);
+                    return OTBR_ERROR_ERRNO;
+                }
+
+                EXPECT_EQ(aAddrInfo, kDesired);
+                return OTBR_ERROR_NONE;
+            });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kDesired);
+}
+
+TEST(Netif, ReconcileUnicastAddressesKeepsCachedEntryWhenReplacementAddFails)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x07, 0x7f}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated =
+        otbr::NetifUnicastAddressCacheTestPeer::ReconcileIp6UnicastAddresses(
+            {kCached}, {kDesired},
+            [&](const otbr::Ip6AddressInfo &, bool) { return OTBR_ERROR_ERRNO; });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kCached);
+}
+
 // Only Test on linux platform for now.
 #ifdef __linux__
 
