@@ -66,6 +66,7 @@ add_executable(otbr-gtest-unit-dnssd
     ${OTBR_PROJECT_DIRECTORY}/src/utils/dns_utils.cpp
     ${OTBR_PROJECT_DIRECTORY}/src/utils/string_utils.cpp
     test_dnssd.cpp
+    test_mdns_mdnssd.cpp
 )
 target_compile_options(otbr-gtest-unit-dnssd
     PRIVATE
