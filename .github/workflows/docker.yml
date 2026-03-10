@@ -119,7 +119,7 @@ jobs:
           ${TAGS} --file etc/docker/test/Dockerfile ." >> $GITHUB_OUTPUT
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
       with:
         image: tonistiigi/binfmt:qemu-v8.1.5
 
