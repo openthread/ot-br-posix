@@ -34,16 +34,29 @@
 #ifndef OTBR_AGENT_POSIX_DAEMON_HPP_
 #define OTBR_AGENT_POSIX_DAEMON_HPP_
 
-#include <vector>
+#include <string>
+
+#include <openthread/cli.h>
+#include <openthread/platform/toolchain.h>
 
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
 
-class CliDaemon
+class CliDaemon : public MainloopProcessor
 {
 public:
+    /**
+     * This enumeration defines the CLI Daemon modes.
+     */
+    enum : uint8_t
+    {
+        OTBR_DAEMON_MODE_UNIX_SOCKET = (1 << 0), ///< Enable CLI over Unix socket.
+        OTBR_DAEMON_MODE_CONSOLE     = (1 << 1), ///< Enable CLI over console (stdin/stdout).
+    };
+    static constexpr size_t kCliMaxLineLength = OTBR_CONFIG_CLI_MAX_LINE_LENGTH;
+
     class Dependencies
     {
     public:
@@ -52,28 +65,70 @@ public:
         virtual otbrError InputCommandLine(const char *aLine);
     };
 
-    explicit CliDaemon(Dependencies &aDependencies);
+    explicit CliDaemon(Dependencies &aDependencies, uint8_t aMode = OTBR_DAEMON_MODE_UNIX_SOCKET);
 
     otbrError Init(const std::string &aNetIfName);
     void      Deinit(void);
 
-    void HandleCommandOutput(const char *aOutput);
-    void Process(const MainloopContext &aContext);
-    void UpdateFdSet(MainloopContext &aContext);
+    void Update(MainloopContext &aContext) override;
+    void Process(const MainloopContext &aContext) override;
+
+    void ProcessLine(char *aLine, int aOutputFd);
+    void ProcessCommand(const char *aLine, void *aContext, otCliOutputCallback aCallback);
+
+    int OutputFormatV(const char *aFormat, va_list aArguments) OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 0);
+    int OutputFormat(const char *aFormat, ...) OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 3);
 
 private:
-    static constexpr size_t kCliMaxLineLength = OTBR_CONFIG_CLI_MAX_LINE_LENGTH;
+#if defined(HAVE_LIBEDIT) || defined(HAVE_LIBREADLINE)
+    class Readline
+    {
+    public:
+        void Init(CliDaemon &aDaemon);
+        void Deinit(void);
+        void Update(MainloopContext &aContext);
+        void Process(const MainloopContext &aContext);
 
-    void Clear(void);
+    private:
+        static void       InputCallback(char *aLine);
+        static CliDaemon *sDaemon;
+    };
 
-    std::string GetSocketFilename(const std::string &aNetIfName, const char *aSuffix) const;
+    Readline mReadline;
+#else
+    class Stdio
+    {
+    public:
+        void Init(CliDaemon &aDaemon);
+        void Deinit(void);
+        void Update(MainloopContext &aContext);
+        void Process(const MainloopContext &aContext);
 
-    otbrError CreateListenSocket(const std::string &aNetIfName);
-    void      InitializeSessionSocket(void);
+    private:
+        CliDaemon *mDaemon;
+    };
 
-    int mListenSocket;
-    int mDaemonLock;
-    int mSessionSocket;
+    Stdio mStdio;
+#endif
+
+    int       UnixSocketOutputV(const char *aFormat, va_list aArguments) OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 0);
+    int       UnixSocketOutput(const char *aOutput, size_t aLength);
+    otbrError UnixSocketCreate(const std::string &aNetIfName);
+    void      UnixSocketSessionInit(void);
+    void      UnixSocketSessionClear(void);
+
+    otbrError SetOutputFd(int aFd);
+
+    void Reject(const char *aFormat, ...) OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 3);
+
+    otCliOutputCallback mExternalOutputCallback        = nullptr;
+    void               *mExternalOutputCallbackContext = nullptr;
+
+    int     mListenSocket;
+    int     mDaemonLock;
+    int     mSessionSocket;
+    int     mOutputFd;
+    uint8_t mDaemonMode;
 
     Dependencies &mDeps;
 };

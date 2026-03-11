@@ -44,7 +44,7 @@ set(OT_CHILD_SUPERVISION ON CACHE STRING "enable child supervision" FORCE)
 set(OT_COAP ON CACHE STRING "Enable CoAP in OpenThread")
 set(OT_COAPS ON CACHE STRING "Enable secure CoAP in OpenThread")
 set(OT_COMMISSIONER ON CACHE STRING "enable commissioner")
-set(OT_DAEMON ON CACHE STRING "enable daemon mode" FORCE)
+set(OT_DAEMON OFF CACHE STRING "enable daemon mode" FORCE)
 set(OT_DATASET_UPDATER ON CACHE STRING "enable dataset updater" FORCE)
 set(OT_DNS_CLIENT ON CACHE STRING "enable DNS client" FORCE)
 set(OT_DNS_CLIENT_OVER_TCP OFF CACHE STRING "disable DNS query over TCP")
@@ -152,6 +152,7 @@ target_compile_definitions(ot-config INTERFACE
     "-DOPENTHREAD_CONFIG_LOG_CLI=1"
     "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
     "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
+    "-DOPENTHREAD_POSIX_CONFIG_DAEMON_CLI_ENABLE=0"
     "-DOPENTHREAD_POSIX_CONFIG_FILE=\"${PROJECT_BINARY_DIR}/src/agent/openthread-otbr-posix-config.h\""
 )
 

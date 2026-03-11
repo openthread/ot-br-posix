@@ -43,6 +43,7 @@
 #include <openthread/error.h>
 #include <openthread/thread.h>
 
+#include "host/posix/cli_daemon.hpp"
 #include "lib/spinel/coprocessor_type.h"
 
 #include "common/logging.hpp"
@@ -174,7 +175,8 @@ public:
                                               const char                      *aBackboneInterfaceName,
                                               bool                             aDryRun,
                                               bool                             aEnableAutoAttach,
-                                              const char                      *aDataPath = "");
+                                              const char                      *aDataPath = "",
+                                              uint8_t aDaemonMode = CliDaemon::OTBR_DAEMON_MODE_UNIX_SOCKET);
 
     /**
      * This method joins this device to the network specified by @p aActiveOpDatasetTlvs.

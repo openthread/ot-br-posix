@@ -94,8 +94,9 @@ public:
      * @param[in]   aInterfaceName          A string of the NCP interface name.
      * @param[in]   aBackboneInterfaceName  A string of the backbone interface name.
      * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in]   aDaemonMode             The CLI daemon mode.
      */
-    NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun);
+    NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun, uint8_t aDaemonMode);
 
     /**
      * Destructor.
@@ -192,7 +193,9 @@ private:
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;
     TaskRunner                mTaskRunner;
-    CliDaemon                 mCliDaemon;
+#if OTBR_ENABLE_DAEMON
+    CliDaemon mCliDaemon;
+#endif
 };
 
 } // namespace Host

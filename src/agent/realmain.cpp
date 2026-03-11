@@ -26,6 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "host/posix/cli_daemon.hpp"
 #define OTBR_LOG_TAG "AGENT"
 
 #include <openthread-br/config.h>
@@ -77,6 +78,7 @@ enum
     OTBR_OPT_DEBUG_LEVEL             = 'd',
     OTBR_OPT_HELP                    = 'h',
     OTBR_OPT_INTERFACE_NAME          = 'I',
+    OTBR_OPT_INTERACTIVE             = 'i',
     OTBR_OPT_VERBOSE                 = 'v',
     OTBR_OPT_SYSLOG_DISABLE          = 's',
     OTBR_OPT_VERSION                 = 'V',
@@ -106,6 +108,7 @@ static const struct option kOptions[] = {
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
     {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
+    {"interactive", optional_argument, nullptr, OTBR_OPT_INTERACTIVE},
     {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
     {"syslog-disable", no_argument, nullptr, OTBR_OPT_SYSLOG_DISABLE},
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
@@ -162,8 +165,8 @@ static std::vector<char *> AppendAutoAttachDisableArg(int argc, char *argv[])
 static void PrintHelp(const char *aProgramName)
 {
     fprintf(stderr,
-            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-s] [--auto-attach[=0/1]] "
-            "RADIO_URL [RADIO_URL]\n"
+            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-s] [-i[=cx]] "
+            "[--auto-attach[=0/1]] RADIO_URL [RADIO_URL]\n"
             "         --data-path        Path of directory to store data.\n"
             "     -I, --thread-ifname    Name of the Thread network interface (default: " DEFAULT_INTERFACE_NAME ").\n"
             "     -B, --backbone-ifname  Name of the backbone network interfaces (can be specified multiple times).\n"
@@ -172,6 +175,8 @@ static void PrintHelp(const char *aProgramName)
             "     -v, --verbose          Enable verbose logging.\n"
             "     -s, --syslog-disable   Disable syslog and print to standard error.\n"
             "     -h, --help             Show this help text.\n"
+            "     -i, --interactive[=cx] Enable interactive CLI. 'c' for console, 'x' for unix socket.\n"
+            "                            Defaults to 'c' if value is missing, or 'x' if option is missing.\n"
             "     -V, --version          Print the application's version and exit.\n"
             "     --radio-version        Print the radio coprocessor version and exit.\n"
             "     --auto-attach          Whether or not to automatically attach to the saved network (default: 1).\n"
@@ -246,6 +251,7 @@ static int realmain(int argc, char *argv[])
     int                       opt;
     int                       ret               = EXIT_SUCCESS;
     const char               *interfaceName     = kDefaultInterfaceName;
+    uint8_t                   daemonMode        = otbr::CliDaemon::OTBR_DAEMON_MODE_UNIX_SOCKET;
     bool                      verbose           = false;
     bool                      syslogDisable     = false;
     bool                      printRadioVersion = false;
@@ -270,7 +276,7 @@ static int realmain(int argc, char *argv[])
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv, "B:d:hI:Vvs", kOptions, nullptr)) != -1)
+    while ((opt = getopt_long(argc, argv, "B:d:hI:i::Vvs", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
@@ -288,6 +294,37 @@ static int realmain(int argc, char *argv[])
         case OTBR_OPT_INTERFACE_NAME:
             interfaceName = optarg;
             break;
+
+#if OTBR_ENABLE_DAEMON
+        case OTBR_OPT_INTERACTIVE:
+            daemonMode = 0;
+            if (optarg != nullptr)
+            {
+                for (const char *c = optarg; *c; c++)
+                {
+                    switch (*c)
+                    {
+                    case 'c':
+                        daemonMode |= otbr::CliDaemon::OTBR_DAEMON_MODE_CONSOLE;
+                        break;
+                    case 'x':
+                        daemonMode |= otbr::CliDaemon::OTBR_DAEMON_MODE_UNIX_SOCKET;
+                        break;
+                    default:
+                        fprintf(stderr, "Invalid interactive mode: %c\n", *c);
+                        ExitNow(ret = EXIT_FAILURE);
+                    }
+                }
+            }
+            else
+            {
+                daemonMode = otbr::CliDaemon::OTBR_DAEMON_MODE_CONSOLE;
+            }
+            break;
+#else
+            fprintf(stderr, "Command line not enabled\n");
+            ExitNow(ret = EXIT_FAILURE);
+#endif
 
         case OTBR_OPT_VERBOSE:
             verbose = true;
@@ -399,8 +436,9 @@ static int realmain(int argc, char *argv[])
 #else
         const std::string backboneInterfaceName = backboneInterfaceNames.empty() ? "" : backboneInterfaceNames.front();
 #endif
-        std::unique_ptr<otbr::Host::ThreadHost> host = otbr::Host::ThreadHost::Create(
-            interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach, dataPath);
+        std::unique_ptr<otbr::Host::ThreadHost> host =
+            otbr::Host::ThreadHost::Create(interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false,
+                                           enableAutoAttach, dataPath, daemonMode);
 
         otbr::Application app(*host, interfaceName, backboneInterfaceName);
 

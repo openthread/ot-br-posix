@@ -49,6 +49,7 @@
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
+#include "host/posix/cli_daemon.hpp"
 #include "host/thread_helper.hpp"
 #include "host/thread_host.hpp"
 
@@ -89,7 +90,7 @@ private:
 /**
  * This interface defines OpenThread Controller under RCP mode.
  */
-class RcpHost : public MainloopProcessor, public ThreadHost, public OtNetworkProperties
+class RcpHost : public MainloopProcessor, public ThreadHost, public OtNetworkProperties, private CliDaemon::Dependencies
 {
 public:
     /**
@@ -101,13 +102,15 @@ public:
      * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
      * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
      * @param[in]   aDataPath               Path of directory to store data.
+     * @param[in]   aDaemonMode             The CLI daemon mode.
      */
     RcpHost(const char                      *aInterfaceName,
             const std::vector<const char *> &aRadioUrls,
             const char                      *aBackboneInterfaceName,
             bool                             aDryRun,
             bool                             aEnableAutoAttach,
-            const char                      *aDataPath = "");
+            const char                      *aDataPath   = "",
+            uint8_t                          aDaemonMode = CliDaemon::OTBR_DAEMON_MODE_UNIX_SOCKET);
 
     /**
      * This method initialize the Thread controller.
@@ -290,6 +293,16 @@ private:
 
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 
+#if OTBR_ENABLE_DAEMON
+    static int OutputCallback(void *aContext, const char *aFormat, va_list aArguments)
+        OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 0)
+    {
+        return static_cast<RcpHost *>(aContext)->mCliDaemon.OutputFormatV(aFormat, aArguments);
+    }
+    // CliDaemon::Dependencies methods
+    otbrError InputCommandLine(const char *aLine) override;
+#endif
+
     otInstance *mInstance;
 
     otPlatformConfig                       mConfig;
@@ -308,6 +321,10 @@ private:
     std::vector<DetachGracefullyCallback>         mDetachGracefullyCallbacks;
     BorderAgentMeshCoPServiceChangedCallback      mBorderAgentMeshCoPServiceChangedCallback;
     std::vector<EphemeralKeyStateChangedCallback> mEphemeralKeyStateChangedCallbacks;
+
+#if OTBR_ENABLE_DAEMON
+    CliDaemon mCliDaemon;
+#endif
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.

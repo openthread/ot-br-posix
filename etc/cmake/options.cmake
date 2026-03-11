@@ -276,3 +276,45 @@ if(OTBR_MULTI_AIL)
 else()
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MULTI_AIL=0)
 endif()
+
+option(OTBR_DAEMON "Enable CLI daemon support" ON)
+if (OTBR_DAEMON)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DAEMON=1)
+endif()
+
+set(OTBR_READLINE_VALUES
+    "readline"
+    "edit"
+)
+
+set(OTBR_READLINE "" CACHE STRING "set readline library name")
+set_property(CACHE OTBR_READLINE PROPERTY STRINGS ${OTBR_READLINE_VALUES})
+
+if(OTBR_READLINE STREQUAL "")
+    foreach(X IN LISTS OTBR_READLINE_VALUES)
+        find_library(READLINE_LIB ${X})
+        if (READLINE_LIB)
+            set(OTBR_READLINE ${X} CACHE STRING "set readline library name" FORCE)
+            break()
+        endif()
+    endforeach()
+elseif(OTBR_READLINE)
+    find_library(READLINE_LIB ${OTBR_READLINE})
+
+    if (NOT READLINE_LIB)
+        message(FATAL_ERROR "Failed to find ${OTBR_READLINE}")
+    endif()
+endif()
+
+if (READLINE_LIB)
+    message(STATUS "Readline: ${OTBR_READLINE}")
+
+    find_library(NCURSES_LIB ncurses)
+    if (NOT NCURSES_LIB)
+        message(FATAL_ERROR "Failed to find ncurses")
+    endif()
+
+    set(OTBR_READLINE_LIBS "${READLINE_LIB}" "${NCURSES_LIB}")
+    string(TOUPPER "${OTBR_READLINE}" OTBR_READLINE_UPPER)
+    target_compile_definitions(otbr-config INTERFACE "HAVE_LIB${OTBR_READLINE_UPPER}=1")
+endif()
