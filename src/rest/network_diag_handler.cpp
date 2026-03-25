@@ -190,6 +190,7 @@ NetworkDiagHandler::NetworkDiagHandler(Services &aServices, otInstance *aInstanc
     , mServices{aServices}
     , mRequestState{RequestState::kIdle}
     , mDiagQueryRequestState{RequestState::kIdle}
+    , mStreaming{false}
 {
 }
 
@@ -851,6 +852,11 @@ void NetworkDiagHandler::UpdateDiag(uint16_t aKey, std::vector<otNetworkDiagTlv>
     mDiagSet[aKey] = value;
     otbrLogDebug("%s:%d - %s - updated DiagSet for 0x%04x with %zu TLVs.", __FILE__, __LINE__, __func__, aKey,
                  value.mDiagContent.size());
+
+    if (mStreaming)
+    {
+        mSseBroadcaster.Broadcast(std::make_shared<const std::vector<otNetworkDiagTlv>>(mDiagSet[aKey].mDiagContent));
+    }
 }
 
 bool NetworkDiagHandler::HandleNextDiagQuery()

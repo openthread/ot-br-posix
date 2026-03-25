@@ -54,6 +54,13 @@ enum ActionStatus
     kActionStatusFailed,
 };
 
+#define KEY_STATUS "status"
+#define KEY_TIMEOUT "timeout"
+#define KEY_DESTINATION "destination"
+#define KEY_DESTINATION_TYPE "destinationType"
+#define KEY_TYPES "types"
+#define KEY_STREAM "stream"
+
 /**
  * @brief This virtual class implements a general json:api item for holding action attributes.
  */
@@ -156,7 +163,7 @@ public:
      * @retval  True   If now is after the timeout of this action.
      * @retval  False  If now is before or equal the timeout of this action.
      */
-    bool IsBeyondTimeout(void) const { return mCreatedSteady + mTimeout < Clock::now(); }
+    virtual bool IsBeyondTimeout(void) const { return mCreatedSteady + mTimeout < Clock::now(); }
 
     /**
      * Get the status of the action.
@@ -179,6 +186,17 @@ public:
      * @retval False If the action is not pending or active.
      */
     bool IsPendingOrActive(void) const { return mStatus == kActionStatusPending || mStatus == kActionStatusActive; }
+
+    /**
+     * Does this action publish its results on an SSE channel while they arrive?
+     *
+     * Each streaming domain owns its own broadcaster, so at most one streaming
+     * action per action type may be in flight at a time.
+     *
+     * @retval True  If the action was created with streaming enabled.
+     * @retval False If the action only exposes its results once it finished.
+     */
+    virtual bool IsStreaming(void) const { return false; }
 
     /**
      * Convert the status of the action to string.
@@ -240,6 +258,23 @@ protected:
      * Set the relationship to the result of this action.
      */
     void SetResult(const std::string &aType, const std::string &aUuid);
+
+    /**
+     * Set a relationship holding a `related` link, e.g. to a stream endpoint.
+     *
+     * @param[in] aName  The name of the relationship.
+     * @param[in] aHref  The link target, may be relative to the server root.
+     */
+    void SetRelatedLink(const std::string &aName, const std::string &aHref);
+
+    /**
+     * Remove a relationship, e.g. when the linked resource ceased to exist.
+     *
+     * Does nothing if no relationship of that name is set.
+     *
+     * @param[in] aName  The name of the relationship.
+     */
+    void ClearRelation(const std::string &aName);
 
     /**
      * The steady_clock created timepoint of the action.

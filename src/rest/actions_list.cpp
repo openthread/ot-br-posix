@@ -71,6 +71,61 @@ void ActionsCollection::GetPendingOrActive(uint32_t &aPending) const
     }
 }
 
+bool ActionsCollection::HasStreamingAction(const std::string &aTypeName) const
+{
+    otbr::rest::actions::BasicActions *action;
+
+    for (auto &it : mCollection)
+    {
+        action = static_cast<otbr::rest::actions::BasicActions *>(it.second.get());
+        if (action->IsStreaming() && action->IsPendingOrActive() && action->GetTypeName() == aTypeName)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ActionsCollection::EvictOldestInactiveItem(void)
+{
+    bool                               evicted = false;
+    std::string                        evictKey;
+    otbr::rest::actions::BasicActions *evictAction = nullptr;
+
+    // Find the oldest inactive action. Pending or active actions are never
+    // evicted, because dropping them while they still own resources has
+    // undesired side effects.
+    for (const auto &key : mAgeSortedItemIds)
+    {
+        auto collIt = mCollection.find(key);
+        if (collIt == mCollection.end())
+        {
+            continue;
+        }
+
+        auto *action = static_cast<otbr::rest::actions::BasicActions *>(collIt->second.get());
+
+        if (!action->IsPendingOrActive())
+        {
+            evictKey    = key;
+            evictAction = action;
+            break;
+        }
+    }
+
+    if (evictAction != nullptr)
+    {
+        otbrLogInfo("EvictOldestInactiveItem: evicting %s", evictKey.c_str());
+        DecrHoldsTypes(evictAction->GetTypeName());
+        mCollection.erase(evictKey);
+        mAgeSortedItemIds.remove(evictKey);
+        evicted = true;
+    }
+
+    return evicted;
+}
+
 void ActionsCollection::AddItem(std::unique_ptr<otbr::rest::actions::BasicActions> aItem)
 {
     if (!aItem)
@@ -79,10 +134,17 @@ void ActionsCollection::AddItem(std::unique_ptr<otbr::rest::actions::BasicAction
         return;
     }
 
-    // do not exceed a max size of the collection
-    while (mCollection.size() >= MAX_ACTIONS_COLLECTION_ITEMS)
+    // Do not exceed the max size of the collection. Only inactive actions may be
+    // evicted. If all actions are pending or active the new item is rejected.
+    while (mCollection.size() >= MAX_ACTIONS_COLLECTION_ITEMS && EvictOldestInactiveItem())
     {
-        EvictOldestItem();
+    }
+
+    if (mCollection.size() >= MAX_ACTIONS_COLLECTION_ITEMS)
+    {
+        otbrLogWarning("%s:%d - %s - collection full of pending or active actions, item not added", __FILE__, __LINE__,
+                       __func__);
+        return;
     }
 
     // add to mHoldsTypes
@@ -95,7 +157,6 @@ void ActionsCollection::AddItem(std::unique_ptr<otbr::rest::actions::BasicAction
         mAgeSortedItemIds.push_back(aItem->mUuid.ToString());
     }
 
-    otbrLogWarning("%s:%d - %s - %s", __FILE__, __LINE__, __func__, aItem->mUuid.ToString().c_str());
     auto result = mCollection.emplace(aItem->mUuid.ToString(), std::move(aItem));
     if (!result.second)
     {
@@ -131,7 +192,14 @@ ActionsList::~ActionsList()
 
 size_t ActionsList::FreeCapacity(void) const
 {
-    return mMaxActions > mCollection.size() ? mMaxActions - mCollection.size() : 0;
+    uint32_t pendingOrActive = 0;
+
+    // Completed, stopped and failed actions can be evicted to make room for a
+    // new action, pending or active ones can not. Hence the free capacity is
+    // what is left after the pending or active actions.
+    GetPendingOrActive(pendingOrActive);
+
+    return mMaxActions > pendingOrActive ? mMaxActions - pendingOrActive : 0;
 }
 
 bool ActionsList::ValidateRequest(const cJSON *aJson)
@@ -188,6 +256,9 @@ otError ActionsList::CreateAction(const cJSON *aJson, std::string &aUuid)
 
     handler = actions::FindHandler(type->valuestring);
     VerifyOrExit(handler != nullptr, error = OT_ERROR_INVALID_ARGS);
+
+    // Reject the new action rather than evicting a pending or active one.
+    VerifyOrExit(FreeCapacity() > 0, error = OT_ERROR_NO_BUFS);
 
     action = handler->Create(*attributes, mServices);
     aUuid  = action.get()->mUuid.ToString();

@@ -39,12 +39,14 @@ add_library(otbr-rest
     diagnostic_types.cpp
     json.cpp
     network_diag_handler.cpp
+    network_diag_sse.cpp
     rest_devices_coll.cpp
     rest_diagnostics_coll.cpp
     rest_generic_collection.cpp
     rest_server_common.cpp
     rest_web_server.cpp
     services.cpp
+    sse_handler.cpp
     timestamp.cpp
     uuid.cpp
 )
