@@ -47,9 +47,11 @@ Include necessary headers for OpenThread functions, REST utilities, and JSON pro
 #include <openthread/border_router.h>
 
 #include "json.hpp"
+#include "network_diag_sse.hpp"
 #include "rest_devices_coll.hpp"
 #include "rest_diagnostics_coll.hpp"
 #include "services.hpp"
+#include "sse_handler.hpp"
 #include "common/api_strings.hpp"
 #include "host/thread_helper.hpp"
 #include "openthread/dataset.h"
@@ -122,6 +124,25 @@ public:
     /**
      */
     void StopDiagnosticsRequest(void);
+
+    /**
+     * The SSE channel owned by this domain.
+     *
+     * Each streaming domain owns its own broadcaster so several domains can
+     * stream concurrently without sharing a payload channel.
+     */
+    SseBroadcaster &GetSseBroadcaster(void) { return mSseBroadcaster; }
+
+    /**
+     * Enable or disable broadcasting of incoming diagnostic responses.
+     *
+     * While enabled every updated device entry is published on the SSE
+     * channel as soon as its response arrives, instead of only being
+     * available once the whole request completed.
+     *
+     * @param[in] aEnable  Whether responses are broadcast.
+     */
+    void SetStreaming(bool aEnable) { mStreaming = aEnable; }
 
     /**
      * @brief Continue a ongoing request assuring retries and completeness of responses.
@@ -240,6 +261,10 @@ private:
     uint16_t     mDiagQueryRequestRloc;  // destination of the DiagQuery
 
     std::string mResultUuid;
+
+    // SSE channel for this domain and whether responses are published on it.
+    SseBroadcaster mSseBroadcaster;
+    bool           mStreaming;
 
     /**
      * @brief Reset router entries in mDiagSet buffer.

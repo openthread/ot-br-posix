@@ -57,6 +57,7 @@
 #include "rest/rest_devices_coll.hpp"
 #include "rest/rest_diagnostics_coll.hpp"
 #include "rest/services.hpp"
+#include "rest/sse_handler.hpp"
 #include "rest/types.hpp"
 
 namespace otbr {
@@ -167,6 +168,8 @@ private:
     void ApiDiagnosticsItemGetHandler(const Request &aRequest, Response &aResponse);
     void ApiDiagnosticsDeleteHandler(const Request &aRequest, Response &aResponse);
     void ApiDiagnosticsItemDeleteHandler(const Request &aRequest, Response &aResponse);
+    void ApiDiagnosticsStreamHandler(const Request &aRequest, Response &aResponse);
+    void ApiNetworkDiagStreamHandler(Response &aResponse, const std::string &aActionId);
 
     void WellKnownThreadHandler(const Request &aRequest, Response &aResponse) const;
     void WellKnownThreadGetHandler(const Request &aRequest, Response &aResponse) const;
