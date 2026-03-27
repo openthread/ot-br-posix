@@ -46,6 +46,9 @@
 #include <openthread/trel.h>
 #include <openthread/platform/radio.h>
 
+#if OTBR_ENABLE_LEAVE_NETWORK_WITH_PSEUDO_RESET
+#include "agent/application.hpp"
+#endif
 #include "common/api_strings.hpp"
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
@@ -1879,8 +1882,6 @@ exit:
 
 void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
 {
-    constexpr int kExitCodeShouldRestart = 7;
-
     mHost.GetThreadHelper()->DetachGracefully([aRequest, this](otError error) mutable {
         SuccessOrExit(error);
         mPublisher->Stop();
@@ -1890,8 +1891,14 @@ void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
         aRequest.ReplyOtResult(error);
         if (error == OT_ERROR_NONE)
         {
+#if OTBR_ENABLE_LEAVE_NETWORK_WITH_PSEUDO_RESET
+            Application::PseudoReset();
+#else
+            constexpr int kExitCodeShouldRestart = 7;
+
             Flush();
             exit(kExitCodeShouldRestart);
+#endif
         }
     });
 }
