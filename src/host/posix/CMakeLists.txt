@@ -45,7 +45,8 @@ add_library(otbr-posix
     udp_proxy.hpp
 )
 
-target_link_libraries(otbr-posix
+target_link_libraries(otbr-posix PRIVATE
     otbr-common
     otbr-utils
+    ${OTBR_READLINE_LIBS}
 )

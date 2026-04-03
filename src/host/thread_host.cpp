@@ -46,7 +46,8 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
                                                const char                      *aBackboneInterfaceName,
                                                bool                             aDryRun,
                                                bool                             aEnableAutoAttach,
-                                               const char                      *aDataPath)
+                                               const char                      *aDataPath,
+                                               uint8_t                          aDaemonMode)
 {
     CoprocessorType             coprocessorType;
     otPlatformCoprocessorUrls   urls;
@@ -69,11 +70,11 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
     {
     case OT_COPROCESSOR_RCP:
         host = MakeUnique<RcpHost>(aInterfaceName, aRadioUrls, aBackboneInterfaceName, aDryRun, aEnableAutoAttach,
-                                   aDataPath);
+                                   aDataPath, aDaemonMode);
         break;
 
     case OT_COPROCESSOR_NCP:
-        host = MakeUnique<NcpHost>(aInterfaceName, aBackboneInterfaceName, aDryRun);
+        host = MakeUnique<NcpHost>(aInterfaceName, aBackboneInterfaceName, aDryRun, aDaemonMode);
         break;
 
     default:

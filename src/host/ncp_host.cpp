@@ -108,11 +108,16 @@ const otMeshLocalPrefix *NcpNetworkProperties::GetMeshLocalPrefix(void) const
 
 // ===================================== NcpHost ======================================
 
-NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun)
+NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun, uint8_t aDaemonMode)
     : mIsInitialized(false)
     , mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
-    , mCliDaemon(mNcpSpinel)
+#if OTBR_ENABLE_DAEMON
+    , mCliDaemon(mNcpSpinel, aDaemonMode)
+#endif
 {
+#if !OTBR_ENABLE_DAEMON
+    OTBR_UNUSED_VARIABLE(aDaemonMode);
+#endif
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.mInterfaceName         = aInterfaceName;
     mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
@@ -129,9 +134,11 @@ void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
     mNcpSpinel.Init(mSpinelDriver, *this);
+#if OTBR_ENABLE_DAEMON
     mCliDaemon.Init(mConfig.mInterfaceName);
 
-    mNcpSpinel.CliDaemonSetOutputCallback([this](const char *aOutput) { mCliDaemon.HandleCommandOutput(aOutput); });
+    mNcpSpinel.CliDaemonSetOutputCallback([this](const char *aOutput) { mCliDaemon.OutputFormat("%s", aOutput); });
+#endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
@@ -370,7 +377,9 @@ otError NcpHost::SetVendorModel(const char *aVendorModel)
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
+#if OTBR_ENABLE_DAEMON
     mCliDaemon.Process(aMainloop);
+#endif
 }
 
 void NcpHost::Update(MainloopContext &aMainloop)
@@ -383,7 +392,9 @@ void NcpHost::Update(MainloopContext &aMainloop)
         aMainloop.mTimeout.tv_usec = 0;
     }
 
-    mCliDaemon.UpdateFdSet(aMainloop);
+#if OTBR_ENABLE_DAEMON
+    mCliDaemon.Update(aMainloop);
+#endif
 }
 
 #if OTBR_ENABLE_MDNS

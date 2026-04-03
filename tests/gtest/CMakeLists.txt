@@ -115,6 +115,7 @@ target_include_directories(otbr-posix-gtest-unit
 target_link_libraries(otbr-posix-gtest-unit
     otbr-posix
     openthread-ftd
+    otbr-common
     GTest::gmock_main
 )
 gtest_discover_tests(otbr-posix-gtest-unit PROPERTIES LABELS "sudo")

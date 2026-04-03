@@ -151,7 +151,7 @@ TEST(CliDaemon, InputCommandLineCorrectly_AfterReveivingOnSessionSocket)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        cliDaemon.UpdateFdSet(context);
+        cliDaemon.Update(context);
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         ASSERT_GE(rval, 0) << "select failed, error: " << strerror(errno);
@@ -177,7 +177,7 @@ public:
 
         if (mCliDaemonInstance != nullptr)
         {
-            mCliDaemonInstance->HandleCommandOutput(mOutputToSend);
+            mCliDaemonInstance->OutputFormat("%s", mOutputToSend);
         }
         return OTBR_ERROR_NONE;
     }
@@ -224,7 +224,7 @@ TEST(CliDaemon, HandleCommandOutputCorrectly_AfterReveivingOnSessionSocket)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        cliDaemon.UpdateFdSet(context);
+        cliDaemon.Update(context);
 
         context.AddFdToReadSet(clientSocket);
 
@@ -293,7 +293,7 @@ TEST(CliDaemon, HandleCommandOutputTruncatedCorrectly_AfterReceivingOnSessionSoc
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        cliDaemon.UpdateFdSet(context);
+        cliDaemon.Update(context);
 
         context.AddFdToReadSet(clientSocket);
 
