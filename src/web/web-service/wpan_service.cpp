@@ -129,7 +129,8 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     else if (credentialType == CREDENTIAL_TYPE_PSKD)
     {
         VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
-        VerifyOrExit(client.Execute("joiner start %s", pskd.c_str()) != nullptr, ret = kWpanStatus_JoinFailed);
+        VerifyOrExit(client.Execute("joiner start %s", escapeOtCliEscapable(pskd).c_str()) != nullptr,
+                     ret = kWpanStatus_JoinFailed);
         VerifyOrExit((rval = client.Read("Join ", 5000)) != nullptr, ret = kWpanStatus_JoinFailed);
         if (strstr(rval, "Join success"))
         {
@@ -154,7 +155,8 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     }
 
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_JoinFailed);
-    VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
+    VerifyOrExit(client.Execute("prefix add %s paso%s", escapeOtCliEscapable(prefix).c_str(),
+                                (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetFailed);
 
 exit:
@@ -233,7 +235,8 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
                  kWpanStatus_Ok);
     VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_FormFailed);
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_FormFailed);
-    VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
+    VerifyOrExit(client.Execute("prefix add %s paso%s", escapeOtCliEscapable(prefix).c_str(),
+                                (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetFailed);
 exit:
 
@@ -275,7 +278,8 @@ std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixReq
         prefix += "/64";
     }
 
-    VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
+    VerifyOrExit(client.Execute("prefix add %s paso%s", escapeOtCliEscapable(prefix).c_str(),
+                                (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetGatewayFailed);
     VerifyOrExit(client.Execute("netdata register") != nullptr, ret = kWpanStatus_SetGatewayFailed);
 exit:
@@ -315,7 +319,8 @@ std::string WpanService::HandleDeletePrefixRequest(const std::string &aDeleteReq
         prefix += "/64";
     }
 
-    VerifyOrExit(client.Execute("prefix remove %s", prefix.c_str()) != nullptr, ret = kWpanStatus_SetGatewayFailed);
+    VerifyOrExit(client.Execute("prefix remove %s", escapeOtCliEscapable(prefix).c_str()) != nullptr,
+                 ret = kWpanStatus_SetGatewayFailed);
     VerifyOrExit(client.Execute("netdata register") != nullptr, ret = kWpanStatus_SetGatewayFailed);
 exit:
 
@@ -574,7 +579,8 @@ std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
             }
             else if (strcmp(rval, "active") == 0)
             {
-                VerifyOrExit(client.Execute("commissioner joiner add * %s", pskd.c_str()) != nullptr,
+                VerifyOrExit(client.Execute("commissioner joiner add * %s", escapeOtCliEscapable(pskd).c_str()) !=
+                                 nullptr,
                              ret = kWpanStatus_Down);
                 root["error"] = ret;
                 ExitNow();
@@ -612,7 +618,8 @@ int WpanService::joinActiveDataset(otbr::Web::OpenThreadClient &aClient,
     int ret = kWpanStatus_Ok;
 
     VerifyOrExit(aClient.Execute("dataset clear") != nullptr, ret = kWpanStatus_SetFailed);
-    VerifyOrExit(aClient.Execute("dataset networkkey %s", aNetworkKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(aClient.Execute("dataset networkkey %s", escapeOtCliEscapable(aNetworkKey).c_str()) != nullptr,
+                 ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset channel %u", aChannel) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset panid %u", aPanId) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset commit active") != nullptr, ret = kWpanStatus_SetFailed);
@@ -632,10 +639,12 @@ int WpanService::formActiveDataset(otbr::Web::OpenThreadClient &aClient,
     int ret = kWpanStatus_Ok;
 
     VerifyOrExit(aClient.Execute("dataset init new") != nullptr, ret = kWpanStatus_SetFailed);
-    VerifyOrExit(aClient.Execute("dataset networkkey %s", aNetworkKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(aClient.Execute("dataset networkkey %s", escapeOtCliEscapable(aNetworkKey).c_str()) != nullptr,
+                 ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset networkname %s", escapeOtCliEscapable(aNetworkName).c_str()) != nullptr,
                  ret = kWpanStatus_SetFailed);
-    VerifyOrExit(aClient.Execute("dataset pskc %s", aPskc.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(aClient.Execute("dataset pskc %s", escapeOtCliEscapable(aPskc).c_str()) != nullptr,
+                 ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset channel %u", aChannel) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset extpanid %016" PRIx64, aExtPanId) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset panid %u", aPanId) != nullptr, ret = kWpanStatus_SetFailed);
@@ -653,10 +662,12 @@ std::string WpanService::escapeOtCliEscapable(const std::string &aArg)
     {
         switch (c)
         {
-        case ' ':
-        case '\t':
         case '\r':
         case '\n':
+            break;
+
+        case ' ':
+        case '\t':
         case '\\':
             strbuf.sputc('\\');
             // Fallthrough
