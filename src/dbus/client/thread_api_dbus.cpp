@@ -723,6 +723,62 @@ ClientError ThreadApiDBus::GetCapabilities(std::vector<uint8_t> &aCapabilities)
     return GetProperty(OTBR_DBUS_PROPERTY_CAPABILITIES, aCapabilities);
 }
 
+ClientError ThreadApiDBus::GetNetworkDiagnosticTlvs(const Ip6Address               &aDestination,
+                                                    const std::vector<uint8_t>     &aTlvTypes,
+                                                    const NetworkDiagnosticHandler &aHandler,
+                                                    uint32_t                        aTimeoutMs)
+{
+    // Add margin to the timeout for DBus method call to avoid a timeout error
+    // when the method call is close to the timeout value.
+    static constexpr uint32_t kDbusTimeoutMarginMs = 200;
+
+    ClientError ret  = ClientError::ERROR_NONE;
+    auto        args = std::tie(aDestination, aTlvTypes, aTimeoutMs);
+
+    VerifyOrExit(mNetworkDiagnosticHandler == nullptr, ret = ClientError::OT_ERROR_INVALID_STATE);
+    VerifyOrExit(aHandler != nullptr, ret = ClientError::OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aTimeoutMs > 0, ret = ClientError::OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aTimeoutMs <= kMaxNetworkDiagnosticTimeoutMs, ret = ClientError::OT_ERROR_INVALID_ARGS);
+
+    mNetworkDiagnosticHandler = aHandler;
+
+    ret = CallDBusMethodAsync(
+        OTBR_DBUS_GET_NETWORK_DIAGNOSTIC_TLVS_METHOD, args,
+        static_cast<int>(aTimeoutMs + kDbusTimeoutMarginMs),
+        &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::NetworkDiagnosticPendingCallHandler>);
+
+    if (ret != ClientError::ERROR_NONE)
+    {
+        mNetworkDiagnosticHandler = nullptr;
+    }
+
+exit:
+    return ret;
+}
+
+void ThreadApiDBus::NetworkDiagnosticPendingCallHandler(DBusPendingCall *aPending)
+{
+    ClientError                           error = ClientError::ERROR_NONE;
+    std::vector<NetworkDiagnosticMessage> responses;
+    UniqueDBusMessage                     message(dbus_pending_call_steal_reply(aPending));
+    DBusMessageIter                       iter;
+    auto                                  handler = mNetworkDiagnosticHandler;
+
+    VerifyOrExit(message != nullptr, error = ClientError::ERROR_DBUS);
+
+    error = DBus::CheckErrorMessage(message.get());
+    SuccessOrExit(error);
+    VerifyOrExit(dbus_message_iter_init(message.get(), &iter), error = ClientError::ERROR_DBUS);
+    VerifyOrExit(DBus::DBusMessageExtract(&iter, responses) == OTBR_ERROR_NONE, error = ClientError::ERROR_DBUS);
+
+exit:
+    mNetworkDiagnosticHandler = nullptr;
+    if (handler != nullptr)
+    {
+        handler(error, responses);
+    }
+}
+
 std::string ThreadApiDBus::GetInterfaceName(void)
 {
     return mInterfaceName;
@@ -796,6 +852,15 @@ ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string            &aMe
                                                const ArgType                &aArgs,
                                                DBusPendingCallNotifyFunction aFunction)
 {
+    return CallDBusMethodAsync(aMethodName, aArgs, DBUS_TIMEOUT_USE_DEFAULT, aFunction);
+}
+
+template <typename ArgType>
+ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string            &aMethodName,
+                                               const ArgType                &aArgs,
+                                               int                           aTimeoutMs,
+                                               DBusPendingCallNotifyFunction aFunction)
+{
     ClientError ret = ClientError::ERROR_NONE;
 
     DBus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
@@ -805,8 +870,7 @@ ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string            &aMe
 
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
     VerifyOrExit(DBus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
-    VerifyOrExit(dbus_connection_send_with_reply(mConnection, message.get(), &pending, DBUS_TIMEOUT_USE_DEFAULT) ==
-                     true,
+    VerifyOrExit(dbus_connection_send_with_reply(mConnection, message.get(), &pending, aTimeoutMs) == true,
                  ret = ClientError::ERROR_DBUS);
 
     VerifyOrExit(dbus_pending_call_set_notify(pending, aFunction, this, &ThreadApiDBus::EmptyFree) == true,

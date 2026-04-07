@@ -34,6 +34,8 @@
 #ifndef OTBR_DBUS_CONSTANTS_HPP_
 #define OTBR_DBUS_CONSTANTS_HPP_
 
+#include <stdint.h>
+
 #define DBUS_PROPERTY_GET_METHOD "Get"
 #define DBUS_PROPERTY_SET_METHOD "Set"
 #define DBUS_PROPERTY_GET_ALL_METHOD "GetAll"
@@ -65,6 +67,7 @@
 #define OTBR_DBUS_GET_PROPERTIES_METHOD "GetProperties"
 #define OTBR_DBUS_LEAVE_NETWORK_METHOD "LeaveNetwork"
 #define OTBR_DBUS_SET_NAT64_ENABLED_METHOD "SetNat64Enabled"
+#define OTBR_DBUS_GET_NETWORK_DIAGNOSTIC_TLVS_METHOD "GetNetworkDiagnosticTlvs"
 #define OTBR_DBUS_ACTIVATE_EPHEMERAL_KEY_MODE_METHOD "ActivateEphemeralKeyMode"
 #define OTBR_DBUS_DEACTIVATE_EPHEMERAL_KEY_MODE_METHOD "DeactivateEphemeralKeyMode"
 #define OTBR_DBUS_SCHEDULE_MIGRATION_METHOD "ScheduleMigration"
@@ -137,5 +140,13 @@
 #define OTBR_NAT64_STATE_NAME_ACTIVE "active"
 
 #define OTBR_DBUS_SIGNAL_READY "Ready"
+
+namespace otbr {
+namespace DBus {
+
+static constexpr uint32_t kMaxNetworkDiagnosticTimeoutMs = 300000; // 5 minutes
+
+} // namespace DBus
+} // namespace otbr
 
 #endif // OTBR_DBUS_CONSTANTS_HPP_

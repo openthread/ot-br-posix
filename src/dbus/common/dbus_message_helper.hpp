@@ -119,6 +119,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo &aTrelInfo);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo &aTrelInfo);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo::TrelPacketCounters &aCounters);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo::TrelPacketCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const NetworkDiagnosticMessage &aMessage);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, NetworkDiagnosticMessage &aMessage);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -407,6 +409,18 @@ template <> struct DBusTypeTrait<InfraLinkInfo>
     static constexpr const char *TYPE_AS_STRING = "(sbbbuuu)";
 };
 
+template <> struct DBusTypeTrait<NetworkDiagnosticMessage>
+{
+    // struct of { array<uint8>, array<uint8> }
+    static constexpr const char *TYPE_AS_STRING = "(ayay)";
+};
+
+template <> struct DBusTypeTrait<std::vector<NetworkDiagnosticMessage>>
+{
+    // array of struct of { array<uint8>, array<uint8> }
+    static constexpr const char *TYPE_AS_STRING = "a(ayay)";
+};
+
 template <> struct DBusTypeTrait<int8_t>
 {
     static constexpr int         TYPE           = DBUS_TYPE_BYTE;
@@ -480,6 +494,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<uint64_t> 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int16_t> &aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int32_t> &aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int64_t> &aValue);
+template <typename T, size_t SIZE>
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::array<T, SIZE> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::string &aValue);
@@ -490,6 +506,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<uint64_t> &aVal
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int16_t> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int32_t> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int64_t> &aValue);
+template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter *aIter, std::array<T, SIZE> &aValue);
 
 template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, T &aValue)
 {

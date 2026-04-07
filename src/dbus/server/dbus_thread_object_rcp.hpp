@@ -36,7 +36,11 @@
 
 #include "openthread-br/config.h"
 
+#include <array>
+#include <map>
+#include <memory>
 #include <string>
+#include <unordered_map>
 
 #include <openthread/link.h>
 
@@ -72,6 +76,8 @@ public:
                         const std::string         &aInterfaceName,
                         const DependentComponents &aDeps);
 
+    ~DBusThreadObjectRcp(void) override;
+
     otbrError Init(void) override;
 
     void RegisterGetPropertyHandler(const std::string         &aInterfaceName,
@@ -105,6 +111,7 @@ private:
 #endif
     void SetThreadEnabledHandler(DBusRequest &aRequest);
     void JoinHandler(DBusRequest &aRequest);
+    void GetNetworkDiagnosticTlvsHandler(DBusRequest &aRequest);
     void GetPropertiesHandler(DBusRequest &aRequest);
     void LeaveNetworkHandler(DBusRequest &aRequest);
     void SetNat64Enabled(DBusRequest &aRequest);
@@ -190,6 +197,13 @@ private:
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
+    static void HandleDiagnosticGetResponse(otError              aError,
+                                            otMessage           *aMessage,
+                                            const otMessageInfo *aMessageInfo,
+                                            void                *aContext);
+    void HandleDiagnosticGetResponse(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
+    void CompleteNetworkDiagnosticRequest(uint64_t aGeneration);
+    void CancelNetworkDiagnosticRequest(void);
 
     otbr::Host::RcpHost &mHost;
 #if OTBR_ENABLE_TELEMETRY_DATA_API
@@ -201,6 +215,51 @@ private:
 #if OTBR_ENABLE_BORDER_AGENT
     otbr::BorderAgent &mBorderAgent;
 #endif
+
+    // NetworkDiagnosticRequest
+    //
+    // Track in flight requests to fetch network diagnostic TLVs. Only one
+    // request is allowed at a time. Additional requests received while a request
+    // is in flight will be rejected with OT_ERROR_BUSY.
+    //
+    // Responses are keyed by peer address.
+    struct NetworkDiagnosticRequest
+    {
+        // Indication of an active request.
+        //
+        // Used to:
+        // - Reject concurrent callers
+        // - Ignore callbacks when no request is being processed
+        // - Guard completion callbacks
+        bool mIsActive = false;
+
+        // Timer generation count
+        //
+        // Incremented each time a new request is initiated. When a response is
+        // received, the generation count is checked to ensure the response
+        // matches the current request. This prevents a delayed response from a
+        // previous request from being processed after a new request has already
+        // been initiated.
+        uint64_t mGeneration = 0;
+
+        // First error encountered while processing the request.
+        otError mError = OT_ERROR_NONE;
+
+        // The original request object.
+        //
+        // Used to send the reply when all responses have been received.
+        std::unique_ptr<DBusRequest> mRequest;
+
+        // Map of peer address to response message.
+        //
+        // The map is used to track responses received for the current request.
+        std::map<Ip6Address, NetworkDiagnosticMessage> mResponses;
+    };
+
+    NetworkDiagnosticRequest mNetworkDiagnosticRequest;
+
+    // Timer sentinel to ensure timer-task safety.
+    std::shared_ptr<bool> mAlive;
 };
 
 /**

@@ -1258,5 +1258,33 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const NetworkDiagnosticMessage &aMessage)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMessage.mPeerAddress));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMessage.mPayload));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, NetworkDiagnosticMessage &aMessage)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    SuccessOrExit(error = DbusMessageIterRecurse(aIter, &sub, DBUS_TYPE_STRUCT));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMessage.mPeerAddress));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMessage.mPayload));
+    dbus_message_iter_next(aIter);
+
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

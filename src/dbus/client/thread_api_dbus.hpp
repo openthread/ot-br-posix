@@ -53,10 +53,11 @@ bool IsThreadActive(DeviceRole aRole);
 class ThreadApiDBus
 {
 public:
-    using DeviceRoleHandler = std::function<void(DeviceRole)>;
-    using ScanHandler       = std::function<void(const std::vector<ActiveScanResult> &)>;
-    using EnergyScanHandler = std::function<void(const std::vector<EnergyScanResult> &)>;
-    using OtResultHandler   = std::function<void(ClientError)>;
+    using DeviceRoleHandler        = std::function<void(DeviceRole)>;
+    using ScanHandler              = std::function<void(const std::vector<ActiveScanResult> &)>;
+    using EnergyScanHandler        = std::function<void(const std::vector<EnergyScanResult> &)>;
+    using OtResultHandler          = std::function<void(ClientError)>;
+    using NetworkDiagnosticHandler = std::function<void(ClientError, const std::vector<NetworkDiagnosticMessage> &)>;
 
     /**
      * The constructor of a d-bus object.
@@ -875,6 +876,29 @@ public:
     ClientError GetTelemetryData(std::vector<uint8_t> &aTelemetryData);
 
     /**
+     * This method sends a network diagnostic get request and returns the raw payloads received from peers.
+     *
+     * Only one request may be in-flight at a time; concurrent calls return OT_ERROR_BUSY.
+     * Responses are ordered by peer IPv6 address. For peers that split their answer across
+     * multiple CoAP messages (FTD peers with large diagnostic data), the raw payloads are
+     * concatenated, so the caller receives every TLV the peer sent.
+     *
+     * @param[in] aDestination  The IPv6 destination of the diagnostic request.
+     * @param[in] aTlvTypes     The diagnostic TLV type IDs to request.
+     * @param[in] aHandler      The result handler for the final diagnostic response or error.
+     * @param[in] aTimeoutMs    The time to collect responses before replying, in milliseconds.
+     *                          The D-Bus transport timeout is set to aTimeoutMs plus a margin.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     */
+    ClientError GetNetworkDiagnosticTlvs(const Ip6Address               &aDestination,
+                                         const std::vector<uint8_t>     &aTlvTypes,
+                                         const NetworkDiagnosticHandler &aHandler,
+                                         uint32_t                        aTimeoutMs = 5000);
+
+    /**
      * This method gets the capabilities data proto serialized byte data.
      *
      * @param[out] aCapabilities The capabilities proto serialized byte data
@@ -893,8 +917,20 @@ private:
     template <typename ArgType> ClientError CallDBusMethodSync(const std::string &aMethodName, const ArgType &aArgs);
 
     template <typename ArgType>
+    ClientError CallDBusMethodSync(const std::string &aMethodName,
+                                   const ArgType     &aArgs,
+                                   int                aTimeoutMs,
+                                   DBusMessage      *&aReply);
+
+    template <typename ArgType>
     ClientError CallDBusMethodAsync(const std::string            &aMethodName,
                                     const ArgType                &aArgs,
+                                    DBusPendingCallNotifyFunction aFunction);
+
+    template <typename ArgType>
+    ClientError CallDBusMethodAsync(const std::string            &aMethodName,
+                                    const ArgType                &aArgs,
+                                    int                           aTimeoutMs,
                                     DBusPendingCallNotifyFunction aFunction);
 
     template <typename ValType> ClientError SetProperty(const std::string &aPropertyName, const ValType &aValue);
@@ -915,6 +951,7 @@ private:
     static void sScanPendingCallHandler(DBusPendingCall *aPending, void *aThreadApiDBus);
     void        ScanPendingCallHandler(DBusPendingCall *aPending);
     void        EnergyScanPendingCallHandler(DBusPendingCall *aPending);
+    void        NetworkDiagnosticPendingCallHandler(DBusPendingCall *aPending);
 
     static void EmptyFree(void *) {}
 
@@ -922,12 +959,13 @@ private:
 
     DBusConnection *mConnection;
 
-    ScanHandler       mScanHandler;
-    EnergyScanHandler mEnergyScanHandler;
-    OtResultHandler   mAttachHandler;
-    OtResultHandler   mDetachHandler;
-    OtResultHandler   mFactoryResetHandler;
-    OtResultHandler   mJoinerHandler;
+    ScanHandler              mScanHandler;
+    EnergyScanHandler        mEnergyScanHandler;
+    NetworkDiagnosticHandler mNetworkDiagnosticHandler;
+    OtResultHandler          mAttachHandler;
+    OtResultHandler          mDetachHandler;
+    OtResultHandler          mFactoryResetHandler;
+    OtResultHandler          mJoinerHandler;
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 };

@@ -684,6 +684,12 @@ struct TrelInfo
     TrelPacketCounters mTrelCounters; ///< The TREL counters.
 };
 
+struct NetworkDiagnosticMessage
+{
+    Ip6Address           mPeerAddress; ///< The IPv6 address of the responding peer.
+    std::vector<uint8_t> mPayload;     ///< The raw diagnostic message payload as received from OpenThread.
+};
+
 } // namespace DBus
 } // namespace otbr
 

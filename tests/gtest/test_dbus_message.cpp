@@ -121,6 +121,11 @@ bool operator==(const otbr::DBus::ExternalRoute &aLhs, const otbr::DBus::Externa
            aLhs.mStable == aRhs.mStable && aLhs.mNextHopIsThisDevice == aRhs.mNextHopIsThisDevice;
 }
 
+bool operator==(const NetworkDiagnosticMessage &aLhs, const NetworkDiagnosticMessage &aRhs)
+{
+    return aLhs.mPeerAddress == aRhs.mPeerAddress && aLhs.mPayload == aRhs.mPayload;
+}
+
 inline otbrError DBusMessageEncode(DBusMessageIter *aIter, const TestStruct &aValue)
 {
     otbrError       error = OTBR_ERROR_DBUS;
@@ -258,6 +263,23 @@ TEST(DBusMessage, TestOtbrChildInfo)
     EXPECT_EQ(DBusMessageToTuple(*msg, getVals), OTBR_ERROR_NONE);
 
     EXPECT_EQ(std::get<0>(setVals)[0], std::get<0>(getVals)[0]);
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestNetworkDiagnosticMessage)
+{
+    DBusMessage                                          *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::NetworkDiagnosticMessage>> setVals(
+        {{{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, {0x01, 0x02, 0x03}},
+         {{0xfd, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, {0xaa, 0xbb}}});
+    tuple<std::vector<otbr::DBus::NetworkDiagnosticMessage>> getVals;
+
+    EXPECT_NE(msg, nullptr);
+
+    EXPECT_EQ(TupleToDBusMessage(*msg, setVals), OTBR_ERROR_NONE);
+    EXPECT_EQ(DBusMessageToTuple(*msg, getVals), OTBR_ERROR_NONE);
+    EXPECT_EQ(setVals, getVals);
 
     dbus_message_unref(msg);
 }

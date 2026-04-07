@@ -235,6 +235,27 @@
       <arg name="enable" type="b" direction="in"/>
     </method>
 
+    <!-- GetNetworkDiagnosticTlvs: Send a network diagnostic get and collect the latest payload from each peer.
+      @destination: The IPv6 destination address of the diagnostic request.
+      @tlv_types: The requested diagnostic TLV type IDs.
+      @timeout_ms: The amount of time to collect responses before replying (1-300000 ms)
+      @response: The diagnostic payload received from each responding peer.
+
+      The response structure is:
+      <literallayout>
+        struct {
+          uint8[] peer_address
+          uint8[] payload
+        }
+      </literallayout>
+    -->
+    <method name="GetNetworkDiagnosticTlvs">
+      <arg name="destination" type="ay" direction="in"/>
+      <arg name="tlv_types" type="ay" direction="in"/>
+      <arg name="timeout_ms" type="u" direction="in"/>
+      <arg name="response" type="a(ayay)" direction="out"/>
+    </method>
+
     <property name="EphemeralKeyEnabled" type="b" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
