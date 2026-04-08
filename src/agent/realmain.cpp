@@ -270,6 +270,7 @@ static int realmain(int argc, char *argv[])
 
     std::set_new_handler(OnAllocateFailed);
 
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "B:d:hI:Vvs", kOptions, nullptr)) != -1)
     {
         switch (opt)
@@ -479,6 +480,8 @@ void otPlatReset(otInstance *aInstance)
 
 int otbr::RealMain(int argc, char *argv[])
 {
+    int ret;
+
 #ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
     if (setjmp(sResetJump))
     {
@@ -492,5 +495,12 @@ int otbr::RealMain(int argc, char *argv[])
         execvp(args[0], args.data());
     }
 #endif
-    return realmain(argc, argv);
+
+    while ((ret = realmain(argc, argv)) == 0)
+    {
+        VerifyOrExit(Application::IsPseudoReset());
+    }
+
+exit:
+    return ret;
 }

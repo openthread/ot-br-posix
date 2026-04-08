@@ -50,6 +50,7 @@ namespace otbr {
 #endif
 
 std::atomic_bool     Application::sShouldTerminate(false);
+std::atomic_bool     Application::sIsPseudoReset(false);
 const struct timeval Application::kPollTimeout = {OTBR_MAINLOOP_POLL_TIMEOUT_SEC, 0};
 
 Application::Application(Host::ThreadHost  &aHost,
@@ -78,6 +79,9 @@ Application::Application(Host::ThreadHost  &aHost,
     , mDBusAgent(MakeDBusDependentComponents())
 #endif
 {
+    sShouldTerminate = false;
+    sIsPseudoReset   = false;
+
     if (mHost.GetCoprocessorType() == OT_COPROCESSOR_RCP)
     {
         CreateRcpMode();
