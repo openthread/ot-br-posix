@@ -92,6 +92,25 @@ void DBusAgent::Deinit(void)
         mThreadObject->Deinit();
         mThreadObject = nullptr;
     }
+
+    if (mConnection != nullptr)
+    {
+        DBusError         err;
+        const std::string serverName = OTBR_DBUS_SERVER_PREFIX + mInterfaceName;
+
+        dbus_error_init(&err);
+        dbus_bus_release_name(mConnection.get(), serverName.c_str(), &err);
+        if (dbus_error_is_set(&err))
+        {
+            otbrLogWarning("Failed to release DBus name: %s: %s", err.name, err.message);
+        }
+
+        dbus_error_free(&err);
+        dbus_connection_set_watch_functions(mConnection.get(), nullptr, nullptr, nullptr, nullptr, nullptr);
+        mWatches.clear();
+        dbus_connection_flush(mConnection.get());
+        mConnection = nullptr;
+    }
 }
 
 DBusAgent::UniqueDBusConnection DBusAgent::PrepareDBusConnection(void)
@@ -147,6 +166,8 @@ void DBusAgent::Update(MainloopContext &aMainloop)
     int          fd;
     uint8_t      fdSetMask = MainloopContext::kErrorFdSet;
 
+    VerifyOrExit(mConnection != nullptr);
+
     if (dbus_connection_get_dispatch_status(mConnection.get()) == DBUS_DISPATCH_DATA_REMAINS)
     {
         aMainloop.mTimeout = {0, 0};
@@ -179,12 +200,17 @@ void DBusAgent::Update(MainloopContext &aMainloop)
 
         aMainloop.AddFdToSet(fd, fdSetMask);
     }
+
+exit:
+    return;
 }
 
 void DBusAgent::Process(const MainloopContext &aMainloop)
 {
     unsigned int flags;
     int          fd;
+
+    VerifyOrExit(mConnection != nullptr);
 
     for (const auto &watch : mWatches)
     {
@@ -220,6 +246,9 @@ void DBusAgent::Process(const MainloopContext &aMainloop)
     }
 
     while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_dispatch(mConnection.get()));
+
+exit:
+    return;
 }
 
 } // namespace DBus
