@@ -520,13 +520,42 @@ void ThreadHelper::LogOpenThreadResult(const char *aAction, otError aError)
     }
 }
 
+bool ThreadHelper::AreDatasetTlvsEqualToLocalDatasetTlvs(const otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    bool                     ret = false;
+    otOperationalDatasetTlvs localDatasetTlvs;
+
+    SuccessOrExit(otDatasetGetActiveTlvs(mInstance, &localDatasetTlvs));
+    ret = otDatasetTlvsCompare(&aDatasetTlvs, &localDatasetTlvs);
+
+exit:
+    return ret;
+}
+
+otError ThreadHelper::StartThreadStack(void)
+{
+    otError error = OT_ERROR_NONE;
+
+    if (!otIp6IsEnabled(mInstance))
+    {
+        SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+    }
+
+    if (mHost->GetDeviceRole() == OT_DEVICE_ROLE_DISABLED)
+    {
+        SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+    }
+
+exit:
+    return error;
+}
+
 void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, AttachHandler aHandler)
 {
     constexpr uint32_t kDelayTimerMilliseconds = 300 * 1000;
 
     otError                  error = OT_ERROR_NONE;
     otOperationalDatasetTlvs datasetTlvs;
-    otOperationalDataset     dataset;
     otOperationalDataset     emptyDataset{};
     otDeviceRole             role = mHost->GetDeviceRole();
 
@@ -541,17 +570,13 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     std::copy(aDatasetTlvs.begin(), aDatasetTlvs.end(), datasetTlvs.mTlvs);
     datasetTlvs.mLength = aDatasetTlvs.size();
 
-    SuccessOrExit(error = otDatasetParseTlvs(&datasetTlvs, &dataset));
-    VerifyOrExit(dataset.mComponents.mIsActiveTimestampPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsNetworkKeyPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsNetworkNamePresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsExtendedPanIdPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsMeshLocalPrefixPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsPanIdPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsChannelPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsPskcPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsSecurityPolicyPresent, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(dataset.mComponents.mIsChannelMaskPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(otDatasetIsValid(&datasetTlvs, /*aActive=*/true), error = OT_ERROR_INVALID_ARGS);
+    if (AreDatasetTlvsEqualToLocalDatasetTlvs(datasetTlvs))
+    {
+        error = StartThreadStack();
+        aHandler(error, 0);
+        ExitNow(error = OT_ERROR_NONE);
+    }
 
     SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, kDelayTimerMilliseconds));
 
@@ -572,11 +597,7 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
             SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
         }
 
-        if (!otIp6IsEnabled(mInstance))
-        {
-            SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
-        }
-        SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+        SuccessOrExit(error = StartThreadStack());
 
         if (hasActiveDataset)
         {

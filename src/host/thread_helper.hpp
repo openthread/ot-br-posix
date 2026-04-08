@@ -272,7 +272,9 @@ private:
     void    RandomFill(void *aBuf, size_t size);
     uint8_t RandomChannelFromChannelMask(uint32_t aChannelMask);
 
-    void ActiveDatasetChangedCallback(void);
+    void    ActiveDatasetChangedCallback(void);
+    bool    AreDatasetTlvsEqualToLocalDatasetTlvs(const otOperationalDatasetTlvs &aDatasetTlvs) const;
+    otError StartThreadStack(void);
 
 #if OTBR_ENABLE_DHCP6_PD
     static void BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState, void *aThreadHelper);
