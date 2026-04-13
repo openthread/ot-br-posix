@@ -70,7 +70,7 @@ paths:
                     eui: '9035eafffef3e09c'
                     role: 'leader'
                     mode:
-                      deviceTypeFTD: false
+                      fullThreadDevice: false
                       rxOnWhenIdle: false
                       fullNetworkData: false
                     baId: 'e11e23c164311ce642f93297b095b2f8'
@@ -103,7 +103,7 @@ paths:
                         eui: '9035eafffef3e09c'
                         role: 'leader'
                         mode:
-                          deviceTypeFTD: false
+                          fullThreadDevice: false
                           rxOnWhenIdle: false
                           fullNetworkData: false
                         baId: 'e11e23c164311ce642f93297b095b2f8'
@@ -203,8 +203,8 @@ paths:
                         - ipv6Addresses
                         - macCounters
                         - childTable
-                        - eui64
-                        - version
+                        - eui
+                        - threadVersion
                         - vendorName
                         - vendorModel
                         - vendorSwVersion
@@ -338,8 +338,8 @@ paths:
                           - maxChildTimeout
                           #- lDevIdSubject
                           #- iDevIdCert
-                          - eui64
-                          - version
+                          - eui
+                          - threadVersion
                           - vendorName
                           - vendorModel
                           - vendorSwVersion
@@ -360,8 +360,8 @@ paths:
                           - extAddress
                           - ipv6Addresses
                           - macCounters
-                          - eui64
-                          - version
+                          - eui
+                          - threadVersion
                           - vendorName
                           - vendorModel
                           - vendorSwVersion
@@ -648,7 +648,7 @@ paths:
         - mlEidIid 
         - mode
         - omrIpv6Address
-        - eui64 (optional)
+        - eui (optional)
         - hostname 
         - role
         - created
@@ -711,7 +711,7 @@ paths:
                           eui: '9035eafffef3e09c'
                           role: 'leader'
                           mode:
-                            deviceTypeFTD: false
+                            fullThreadDevice: false
                             rxOnWhenIdle: false
                             fullNetworkData: false
                           baId: 'e11e23c164311ce642f93297b095b2f8'
@@ -808,9 +808,9 @@ paths:
                       - 'fd11:22:0:0:92de:b397:5758:368'
                     hostname: 'knx-00fd5f0123a5.local'
                     eui: '9035eafffef3e09c'
-                    role: 'leader'
+                    role: 'child'
                     mode:
-                      deviceTypeFTD: false
+                      fullThreadDevice: false
                       rxOnWhenIdle: false
                       fullNetworkData: false
             application/vnd.api+json:
@@ -828,9 +828,9 @@ paths:
                           - 'fd11:22:0:0:92de:b397:5758:368'
                         hostname: 'knx-00fd5f0123a5.local'
                         eui: '9035eafffef3e09c'
-                        role: 'leader'
+                        role: 'child'
                         mode:
-                          deviceTypeFTD: false
+                          fullThreadDevice: false
                           rxOnWhenIdle: false
                           fullNetworkData: false
                         created: '2025-02-25T17:31:54+02:00'
@@ -943,7 +943,7 @@ paths:
                         attributes:
                           created: '2023-11-23T18:30:42Z'
                           extAddress: '96518e5497d5b9f3'
-                          addr: '0x5000'
+                          rloc16: '0x5000'
                           leaderData:
                             partitionId: 1794764107
                             weighting: 64
@@ -973,34 +973,34 @@ paths:
                           threadVersion: 4
                           vendorName: 'VendorName'
                           vendorModel: 'VendorModel'
-                          vendorVersion: '1.0.0'
+                          vendorSwVersion: '1.0.0'
                           stackVersion: 'openthread-esp32/-; esp32; Nov 1 2023 01:02:03'
                           routerNeighbors:
-                            - addr: '0xf000'
+                            - rloc16: '0xf000'
                               extAddress: '96518e5497d5b9f3'
                               threadVersion: 4
-                              connTime: 43742
+                              linkAge: 43742
                               linkMargin: 85
                               averageRssi: -23
                               lastRssi: -20
                               frameErrorRate: 0.0
-                              msgErrorRate: 0.0
+                              messageErrorRate: 0.0
                           mleCounters:
-                            roleDisabled: 1
-                            roleDetached: 1
-                            roleChild: 1
-                            roleRouter: 1
-                            roleLeader: 0
-                            attachAttempts: 1
-                            partitionChanges: 0
-                            betterAttachAttempts: 0
-                            parentChanges: 1
+                            radioDisabledCount: 1
+                            detachedRoleCount: 1
+                            childRoleCount: 1
+                            routerRoleCount: 1
+                            leaderRoleCount: 0
+                            attachAttemptsCount: 1
+                            partIdChangesCount: 0
+                            betterPartIdAttachAttemptsCount: 0
+                            newParentCount: 1
                             trackingTime: 44000.000
-                            roleDisabledTime: 21.434
-                            roleDetachedTime: 174.560
-                            roleChildTime: 62.006
-                            roleRouterTime: 43742.000
-                            roleLeaderTime: 0.0
+                            radioDisabledTime: 21.434
+                            detachedRoleTime: 174.560
+                            childRoleTime: 62.006
+                            routerRoleTime: 43742.000
+                            leaderRoleTime: 0.0
                           brCounters:
                             ifInUcastPkts: 0
                             ifInBroadcastPkts: 0
@@ -1026,7 +1026,7 @@ paths:
                             rxOnWhenIdle: false
                             fullThreadDevice: false
                             fullNetworkData: true
-                          childTimeout: 2880
+                          timeout: 2880
                           leaderData:
                             partitionId: 1794764107
                             weighting: 64
@@ -1052,24 +1052,24 @@ paths:
                           threadVersion: null
                           vendorName: 'VendorName'
                           vendorModel: 'VendorModel'
-                          vendorVersion: '1.0.0'
+                          vendorSwVersion: '1.0.0'
                           stackVersion: 'OPENTHREAD/9cf62ff-dirty; NRF52840; Sep 13 2023 06:50:37'
                           mleCounters:
-                            roleDisabled: 1
-                            roleDetached: 1
-                            roleChild: 1
-                            roleRouter: 0
-                            roleLeader: 0
-                            attachAttempts: 1
-                            partitionChanges: 0
-                            betterAttachAttempts: 0
-                            parentChanges: 1
+                            radioDisabledCount: 1
+                            detachedRoleCount: 1
+                            childRoleCount: 1
+                            routerRoleCount: 0
+                            leaderRoleCount: 0
+                            attachAttemptsCount: 1
+                            partIdChangesCount: 0
+                            betterPartIdAttachAttemptsCount: 0
+                            newParentCount: 1
                             trackingTime: 43576.123
-                            roleDisabledTime: 20.788
-                            roleDetachedTime: 342.333
-                            roleChildTime: 43213.002
-                            roleRouterTime: 0.0
-                            roleLeaderTime: 0.0
+                            radioDisabledTime: 20.788
+                            detachedRoleTime: 342.333
+                            childRoleTime: 43213.002
+                            routerRoleTime: 0.0
+                            leaderRoleTime: 0.0
                       - id: 688f881a-b3d5-4261-949c-9c18dfdd7fca
                         type: energyScanReport
                         attributes:
@@ -1717,9 +1717,9 @@ components:
                       - extAddress         # TLV 0: MAC Extended Address (64-bit)
                       - rloc16             # TLV 1: MAC Address (16-bit)
                       - mode               # TLV 2: Mode
-                      - childTimeout       # TLV 3: Timeout
+                      - timeout            # TLV 3: Timeout
                       - connectivity       # TLV 4: Connectivity
-                      - route64            # TLV 5: Route64
+                      - route              # TLV 5: Route64
                       - leaderData         # TLV 6: Leader Data
                       - networkData        # TLV 7: Network Data
                       - ipv6Addresses      # TLV 8: IPv6 Address List
@@ -1731,11 +1731,11 @@ components:
                       - maxChildTimeout    # TLV 19: Max Child Timeout
                       #- lDevIdSubject      # TLV 20: LDevID Subject Public Key Info
                       #- iDevIdCert         # TLV 21: IDevID Certificate
-                      - eui64              # TLV 23: EUI-64
-                      - version            # TLV 24: Version
+                      - eui                # TLV 23: EUI-64
+                      - threadVersion      # TLV 24: Version
                       - vendorName         # TLV 25: Vendor Name
                       - vendorModel        # TLV 26: Vendor Model
-                      - vendorVersion      # TLV 27: Vendor Software Version
+                      - vendorSwVersion    # TLV 27: Vendor Software Version
                       - threadStackVersion # TLV 28: Thread Stack Version
                       - children           # TLV 29: Child
                       - childIpv6Addresses # TLV 30: Child IPv6 Address List
@@ -2380,19 +2380,19 @@ components:
           $ref: "#/components/schemas/pskd"
         joinerId:
           type: string
-          description: A string of the EUI-64, Discerner, or "*", mutually exclusive with Eui64 and Discerner
+          description: A string of the EUI-64, Discerner, or "*", mutually exclusive with `eui` and `discerner`.
           example: "0xabc/12"
           default: "*"
-        eui64:
+        eui:
           type: string
-          description: A string of the EUI-64, mutually exclusive with JoinerId and Discerner
+          description: A string of the EUI-64, mutually exclusive with `joinerId` and `discerner`.
           example: "0123456789abcdef"
         discerner:
           type: string
           description: |- 
             A discerner in the form of the discerner hex value (optionally with leading 0x) 
             and bit length separated by a '/'.
-            Field is mutually exclusive with JoinerId and Eui64.
+            Field is mutually exclusive with `joinerId` and `eui`.
           example: "0xabc/12"
         timeout:
           type: integer
@@ -2511,7 +2511,7 @@ components:
         nestedAttributes:
           summary: Nested attributes for a type
           value:
-            fields[threadDevice]: "mode.deviceTypeFTD,mode.rxOnWhenIdle"
+            fields[threadDevice]: "mode.fullThreadDevice,mode.rxOnWhenIdle"
 
   ### Responses ###############################################################
   #############################################################################
