@@ -600,10 +600,8 @@ test_restapi()
 {
     exit_message="Error in REST API server test"
     cd tests/restjsonapi
-    exists_or_die install_bruno_cli
     exists_or_die test-restjsonapi-server
     executable_or_die test-restjsonapi-server
-    ./install_bruno_cli || die "Failed to install bruno cli"
 
     test_setup
     ba_start
