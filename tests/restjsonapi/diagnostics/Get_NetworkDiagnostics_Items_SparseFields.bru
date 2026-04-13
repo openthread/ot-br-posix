@@ -46,7 +46,7 @@ tests {
       expect(item.attributes).to.have.property("created");
       expect(item.attributes).to.have.property("extAddress");
 
-      expect(item.attributes).to.not.have.property("eui64");
+      expect(item.attributes).to.not.have.property("eui");
       expect(item.attributes).to.not.have.property("macCounters");
       expect(item.attributes).to.not.have.property("mleCounters");
       expect(item.attributes).to.not.have.property("children");
@@ -55,7 +55,7 @@ tests {
       expect(item.attributes).to.not.have.property("leaderData");
       expect(item.attributes).to.not.have.property("ip6Addresses");
       expect(item.attributes).to.not.have.property("channelPages");
-      expect(item.attributes).to.not.have.property("version");
+      expect(item.attributes).to.not.have.property("threadVersion");
       expect(item.attributes).to.not.have.property("vendorName");
       expect(item.attributes).to.not.have.property("vendorModel");
       expect(item.attributes).to.not.have.property("vendorSwVersion");
