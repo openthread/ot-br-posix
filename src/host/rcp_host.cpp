@@ -886,6 +886,8 @@ void RcpHost::HandleEpskcStateChanged(void)
     {
         callback(epskcState, port);
     }
+
+    mThreadHelper->EphemeralKeyStateChangedCallback(epskcState);
 }
 
 otbrError RcpHost::UdpForward(const uint8_t      *aUdpPayload,

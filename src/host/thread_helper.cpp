@@ -702,9 +702,22 @@ exit:
 }
 #endif
 
+void ThreadHelper::EphemeralKeyStateChangedCallback(otBorderAgentEphemeralKeyState aEpskcState)
+{
+    for (const auto &handler : mEphemeralKeyStateChangeHandlers)
+    {
+        handler(aEpskcState);
+    }
+}
+
 void ThreadHelper::AddActiveDatasetChangeHandler(DatasetChangeHandler aHandler)
 {
     mActiveDatasetChangeHandlers.push_back(std::move(aHandler));
+}
+
+void ThreadHelper::AddEphemeralKeyStateChangedHandler(EphemeralKeyStateChangeHandler aHandler)
+{
+    mEphemeralKeyStateChangeHandlers.push_back(std::move(aHandler));
 }
 
 void ThreadHelper::DetachGracefully(ResultHandler aHandler)

@@ -56,7 +56,8 @@ public:
     using DeviceRoleHandler = std::function<void(DeviceRole)>;
     using ScanHandler       = std::function<void(const std::vector<ActiveScanResult> &)>;
     using EnergyScanHandler = std::function<void(const std::vector<EnergyScanResult> &)>;
-    using OtResultHandler   = std::function<void(ClientError)>;
+    using OtResultHandler          = std::function<void(ClientError)>;
+    using EphemeralKeyStateHandler = std::function<void(EphemeralKeyState)>;
 
     /**
      * The constructor of a d-bus object.
@@ -81,6 +82,16 @@ public:
      * @param[in] aHandler  The device role handler.
      */
     void AddDeviceRoleHandler(const DeviceRoleHandler &aHandler);
+
+    /**
+     * This method adds a callback for ephemeral key state change.
+     *
+     * @param[in] aHandler  The ephemeral key state handler.
+     */
+    void AddEphemeralKeyStateHandler(const EphemeralKeyStateHandler aHandler)
+    {
+        mEphemeralKeyStateHandlers.push_back(aHandler);
+    }
 
     /**
      * This method permits unsecure join on port.
@@ -929,7 +940,8 @@ private:
     OtResultHandler   mFactoryResetHandler;
     OtResultHandler   mJoinerHandler;
 
-    std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
+    std::vector<DeviceRoleHandler>        mDeviceRoleHandlers;
+    std::vector<EphemeralKeyStateHandler> mEphemeralKeyStateHandlers;
 };
 
 } // namespace DBus

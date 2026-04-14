@@ -41,6 +41,7 @@ add_executable(otbr-test-dbus-server
 target_link_libraries(otbr-test-dbus-server PRIVATE
     otbr-dbus-server
 )
+
 add_test(
     NAME dbus-server
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-server

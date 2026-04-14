@@ -26,6 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dbus/common/constants.hpp"
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/server/dbus_object.hpp"
 
@@ -43,15 +44,38 @@ public:
         : DBusObject(aConnection, "/io/openthread/testobj")
         , mEnded(false)
         , mCount(0)
+        , mEphemeralKeyState(0)
     {
         RegisterMethod("io.openthread", "Ping", std::bind(&TestObject::PingHandler, this, _1));
         RegisterGetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountGetHandler, this, _1));
         RegisterSetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountSetHandler, this, _1));
+        RegisterGetPropertyHandler("io.openthread", OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_STATE,
+                                   std::bind(&TestObject::EphemeralKeyStateGetHandler, this, _1));
+        RegisterSetPropertyHandler("io.openthread", OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_STATE,
+                                   std::bind(&TestObject::EphemeralKeyStateSetHandler, this, _1));
     }
 
     bool IsEnded(void) const { return mEnded; }
 
 private:
+    otError EphemeralKeyStateGetHandler(DBusMessageIter &aIter)
+    {
+        DBusMessageEncodeToVariant(&aIter, mEphemeralKeyState);
+        return OT_ERROR_NONE;
+    }
+
+    otError EphemeralKeyStateSetHandler(DBusMessageIter &aIter)
+    {
+        uint32_t state = 0;
+
+        DBusMessageExtractFromVariant(&aIter, state);
+        mEphemeralKeyState = state;
+
+        SignalPropertyChanged("io.openthread", OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_STATE, mEphemeralKeyState);
+
+        return OT_ERROR_NONE;
+    }
+
     otError CountGetHandler(DBusMessageIter &aIter)
     {
         DBusMessageEncodeToVariant(&aIter, mCount);
@@ -85,8 +109,9 @@ private:
         }
     }
 
-    bool    mEnded;
-    int32_t mCount;
+    bool     mEnded;
+    int32_t  mCount;
+    uint32_t mEphemeralKeyState;
 };
 
 int main()

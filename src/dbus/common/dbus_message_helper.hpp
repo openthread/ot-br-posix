@@ -36,6 +36,10 @@
 
 #include "openthread-br/config.h"
 
+#if OTBR_ENABLE_EPSKC
+#include <openthread/border_agent.h>
+#endif
+
 #include <array>
 #include <string>
 #include <tuple>
@@ -264,6 +268,14 @@ template <> struct DBusTypeTrait<SrpServerAddressMode>
     static constexpr int         TYPE           = DBUS_TYPE_BYTE;
     static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BYTE_AS_STRING;
 };
+
+#if OTBR_ENABLE_EPSKC
+template <> struct DBusTypeTrait<otBorderAgentEphemeralKeyState>
+{
+    static constexpr int         TYPE           = DBUS_TYPE_BYTE;
+    static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BYTE_AS_STRING;
+};
+#endif
 
 template <> struct DBusTypeTrait<SrpServerInfo>
 {

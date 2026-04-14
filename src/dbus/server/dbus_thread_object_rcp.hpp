@@ -82,6 +82,7 @@ private:
     void DeviceRoleHandler(otDeviceRole aDeviceRole);
     void Dhcp6PdStateHandler(otBorderRoutingDhcp6PdState aDhcp6PdState);
     void ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs);
+    void EphemeralKeyStateChangedHandler(otBorderAgentEphemeralKeyState aEpskcState);
     void NcpResetHandler(void);
 
     void ScanHandler(DBusRequest &aRequest);

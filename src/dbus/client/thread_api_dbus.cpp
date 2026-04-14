@@ -143,16 +143,30 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
     SuccessOrExit(DBusMessageExtract(&dictEntryIter, propertyName));
     VerifyOrExit(dbus_message_iter_get_arg_type(&dictEntryIter) == DBUS_TYPE_VARIANT);
     dbus_message_iter_recurse(&dictEntryIter, &valIter);
-    SuccessOrExit(DBusMessageExtract(&valIter, val));
 
-    VerifyOrExit(propertyName == OTBR_DBUS_PROPERTY_DEVICE_ROLE);
-    SuccessOrExit(NameToDeviceRole(val, role));
-
-    for (const auto &f : mDeviceRoleHandlers)
+    if (propertyName == OTBR_DBUS_PROPERTY_DEVICE_ROLE)
     {
-        f(role);
+        SuccessOrExit(DBusMessageExtract(&valIter, val));
+        SuccessOrExit(NameToDeviceRole(val, role));
+
+        for (const auto &f : mDeviceRoleHandlers)
+        {
+            f(role);
+        }
+        handled = DBUS_HANDLER_RESULT_HANDLED;
     }
-    handled = DBUS_HANDLER_RESULT_HANDLED;
+    else if (propertyName == OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_STATE)
+    {
+        uint32_t state;
+
+        SuccessOrExit(DBusMessageExtract(&valIter, state));
+
+        for (const auto &f : mEphemeralKeyStateHandlers)
+        {
+            f(static_cast<EphemeralKeyState>(state));
+        }
+        handled = DBUS_HANDLER_RESULT_HANDLED;
+    }
 
 exit:
     return handled;

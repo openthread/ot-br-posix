@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 
+#include <openthread/border_agent.h>
 #include <openthread/border_routing.h>
 #include <openthread/instance.h>
 #include <openthread/ip6.h>
@@ -73,6 +74,7 @@ public:
 #if OTBR_ENABLE_DHCP6_PD
     using Dhcp6PdStateCallback = std::function<void(otBorderRoutingDhcp6PdState)>;
 #endif
+    using EphemeralKeyStateChangeHandler = std::function<void(otBorderAgentEphemeralKeyState)>;
 
     /**
      * The constructor of a Thread helper.
@@ -253,6 +255,20 @@ public:
      */
     static otError ProcessDatasetForMigration(otOperationalDatasetTlvs &aDatasetTlvs, uint32_t aDelayMilli);
 
+    /**
+     * This method handles ephemeral key state change event from openthread stack.
+     *
+     * @param[in] aEpskcState The ephemeral key state.
+     */
+    void EphemeralKeyStateChangedCallback(otBorderAgentEphemeralKeyState aEpskcState);
+
+    /**
+     * This method adds a callback for ephemeral key state change.
+     *
+     * @param[in] aHandler The ephemeral key state change handler.
+     */
+    void AddEphemeralKeyStateChangedHandler(EphemeralKeyStateChangeHandler aHandler);
+
 private:
     static void ActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
     void        ActiveScanHandler(otActiveScanResult *aResult);
@@ -288,8 +304,9 @@ private:
     EnergyScanHandler               mEnergyScanHandler;
     std::vector<otEnergyScanResult> mEnergyScanResults;
 
-    std::vector<DeviceRoleHandler>    mDeviceRoleHandlers;
-    std::vector<DatasetChangeHandler> mActiveDatasetChangeHandlers;
+    std::vector<DeviceRoleHandler>              mDeviceRoleHandlers;
+    std::vector<DatasetChangeHandler>           mActiveDatasetChangeHandlers;
+    std::vector<EphemeralKeyStateChangeHandler> mEphemeralKeyStateChangeHandlers;
 
     std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 

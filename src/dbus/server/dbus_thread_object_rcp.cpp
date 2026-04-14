@@ -117,6 +117,10 @@ otbrError DBusThreadObjectRcp::Init(void)
 #if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
     threadHelper->SetDhcp6PdStateCallback(std::bind(&DBusThreadObjectRcp::Dhcp6PdStateHandler, this, _1));
 #endif
+#if OTBR_ENABLE_EPSKC
+    mHost.GetThreadHelper()->AddEphemeralKeyStateChangedHandler(
+        std::bind(&DBusThreadObjectRcp::EphemeralKeyStateChangedHandler, this, _1));
+#endif
     threadHelper->AddActiveDatasetChangeHandler(std::bind(&DBusThreadObjectRcp::ActiveDatasetChangeHandler, this, _1));
     mHost.RegisterResetHandler(std::bind(&DBusThreadObjectRcp::NcpResetHandler, this));
 
@@ -338,6 +342,10 @@ void DBusThreadObjectRcp::NcpResetHandler(void)
     mHost.GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObjectRcp::DeviceRoleHandler, this, _1));
     mHost.GetThreadHelper()->AddActiveDatasetChangeHandler(
         std::bind(&DBusThreadObjectRcp::ActiveDatasetChangeHandler, this, _1));
+#if OTBR_ENABLE_EPSKC
+    mHost.GetThreadHelper()->AddEphemeralKeyStateChangedHandler(
+        std::bind(&DBusThreadObjectRcp::EphemeralKeyStateChangedHandler, this, _1));
+#endif
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
                           GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
@@ -2254,6 +2262,13 @@ exit:
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif
 }
+
+#if OTBR_ENABLE_EPSKC
+void DBusThreadObjectRcp::EphemeralKeyStateChangedHandler(otBorderAgentEphemeralKeyState aEpskcState) {
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_STATE,
+                          aEpskcState);
+}
+#endif
 
 static_assert(OTBR_SRP_SERVER_STATE_DISABLED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_DISABLED),
               "OTBR_SRP_SERVER_STATE_DISABLED value is incorrect");

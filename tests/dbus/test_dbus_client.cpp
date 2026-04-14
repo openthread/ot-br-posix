@@ -283,6 +283,27 @@ void CheckEphemeralKey(ThreadApiDBus *aApi)
     TEST_ASSERT(enabled == true);
 }
 
+void CheckEphemeralKeyStateHandler(ThreadApiDBus *aApi, DBusConnection *aConnection)
+{
+    bool                          stepDone      = false;
+    otbr::DBus::EphemeralKeyState receivedState = otbr::DBus::OTBR_EPHEMERAL_KEY_STATE_DISABLED;
+
+    aApi->AddEphemeralKeyStateHandler([&stepDone, &receivedState](otbr::DBus::EphemeralKeyState aState) {
+        receivedState = aState;
+        stepDone      = true;
+    });
+
+    TEST_ASSERT(aApi->SetEphemeralKeyEnabled(false) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->SetEphemeralKeyEnabled(true) == OTBR_ERROR_NONE);
+
+    while (!stepDone)
+    {
+        dbus_connection_read_write_dispatch(aConnection, 100);
+    }
+
+    TEST_ASSERT(receivedState != otbr::DBus::OTBR_EPHEMERAL_KEY_STATE_DISABLED);
+}
+
 void CheckBorderAgent(ThreadApiDBus *aApi)
 {
     TEST_ASSERT(aApi->SetBorderAgentEnabled(false) == OTBR_ERROR_NONE);
@@ -464,7 +485,7 @@ int main()
 
     stepDone = false;
 
-    api->Scan([&api, extpanid, &stepDone](const std::vector<ActiveScanResult> &aResult) {
+    api->Scan([&api, &connection, extpanid, &stepDone](const std::vector<ActiveScanResult> &aResult) {
         LinkModeConfig       cfg        = {true, false, true};
         std::vector<uint8_t> networkKey = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                            0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
@@ -483,7 +504,7 @@ int main()
         api->SetLinkMode(cfg);
 
         api->Attach("Test", 0x3456, extpanid, networkKey, {}, 1 << channel,
-                    [&api, channel, extpanid, &stepDone](ClientError aError) {
+                    [&api, &connection, channel, extpanid, &stepDone](ClientError aError) {
                         printf("Attach result %d\n", static_cast<int>(aError));
                         sleep(20);
                         uint64_t             extpanidCheck;
@@ -530,6 +551,7 @@ int main()
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
                             CheckEphemeralKey(api.get());
+                            CheckEphemeralKeyStateHandler(api.get(), connection.get());
                             CheckBorderAgent(api.get());
 #if OTBR_ENABLE_TELEMETRY_DATA_API
                             CheckTelemetryData(api.get());
@@ -548,7 +570,7 @@ int main()
                             exit(-1);
                         }
                         TEST_ASSERT(api->SetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
-                        api->Attach([&api, channel, extpanid, &stepDone](ClientError aErr) {
+                        api->Attach([&api, &connection, channel, extpanid, &stepDone](ClientError aErr) {
                             sleep(20);
 
                             uint8_t                routerId;

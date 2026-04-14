@@ -1258,5 +1258,22 @@ exit:
     return error;
 }
 
+#if OTBR_ENABLE_EPSKC
+otbrError DBusMessageEncode(DBusMessageIter *aIter, otBorderAgentEphemeralKeyState aEpskcScope)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, static_cast<uint8_t>(aEpskcScope)));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+#endif
+
 } // namespace DBus
 } // namespace otbr

@@ -56,6 +56,15 @@ enum DeviceRole
     OTBR_DEVICE_ROLE_LEADER   = 4,
 };
 
+enum EphemeralKeyState
+{
+    OTBR_EPHEMERAL_KEY_STATE_DISABLED  = 0,
+    OTBR_EPHEMERAL_KEY_STATE_STOPPED   = 1,
+    OTBR_EPHEMERAL_KEY_STATE_STARTED   = 2,
+    OTBR_EPHEMERAL_KEY_STATE_CONNECTED = 3,
+    OTBR_EPHEMERAL_KEY_STATE_ACCEPTED  = 4,
+};
+
 struct ActiveScanResult
 {
     uint64_t             mExtAddress;    ///< IEEE 802.15.4 Extended Address
