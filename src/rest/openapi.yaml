@@ -2284,7 +2284,7 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ActiveDataset"
             - $ref: "#/components/schemas/DatasetTlv"
-        PendingTimestamp:
+        pendingTimestamp:
           $ref: "#/components/schemas/Timestamp"
         delay:
           type: integer
