@@ -319,7 +319,7 @@ static cJSON *SecurityPolicy2Json(const otSecurityPolicy &aSecurityPolicy)
                           cJSON_CreateBool(aSecurityPolicy.mObtainNetworkKeyEnabled));
     cJSON_AddItemToObject(securityPolicy, "nativeCommissioning",
                           cJSON_CreateBool(aSecurityPolicy.mNativeCommissioningEnabled));
-    cJSON_AddItemToObject(securityPolicy, "Routers", cJSON_CreateBool(aSecurityPolicy.mRoutersEnabled));
+    cJSON_AddItemToObject(securityPolicy, "routers", cJSON_CreateBool(aSecurityPolicy.mRoutersEnabled));
     cJSON_AddItemToObject(securityPolicy, "externalCommissioning",
                           cJSON_CreateBool(aSecurityPolicy.mExternalCommissioningEnabled));
     cJSON_AddItemToObject(securityPolicy, "commercialCommissioning",
