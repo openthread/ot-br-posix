@@ -143,7 +143,10 @@ int main(int argc, char **argv)
     signal(SIGINT, HandleSignal);
 
     sServer.reset(new otbr::Web::WebServer());
-    sServer->StartWebServer(interfaceName, httpListenAddr, port);
+    if (sServer->StartWebServer(interfaceName, httpListenAddr, port) != OTBR_ERROR_NONE)
+    {
+        ret = -1;
+    }
 
     otbrLogDeinit();
 

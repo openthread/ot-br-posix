@@ -35,6 +35,9 @@
 
 #include "web/web-service/web_server.hpp"
 
+#include <errno.h>
+#include <string.h>
+
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
@@ -82,7 +85,7 @@ void WebServer::Init()
     }
 }
 
-void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)
+otbrError WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)
 {
     mWpanService.SetInterfaceName(aIfName);
     Init();
@@ -96,7 +99,14 @@ void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uin
     ResponseCommission();
     mServer.set_mount_point("/", WEB_FILE_PATH);
 
-    mServer.listen(aListenAddr, aPort);
+    if (!mServer.listen(aListenAddr, aPort))
+    {
+        otbrLogCrit("Failed to start web server on %s:%d: %s (errno %d)", aListenAddr != nullptr ? aListenAddr : "*",
+                    aPort, strerror(errno), errno);
+        return OTBR_ERROR_ERRNO;
+    }
+
+    return OTBR_ERROR_NONE;
 }
 
 void WebServer::StopWebServer(void)
