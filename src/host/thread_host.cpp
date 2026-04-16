@@ -50,7 +50,6 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
     CoprocessorType             coprocessorType;
     otPlatformCoprocessorUrls   urls;
     std::unique_ptr<ThreadHost> host;
-    otLogLevel                  level = ConvertToOtLogLevel(otbrLogGetLevel());
 
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -59,8 +58,6 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
     {
         urls.mUrls[urls.mNum++] = url;
     }
-
-    VerifyOrDie(otLoggingSetLevel(level) == OT_ERROR_NONE, "Failed to set OT log Level!");
 
     coprocessorType = otSysInitCoprocessor(&urls);
 
