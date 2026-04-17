@@ -233,8 +233,14 @@ otbrLogLevel ConvertProtoToOtbrLogLevel(ProtoLogLevel aProtoLogLevel)
 otError RcpHost::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
 {
     otError error = OT_ERROR_NONE;
+
     otbrLogSetLevel(aLevel);
-    error = otLoggingSetLevel(ConvertToOtLogLevel(aLevel));
+
+    if (GetInstance() != nullptr)
+    {
+        error = otSetLogLevel(GetInstance(), ConvertToOtLogLevel(aLevel));
+    }
+
     return error;
 }
 
@@ -247,10 +253,10 @@ void RcpHost::Init(void)
     FeatureFlagList featureFlagList;
 #endif
 
-    VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
-
     mInstance = otSysInit(&mConfig);
     assert(mInstance != nullptr);
+
+    VerifyOrExit(otSetLogLevel(mInstance, level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     {
         otError result = otSetStateChangedCallback(mInstance, &RcpHost::HandleStateChanged, this);
@@ -970,10 +976,17 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
     va_end(ap);
 }
 
+extern "C" void otPlatLogHandleLogLevelChanged(otInstance *aInstance, otLogLevel aLogLevel)
+{
+    OTBR_UNUSED_VARIABLE(aInstance);
+
+    otbrLogSetLevel(RcpHost::ConvertToOtbrLogLevel(aLogLevel));
+    otbrLogInfo("OpenThread log level changed to %d", aLogLevel);
+}
+
 extern "C" void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
 {
     otbrLogSetLevel(RcpHost::ConvertToOtbrLogLevel(aLogLevel));
-    otbrLogInfo("OpenThread log level changed to %d", aLogLevel);
 }
 
 } // namespace Host
