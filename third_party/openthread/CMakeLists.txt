@@ -53,6 +53,9 @@ set(OT_ECDSA ON CACHE STRING "enable ECDSA" FORCE)
 set(OT_EXTERNAL_HEAP ON CACHE STRING "enable external heap" FORCE)
 set(OT_FIREWALL ON CACHE STRING "enable firewall feature")
 set(OT_HISTORY_TRACKER ON CACHE STRING "enable history tracker" FORCE)
+# ====================================================================================================
+set(OT_IPFIX ${OTBR_IPFIX} CACHE STRING "enable IPFIX packet/frame capture and export" FORCE) 
+# ====================================================================================================
 set(OT_JOINER ON CACHE STRING "enable joiner" FORCE)
 set(OT_LINK_METRICS_INITIATOR ${OTBR_LINK_METRICS_TELEMETRY} CACHE STRING "enable link metrics initiator" FORCE)
 set(OT_LINK_METRICS_MANAGER ${OTBR_LINK_METRICS_TELEMETRY} CACHE STRING "enable link metrics manager" FORCE)
