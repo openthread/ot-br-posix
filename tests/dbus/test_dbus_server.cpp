@@ -68,19 +68,19 @@ private:
         return OT_ERROR_NONE;
     }
 
-    void PingHandler(DBusRequest &aRequest)
+    void PingHandler(std::shared_ptr<DBusRequest> aRequest)
     {
         uint32_t    id;
         std::string pingMessage;
         auto        args = std::tie(id, pingMessage);
 
-        if (DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE)
+        if (DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE)
         {
-            aRequest.Reply(std::make_tuple(id, pingMessage + "Pong"));
+            aRequest->Reply(std::make_tuple(id, pingMessage + "Pong"));
         }
         else
         {
-            aRequest.Reply(std::make_tuple("hello"));
+            aRequest->Reply(std::make_tuple("hello"));
             mEnded = true;
         }
     }
