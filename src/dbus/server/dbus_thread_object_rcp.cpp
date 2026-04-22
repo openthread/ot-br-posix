@@ -2159,14 +2159,16 @@ exit:
 
 void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
 {
-    otError     error        = OT_ERROR_NONE;
-    auto        threadHelper = mHost.GetThreadHelper();
-    uint32_t    lifetime     = 0;
-    auto        args         = std::tie(lifetime);
-    std::string ePskc;
+    otError                        error        = OT_ERROR_NONE;
+    auto                           threadHelper = mHost.GetThreadHelper();
+    uint32_t                       lifetime     = 0;
+    auto                           args         = std::tie(lifetime);
+    std::string                    ePskc;
+    otBorderAgentEphemeralKeyState state;
 
-    VerifyOrExit(otBorderAgentEphemeralKeyGetState(threadHelper->GetInstance()) != OT_BORDER_AGENT_STATE_DISABLED,
-                 error = OT_ERROR_NOT_CAPABLE);
+    state = otBorderAgentEphemeralKeyGetState(threadHelper->GetInstance());
+    VerifyOrExit(state != OT_BORDER_AGENT_STATE_DISABLED, error = OT_ERROR_NOT_CAPABLE);
+    VerifyOrExit(state == OT_BORDER_AGENT_STATE_STOPPED, error = OT_ERROR_BUSY);
 
     SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OT_ERROR_INVALID_ARGS);
