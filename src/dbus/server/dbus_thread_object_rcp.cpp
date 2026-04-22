@@ -2175,6 +2175,8 @@ void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
 
     VerifyOrExit(otBorderAgentEphemeralKeyGetState(threadHelper->GetInstance()) != OT_BORDER_AGENT_STATE_DISABLED,
                  error = OT_ERROR_NOT_CAPABLE);
+    VerifyOrExit(otBorderAgentEphemeralKeyGetState(GetOtInstance()) == OT_BORDER_AGENT_STATE_STOPPED,
+                 error = OT_ERROR_BUSY);
 
     SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OT_ERROR_INVALID_ARGS);
