@@ -1001,6 +1001,8 @@ void NetworkDiagHandler::MeshChildTableResponseHandler(otError aError, const otM
     VerifyOrExit(it != mChildTables.end(), error = OT_ERROR_INVALID_STATE);
     VerifyOrExit(it->second.mState == RequestState::kPending, error = OT_ERROR_INVALID_STATE);
 
+    VerifyOrExit(aError == OT_ERROR_NONE || aError == OT_ERROR_PENDING || aError == OT_ERROR_RESPONSE_TIMEOUT);
+
     VerifyOrExit(aChildEntry != nullptr);
 
     it->second.mChildTable.emplace_back(*aChildEntry);
@@ -1095,12 +1097,13 @@ void NetworkDiagHandler::MeshChildIp6AddrResponseHandler(otError                
     otIp6Address   ip6Address;
     auto           it = mChildIps.find(mDiagQueryRequestRloc);
 
-    VerifyOrExit(aError == OT_ERROR_NONE || aError == OT_ERROR_PENDING || aError == OT_ERROR_RESPONSE_TIMEOUT);
-    VerifyOrExit(aIp6AddrIterator != nullptr);
-    VerifyOrExit(aChildRloc16 != 65534);
-
     VerifyOrExit(it != mChildIps.end(), error = OT_ERROR_INVALID_STATE);
     VerifyOrExit(it->second.mState == RequestState::kPending, error = OT_ERROR_INVALID_STATE);
+
+    VerifyOrExit(aError == OT_ERROR_NONE || aError == OT_ERROR_PENDING || aError == OT_ERROR_RESPONSE_TIMEOUT);
+
+    VerifyOrExit(aIp6AddrIterator != nullptr);
+    VerifyOrExit(aChildRloc16 != 65534);
 
     // otbrLogWarning("%s:%d Have child IP from 0x%04x for child 0x%04x", __FILE__, __LINE__, mDiagQueryRequestRloc,
     //                aChildRloc16);
@@ -1197,6 +1200,8 @@ void NetworkDiagHandler::MeshRouterNeighborsResponseHandler(otError             
 
     VerifyOrExit(it != mRouterNeighbors.end(), error = OT_ERROR_INVALID_STATE);
     VerifyOrExit(it->second.mState == RequestState::kPending, error = OT_ERROR_INVALID_STATE);
+
+    VerifyOrExit(aError == OT_ERROR_NONE || aError == OT_ERROR_PENDING || aError == OT_ERROR_RESPONSE_TIMEOUT);
 
     VerifyOrExit(aNeighborEntry != nullptr);
 

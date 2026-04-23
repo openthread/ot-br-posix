@@ -69,8 +69,8 @@ namespace Json {
 #define KEY_EXTADDRESS "extAddress" // 64-bit MAC address
 #define KEY_MLEIDIID "mlEidIid"
 #define KEY_OMRIPV6 "omrIpv6Address"
-#define KEY_EUI64 "eui64" // EUI-64 address
-#define KEY_HOSTNAME "hostName"
+#define KEY_EUI64 "eui" // EUI-64 address
+#define KEY_HOSTNAME "hostname"
 #define KEY_PSKD "pskd"
 
 #define KEY_BORDERAGENTID "baId"
@@ -88,7 +88,7 @@ namespace Json {
 #define KEY_IP6ADDRESSLIST "ipv6Addresses"          // List of IPv6 addresses
 #define KEY_MACCOUNTERS "macCounters"               // MAC packet/event counters
 #define KEY_CHANNELPAGES "channelPages"             // Supported frequency bands
-#define KEY_VERSION "version"                       // Thread version
+#define KEY_VERSION "threadVersion"                 // Thread version
 #define KEY_VENDORNAME "vendorName"                 // Vendor name
 #define KEY_VENDORMODEL "vendorModel"               // Vendor model
 #define KEY_VENDORSWVERSION "vendorSwVersion"       // Vendor software version
@@ -103,13 +103,13 @@ namespace Json {
 #define KEY_PBBR "isPrimaryBBR"
 #define KEY_BR "isBorderRouter"
 
-#define KEY_MODE "mode"           // Mode
-#define KEY_ISFTD "deviceTypeFTD" // is FullThreadDevice
+#define KEY_MODE "mode"              // Mode
+#define KEY_ISFTD "fullThreadDevice" // is FullThreadDevice
 #define KEY_RXONWHENIDLE "rxOnWhenIdle"
 #define KEY_FULLNETWORKDATA "fullNetworkData"
-#define KEY_TIMEOUT "timeout"                 // Timeout (max polling time period for SEDs)
-#define KEY_CONNECTIVITY "connectivity"       // Connectivity information
-#define KEY_ROUTE "route"                     // Route64 information
+#define KEY_TIMEOUT "timeout"                 // timeout attribute name and Timeout TLV name
+#define KEY_CONNECTIVITY "connectivity"       // Connectivity TLV name
+#define KEY_ROUTE "route"                     // Route64 TLV name
 #define KEY_NETWORKDATA "networkData"         // Network data
 #define KEY_BATTERYLEVEL "batteryLevel"       // Battery energy level
 #define KEY_SUPPLYVOLTAGE "supplyVoltage"     // Current supply voltage
