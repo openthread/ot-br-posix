@@ -1,0 +1,16 @@
+# Certificate files
+*.pem
+*.csr
+*.srl
+certs/
+
+# Traefik files
+traefik
+traefik_*.tar.gz
+traefik_*_checksums.txt
+
+# Logs
+*.log
+
+# Temporary files
+acme.json

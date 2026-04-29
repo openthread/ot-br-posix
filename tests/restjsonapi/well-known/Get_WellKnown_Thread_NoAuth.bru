@@ -1,0 +1,36 @@
+meta {
+  name: GET .well-known/thread (no auth)
+  type: http
+  seq: 1000
+  tags: secure-enrollment-server
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Well-known metadata retrieved without authentication", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('object');
+    expect(res.status).to.equal(200);
+  });
+}
+
+docs {
+  Test 1.1: GET .well-known/thread without authentication
+  
+  The .well-known/thread endpoint should be publicly accessible
+  without authentication as per OpenAPI specification.
+}
