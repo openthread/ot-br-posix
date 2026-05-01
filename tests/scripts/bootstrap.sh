@@ -119,8 +119,7 @@ case "$(uname)" in
 
         if [ "$BUILD_TARGET" == pretty-check ]; then
             sudo bash "$(dirname "$0")/install-llvm.sh"
-            sudo apt-get install -y shellcheck
-            sudo snap install shfmt
+            sudo apt-get install --no-install-recommends -y shellcheck shfmt
             npm install prettier@2.0.4
         fi
 
