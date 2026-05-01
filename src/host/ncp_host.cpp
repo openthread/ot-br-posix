@@ -393,10 +393,33 @@ void NcpHost::SetMdnsPublisher(Mdns::Publisher *aPublisher)
 }
 #endif
 
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_MDNS && (OTBR_ENABLE_SRP_ADVERTISING_PROXY || OTBR_ENABLE_DNSSD_PLAT)
 void NcpHost::HandleMdnsState(Mdns::Publisher::State aState)
 {
     mNcpSpinel.DnssdSetState(aState);
+}
+#endif
+
+#if OTBR_ENABLE_DNSSD_PLAT
+void NcpHost::NotifyDnssdPlatformStateToNcp(otPlatDnssdState aState)
+{
+#if OTBR_ENABLE_MDNS && (OTBR_ENABLE_SRP_ADVERTISING_PROXY || OTBR_ENABLE_DNSSD_PLAT)
+    Mdns::Publisher::State mdnsState =
+        (aState == OT_PLAT_DNSSD_READY) ? Mdns::Publisher::State::kReady : Mdns::Publisher::State::kIdle;
+    mNcpSpinel.DnssdSetState(mdnsState);
+#endif
+}
+#endif
+
+#if OTBR_ENABLE_TREL
+void NcpHost::SetTrelStateChangedCallback(NcpSpinel::TrelStateChangedCallback aCallback)
+{
+    mNcpSpinel.SetTrelStateChangedCallback(aCallback);
+}
+
+otError NcpHost::SetTrelHostUdpPort(bool aEnabled, uint16_t aHostPort)
+{
+    return mNcpSpinel.SetTrelHostUdpPort(aEnabled, aHostPort);
 }
 #endif
 
