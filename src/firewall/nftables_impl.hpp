@@ -51,6 +51,7 @@
 struct mnl_socket;
 struct mnl_nlmsg_batch;
 struct nlmsghdr;
+struct nftnl_rule;
 
 namespace otbr {
 namespace Firewall {
@@ -124,8 +125,14 @@ public:
 private:
     static constexpr size_t kBatchPageSize = 8192;
 
-    otbrError      SendStandalone(const void *aMessage, size_t aLength, bool aAllowEnoent);
-    static int     HandleEchoReply(const struct nlmsghdr *aNlh, void *aContext);
+    otbrError SendStandalone(const void *aMessage, size_t aLength, bool aAllowEnoent);
+
+    /// Push a fully-populated nftnl_rule into the current batch as a NEWRULE
+    /// with NLM_F_ECHO so the kernel returns the assigned handle. Caller still
+    /// owns @p aRule and must free it.
+    otbrError QueueNewRule(struct nftnl_rule *aRule, uint64_t *aHandleOut);
+
+    static int HandleEchoReply(const struct nlmsghdr *aNlh, void *aContext);
 
     struct mnl_socket      *mSocket;
     struct mnl_nlmsg_batch *mBatch;

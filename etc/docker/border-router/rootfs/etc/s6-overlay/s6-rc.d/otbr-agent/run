@@ -51,9 +51,6 @@ readonly OT_REST_LISTEN_ADDR
 OT_REST_LISTEN_PORT="${OT_REST_LISTEN_PORT:-8081}"
 readonly OT_REST_LISTEN_PORT
 
-OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
-readonly OT_FORWARD_INGRESS_CHAIN
-
 die()
 {
     echo >&2 "ERROR: $*"
@@ -62,21 +59,10 @@ die()
 
 mkdir -p /data/thread && ln -sft /var/lib /data/thread || die "Could not create directory /var/lib/thread to store Thread data."
 
-echo "Configuring OpenThread firewall..."
-
-ipset create -exist otbr-ingress-deny-src hash:net family inet6
-ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6
-ipset create -exist otbr-ingress-allow-dst hash:net family inet6
-ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6
-
-ip6tables -N "${OT_FORWARD_INGRESS_CHAIN}"
-ip6tables -I FORWARD 1 -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
-
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -i "${OT_THREAD_IF}" -j DROP
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-deny-src src -j DROP
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -j DROP
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -j ACCEPT
+# IPv6 ingress filtering is installed in-process by otbr-agent (FirewallManager
+# / nftables) when built with OTBR_NFTABLES=ON, which is the default. If you
+# build with OTBR_NFTABLES=OFF, you must restore the legacy ipset/ip6tables
+# block here AND also add `ipset` + `iptables` back into the Dockerfile.
 
 echo "Configuring OpenThread NAT64..."
 

@@ -336,6 +336,10 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
         {
             firewallError = mFirewall->Init();
         }
+        if (firewallError == OTBR_ERROR_NONE)
+        {
+            firewallError = mFirewall->EnableIngressFilter();
+        }
         if (firewallError != OTBR_ERROR_NONE)
         {
             otbrLogCrit("FirewallManager: init failed (%d) — nftables-backed features will be unavailable",

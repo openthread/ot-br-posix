@@ -92,7 +92,7 @@ if (OTBR_DUA_ROUTING)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DUA_ROUTING=1)
 endif()
 
-option(OTBR_NFTABLES "Enable in-process nftables firewall backend (libnftnl/libmnl)" OFF)
+option(OTBR_NFTABLES "Enable in-process nftables firewall backend (libnftnl/libmnl)" ON)
 if (OTBR_NFTABLES)
     find_library(LIBNFTNL_LIBRARY nftnl REQUIRED)
     find_library(LIBMNL_LIBRARY mnl REQUIRED)
