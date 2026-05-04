@@ -59,17 +59,11 @@ die()
 
 mkdir -p /data/thread && ln -sft /var/lib /data/thread || die "Could not create directory /var/lib/thread to store Thread data."
 
-# IPv6 ingress filtering is installed in-process by otbr-agent (FirewallManager
-# / nftables) when built with OTBR_NFTABLES=ON, which is the default. If you
-# build with OTBR_NFTABLES=OFF, you must restore the legacy ipset/ip6tables
-# block here AND also add `ipset` + `iptables` back into the Dockerfile.
-
-echo "Configuring OpenThread NAT64..."
-
-iptables -t mangle -A PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
-iptables -t nat -A POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
-iptables -t filter -A FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
-iptables -t filter -A FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
+# IPv6 ingress filtering and IPv4 NAT44 masquerade are installed in-process by
+# otbr-agent (FirewallManager / nftables) when built with OTBR_NFTABLES=ON,
+# which is the default. If you build with OTBR_NFTABLES=OFF, you must restore
+# the legacy ipset/ip6tables and iptables-MASQUERADE blocks here AND add the
+# `ipset` and `iptables` packages back into the Dockerfile.
 
 echo "Starting otbr-agent..."
 

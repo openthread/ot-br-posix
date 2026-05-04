@@ -47,7 +47,6 @@ RUN set -x \
            cmake \
            curl \
            git \
-           iptables \
            libjsoncpp-dev \
            libjsoncpp25 \
            libmnl-dev \

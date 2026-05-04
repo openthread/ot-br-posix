@@ -83,6 +83,16 @@ public:
     otbrError EnableIngressFilter(void);
 
     /**
+     * Install IPv4 masquerade NAT44 for traffic from the Thread interface
+     * out the upstream interface, plus FORWARD ACCEPTs in both directions.
+     * Replaces the legacy iptables-based NAT64 setup that used to live in
+     * the Docker entrypoint. No-op if already enabled.
+     *
+     * @param[in] aUpstreamInterfaceName  Upstream interface (e.g. "eth0").
+     */
+    otbrError EnableNat44Masquerade(const std::string &aUpstreamInterfaceName);
+
+    /**
      * Install the ND-proxy NFQUEUE redirect rule for the given Domain prefix
      * on the given backbone interface. Lazily creates the dua_prerouting
      * chain on first call. Subsequent calls without an intervening Disable
@@ -109,12 +119,19 @@ public:
 
     bool IsInitialized(void) const { return mInitialized; }
     bool IsIngressFilterEnabled(void) const { return mIngressFilterEnabled; }
+    bool IsNat44Enabled(void) const { return mNat44Enabled; }
 
-    static constexpr const char *kTableName            = "otbr";
-    static constexpr const char *kIngressChain         = "forward_ingress";
-    static constexpr const char *kPreroutingChain      = "dua_prerouting";
-    static constexpr const char *kIngressDenySrcSet    = "ingress_deny_src";
-    static constexpr const char *kIngressAllowDstSet   = "ingress_allow_dst";
+    static constexpr const char *kTableName             = "otbr";
+    static constexpr const char *kIngressChain          = "forward_ingress";
+    static constexpr const char *kPreroutingChain       = "dua_prerouting";
+    static constexpr const char *kNatPreroutingChain    = "nat_prerouting";
+    static constexpr const char *kNatPostroutingChain   = "nat_postrouting";
+    static constexpr const char *kNatForwardChain       = "nat_forward";
+    static constexpr const char *kIngressDenySrcSet     = "ingress_deny_src";
+    static constexpr const char *kIngressAllowDstSet    = "ingress_allow_dst";
+
+    /// Mark used to tag NAT44'd traffic from the Thread interface.
+    static constexpr uint32_t kNat44Mark = 0x1001;
 
 private:
     static const char *SetName(IngressSet aSet);
@@ -124,6 +141,7 @@ private:
     std::string mThreadIfName;
     bool        mInitialized;
     bool        mIngressFilterEnabled;
+    bool        mNat44Enabled;
     bool        mDuaChainCreated; ///< True once the dua_prerouting chain has been created.
     uint64_t    mNdRuleHandle;    ///< Kernel handle of the active ND-proxy rule, 0 if none.
 };

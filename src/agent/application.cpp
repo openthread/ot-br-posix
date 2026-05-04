@@ -340,6 +340,10 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
         {
             firewallError = mFirewall->EnableIngressFilter();
         }
+        if (firewallError == OTBR_ERROR_NONE && !mBackboneInterfaceName.empty())
+        {
+            firewallError = mFirewall->EnableNat44Masquerade(mBackboneInterfaceName);
+        }
         if (firewallError != OTBR_ERROR_NONE)
         {
             otbrLogCrit("FirewallManager: init failed (%d) — nftables-backed features will be unavailable",

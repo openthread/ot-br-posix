@@ -81,7 +81,8 @@ public:
     otbrError AddChain(const std::string &aTable,
                        const std::string &aChain,
                        Hook               aHook,
-                       int                aPriority) override;
+                       int                aPriority,
+                       ChainType          aType) override;
     otbrError AddIp6PrefixSet(const std::string &aTable, const std::string &aSet) override;
 
     otbrError AddSetElement(const std::string &aTable, const std::string &aSet, const Ip6Net &aPrefix) override;
@@ -119,6 +120,26 @@ public:
                                   const std::string &aIifname,
                                   uint16_t           aQueueNum,
                                   uint64_t          *aHandleOut) override;
+
+    otbrError AddRuleIifMark(const std::string &aTable,
+                             const std::string &aChain,
+                             const std::string &aIifname,
+                             uint32_t           aMark,
+                             uint64_t          *aHandleOut) override;
+    otbrError AddRuleMarkMasquerade(const std::string &aTable,
+                                    const std::string &aChain,
+                                    uint32_t           aMark,
+                                    uint64_t          *aHandleOut) override;
+    otbrError AddRuleOifnameVerdict(const std::string &aTable,
+                                    const std::string &aChain,
+                                    const std::string &aOifname,
+                                    Verdict            aVerdict,
+                                    uint64_t          *aHandleOut) override;
+    otbrError AddRuleIifnameVerdict(const std::string &aTable,
+                                    const std::string &aChain,
+                                    const std::string &aIifname,
+                                    Verdict            aVerdict,
+                                    uint64_t          *aHandleOut) override;
 
     otbrError DelRule(const std::string &aTable, const std::string &aChain, uint64_t aHandle) override;
 

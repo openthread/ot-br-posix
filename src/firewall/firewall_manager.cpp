@@ -43,6 +43,7 @@ FirewallManager::FirewallManager(INftables &aNftables, std::string aThreadInterf
     , mThreadIfName(std::move(aThreadInterfaceName))
     , mInitialized(false)
     , mIngressFilterEnabled(false)
+    , mNat44Enabled(false)
     , mDuaChainCreated(false)
     , mNdRuleHandle(0)
 {
@@ -78,6 +79,7 @@ otbrError FirewallManager::Deinit(void)
     mNdRuleHandle         = 0;
     mDuaChainCreated      = false;
     mIngressFilterEnabled = false;
+    mNat44Enabled         = false;
     mInitialized          = false;
 
 exit:
@@ -129,6 +131,65 @@ otbrError FirewallManager::EnableIngressFilter(void)
     SuccessOrExit(error = mNftables.CommitBatch());
 
     mIngressFilterEnabled = true;
+
+exit:
+    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
+    return error;
+}
+
+otbrError FirewallManager::EnableNat44Masquerade(const std::string &aUpstreamInterfaceName)
+{
+    otbrError error  = OTBR_ERROR_NONE;
+    uint64_t  handle = 0;
+
+    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(!mNat44Enabled);
+
+    SuccessOrExit(error = mNftables.BeginBatch());
+
+    // Mangle-prerouting: tag packets coming from the Thread interface so the
+    // postrouting chain can MASQUERADE them. Type filter, mangle priority.
+    SuccessOrExit(error = mNftables.AddChain(kTableName,
+                                             kNatPreroutingChain,
+                                             Hook::kPrerouting,
+                                             kPriorityMangle,
+                                             ChainType::kFilter));
+    SuccessOrExit(error = mNftables.AddRuleIifMark(kTableName,
+                                                   kNatPreroutingChain,
+                                                   mThreadIfName,
+                                                   kNat44Mark,
+                                                   &handle));
+
+    // Postrouting: source-NAT marked traffic. Type nat, srcnat priority.
+    SuccessOrExit(error = mNftables.AddChain(kTableName,
+                                             kNatPostroutingChain,
+                                             Hook::kPostrouting,
+                                             kPrioritySrcNat,
+                                             ChainType::kNat));
+    SuccessOrExit(error = mNftables.AddRuleMarkMasquerade(kTableName, kNatPostroutingChain, kNat44Mark, &handle));
+
+    // Forward: accept traffic in either direction on the upstream interface.
+    // Hooked at FORWARD/filter alongside forward_ingress; the iifname/oifname
+    // matches scope each rule cleanly.
+    SuccessOrExit(error = mNftables.AddChain(kTableName,
+                                             kNatForwardChain,
+                                             Hook::kForward,
+                                             kPriorityFilter,
+                                             ChainType::kFilter));
+    SuccessOrExit(error = mNftables.AddRuleOifnameVerdict(kTableName,
+                                                          kNatForwardChain,
+                                                          aUpstreamInterfaceName,
+                                                          Verdict::kAccept,
+                                                          &handle));
+    SuccessOrExit(error = mNftables.AddRuleIifnameVerdict(kTableName,
+                                                          kNatForwardChain,
+                                                          aUpstreamInterfaceName,
+                                                          Verdict::kAccept,
+                                                          &handle));
+
+    SuccessOrExit(error = mNftables.CommitBatch());
+
+    mNat44Enabled = true;
 
 exit:
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);

@@ -278,8 +278,22 @@ uint32_t HookToHooknum(Hook aHook)
         return NF_INET_FORWARD;
     case Hook::kPrerouting:
         return NF_INET_PRE_ROUTING;
+    case Hook::kPostrouting:
+        return NF_INET_POST_ROUTING;
     }
     return 0;
+}
+
+const char *ChainTypeToString(ChainType aType)
+{
+    switch (aType)
+    {
+    case ChainType::kFilter:
+        return "filter";
+    case ChainType::kNat:
+        return "nat";
+    }
+    return "filter";
 }
 
 } // namespace
@@ -315,7 +329,11 @@ exit:
     return error;
 }
 
-otbrError Nftables::AddChain(const std::string &aTable, const std::string &aChain, Hook aHook, int aPriority)
+otbrError Nftables::AddChain(const std::string &aTable,
+                             const std::string &aChain,
+                             Hook               aHook,
+                             int                aPriority,
+                             ChainType          aType)
 {
     otbrError           error = OTBR_ERROR_NONE;
     struct nftnl_chain *c     = nullptr;
@@ -330,7 +348,7 @@ otbrError Nftables::AddChain(const std::string &aTable, const std::string &aChai
     nftnl_chain_set_u32(c, NFTNL_CHAIN_FAMILY, NFPROTO_INET);
     nftnl_chain_set_u32(c, NFTNL_CHAIN_HOOKNUM, HookToHooknum(aHook));
     nftnl_chain_set_s32(c, NFTNL_CHAIN_PRIO, aPriority);
-    nftnl_chain_set_str(c, NFTNL_CHAIN_TYPE, "filter");
+    nftnl_chain_set_str(c, NFTNL_CHAIN_TYPE, ChainTypeToString(aType));
 
     {
         struct nlmsghdr *nlh = nftnl_chain_nlmsg_build_hdr(reinterpret_cast<char *>(mnl_nlmsg_batch_current(mBatch)),
@@ -387,19 +405,184 @@ exit:
     return error;
 }
 
-otbrError Nftables::AddSetElement(const std::string &, const std::string &, const Ip6Net &)
+namespace {
+
+// Adds 2^(128-aN) to the 128-bit big-endian value in @p aOut. Used to compute
+// the (exclusive) upper bound of an IPv6 prefix interval. Wraps to zero on
+// overflow (only happens for aN==0, which is /0 ::/0 — not a use case here).
+void AddPrefixIncrement(uint8_t aOut[16], uint8_t aN)
 {
-    return OTBR_ERROR_NOT_IMPLEMENTED;
+    uint16_t carry;
+    uint8_t  bitFromLsb;
+    uint8_t  byteFromLsb;
+    int      byteIdx;
+
+    if (aN == 0)
+    {
+        memset(aOut, 0, 16);
+        return;
+    }
+
+    bitFromLsb  = static_cast<uint8_t>(128 - aN);
+    byteFromLsb = bitFromLsb / 8;
+    byteIdx     = 15 - byteFromLsb;
+    carry       = static_cast<uint16_t>(1u << (bitFromLsb % 8));
+
+    for (int i = byteIdx; i >= 0 && carry != 0; i--)
+    {
+        uint16_t sum = static_cast<uint16_t>(aOut[i]) + carry;
+        aOut[i]      = static_cast<uint8_t>(sum & 0xff);
+        carry        = static_cast<uint16_t>(sum >> 8);
+    }
 }
 
-otbrError Nftables::DelSetElement(const std::string &, const std::string &, const Ip6Net &)
+// Build the start/end pair for a prefix interval and attach them to @p aSet.
+// The end element carries NFT_SET_ELEM_INTERVAL_END to mark it as the
+// (exclusive) upper bound.
+otbrError AttachPrefixInterval(struct nftnl_set *aSet, const Ip6Net &aPrefix)
 {
-    return OTBR_ERROR_NOT_IMPLEMENTED;
+    otbrError              error = OTBR_ERROR_NONE;
+    struct nftnl_set_elem *startElem;
+    struct nftnl_set_elem *endElem;
+    uint8_t                startAddr[16];
+    uint8_t                endAddr[16];
+
+    memcpy(startAddr, aPrefix.mAddr, 16);
+    // Zero out the host bits so the start element is prefix-aligned.
+    if (aPrefix.mPrefixLen < 128)
+    {
+        for (uint8_t byteIndex = 0; byteIndex < 16; byteIndex++)
+        {
+            if (byteIndex * 8 >= aPrefix.mPrefixLen)
+            {
+                startAddr[byteIndex] = 0;
+            }
+            else if (byteIndex * 8 + 8 > aPrefix.mPrefixLen)
+            {
+                startAddr[byteIndex] &= static_cast<uint8_t>(0xff << (8 - (aPrefix.mPrefixLen - byteIndex * 8)));
+            }
+        }
+    }
+    memcpy(endAddr, startAddr, 16);
+    AddPrefixIncrement(endAddr, aPrefix.mPrefixLen);
+
+    startElem = nftnl_set_elem_alloc();
+    VerifyOrExit(startElem != nullptr, error = OTBR_ERROR_ERRNO);
+    nftnl_set_elem_set(startElem, NFTNL_SET_ELEM_KEY, startAddr, sizeof(startAddr));
+    nftnl_set_elem_add(aSet, startElem);
+
+    endElem = nftnl_set_elem_alloc();
+    VerifyOrExit(endElem != nullptr, error = OTBR_ERROR_ERRNO);
+    nftnl_set_elem_set(endElem, NFTNL_SET_ELEM_KEY, endAddr, sizeof(endAddr));
+    nftnl_set_elem_set_u32(endElem, NFTNL_SET_ELEM_FLAGS, NFT_SET_ELEM_INTERVAL_END);
+    nftnl_set_elem_add(aSet, endElem);
+
+exit:
+    return error;
 }
 
-otbrError Nftables::FlushSet(const std::string &, const std::string &)
+} // namespace
+
+otbrError Nftables::AddSetElement(const std::string &aTable, const std::string &aSet, const Ip6Net &aPrefix)
 {
-    return OTBR_ERROR_NOT_IMPLEMENTED;
+    otbrError         error = OTBR_ERROR_NONE;
+    struct nftnl_set *s     = nullptr;
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+
+    s = nftnl_set_alloc();
+    VerifyOrExit(s != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_set_set_str(s, NFTNL_SET_TABLE, aTable.c_str());
+    nftnl_set_set_str(s, NFTNL_SET_NAME, aSet.c_str());
+    nftnl_set_set_u32(s, NFTNL_SET_FAMILY, NFPROTO_INET);
+
+    SuccessOrExit(error = AttachPrefixInterval(s, aPrefix));
+
+    {
+        struct nlmsghdr *nlh = nftnl_nlmsg_build_hdr(reinterpret_cast<char *>(mnl_nlmsg_batch_current(mBatch)),
+                                                    NFT_MSG_NEWSETELEM,
+                                                    NFPROTO_INET,
+                                                    NLM_F_CREATE | NLM_F_ACK,
+                                                    mSeq++);
+        nftnl_set_elems_nlmsg_build_payload(nlh, s);
+        mnl_nlmsg_batch_next(mBatch);
+    }
+
+exit:
+    if (s != nullptr)
+    {
+        nftnl_set_free(s);
+    }
+    return error;
+}
+
+otbrError Nftables::DelSetElement(const std::string &aTable, const std::string &aSet, const Ip6Net &aPrefix)
+{
+    otbrError         error = OTBR_ERROR_NONE;
+    struct nftnl_set *s     = nullptr;
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+
+    s = nftnl_set_alloc();
+    VerifyOrExit(s != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_set_set_str(s, NFTNL_SET_TABLE, aTable.c_str());
+    nftnl_set_set_str(s, NFTNL_SET_NAME, aSet.c_str());
+    nftnl_set_set_u32(s, NFTNL_SET_FAMILY, NFPROTO_INET);
+
+    SuccessOrExit(error = AttachPrefixInterval(s, aPrefix));
+
+    {
+        struct nlmsghdr *nlh = nftnl_nlmsg_build_hdr(reinterpret_cast<char *>(mnl_nlmsg_batch_current(mBatch)),
+                                                    NFT_MSG_DELSETELEM,
+                                                    NFPROTO_INET,
+                                                    NLM_F_ACK,
+                                                    mSeq++);
+        nftnl_set_elems_nlmsg_build_payload(nlh, s);
+        mnl_nlmsg_batch_next(mBatch);
+    }
+
+exit:
+    if (s != nullptr)
+    {
+        nftnl_set_free(s);
+    }
+    return error;
+}
+
+otbrError Nftables::FlushSet(const std::string &aTable, const std::string &aSet)
+{
+    otbrError         error = OTBR_ERROR_NONE;
+    struct nftnl_set *s     = nullptr;
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+
+    s = nftnl_set_alloc();
+    VerifyOrExit(s != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_set_set_str(s, NFTNL_SET_TABLE, aTable.c_str());
+    nftnl_set_set_str(s, NFTNL_SET_NAME, aSet.c_str());
+    nftnl_set_set_u32(s, NFTNL_SET_FAMILY, NFPROTO_INET);
+    // No elements attached — kernel interprets DELSETELEM with empty element
+    // list as "flush all".
+
+    {
+        struct nlmsghdr *nlh = nftnl_nlmsg_build_hdr(reinterpret_cast<char *>(mnl_nlmsg_batch_current(mBatch)),
+                                                    NFT_MSG_DELSETELEM,
+                                                    NFPROTO_INET,
+                                                    NLM_F_ACK,
+                                                    mSeq++);
+        nftnl_set_elems_nlmsg_build_payload(nlh, s);
+        mnl_nlmsg_batch_next(mBatch);
+    }
+
+exit:
+    if (s != nullptr)
+    {
+        nftnl_set_free(s);
+    }
+    return error;
 }
 
 namespace {
@@ -569,6 +752,33 @@ void IfNameToWire(const std::string &aName, char (&aOut)[IFNAMSIZ])
 {
     memset(aOut, 0, IFNAMSIZ);
     memcpy(aOut, aName.c_str(), aName.size());
+}
+
+struct nftnl_expr *MakeImmediateData(uint32_t aDreg, const void *aData, uint32_t aDataLen)
+{
+    struct nftnl_expr *e = nftnl_expr_alloc("immediate");
+    if (e != nullptr)
+    {
+        nftnl_expr_set_u32(e, NFTNL_EXPR_IMM_DREG, aDreg);
+        nftnl_expr_set(e, NFTNL_EXPR_IMM_DATA, aData, aDataLen);
+    }
+    return e;
+}
+
+struct nftnl_expr *MakeMetaSet(uint32_t aKey, uint32_t aSreg)
+{
+    struct nftnl_expr *e = nftnl_expr_alloc("meta");
+    if (e != nullptr)
+    {
+        nftnl_expr_set_u32(e, NFTNL_EXPR_META_KEY, aKey);
+        nftnl_expr_set_u32(e, NFTNL_EXPR_META_SREG, aSreg);
+    }
+    return e;
+}
+
+struct nftnl_expr *MakeMasquerade(void)
+{
+    return nftnl_expr_alloc("masq");
 }
 
 } // namespace
@@ -831,6 +1041,156 @@ otbrError Nftables::AddRuleVerdict(const std::string &aTable,
     nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, aChain.c_str());
     nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, NFPROTO_INET);
 
+    nftnl_rule_add_expr(rule, MakeImmediateVerdict(VerdictToNft(aVerdict)));
+
+    error = QueueNewRule(rule, aHandleOut);
+
+exit:
+    if (rule != nullptr)
+    {
+        nftnl_rule_free(rule);
+    }
+    return error;
+}
+
+otbrError Nftables::AddRuleIifMark(const std::string &aTable,
+                                   const std::string &aChain,
+                                   const std::string &aIifname,
+                                   uint32_t           aMark,
+                                   uint64_t          *aHandleOut)
+{
+    otbrError          error = OTBR_ERROR_NONE;
+    struct nftnl_rule *rule  = nullptr;
+    char               iifBuf[IFNAMSIZ];
+    // NFT_META_MARK is host-byte-order in registers; nft userspace stores
+    // mark values that way too. Same byte order on set and match.
+    uint32_t markValue = aMark;
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(aIifname.size() < IFNAMSIZ, error = OTBR_ERROR_INVALID_ARGS);
+
+    IfNameToWire(aIifname, iifBuf);
+
+    rule = nftnl_rule_alloc();
+    VerifyOrExit(rule != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, aTable.c_str());
+    nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, aChain.c_str());
+    nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, NFPROTO_INET);
+
+    // iifname == <ifname>
+    nftnl_rule_add_expr(rule, MakeMetaLoad(NFT_META_IIFNAME, NFT_REG_1));
+    nftnl_rule_add_expr(rule, MakeCmpEq(NFT_REG_1, iifBuf, IFNAMSIZ));
+
+    // meta mark set <aMark>
+    nftnl_rule_add_expr(rule, MakeImmediateData(NFT_REG_1, &markValue, sizeof(markValue)));
+    nftnl_rule_add_expr(rule, MakeMetaSet(NFT_META_MARK, NFT_REG_1));
+
+    error = QueueNewRule(rule, aHandleOut);
+
+exit:
+    if (rule != nullptr)
+    {
+        nftnl_rule_free(rule);
+    }
+    return error;
+}
+
+otbrError Nftables::AddRuleMarkMasquerade(const std::string &aTable,
+                                          const std::string &aChain,
+                                          uint32_t           aMark,
+                                          uint64_t          *aHandleOut)
+{
+    otbrError          error     = OTBR_ERROR_NONE;
+    struct nftnl_rule *rule      = nullptr;
+    uint32_t           markValue = aMark;
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+
+    rule = nftnl_rule_alloc();
+    VerifyOrExit(rule != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, aTable.c_str());
+    nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, aChain.c_str());
+    nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, NFPROTO_INET);
+
+    // meta mark <aMark>
+    nftnl_rule_add_expr(rule, MakeMetaLoad(NFT_META_MARK, NFT_REG_1));
+    nftnl_rule_add_expr(rule, MakeCmpEq(NFT_REG_1, &markValue, sizeof(markValue)));
+
+    // masquerade
+    nftnl_rule_add_expr(rule, MakeMasquerade());
+
+    error = QueueNewRule(rule, aHandleOut);
+
+exit:
+    if (rule != nullptr)
+    {
+        nftnl_rule_free(rule);
+    }
+    return error;
+}
+
+otbrError Nftables::AddRuleOifnameVerdict(const std::string &aTable,
+                                          const std::string &aChain,
+                                          const std::string &aOifname,
+                                          Verdict            aVerdict,
+                                          uint64_t          *aHandleOut)
+{
+    otbrError          error = OTBR_ERROR_NONE;
+    struct nftnl_rule *rule  = nullptr;
+    char               oifBuf[IFNAMSIZ];
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(aOifname.size() < IFNAMSIZ, error = OTBR_ERROR_INVALID_ARGS);
+
+    IfNameToWire(aOifname, oifBuf);
+
+    rule = nftnl_rule_alloc();
+    VerifyOrExit(rule != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, aTable.c_str());
+    nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, aChain.c_str());
+    nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, NFPROTO_INET);
+
+    nftnl_rule_add_expr(rule, MakeMetaLoad(NFT_META_OIFNAME, NFT_REG_1));
+    nftnl_rule_add_expr(rule, MakeCmpEq(NFT_REG_1, oifBuf, IFNAMSIZ));
+    nftnl_rule_add_expr(rule, MakeImmediateVerdict(VerdictToNft(aVerdict)));
+
+    error = QueueNewRule(rule, aHandleOut);
+
+exit:
+    if (rule != nullptr)
+    {
+        nftnl_rule_free(rule);
+    }
+    return error;
+}
+
+otbrError Nftables::AddRuleIifnameVerdict(const std::string &aTable,
+                                          const std::string &aChain,
+                                          const std::string &aIifname,
+                                          Verdict            aVerdict,
+                                          uint64_t          *aHandleOut)
+{
+    otbrError          error = OTBR_ERROR_NONE;
+    struct nftnl_rule *rule  = nullptr;
+    char               iifBuf[IFNAMSIZ];
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(aIifname.size() < IFNAMSIZ, error = OTBR_ERROR_INVALID_ARGS);
+
+    IfNameToWire(aIifname, iifBuf);
+
+    rule = nftnl_rule_alloc();
+    VerifyOrExit(rule != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, aTable.c_str());
+    nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, aChain.c_str());
+    nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, NFPROTO_INET);
+
+    nftnl_rule_add_expr(rule, MakeMetaLoad(NFT_META_IIFNAME, NFT_REG_1));
+    nftnl_rule_add_expr(rule, MakeCmpEq(NFT_REG_1, iifBuf, IFNAMSIZ));
     nftnl_rule_add_expr(rule, MakeImmediateVerdict(VerdictToNft(aVerdict)));
 
     error = QueueNewRule(rule, aHandleOut);

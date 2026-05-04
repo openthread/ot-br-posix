@@ -42,6 +42,7 @@ using ::testing::SetArgPointee;
 using ::testing::StrEq;
 
 using otbr::Ip6Prefix;
+using otbr::Firewall::ChainType;
 using otbr::Firewall::FirewallManager;
 using otbr::Firewall::Hook;
 using otbr::Firewall::INftables;
@@ -61,7 +62,7 @@ public:
     MOCK_METHOD(otbrError, CommitBatch, (), (override));
     MOCK_METHOD(otbrError, DelTable, (const std::string &), (override));
     MOCK_METHOD(otbrError, AddTable, (const std::string &), (override));
-    MOCK_METHOD(otbrError, AddChain, (const std::string &, const std::string &, Hook, int), (override));
+    MOCK_METHOD(otbrError, AddChain, (const std::string &, const std::string &, Hook, int, ChainType), (override));
     MOCK_METHOD(otbrError, AddIp6PrefixSet, (const std::string &, const std::string &), (override));
     MOCK_METHOD(otbrError, AddSetElement, (const std::string &, const std::string &, const Ip6Net &), (override));
     MOCK_METHOD(otbrError, DelSetElement, (const std::string &, const std::string &, const Ip6Net &), (override));
@@ -89,6 +90,22 @@ public:
     MOCK_METHOD(otbrError,
                 AddRuleNdNsRedirect,
                 (const std::string &, const std::string &, const Ip6Net &, const std::string &, uint16_t, uint64_t *),
+                (override));
+    MOCK_METHOD(otbrError,
+                AddRuleIifMark,
+                (const std::string &, const std::string &, const std::string &, uint32_t, uint64_t *),
+                (override));
+    MOCK_METHOD(otbrError,
+                AddRuleMarkMasquerade,
+                (const std::string &, const std::string &, uint32_t, uint64_t *),
+                (override));
+    MOCK_METHOD(otbrError,
+                AddRuleOifnameVerdict,
+                (const std::string &, const std::string &, const std::string &, Verdict, uint64_t *),
+                (override));
+    MOCK_METHOD(otbrError,
+                AddRuleIifnameVerdict,
+                (const std::string &, const std::string &, const std::string &, Verdict, uint64_t *),
                 (override));
     MOCK_METHOD(otbrError, DelRule, (const std::string &, const std::string &, uint64_t), (override));
 };
@@ -120,6 +137,10 @@ void SetSuccessfulDefaults(MockNftables &mock)
     ON_CALL(mock, AddRuleVerdict).WillByDefault(DoAll(SetArgPointee<3>(105), Return(OTBR_ERROR_NONE)));
     ON_CALL(mock, AddRuleNdNsRedirect)
         .WillByDefault(DoAll(SetArgPointee<5>(200), Return(OTBR_ERROR_NONE)));
+    ON_CALL(mock, AddRuleIifMark).WillByDefault(DoAll(SetArgPointee<4>(300), Return(OTBR_ERROR_NONE)));
+    ON_CALL(mock, AddRuleMarkMasquerade).WillByDefault(DoAll(SetArgPointee<3>(301), Return(OTBR_ERROR_NONE)));
+    ON_CALL(mock, AddRuleOifnameVerdict).WillByDefault(DoAll(SetArgPointee<4>(302), Return(OTBR_ERROR_NONE)));
+    ON_CALL(mock, AddRuleIifnameVerdict).WillByDefault(DoAll(SetArgPointee<4>(303), Return(OTBR_ERROR_NONE)));
 }
 
 } // namespace
@@ -136,7 +157,7 @@ TEST(FirewallManagerTest, InitOnlyCreatesTable)
         EXPECT_CALL(mock, CommitBatch()).WillOnce(Return(OTBR_ERROR_NONE));
     }
     // Init must NOT touch any chains, sets, or rules — those are lazy.
-    EXPECT_CALL(mock, AddChain(_, _, _, _)).Times(0);
+    EXPECT_CALL(mock, AddChain(_, _, _, _, _)).Times(0);
     EXPECT_CALL(mock, AddIp6PrefixSet(_, _)).Times(0);
     EXPECT_CALL(mock, AddRuleOifnameNeqReturn(_, _, _, _)).Times(0);
 
@@ -199,7 +220,8 @@ TEST(FirewallManagerTest, EnableIngressFilterInstallsChainAndRulesInOrder)
                     AddChain(StrEq(FirewallManager::kTableName),
                              StrEq(FirewallManager::kIngressChain),
                              Hook::kForward,
-                             otbr::Firewall::kPriorityFilter))
+                             otbr::Firewall::kPriorityFilter,
+                             ChainType::kFilter))
             .Times(1);
         EXPECT_CALL(mock,
                     AddRuleOifnameNeqReturn(StrEq(FirewallManager::kTableName),
@@ -240,7 +262,7 @@ TEST(FirewallManagerTest, EnableIngressFilterTwiceIsIdempotent)
 {
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
-    EXPECT_CALL(mock, AddChain(_, StrEq(FirewallManager::kIngressChain), _, _)).Times(1);
+    EXPECT_CALL(mock, AddChain(_, StrEq(FirewallManager::kIngressChain), _, _, _)).Times(1);
 
     FirewallManager fw(mock, "wpan0");
     ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
@@ -257,7 +279,8 @@ TEST(FirewallManagerTest, EnableNdProxyLazilyCreatesPreroutingChainOnFirstCall)
                 AddChain(StrEq(FirewallManager::kTableName),
                          StrEq(FirewallManager::kPreroutingChain),
                          Hook::kPrerouting,
-                         otbr::Firewall::kPriorityRaw))
+                         otbr::Firewall::kPriorityRaw,
+                         ChainType::kFilter))
         .Times(1);
     EXPECT_CALL(mock,
                 AddRuleNdNsRedirect(StrEq(FirewallManager::kTableName),
@@ -374,4 +397,88 @@ TEST(FirewallManagerTest, AddIngressSetElementBeforeInitFails)
 
     Ip6Prefix prefix("2001:db8::", 64);
     EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_INVALID_STATE);
+}
+
+TEST(FirewallManagerTest, EnableNat44InstallsThreeChainsAndFiveRules)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+
+    EXPECT_CALL(mock,
+                AddChain(StrEq(FirewallManager::kTableName),
+                         StrEq(FirewallManager::kNatPreroutingChain),
+                         Hook::kPrerouting,
+                         otbr::Firewall::kPriorityMangle,
+                         ChainType::kFilter))
+        .Times(1);
+    EXPECT_CALL(mock,
+                AddChain(StrEq(FirewallManager::kTableName),
+                         StrEq(FirewallManager::kNatPostroutingChain),
+                         Hook::kPostrouting,
+                         otbr::Firewall::kPrioritySrcNat,
+                         ChainType::kNat))
+        .Times(1);
+    EXPECT_CALL(mock,
+                AddChain(StrEq(FirewallManager::kTableName),
+                         StrEq(FirewallManager::kNatForwardChain),
+                         Hook::kForward,
+                         otbr::Firewall::kPriorityFilter,
+                         ChainType::kFilter))
+        .Times(1);
+
+    EXPECT_CALL(mock,
+                AddRuleIifMark(StrEq(FirewallManager::kTableName),
+                               StrEq(FirewallManager::kNatPreroutingChain),
+                               StrEq("wpan0"),
+                               FirewallManager::kNat44Mark,
+                               _))
+        .Times(1);
+    EXPECT_CALL(mock,
+                AddRuleMarkMasquerade(StrEq(FirewallManager::kTableName),
+                                      StrEq(FirewallManager::kNatPostroutingChain),
+                                      FirewallManager::kNat44Mark,
+                                      _))
+        .Times(1);
+    EXPECT_CALL(mock,
+                AddRuleOifnameVerdict(StrEq(FirewallManager::kTableName),
+                                      StrEq(FirewallManager::kNatForwardChain),
+                                      StrEq("eth0"),
+                                      Verdict::kAccept,
+                                      _))
+        .Times(1);
+    EXPECT_CALL(mock,
+                AddRuleIifnameVerdict(StrEq(FirewallManager::kTableName),
+                                      StrEq(FirewallManager::kNatForwardChain),
+                                      StrEq("eth0"),
+                                      Verdict::kAccept,
+                                      _))
+        .Times(1);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    EXPECT_EQ(fw.EnableNat44Masquerade("eth0"), OTBR_ERROR_NONE);
+    EXPECT_TRUE(fw.IsNat44Enabled());
+}
+
+TEST(FirewallManagerTest, EnableNat44TwiceIsNoOp)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+    // Three chains created on the first call (mangle-prerouting, nat-
+    // postrouting, nat-forward); the second call must make zero additional
+    // AddChain calls.
+    EXPECT_CALL(mock, AddChain(_, _, _, _, _)).Times(3);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fw.EnableNat44Masquerade("eth0"), OTBR_ERROR_NONE);
+    EXPECT_EQ(fw.EnableNat44Masquerade("eth0"), OTBR_ERROR_NONE);
+}
+
+TEST(FirewallManagerTest, EnableNat44BeforeInitFails)
+{
+    NiceMock<MockNftables> mock;
+
+    FirewallManager fw(mock, "wpan0");
+    EXPECT_EQ(fw.EnableNat44Masquerade("eth0"), OTBR_ERROR_INVALID_STATE);
 }

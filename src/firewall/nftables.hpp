@@ -53,6 +53,13 @@ enum class Hook
 {
     kForward,
     kPrerouting,
+    kPostrouting,
+};
+
+enum class ChainType
+{
+    kFilter, ///< Default filter chain.
+    kNat,    ///< NAT chain — required for masquerade / dnat / snat expressions.
 };
 
 enum class Verdict
@@ -80,8 +87,10 @@ enum class PktType
  */
 enum ChainPriority
 {
-    kPriorityRaw    = -300,
-    kPriorityFilter = 0,
+    kPriorityRaw     = -300,
+    kPriorityMangle  = -150,
+    kPriorityFilter  = 0,
+    kPrioritySrcNat  = 100,
 };
 
 /**
@@ -136,12 +145,14 @@ public:
     virtual otbrError AddTable(const std::string &aTable) = 0;
 
     /**
-     * Create a base chain with the given netfilter hook and priority.
+     * Create a base chain with the given netfilter hook, priority, and type.
+     * NAT operations (masquerade/snat/dnat) require @p aType == kNat.
      */
     virtual otbrError AddChain(const std::string &aTable,
                                const std::string &aChain,
                                Hook               aHook,
-                               int                aPriority) = 0;
+                               int                aPriority,
+                               ChainType          aType = ChainType::kFilter) = 0;
 
     /**
      * Create a named set of `ipv6_addr` with the `interval` flag,
@@ -213,6 +224,45 @@ public:
                                           const std::string &aIifname,
                                           uint16_t           aQueueNum,
                                           uint64_t          *aHandleOut) = 0;
+
+    /**
+     * `iifname <ifname> meta mark set <mark>` — used in mangle-prerouting to
+     * tag packets coming from the Thread interface for downstream NAT.
+     */
+    virtual otbrError AddRuleIifMark(const std::string &aTable,
+                                     const std::string &aChain,
+                                     const std::string &aIifname,
+                                     uint32_t           aMark,
+                                     uint64_t          *aHandleOut) = 0;
+
+    /**
+     * `meta mark <mark> masquerade` — used in srcnat-postrouting to source-NAT
+     * marked packets out the upstream interface.
+     */
+    virtual otbrError AddRuleMarkMasquerade(const std::string &aTable,
+                                            const std::string &aChain,
+                                            uint32_t           aMark,
+                                            uint64_t          *aHandleOut) = 0;
+
+    /**
+     * `oifname <ifname> <verdict>` — used in NAT forward to allow traffic out
+     * the upstream interface.
+     */
+    virtual otbrError AddRuleOifnameVerdict(const std::string &aTable,
+                                            const std::string &aChain,
+                                            const std::string &aOifname,
+                                            Verdict            aVerdict,
+                                            uint64_t          *aHandleOut) = 0;
+
+    /**
+     * `iifname <ifname> <verdict>` — used in NAT forward to allow return
+     * traffic from the upstream interface.
+     */
+    virtual otbrError AddRuleIifnameVerdict(const std::string &aTable,
+                                            const std::string &aChain,
+                                            const std::string &aIifname,
+                                            Verdict            aVerdict,
+                                            uint64_t          *aHandleOut) = 0;
 
     virtual otbrError DelRule(const std::string &aTable, const std::string &aChain, uint64_t aHandle) = 0;
 };
