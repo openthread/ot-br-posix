@@ -61,10 +61,11 @@ public:
     FirewallManager(INftables &aNftables, std::string aThreadInterfaceName);
 
     /**
-     * Create the OTBR table with the ingress filter chain, the named sets
-     * (ingress_deny_src, ingress_allow_dst), the prerouting chain used by the
-     * ND-proxy redirect, and the static ingress filter rules. Idempotent:
-     * tears down any pre-existing OTBR table first so re-running is safe.
+     * Create the OTBR table. Idempotent: tears down any pre-existing OTBR
+     * table first. The ingress filter chain (forward_ingress) and the
+     * prerouting chain (dua_prerouting) are NOT created here — they are
+     * created on demand by EnableIngressFilter() and EnableNdProxyRedirect()
+     * respectively, so a phase that doesn't need them doesn't pay for them.
      */
     otbrError Init(void);
 
@@ -74,9 +75,18 @@ public:
     otbrError Deinit(void);
 
     /**
+     * Install the static ingress filter chain (forward_ingress) and the
+     * named sets (ingress_deny_src, ingress_allow_dst). After this returns,
+     * AddIngressSetElement / DelIngressSetElement / FlushIngressSet are
+     * available. No-op if already enabled.
+     */
+    otbrError EnableIngressFilter(void);
+
+    /**
      * Install the ND-proxy NFQUEUE redirect rule for the given Domain prefix
-     * on the given backbone interface. Idempotent w.r.t. repeated calls — a
-     * second call without a Disable in between replaces the previous rule.
+     * on the given backbone interface. Lazily creates the dua_prerouting
+     * chain on first call. Subsequent calls without an intervening Disable
+     * replace the previous rule.
      */
     otbrError EnableNdProxyRedirect(const Ip6Prefix   &aDomainPrefix,
                                     const std::string &aBackboneInterfaceName,
@@ -98,6 +108,7 @@ public:
     otbrError FlushIngressSet(IngressSet aSet);
 
     bool IsInitialized(void) const { return mInitialized; }
+    bool IsIngressFilterEnabled(void) const { return mIngressFilterEnabled; }
 
     static constexpr const char *kTableName            = "otbr";
     static constexpr const char *kIngressChain         = "forward_ingress";
@@ -112,7 +123,9 @@ private:
     INftables  &mNftables;
     std::string mThreadIfName;
     bool        mInitialized;
-    uint64_t    mNdRuleHandle; ///< Kernel handle of the active ND-proxy rule, 0 if none.
+    bool        mIngressFilterEnabled;
+    bool        mDuaChainCreated; ///< True once the dua_prerouting chain has been created.
+    uint64_t    mNdRuleHandle;    ///< Kernel handle of the active ND-proxy rule, 0 if none.
 };
 
 } // namespace Firewall

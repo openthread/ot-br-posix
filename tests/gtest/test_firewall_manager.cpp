@@ -93,20 +93,10 @@ public:
     MOCK_METHOD(otbrError, DelRule, (const std::string &, const std::string &, uint64_t), (override));
 };
 
-/**
- * Default ON_CALL behaviors so a NiceMock's Init succeeds silently and rule
- * adds yield distinct synthetic handles. Tests that care about specific calls
- * still apply EXPECT_CALL to override.
- */
 void SetSuccessfulDefaults(MockNftables &mock)
 {
     using ::testing::DoAll;
     using ::testing::Return;
-
-    static uint64_t sNextHandle = 100;
-
-    auto returnNoneAndHandle = [](uint64_t *h) { *h = ++sNextHandle; return OTBR_ERROR_NONE; };
-    (void)returnNoneAndHandle; // silence unused if compiler flags catch lambdas
 
     ON_CALL(mock, DelTable).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddTable).WillByDefault(Return(OTBR_ERROR_NONE));
@@ -134,7 +124,7 @@ void SetSuccessfulDefaults(MockNftables &mock)
 
 } // namespace
 
-TEST(FirewallManagerTest, InitInstallsTableChainsSetsAndIngressRulesInOrder)
+TEST(FirewallManagerTest, InitOnlyCreatesTable)
 {
     NiceMock<MockNftables> mock;
 
@@ -143,73 +133,17 @@ TEST(FirewallManagerTest, InitInstallsTableChainsSetsAndIngressRulesInOrder)
         EXPECT_CALL(mock, DelTable(StrEq(FirewallManager::kTableName))).WillOnce(Return(OTBR_ERROR_NONE));
         EXPECT_CALL(mock, BeginBatch()).WillOnce(Return(OTBR_ERROR_NONE));
         EXPECT_CALL(mock, AddTable(StrEq(FirewallManager::kTableName))).WillOnce(Return(OTBR_ERROR_NONE));
-        EXPECT_CALL(mock,
-                    AddIp6PrefixSet(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressDenySrcSet)))
-            .WillOnce(Return(OTBR_ERROR_NONE));
-        EXPECT_CALL(mock,
-                    AddIp6PrefixSet(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressAllowDstSet)))
-            .WillOnce(Return(OTBR_ERROR_NONE));
-        EXPECT_CALL(mock,
-                    AddChain(StrEq(FirewallManager::kTableName),
-                             StrEq(FirewallManager::kIngressChain),
-                             Hook::kForward,
-                             otbr::Firewall::kPriorityFilter))
-            .WillOnce(Return(OTBR_ERROR_NONE));
-        EXPECT_CALL(mock,
-                    AddRuleOifnameNeqReturn(StrEq(FirewallManager::kTableName),
-                                            StrEq(FirewallManager::kIngressChain),
-                                            StrEq("wpan0"),
-                                            _))
-            .WillOnce(DoAll(SetArgPointee<3>(1), Return(OTBR_ERROR_NONE)));
-        EXPECT_CALL(mock,
-                    AddRuleIifPkttypeVerdict(StrEq(FirewallManager::kTableName),
-                                             StrEq(FirewallManager::kIngressChain),
-                                             StrEq("wpan0"),
-                                             PktType::kUnicast,
-                                             Verdict::kDrop,
-                                             _))
-            .WillOnce(DoAll(SetArgPointee<5>(2), Return(OTBR_ERROR_NONE)));
-        EXPECT_CALL(mock,
-                    AddRuleSetLookupVerdict(StrEq(FirewallManager::kTableName),
-                                            StrEq(FirewallManager::kIngressChain),
-                                            StrEq(FirewallManager::kIngressDenySrcSet),
-                                            SetDirection::kSrc,
-                                            Verdict::kDrop,
-                                            _))
-            .WillOnce(DoAll(SetArgPointee<5>(3), Return(OTBR_ERROR_NONE)));
-        EXPECT_CALL(mock,
-                    AddRuleSetLookupVerdict(StrEq(FirewallManager::kTableName),
-                                            StrEq(FirewallManager::kIngressChain),
-                                            StrEq(FirewallManager::kIngressAllowDstSet),
-                                            SetDirection::kDst,
-                                            Verdict::kAccept,
-                                            _))
-            .WillOnce(DoAll(SetArgPointee<5>(4), Return(OTBR_ERROR_NONE)));
-        EXPECT_CALL(mock,
-                    AddRulePkttypeVerdict(StrEq(FirewallManager::kTableName),
-                                          StrEq(FirewallManager::kIngressChain),
-                                          PktType::kUnicast,
-                                          Verdict::kDrop,
-                                          _))
-            .WillOnce(DoAll(SetArgPointee<4>(5), Return(OTBR_ERROR_NONE)));
-        EXPECT_CALL(mock,
-                    AddRuleVerdict(StrEq(FirewallManager::kTableName),
-                                   StrEq(FirewallManager::kIngressChain),
-                                   Verdict::kAccept,
-                                   _))
-            .WillOnce(DoAll(SetArgPointee<3>(6), Return(OTBR_ERROR_NONE)));
-        EXPECT_CALL(mock,
-                    AddChain(StrEq(FirewallManager::kTableName),
-                             StrEq(FirewallManager::kPreroutingChain),
-                             Hook::kPrerouting,
-                             otbr::Firewall::kPriorityRaw))
-            .WillOnce(Return(OTBR_ERROR_NONE));
         EXPECT_CALL(mock, CommitBatch()).WillOnce(Return(OTBR_ERROR_NONE));
     }
+    // Init must NOT touch any chains, sets, or rules — those are lazy.
+    EXPECT_CALL(mock, AddChain(_, _, _, _)).Times(0);
+    EXPECT_CALL(mock, AddIp6PrefixSet(_, _)).Times(0);
+    EXPECT_CALL(mock, AddRuleOifnameNeqReturn(_, _, _, _)).Times(0);
 
     FirewallManager fw(mock, "wpan0");
     EXPECT_EQ(fw.Init(), OTBR_ERROR_NONE);
     EXPECT_TRUE(fw.IsInitialized());
+    EXPECT_FALSE(fw.IsIngressFilterEnabled());
 }
 
 TEST(FirewallManagerTest, InitTwiceFails)
@@ -245,11 +179,86 @@ TEST(FirewallManagerTest, DeinitDeletesTable)
     EXPECT_FALSE(fw.IsInitialized());
 }
 
-TEST(FirewallManagerTest, EnableNdProxyInstallsRule)
+TEST(FirewallManagerTest, EnableIngressFilterInstallsChainAndRulesInOrder)
 {
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
 
+    // BeginBatch/CommitBatch deliberately omitted from this InSequence — they
+    // are also called by Init(), and including them in the sequence would
+    // cross-couple unrelated expectations.
+    {
+        InSequence seq;
+        EXPECT_CALL(mock,
+                    AddIp6PrefixSet(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressDenySrcSet)))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddIp6PrefixSet(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressAllowDstSet)))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddChain(StrEq(FirewallManager::kTableName),
+                             StrEq(FirewallManager::kIngressChain),
+                             Hook::kForward,
+                             otbr::Firewall::kPriorityFilter))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddRuleOifnameNeqReturn(StrEq(FirewallManager::kTableName),
+                                            StrEq(FirewallManager::kIngressChain),
+                                            StrEq("wpan0"),
+                                            _))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddRuleIifPkttypeVerdict(_, StrEq(FirewallManager::kIngressChain), StrEq("wpan0"),
+                                             PktType::kUnicast, Verdict::kDrop, _))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddRuleSetLookupVerdict(_, StrEq(FirewallManager::kIngressChain),
+                                            StrEq(FirewallManager::kIngressDenySrcSet), SetDirection::kSrc,
+                                            Verdict::kDrop, _))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddRuleSetLookupVerdict(_, StrEq(FirewallManager::kIngressChain),
+                                            StrEq(FirewallManager::kIngressAllowDstSet), SetDirection::kDst,
+                                            Verdict::kAccept, _))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddRulePkttypeVerdict(_, StrEq(FirewallManager::kIngressChain), PktType::kUnicast, Verdict::kDrop,
+                                          _))
+            .Times(1);
+        EXPECT_CALL(mock,
+                    AddRuleVerdict(_, StrEq(FirewallManager::kIngressChain), Verdict::kAccept, _))
+            .Times(1);
+    }
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    EXPECT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
+    EXPECT_TRUE(fw.IsIngressFilterEnabled());
+}
+
+TEST(FirewallManagerTest, EnableIngressFilterTwiceIsIdempotent)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+    EXPECT_CALL(mock, AddChain(_, StrEq(FirewallManager::kIngressChain), _, _)).Times(1);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
+    EXPECT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE); // second call: no-op.
+}
+
+TEST(FirewallManagerTest, EnableNdProxyLazilyCreatesPreroutingChainOnFirstCall)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+
+    EXPECT_CALL(mock,
+                AddChain(StrEq(FirewallManager::kTableName),
+                         StrEq(FirewallManager::kPreroutingChain),
+                         Hook::kPrerouting,
+                         otbr::Firewall::kPriorityRaw))
+        .Times(1);
     EXPECT_CALL(mock,
                 AddRuleNdNsRedirect(StrEq(FirewallManager::kTableName),
                                     StrEq(FirewallManager::kPreroutingChain),
@@ -257,32 +266,17 @@ TEST(FirewallManagerTest, EnableNdProxyInstallsRule)
                                     StrEq("eth0"),
                                     88,
                                     _))
-        .WillOnce(DoAll(SetArgPointee<5>(42), Return(OTBR_ERROR_NONE)));
+        .Times(2)
+        .WillOnce(DoAll(SetArgPointee<5>(42), Return(OTBR_ERROR_NONE)))
+        .WillOnce(DoAll(SetArgPointee<5>(43), Return(OTBR_ERROR_NONE)));
+    EXPECT_CALL(mock, DelRule(_, StrEq(FirewallManager::kPreroutingChain), 42)).Times(1);
 
     FirewallManager fw(mock, "wpan0");
     ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
 
     Ip6Prefix domainPrefix("fd00::", 64);
     EXPECT_EQ(fw.EnableNdProxyRedirect(domainPrefix, "eth0", 88), OTBR_ERROR_NONE);
-}
-
-TEST(FirewallManagerTest, EnableNdProxyTwiceReplacesPreviousRule)
-{
-    NiceMock<MockNftables> mock;
-    SetSuccessfulDefaults(mock);
-
-    EXPECT_CALL(mock, AddRuleNdNsRedirect(_, _, _, _, _, _))
-        .WillOnce(DoAll(SetArgPointee<5>(11), Return(OTBR_ERROR_NONE)))
-        .WillOnce(DoAll(SetArgPointee<5>(12), Return(OTBR_ERROR_NONE)));
-    // Second Enable must delete the previously installed rule (handle 11).
-    EXPECT_CALL(mock, DelRule(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kPreroutingChain), 11))
-        .Times(1);
-
-    FirewallManager fw(mock, "wpan0");
-    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
-
-    Ip6Prefix domainPrefix("fd00::", 64);
-    EXPECT_EQ(fw.EnableNdProxyRedirect(domainPrefix, "eth0", 88), OTBR_ERROR_NONE);
+    // Second call must NOT recreate the chain, but must replace the previous rule (handle 42).
     EXPECT_EQ(fw.EnableNdProxyRedirect(domainPrefix, "eth0", 88), OTBR_ERROR_NONE);
 }
 
@@ -343,30 +337,33 @@ TEST(FirewallManagerTest, IngressSetOpsRouteToCorrectSets)
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
 
-    EXPECT_CALL(mock, AddSetElement(StrEq(FirewallManager::kTableName),
-                                    StrEq(FirewallManager::kIngressDenySrcSet),
-                                    _))
-        .Times(1);
-    EXPECT_CALL(mock, AddSetElement(StrEq(FirewallManager::kTableName),
-                                    StrEq(FirewallManager::kIngressAllowDstSet),
-                                    _))
-        .Times(1);
-    EXPECT_CALL(mock, DelSetElement(StrEq(FirewallManager::kTableName),
-                                    StrEq(FirewallManager::kIngressDenySrcSet),
-                                    _))
-        .Times(1);
-    EXPECT_CALL(mock, FlushSet(StrEq(FirewallManager::kTableName),
-                               StrEq(FirewallManager::kIngressAllowDstSet)))
-        .Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressDenySrcSet), _)).Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressAllowDstSet), _)).Times(1);
+    EXPECT_CALL(mock, DelSetElement(_, StrEq(FirewallManager::kIngressDenySrcSet), _)).Times(1);
+    EXPECT_CALL(mock, FlushSet(_, StrEq(FirewallManager::kIngressAllowDstSet))).Times(1);
 
     FirewallManager fw(mock, "wpan0");
     ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
 
     Ip6Prefix prefix("2001:db8::", 64);
     EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_NONE);
     EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kAllowDst, prefix), OTBR_ERROR_NONE);
     EXPECT_EQ(fw.DelIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_NONE);
     EXPECT_EQ(fw.FlushIngressSet(FirewallManager::IngressSet::kAllowDst), OTBR_ERROR_NONE);
+}
+
+TEST(FirewallManagerTest, IngressSetOpsRequireEnableIngressFilter)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+
+    // EnableIngressFilter NOT called — set ops must reject.
+    Ip6Prefix prefix("2001:db8::", 64);
+    EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_INVALID_STATE);
 }
 
 TEST(FirewallManagerTest, AddIngressSetElementBeforeInitFails)

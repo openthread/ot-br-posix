@@ -74,12 +74,16 @@ void NdProxyManager::Enable(const Ip6Prefix &aDomainPrefix)
     SuccessOrExit(error = UpdateMacAddress());
     SuccessOrExit(error = InitNetfilterQueue());
 
-    // Add ip6tables rule for unicast ICMPv6 messages
+#if OTBR_ENABLE_NFTABLES
+    VerifyOrExit(mFirewall != nullptr, error = OTBR_ERROR_INVALID_STATE);
+    SuccessOrExit(error = mFirewall->EnableNdProxyRedirect(mDomainPrefix, mBackboneInterfaceName, kNdProxyQueueNum));
+#else
     VerifyOrExit(SystemUtils::ExecuteCommand(
                      "ip6tables -t raw -A PREROUTING -6 -d %s -p icmpv6 --icmpv6-type neighbor-solicitation -i %s -j "
                      "NFQUEUE --queue-num 88",
                      mDomainPrefix.ToString().c_str(), mBackboneInterfaceName.c_str()) == 0,
                  error = OTBR_ERROR_ERRNO);
+#endif
 
 exit:
     if (error != OTBR_ERROR_NONE)
@@ -100,12 +104,16 @@ void NdProxyManager::Disable(void)
     FiniNetfilterQueue();
     FiniIcmp6RawSocket();
 
-    // Remove ip6tables rule for unicast ICMPv6 messages
+#if OTBR_ENABLE_NFTABLES
+    VerifyOrExit(mFirewall != nullptr, error = OTBR_ERROR_INVALID_STATE);
+    SuccessOrExit(error = mFirewall->DisableNdProxyRedirect());
+#else
     VerifyOrExit(SystemUtils::ExecuteCommand(
                      "ip6tables -t raw -D PREROUTING -6 -d %s -p icmpv6 --icmpv6-type neighbor-solicitation -i %s -j "
                      "NFQUEUE --queue-num 88",
                      mDomainPrefix.ToString().c_str(), mBackboneInterfaceName.c_str()) == 0,
                  error = OTBR_ERROR_ERRNO);
+#endif
 
 exit:
     otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
@@ -423,7 +431,8 @@ otbrError NdProxyManager::InitNetfilterQueue(void)
     VerifyOrExit(nfq_unbind_pf(mNfqHandler, AF_INET6) >= 0);
     VerifyOrExit(nfq_bind_pf(mNfqHandler, AF_INET6) >= 0);
 
-    VerifyOrExit((mNfqQueueHandler = nfq_create_queue(mNfqHandler, 88, HandleNetfilterQueue, this)) != nullptr);
+    VerifyOrExit((mNfqQueueHandler = nfq_create_queue(mNfqHandler, kNdProxyQueueNum, HandleNetfilterQueue, this)) !=
+                 nullptr);
     VerifyOrExit(nfq_set_mode(mNfqQueueHandler, NFQNL_COPY_PACKET, 0xffff) >= 0);
     VerifyOrExit((mUnicastNsQueueSock = nfq_fd(mNfqHandler)) >= 0);
 

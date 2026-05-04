@@ -43,11 +43,14 @@
 
 #include <stdint.h>
 
+#include <map>
+
 #include "common/code_utils.hpp"
 #include "firewall/nftables.hpp"
 
 struct mnl_socket;
 struct mnl_nlmsg_batch;
+struct nlmsghdr;
 
 namespace otbr {
 namespace Firewall {
@@ -121,7 +124,8 @@ public:
 private:
     static constexpr size_t kBatchPageSize = 8192;
 
-    otbrError SendStandalone(const void *aMessage, size_t aLength, bool aAllowEnoent);
+    otbrError      SendStandalone(const void *aMessage, size_t aLength, bool aAllowEnoent);
+    static int     HandleEchoReply(const struct nlmsghdr *aNlh, void *aContext);
 
     struct mnl_socket      *mSocket;
     struct mnl_nlmsg_batch *mBatch;
@@ -129,6 +133,10 @@ private:
     uint32_t                mPortId;
     uint32_t                mSeq;
     bool                    mInBatch;
+
+    /// Maps message-sequence-number to the caller-provided handle out-pointer.
+    /// CommitBatch() walks the kernel responses and writes handles back.
+    std::map<uint32_t, uint64_t *> mPendingHandles;
 };
 
 } // namespace Firewall

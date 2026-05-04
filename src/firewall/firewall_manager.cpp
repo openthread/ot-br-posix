@@ -42,14 +42,15 @@ FirewallManager::FirewallManager(INftables &aNftables, std::string aThreadInterf
     : mNftables(aNftables)
     , mThreadIfName(std::move(aThreadInterfaceName))
     , mInitialized(false)
+    , mIngressFilterEnabled(false)
+    , mDuaChainCreated(false)
     , mNdRuleHandle(0)
 {
 }
 
 otbrError FirewallManager::Init(void)
 {
-    otbrError error  = OTBR_ERROR_NONE;
-    uint64_t  handle = 0;
+    otbrError error = OTBR_ERROR_NONE;
 
     VerifyOrExit(!mInitialized, error = OTBR_ERROR_INVALID_STATE);
 
@@ -58,6 +59,41 @@ otbrError FirewallManager::Init(void)
 
     SuccessOrExit(error = mNftables.BeginBatch());
     SuccessOrExit(error = mNftables.AddTable(kTableName));
+    SuccessOrExit(error = mNftables.CommitBatch());
+
+    mInitialized = true;
+
+exit:
+    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
+    return error;
+}
+
+otbrError FirewallManager::Deinit(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mInitialized);
+
+    error                 = mNftables.DelTable(kTableName);
+    mNdRuleHandle         = 0;
+    mDuaChainCreated      = false;
+    mIngressFilterEnabled = false;
+    mInitialized          = false;
+
+exit:
+    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
+    return error;
+}
+
+otbrError FirewallManager::EnableIngressFilter(void)
+{
+    otbrError error  = OTBR_ERROR_NONE;
+    uint64_t  handle = 0;
+
+    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(!mIngressFilterEnabled);
+
+    SuccessOrExit(error = mNftables.BeginBatch());
 
     SuccessOrExit(error = mNftables.AddIp6PrefixSet(kTableName, kIngressDenySrcSet));
     SuccessOrExit(error = mNftables.AddIp6PrefixSet(kTableName, kIngressAllowDstSet));
@@ -90,26 +126,9 @@ otbrError FirewallManager::Init(void)
                                                            &handle));
     SuccessOrExit(error = mNftables.AddRuleVerdict(kTableName, kIngressChain, Verdict::kAccept, &handle));
 
-    SuccessOrExit(error = mNftables.AddChain(kTableName, kPreroutingChain, Hook::kPrerouting, kPriorityRaw));
-
     SuccessOrExit(error = mNftables.CommitBatch());
 
-    mInitialized = true;
-
-exit:
-    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
-    return error;
-}
-
-otbrError FirewallManager::Deinit(void)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    VerifyOrExit(mInitialized);
-
-    error         = mNftables.DelTable(kTableName);
-    mNdRuleHandle = 0;
-    mInitialized  = false;
+    mIngressFilterEnabled = true;
 
 exit:
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
@@ -120,7 +139,7 @@ otbrError FirewallManager::EnableNdProxyRedirect(const Ip6Prefix   &aDomainPrefi
                                                  const std::string &aBackboneInterfaceName,
                                                  uint16_t           aQueueNum)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    otbrError error     = OTBR_ERROR_NONE;
     uint64_t  newHandle = 0;
     Ip6Net    daddr     = ToIp6Net(aDomainPrefix);
 
@@ -128,6 +147,11 @@ otbrError FirewallManager::EnableNdProxyRedirect(const Ip6Prefix   &aDomainPrefi
     VerifyOrExit(aDomainPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
 
     SuccessOrExit(error = mNftables.BeginBatch());
+
+    if (!mDuaChainCreated)
+    {
+        SuccessOrExit(error = mNftables.AddChain(kTableName, kPreroutingChain, Hook::kPrerouting, kPriorityRaw));
+    }
 
     if (mNdRuleHandle != 0)
     {
@@ -144,7 +168,8 @@ otbrError FirewallManager::EnableNdProxyRedirect(const Ip6Prefix   &aDomainPrefi
 
     SuccessOrExit(error = mNftables.CommitBatch());
 
-    mNdRuleHandle = newHandle;
+    mDuaChainCreated = true;
+    mNdRuleHandle    = newHandle;
 
 exit:
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
@@ -174,7 +199,7 @@ otbrError FirewallManager::AddIngressSetElement(IngressSet aSet, const Ip6Prefix
     otbrError error = OTBR_ERROR_NONE;
     Ip6Net    net   = ToIp6Net(aPrefix);
 
-    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(aPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
 
     error = mNftables.AddSetElement(kTableName, SetName(aSet), net);
@@ -188,7 +213,7 @@ otbrError FirewallManager::DelIngressSetElement(IngressSet aSet, const Ip6Prefix
     otbrError error = OTBR_ERROR_NONE;
     Ip6Net    net   = ToIp6Net(aPrefix);
 
-    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(aPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
 
     error = mNftables.DelSetElement(kTableName, SetName(aSet), net);
@@ -201,7 +226,7 @@ otbrError FirewallManager::FlushIngressSet(IngressSet aSet)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
 
     error = mNftables.FlushSet(kTableName, SetName(aSet));
 
