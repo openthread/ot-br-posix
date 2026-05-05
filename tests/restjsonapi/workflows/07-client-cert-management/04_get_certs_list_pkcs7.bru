@@ -1,0 +1,57 @@
+meta {
+  name: GET Client Certificates List (PKCS#7)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode !== "noAuth") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/pkcs7-mime
+}
+
+assert {
+  res.status: eq {{client_cert_get_pkcs7_expected_status}}
+}
+
+tests {
+  test("Client certificates retrieved in PKCS#7 format", function() {
+    const expectedStatus = parseInt(bru.getEnvVar('client_cert_get_pkcs7_expected_status'));
+    expect(res.status).to.equal(expectedStatus);
+    
+    if (res.status === 200) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+
+      expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+      
+      // Note: PKCS#7 binary data corrupted by Bruno string conversion
+      // For extraction, use curl directly (See Phase 3 approach)
+      console.log("PKCS#7 bundle retrieved (binary data)");
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      const errorMessage = res.body?.error || res.body?.message || "Unknown error";
+      console.log(`✗ ${errorMessage}`);
+    }
+  });
+}
+
+docs {
+  Retrieves client certificates in PKCS#7 format.
+}

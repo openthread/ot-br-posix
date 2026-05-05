@@ -1,0 +1,44 @@
+meta {
+  name: GET /api/auth/certs (PKCS#7)
+  type: http
+  seq: 1008
+  tags: client-certificate-mtls
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: {{admin_user}}
+  password: {{admin_pass}}
+}
+
+headers {
+  Accept: application/pkcs7-mime
+}
+
+assert {
+  res.status: eq 200
+  res.headers.content-type: contains pkcs7-mime
+}
+
+tests {
+  test("Client certificates retrieved in PKCS#7 format", function() {
+    expect(res.status).to.equal(200);
+    expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+  });
+}
+
+docs {
+  Test 3.4b: GET /api/auth/certs in PKCS#7 format
+  
+  Retrieves all enrolled client certificates as a PKCS#7 bundle.
+  This is useful for EST-compatible operations.
+  
+  Content negotiation via Accept header:
+  - application/json: Returns JSON array of cert metadata
+  - application/pkcs7-mime: Returns PKCS#7 certificate bundle
+}

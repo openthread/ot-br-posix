@@ -1,0 +1,28 @@
+# OpenThread Border Router Enrollment Service Dependencies
+#
+# INSTALLATION OPTIONS:
+# 
+# Option 1 (Recommended): System packages via apt (Debian/Ubuntu/Raspbian)
+#   sudo apt-get install python3-flask python3-gunicorn
+#   Versions: Flask 2.2.2, Gunicorn 20.1.0 (compatible with this application)
+#
+# Option 2: Virtual environment (if you need specific versions)
+#   python3 -m venv venv
+#   source venv/bin/activate
+#   pip install -r requirements.txt
+#
+# Option 3: System-wide pip (NOT recommended on Debian 12+)
+#   sudo pip3 install --break-system-packages -r requirements.txt
+#
+
+# Flask web framework
+Flask>=2.2.0,<4.0.0
+Werkzeug>=2.2.0,<4.0.0
+
+# WSGI HTTP server
+gunicorn>=20.1.0,<22.0.0
+
+cryptography>=3.4.0
+passlib>=1.7.0
+
+requests>=2.28.0,<3.0.0
