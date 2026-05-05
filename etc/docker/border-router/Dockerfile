@@ -32,6 +32,7 @@ ARG GITHUB_REPO="openthread/ot-br-posix"
 ARG GIT_COMMIT="HEAD"
 ARG TARGETARCH
 ARG TARGETVARIANT
+ARG OTBR_OPTIONS=""
 
 ENV S6_OVERLAY_VERSION=3.2.1.0
 
@@ -87,6 +88,7 @@ RUN set -x \
                -DOTBR_WEB=ON \
                -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
                -DOT_FIREWALL=ON \
+               ${OTBR_OPTIONS} \
                .. \
         && ninja \
         && ninja install) \
