@@ -1,0 +1,215 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenThread Authors.
+'use strict';
+
+let ubus = require('ubus').connect();
+
+function otbr(method, args) {
+	return ubus.call('otbr', method, args ?? {}) ?? { error: -1 };
+}
+
+function summarize_state() {
+	let s = otbr('state');
+	let result = { state: s?.State ?? 'disabled' };
+	if (result.state != 'disabled') {
+		result.networkname = otbr('networkname').NetworkName;
+		result.panid = otbr('panid').PanId;
+		result.channel = otbr('channel').Channel;
+		result.rloc16 = otbr('rloc16').rloc16;
+		let leader = otbr('leaderdata').leaderdata;
+		if (leader) result.leaderdata = leader;
+	}
+	result.interfacename = otbr('interfacename').InterfaceName;
+	return result;
+}
+
+function summarize_neighbors() {
+	let state = otbr('state').State;
+	let result = { state: state, neighbor: [] };
+
+	if (state == 'disabled')
+		return result;
+
+	let list = (state == 'child')
+		? otbr('parent').parent_list
+		: otbr('neighbor').neighbor_list;
+	for (let n in list)
+		push(result.neighbor, n);
+
+	let j = otbr('joinernum');
+	result.joinernum = j.joinernum ?? 0;
+	result.joinerlist = [];
+	if ((j.Joinernum ?? 0) != 0 && j.joinerList)
+		for (let entry in j.joinerList)
+			push(result.joinerlist, entry);
+
+	return result;
+}
+
+return {
+	'luci.openthread': {
+		state_summary: {
+			args: {},
+			call: function() {
+				return summarize_state();
+			}
+		},
+		neighbors_summary: {
+			args: {},
+			call: function() {
+				return summarize_neighbors();
+			}
+		},
+		settings_get: {
+			args: {},
+			call: function() {
+				let addrs = otbr('macfilteraddr').addrlist ?? [];
+				return {
+					networkname: otbr('networkname').NetworkName,
+					panid: otbr('panid').PanId,
+					channel: otbr('channel').Channel,
+					extpanid: otbr('extpanid').ExtPanId,
+					mode: otbr('mode').Mode,
+					networkkey: otbr('networkkey').Networkkey,
+					pskc: otbr('pskc').pskc,
+					partitionid: otbr('partitionid').Partitionid,
+					macfilterstate: otbr('macfilterstate').state,
+					addrlist: addrs,
+					state: otbr('state').State,
+				};
+			}
+		},
+		get_networkkey: {
+			args: {},
+			call: function() {
+				return { networkkey: otbr('networkkey').Networkkey };
+			}
+		},
+		scan: {
+			args: {},
+			call: function() {
+				let r = otbr('scan');
+				return { scan_list: r.scan_list ?? [] };
+			}
+		},
+		settings_apply: {
+			args: {
+				networkname: 'string',
+				channel:     0,
+				panid:       'string',
+				extpanid:    'string',
+				mode:        'string',
+				networkkey:  'string',
+				pskc:        'string',
+				macfilter:   'string',
+			},
+			call: function(req) {
+				let a = req.args;
+				let state = otbr('state').State;
+				let result;
+				if (state == 'disabled') {
+					otbr('setnetworkname', { networkname: a.networkname });
+					otbr('setchannel',     { channel:     a.channel });
+					otbr('setpanid',       { panid:       a.panid });
+					otbr('setextpanid',    { extpanid:    a.extpanid });
+					otbr('setmode',        { mode:        a.mode });
+					otbr('setnetworkkey',  { networkkey:  a.networkkey });
+					otbr('setpskc',        { pskc:        a.pskc });
+					if (a.macfilter)
+						otbr('macfiltersetstate', { state: a.macfilter });
+					result = otbr('threadstart');
+				} else {
+					result = otbr('mgmtset', {
+						networkkey:  a.networkkey,
+						networkname: a.networkname,
+						extpanid:    a.extpanid,
+						panid:       a.panid,
+						channel:     sprintf('%d', a.channel),
+						pskc:        a.pskc,
+					});
+					if (a.macfilter)
+						otbr('macfiltersetstate', { state: a.macfilter });
+				}
+				return { error: result?.Error ?? 0 };
+			}
+		},
+		attach: {
+			args: { panid: 'string', channel: 0, networkkey: 'string' },
+			call: function(req) {
+				let a = req.args;
+				otbr('setpanid',      { panid:      a.panid });
+				otbr('setchannel',    { channel:    a.channel });
+				otbr('setnetworkkey', { networkkey: a.networkkey });
+				let r = otbr('threadstart');
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		thread_start: {
+			args: {},
+			call: function() {
+				let r = otbr('threadstart');
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		thread_stop: {
+			args: {},
+			call: function() {
+				let r = otbr('threadstop');
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		leave: {
+			args: {},
+			call: function() {
+				let r = otbr('leave');
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		commissioner_start: {
+			args: {},
+			call: function() {
+				let r = otbr('commissionerstart');
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		joiner_add: {
+			args: { pskd: 'string', eui64: 'string' },
+			call: function(req) {
+				let r = otbr('joineradd', { pskd: req.args.pskd, eui64: req.args.eui64 });
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		joiner_remove: {
+			args: { eui64: 'string' },
+			call: function(req) {
+				let r = otbr('joinerremove', { eui64: req.args.eui64 });
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		macfilter_clear: {
+			args: {},
+			call: function() {
+				let r = otbr('macfilterclear');
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		macfilter_add: {
+			args: { addr: 'string', state: 'string' },
+			call: function(req) {
+				let r = otbr('macfilteradd', { addr: req.args.addr });
+				if (req.args.state)
+					otbr('macfiltersetstate', { state: req.args.state });
+				return { error: r?.Error ?? 0 };
+			}
+		},
+		macfilter_remove: {
+			args: { addr: 'string', state: 'string' },
+			call: function(req) {
+				let r = otbr('macfilterremove', { addr: req.args.addr });
+				if (req.args.state)
+					otbr('macfiltersetstate', { state: req.args.state });
+				return { error: r?.Error ?? 0 };
+			}
+		},
+	}
+};

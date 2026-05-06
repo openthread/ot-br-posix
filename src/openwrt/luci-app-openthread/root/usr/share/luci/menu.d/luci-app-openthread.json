@@ -1,0 +1,33 @@
+{
+	"admin/network/thread": {
+		"title": "Thread",
+		"order": 16,
+		"action": { "type": "view", "path": "openthread/overview" },
+		"depends": { "acl": [ "luci-app-openthread" ] }
+	},
+	"admin/network/thread_setting": {
+		"title": "Thread Settings",
+		"action": { "type": "view", "path": "openthread/settings" },
+		"depends": { "acl": [ "luci-app-openthread" ] }
+	},
+	"admin/network/thread_view": {
+		"title": "Thread View",
+		"action": { "type": "view", "path": "openthread/view" },
+		"depends": { "acl": [ "luci-app-openthread" ] }
+	},
+	"admin/network/thread_scan": {
+		"title": "Thread Scan",
+		"action": { "type": "view", "path": "openthread/scan" },
+		"depends": { "acl": [ "luci-app-openthread" ] }
+	},
+	"admin/network/thread_join": {
+		"title": "Thread Join",
+		"action": { "type": "view", "path": "openthread/join" },
+		"depends": { "acl": [ "luci-app-openthread" ] }
+	},
+	"admin/network/thread_add": {
+		"title": "Thread Add Joiner",
+		"action": { "type": "view", "path": "openthread/add" },
+		"depends": { "acl": [ "luci-app-openthread" ] }
+	}
+}
