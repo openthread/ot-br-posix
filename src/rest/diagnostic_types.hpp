@@ -92,8 +92,8 @@ private:
         {"lDevIdSubject", 0},                    // 20
         {"iDevIdCert", 0},                       // 21
         {nullptr, 0},
-        {"eui64", 0},                           // 23
-        {"version", 0},                         // 24
+        {"eui", 0},                             // 23
+        {"threadVersion", 0},                   // 24
         {"vendorName", 0},                      // 25
         {"vendorModel", 0},                     // 26
         {"vendorSwVersion", 0},                 // 27

@@ -87,7 +87,7 @@ def diagnostics_check(data):
         expected_keys = [
             "extAddress", "rloc16", "mode", "connectivity", "route",
             "leaderData", "networkData", "ip6AddressList", "macCounters",
-            "childTable", "channelPages", "maxChildTimeout", "version",
+            "childTable", "channelPages", "maxChildTimeout", "threadVersion",
             "vendorName", "vendorModel", "vendorSwVersion", "threadStackVersion"
         ]
         expected_value_type = [
@@ -104,7 +104,7 @@ def diagnostics_check(data):
 
         mode = diag["mode"]
         mode_expected_keys = [
-            "rxOnWhenIdle", "deviceTypeFTD", "fullNetworkData"
+            "rxOnWhenIdle", "fullThreadDevice", "fullNetworkData"
         ]
         for key in mode_expected_keys:
             assert (key in mode)

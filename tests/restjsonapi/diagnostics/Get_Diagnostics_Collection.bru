@@ -69,8 +69,8 @@ tests {
           expect(item.attributes).to.have.property("routerNeighbors");
         }
 
-        if (item.attributes.hasOwnProperty("eui64")){
-          expect(item.attributes).to.have.property("version");
+        if (item.attributes.hasOwnProperty("eui")){
+          expect(item.attributes).to.have.property("threadVersion");
           expect(item.attributes).to.have.property("vendorName");
           expect(item.attributes).to.have.property("vendorModel");
           expect(item.attributes).to.have.property("vendorSwVersion");
