@@ -55,6 +55,16 @@ target_link_libraries(otbr-gtest-unit
 )
 gtest_discover_tests(otbr-gtest-unit)
 
+add_executable(otbr-gtest-firewall
+    test_firewall_manager.cpp
+)
+target_link_libraries(otbr-gtest-firewall
+    otbr-firewall
+    otbr-common
+    GTest::gmock_main
+)
+gtest_discover_tests(otbr-gtest-firewall)
+
 add_executable(otbr-gtest-unit-dnssd
     ${OTBR_PROJECT_DIRECTORY}/src/common/types.cpp
     ${OTBR_PROJECT_DIRECTORY}/src/common/logging.cpp

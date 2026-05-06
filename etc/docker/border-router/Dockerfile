@@ -48,10 +48,10 @@ RUN set -x \
            cmake \
            curl \
            git \
-           ipset \
-           iptables \
            libjsoncpp-dev \
            libjsoncpp25 \
+           libmnl-dev \
+           libnftnl-dev \
            ninja-build \
            nodejs \
            npm \

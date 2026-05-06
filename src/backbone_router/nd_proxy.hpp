@@ -55,6 +55,7 @@
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
+#include "firewall/firewall_manager.hpp"
 #include "host/rcp_host.hpp"
 
 namespace otbr {
@@ -77,10 +78,20 @@ class NdProxyManager : public MainloopProcessor, private NonCopyable
 public:
     /**
      * This constructor initializes a NdProxyManager instance.
+     *
+     * @param[in] aHost      The Thread controller instance.
+     * @param[in] aBackboneInterfaceName  The backbone interface name.
+     * @param[in] aFirewall  Firewall manager used to install the ND-proxy
+     *                       NFQUEUE redirect rule. May be nullptr when
+     *                       OTBR_ENABLE_NFTABLES is disabled, in which case
+     *                       the legacy ip6tables path is used instead.
      */
-    explicit NdProxyManager(otbr::Host::RcpHost &aHost, std::string aBackboneInterfaceName)
+    NdProxyManager(otbr::Host::RcpHost          &aHost,
+                   std::string                   aBackboneInterfaceName,
+                   Firewall::FirewallManager    *aFirewall)
         : mHost(aHost)
         , mBackboneInterfaceName(std::move(aBackboneInterfaceName))
+        , mFirewall(aFirewall)
         , mIcmp6RawSock(-1)
         , mUnicastNsQueueSock(-1)
         , mNfqHandler(nullptr)
@@ -124,6 +135,8 @@ public:
      */
     bool IsEnabled(void) const { return mIcmp6RawSock >= 0; }
 
+    static constexpr uint16_t kNdProxyQueueNum = 88; ///< NFQUEUE number for redirected unicast NS packets.
+
 private:
     enum
     {
@@ -146,12 +159,13 @@ private:
                                     void                *aContext);
     int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler, struct nfgenmsg *aNfMsg, struct nfq_data *aNfData);
 
-    otbr::Host::RcpHost &mHost;
-    std::string          mBackboneInterfaceName;
-    std::set<Ip6Address> mNdProxySet;
-    uint32_t             mBackboneIfIndex;
-    int                  mIcmp6RawSock;
-    int                  mUnicastNsQueueSock;
+    otbr::Host::RcpHost        &mHost;
+    std::string                 mBackboneInterfaceName;
+    Firewall::FirewallManager  *mFirewall;
+    std::set<Ip6Address>        mNdProxySet;
+    uint32_t                    mBackboneIfIndex;
+    int                         mIcmp6RawSock;
+    int                         mUnicastNsQueueSock;
     struct nfq_handle   *mNfqHandler;      ///< A pointer to an NFQUEUE handler.
     struct nfq_q_handle *mNfqQueueHandler; ///< A pointer to a newly created queue.
     MacAddress           mMacAddress;

@@ -27,12 +27,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-OT_THREAD_IF="${OT_THREAD_IF:-wpan0}"
-readonly OT_THREAD_IF
-
-OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
-readonly OT_FORWARD_INGRESS_CHAIN
-
 if test "$1" -eq 256 ; then
   e=$((128 + $2))
 else
@@ -41,28 +35,12 @@ fi
 
 echo "otbr-agent exited with code ${1} (by signal ${2})."
 
-ipset_destroy_if_exist()
-{
-    while ipset list -n "$1" 2> /dev/null; do
-        ipset destroy "$1" || true
-    done
-}
-
-while ip6tables -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; do
-    ip6tables -D FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
-done
-
-if ip6tables -L "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; then
-    ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
-    ip6tables -w -X "${OT_FORWARD_INGRESS_CHAIN}"
-fi
-
-ipset_destroy_if_exist otbr-ingress-deny-src
-ipset_destroy_if_exist otbr-ingress-deny-src-swap
-ipset_destroy_if_exist otbr-ingress-allow-dst
-ipset_destroy_if_exist otbr-ingress-allow-dst-swap
-
-echo "OpenThread firewall rules removed."
+# IPv6 ingress filter teardown is no longer required here: when otbr-agent is
+# built with OTBR_NFTABLES=ON (the default), the FirewallManager owns the
+# `inet otbr` table lifecycle. Stale state from a previous run is cleared by
+# the next FirewallManager::Init() (DelTable is idempotent). For OTBR_NFTABLES
+# =OFF builds, restore the legacy ipset/ip6tables teardown that previously
+# lived here.
 
 if test "$e" -ne 0; then
     echo "$e" > /run/s6-linux-init-container-results/exitcode

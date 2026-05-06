@@ -34,6 +34,7 @@ add_library(otbr-backbone-router
 
 target_link_libraries(otbr-backbone-router PRIVATE
     otbr-common
+    otbr-firewall
     otbr-utils
     $<$<BOOL:${OTBR_DUA_ROUTING}>:netfilter_queue>
 )

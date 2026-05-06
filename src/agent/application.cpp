@@ -229,8 +229,19 @@ void Application::HandleSignal(int aSignal)
 void Application::CreateRcpMode(void)
 {
     otbr::Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
+#if OTBR_ENABLE_NFTABLES
+    mNftables = MakeUnique<Firewall::Nftables>();
+    mFirewall = MakeUnique<Firewall::FirewallManager>(*mNftables, mInterfaceName);
+#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent = MakeUnique<BackboneRouter::BackboneAgent>(rcpHost, mInterfaceName, mBackboneInterfaceName);
+    Firewall::FirewallManager *firewall =
+#if OTBR_ENABLE_NFTABLES
+        mFirewall.get();
+#else
+        nullptr;
+#endif
+    mBackboneAgent =
+        MakeUnique<BackboneRouter::BackboneAgent>(rcpHost, mInterfaceName, mBackboneInterfaceName, firewall);
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy = MakeUnique<AdvertisingProxy>(rcpHost, *mPublisher);
@@ -318,6 +329,28 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     });
 #endif
 #endif // OTBR_ENABLE_BORDER_AGENT
+#if OTBR_ENABLE_NFTABLES
+    {
+        otbrError firewallError = mNftables->Init();
+        if (firewallError == OTBR_ERROR_NONE)
+        {
+            firewallError = mFirewall->Init();
+        }
+        if (firewallError == OTBR_ERROR_NONE)
+        {
+            firewallError = mFirewall->EnableIngressFilter();
+        }
+        if (firewallError == OTBR_ERROR_NONE && !mBackboneInterfaceName.empty())
+        {
+            firewallError = mFirewall->EnableNat44Masquerade(mBackboneInterfaceName);
+        }
+        if (firewallError != OTBR_ERROR_NONE)
+        {
+            otbrLogCrit("FirewallManager: init failed (%d) — nftables-backed features will be unavailable",
+                        firewallError);
+        }
+    }
+#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent->Init();
 #endif

@@ -47,16 +47,20 @@
 namespace otbr {
 namespace BackboneRouter {
 
-BackboneAgent::BackboneAgent(otbr::Host::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName)
+BackboneAgent::BackboneAgent(otbr::Host::RcpHost       &aHost,
+                             std::string                aInterfaceName,
+                             std::string                aBackboneInterfaceName,
+                             Firewall::FirewallManager *aFirewall)
     : mHost(aHost)
     , mBackboneRouterState(OT_BACKBONE_ROUTER_STATE_DISABLED)
 #if OTBR_ENABLE_DUA_ROUTING
-    , mNdProxyManager(aHost, aBackboneInterfaceName)
+    , mNdProxyManager(aHost, aBackboneInterfaceName, aFirewall)
     , mDuaRoutingManager(aInterfaceName, aBackboneInterfaceName)
 #endif
 {
     OTBR_UNUSED_VARIABLE(aInterfaceName);
     OTBR_UNUSED_VARIABLE(aBackboneInterfaceName);
+    OTBR_UNUSED_VARIABLE(aFirewall);
 }
 
 void BackboneAgent::Init(void)
