@@ -158,6 +158,8 @@ private:
     void ApiDiagnosticsDeleteHandler(const Request &aRequest, Response &aResponse);
     void ApiDiagnosticsItemDeleteHandler(const Request &aRequest, Response &aResponse);
 
+    void WellKnownThread(const Request &aRequest, Response &aResponse) const;
+
     void                               RoutingErrorHandler(const Request &aRequest, Response &aResponse);
     std::map<std::string, std::string> ExtractFieldsQueries(const Request               &aRequest,
                                                             const std::set<std::string> &aContainedTypes) const;

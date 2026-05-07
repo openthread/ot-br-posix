@@ -48,6 +48,7 @@
 #include "rest/rest_devices_coll.hpp"     // Devices Collection
 #include "rest/rest_diagnostics_coll.hpp" // Diagnostics Collection
 #include "rest/services.hpp"
+#include "rest/version.hpp"
 #include "utils/string_utils.hpp"
 
 #include <cJSON.h>
@@ -107,6 +108,8 @@
 
 #define OT_REST_ROUTE_DIAGNOSTICS "/api/diagnostics"
 #define OT_REST_ROUTE_DIAGNOSTICS_ID "/api/diagnostics/:id"
+
+#define OT_REST_ROUTE_WELLKNOWN_THREAD "/.well-known/thread"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -185,6 +188,8 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS_ID,
                    MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemDeleteHandler));
     mServer.Options(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
+
+    mServer.Get(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThread));
 }
 
 RestWebServer::~RestWebServer(void)
@@ -1804,6 +1809,51 @@ void RestWebServer::ApiDevicesNodeInit()
     thisextaddr_str = StringUtils::ToLowercase(thisextaddr_str);
 
     mServices.GetNetworkDiagHandler().SetDeviceItemAttributes(thisextaddr_str, aDeviceInfo);
+}
+
+void RestWebServer::WellKnownThread(const Request &aRequest, Response &aResponse) const
+{
+    OT_UNUSED_VARIABLE(aRequest);
+
+    // Static JSON discovery metadata per RFC 8615 and OpenAPI specification
+    // API version from rest/version.hpp
+    // Routes use OT_REST_ROUTE_* macros for consistency with endpoint definitions
+    static const std::string kWellKnownThreadJson = R"({
+  "api": {
+    "version": ")" OTBR_REST_API_VERSION R"(",
+    "base": "/api/"
+  },
+  "links": [
+    {
+      "href": ")" OT_REST_ROUTE_WELLKNOWN_THREAD R"(",
+      "rel": "self",
+      "type": ["application/json"]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_NODE R"(",
+      "rel": "node",
+      "type": ["application/vnd.api+json"]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_ACTIONS R"(",
+      "rel": "task",
+      "type": ["application/vnd.api+json"]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_DEVICES R"(",
+      "rel": "device",
+      "type": ["application/vnd.api+json"]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_DIAGNOSTICS R"(",
+      "rel": "diagnostic",
+      "type": ["application/vnd.api+json"]
+    }
+  ]
+})";
+
+    aResponse.set_content(kWellKnownThreadJson, "application/json");
+    aResponse.status = StatusCode::OK_200;
 }
 
 /**
