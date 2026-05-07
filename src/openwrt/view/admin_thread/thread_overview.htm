@@ -185,18 +185,21 @@
 				if (tb)
 				{
 					var rows = [];
-					st.neighbor.forEach(function(bss) {
-						var icon = guess_thread_signal(bss);
-						var signal = percent_thread_signal(bss);
-						rows.push([
-							'<abbr title="LinkQualityIn: %s"><img src="%s" /><br /><small> %s%</small></abbr>'.format(bss.LinkQualityIn, icon, signal),
-							'<div class="col-1 center"> %s </div>'.format(bss.Role),
-							'<div class="col-4 center"> %s </div>'.format(bss.Rloc16),
-							'<div class="col-2 center"> %s </div>'.format(bss.Age),
-							'<div class="col-2 center"> %s </div>'.format(bss.LinkQualityIn),
-							'<div class="col-2 center"> %s </div>'.format(bss.ExtAddress),
-						]);
-					});
+					if (typeof st.neighbor === 'object' && st.neighbor !== null) {
+						Object.keys(st.neighbor).forEach(function(key) {
+							var bss = st.neighbor[key];
+							var icon = guess_thread_signal(bss);
+							var signal = percent_thread_signal(bss);
+							rows.push([
+								'<abbr title="LinkQualityIn: %s"><img src="%s" /><br /><small> %s%</small></abbr>'.format(bss.LinkQualityIn, icon, signal),
+								'<div class="col-1 center"> %s </div>'.format(bss.Role),
+								'<div class="col-4 center"> %s </div>'.format(bss.Rloc16),
+								'<div class="col-2 center"> %s </div>'.format(bss.Age),
+								'<div class="col-2 center"> %s </div>'.format(bss.LinkQualityIn),
+								'<div class="col-2 center"> %s </div>'.format(bss.ExtAddress),
+							]);
+						});
+					}
 					cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
 					tb.style.display = "table";
 				}
@@ -208,18 +211,21 @@
 				if (tb)
 				{
 					var rows = [];
-					st.neighbor.forEach(function(bss) {
-						var icon = guess_thread_signal(bss);
-						var signal = percent_thread_signal(bss);
-						rows.push([
-							'<abbr title="LinkQualityIn: %s"><img src="%s" /><br /><small> %s%</small></abbr>'.format(bss.LinkQualityIn, icon, signal),
-							'<div class="col-1 center"> %s </div>'.format(bss.Role),
-							'<div class="col-4 center"> %s </div>'.format(bss.Rloc16),
-							'<div class="col-2 center"> %s </div>'.format(bss.Age),
-							'<div class="col-2 center"> %s </div>'.format(bss.AvgRssi),
-							'<div class="col-2 center"> %s </div>'.format(bss.LastRssi),
-						]);
-					});
+					if (typeof st.neighbor === 'object' && st.neighbor !== null) {
+						Object.keys(st.neighbor).forEach(function(key) {
+							var bss = st.neighbor[key];
+							var icon = guess_thread_signal(bss);
+							var signal = percent_thread_signal(bss);
+							rows.push([
+								'<abbr title="LinkQualityIn: %s"><img src="%s" /><br /><small> %s%</small></abbr>'.format(bss.LinkQualityIn, icon, signal),
+								'<div class="col-1 center"> %s </div>'.format(bss.Role),
+								'<div class="col-4 center"> %s </div>'.format(bss.Rloc16),
+								'<div class="col-2 center"> %s </div>'.format(bss.Age),
+								'<div class="col-2 center"> %s </div>'.format(bss.AvgRssi),
+								'<div class="col-2 center"> %s </div>'.format(bss.LastRssi),
+							]);
+						});
+					}
 					cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
 					tb.style.display = "table";
 				}

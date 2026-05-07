@@ -45,7 +45,7 @@ CMAKE_OPTIONS+= \
 	-DCMAKE_INSTALL_PREFIX=/usr \
 	-DOTBR_BORDER_AGENT=ON \
 	-DOTBR_INFRA_IF_NAME=\"br-lan\" \
-	-DOTBR_MDNS="avahi" \
+	-DOTBR_MDNS="openthread" \
 	-DOTBR_OPENWRT=ON \
 	-DOTBR_VENDOR_NAME="OpenWrt" \
 	-DOTBR_PRODUCT_NAME="BorderRouter" \
@@ -60,7 +60,17 @@ define Package/openthread-br
 	SECTION:=base
 	CATEGORY:=Network
 	TITLE:=OpenThread Border Router
-	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client +avahi-daemon +iptables-mod-extra +ipset
+	DEPENDS:= \
+		+ip6tables \
+		+ipset \
+		+iptables-mod-extra \
+		+kmod-tun \
+		+kmod-usb-acm \
+		+libblobmsg-json \
+		+libjson-c \
+		+libstdcpp \
+		+libubus \
+		+luci-lua-runtime
 endef
 
 define Package/openthread-br/description
