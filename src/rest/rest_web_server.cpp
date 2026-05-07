@@ -50,6 +50,7 @@
 #include "rest/rest_devices_coll.hpp"     // Devices Collection
 #include "rest/rest_diagnostics_coll.hpp" // Diagnostics Collection
 #include "rest/services.hpp"
+#include "rest/version.hpp"
 #include "utils/string_utils.hpp"
 
 #include <cJSON.h>
@@ -109,6 +110,8 @@
 
 #define OT_REST_ROUTE_DIAGNOSTICS "/api/diagnostics"
 #define OT_REST_ROUTE_DIAGNOSTICS_ID "/api/diagnostics/:id"
+
+#define OT_REST_ROUTE_WELLKNOWN_THREAD "/.well-known/thread/br-rest"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -187,6 +190,9 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS_ID,
                    MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemDeleteHandler));
     mServer.Options(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
+
+    mServer.Get(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
+    mServer.Options(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
 }
 
 RestWebServer::~RestWebServer(void)
@@ -1148,8 +1154,7 @@ void RestWebServer::ApiActionsHandler(const Request &aRequest, Response &aRespon
         aResponse.set_header("Allow", "GET, POST, DELETE, OPTIONS");
         break;
     default:
-        // aResponse.SetAllowMethods(methods);
-        errorDetails = "method not supported";
+        errorDetails = "not supported";
         statusCode   = StatusCode::MethodNotAllowed_405;
         break;
     }
@@ -1520,7 +1525,6 @@ void RestWebServer::ApiDiagnosticsHandler(const Request &aRequest, Response &aRe
         break;
     case HttpMethod::kPost:
     default:
-        // aResponse.SetAllowMethods(methods);
         errorDetails = "not supported";
         statusCode   = StatusCode::MethodNotAllowed_405;
         break;
@@ -1552,7 +1556,6 @@ void RestWebServer::ApiDevicesHandler(const Request &aRequest, Response &aRespon
         aResponse.set_header("Allow", "GET, DELETE, OPTIONS");
         break;
     default:
-        // aResponse.SetAllowMethods(methods);
         errorDetails = "not supported";
         statusCode   = StatusCode::MethodNotAllowed_405;
         break;
@@ -1595,7 +1598,7 @@ exit:
     }
 }
 
-otError RestWebServer::HasValidChars(const Request &aRequest, std::string &aErrorDetails)
+otError RestWebServer::HasValidChars(const Request &aRequest, std::string &aErrorDetails) const
 {
     otError          error            = OT_ERROR_NONE;
     constexpr size_t kMaxHeaderParams = 32;
@@ -1811,6 +1814,81 @@ void RestWebServer::ApiDevicesNodeInit()
     thisextaddr_str = StringUtils::ToLowercase(thisextaddr_str);
 
     mServices.GetNetworkDiagHandler().SetDeviceItemAttributes(thisextaddr_str, aDeviceInfo);
+}
+
+void RestWebServer::WellKnownThreadHandler(const Request &aRequest, Response &aResponse) const
+{
+    StatusCode  statusCode = StatusCode::OK_200;
+    std::string errorDetails;
+    VerifyOrExit(HasValidChars(aRequest, errorDetails) == OT_ERROR_NONE, statusCode = StatusCode::BadRequest_400);
+
+    switch (GetMethod(aRequest))
+    {
+    case HttpMethod::kGet:
+        WellKnownThreadGetHandler(aRequest, aResponse);
+        break;
+
+    case HttpMethod::kOptions:
+        aResponse.status = StatusCode::NoContent_204;
+        aResponse.set_header("Allow", "GET, OPTIONS");
+        break;
+
+    default:
+        errorDetails = "not supported";
+        statusCode   = StatusCode::MethodNotAllowed_405;
+        break;
+    }
+exit:
+    if (statusCode != StatusCode::OK_200)
+    {
+        otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
+        ErrorHandler(aResponse, statusCode, errorDetails);
+    }
+}
+
+void RestWebServer::WellKnownThreadGetHandler(const Request &aRequest, Response &aResponse) const
+{
+    OT_UNUSED_VARIABLE(aRequest);
+
+    // Static JSON discovery metadata per RFC 8615 and OpenAPI specification
+    // API version from rest/version.hpp
+    // Routes use OT_REST_ROUTE_* macros for consistency with endpoint definitions
+    static const std::string kWellKnownThreadJson = R"({
+  "api": {
+    "version": ")" OTBR_REST_API_VERSION R"(",
+    "base": "/api/"
+  },
+  "links": [
+    {
+      "href": ")" OT_REST_ROUTE_WELLKNOWN_THREAD R"(",
+      "rel": "self",
+      "type": [")" OT_REST_CONTENT_TYPE_JSON R"("]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_NODE R"(",
+      "rel": "node",
+      "type": [")" OT_REST_CONTENT_TYPE_JSONAPI R"("]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_ACTIONS R"(",
+      "rel": "task",
+      "type": [")" OT_REST_CONTENT_TYPE_JSONAPI R"("]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_DEVICES R"(",
+      "rel": "device",
+      "type": [")" OT_REST_CONTENT_TYPE_JSONAPI R"("]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_DIAGNOSTICS R"(",
+      "rel": "diagnostic",
+      "type": [")" OT_REST_CONTENT_TYPE_JSONAPI R"("]
+    }
+  ]
+})";
+
+    aResponse.set_content(kWellKnownThreadJson, OT_REST_CONTENT_TYPE_JSON);
+    aResponse.status = StatusCode::OK_200;
 }
 
 /**
