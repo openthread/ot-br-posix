@@ -70,12 +70,14 @@ die()
 test_teardown()
 {
     echo "--- Tearing down test environment ---"
+    echo "Active and inactive containers:"
+    docker ps -a || true
     echo "Container logs:"
     docker logs "${CONTAINER_NAME}" || true
+    echo "Test client logs:"
+    docker logs "test-client" || true
     echo "Agent logs:"
     docker exec -i "${CONTAINER_NAME}" cat /var/log/otbr-agent.log || true
-    echo "Process status:"
-    docker exec -i "${CONTAINER_NAME}" ps aux || true
     docker stop "${CONTAINER_NAME}" || true
     for c in $(docker network inspect "${INFRA_NET_NAME}" -f '{{range $id, $el := .Containers}}{{$id}} {{end}}' 2>/dev/null || true); do
         docker stop "$c" || true
@@ -120,11 +122,11 @@ test_setup()
         echo "Network ${INFRA_NET_NAME} already exists."
     fi
 
-    # 3. Build the test client image with mdns-scan
-    echo "Building test client image with mdns-scan..."
+    # 3. Build the test client image with mdns-scan and ping/ndisc6 tools
+    echo "Building test client image with mdns-scan and ping/ndisc6 tools..."
     docker build -t "${TEST_CLIENT_IMAGE}" - <<EOF
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y mdns-scan --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 --no-install-recommends && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["mdns-scan"]
 EOF
 
@@ -151,6 +153,7 @@ test_run()
     export EXP_TUN_NAME="wpan0"
     export EXP_LEADER_NODE_ID=1
     export EXP_REPO_ROOT="${REPO_ROOT}"
+    export EXP_TEST_CLIENT_IMAGE="${TEST_CLIENT_IMAGE}"
 
     local ot_cli
     local ot_rcp

@@ -31,6 +31,7 @@ proc fail {message} {
     send_user "Error: $message\n"
     exit 1
 }
+
 source "tests/scripts/expect/_common.exp"
 
 # Custom start_otbr_docker for our network name
@@ -49,7 +50,7 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
     }
     send_user "Network Gateway: $gateway\n"
 
-    # 1. Start the child container in sleep mode
+    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
     exec docker run -d \
         --name $name \
         --network infrastructure-link \
@@ -58,15 +59,15 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
         --add-host=host.docker.internal:host-gateway \
         --sysctl net.ipv6.conf.all.disable_ipv6=0 \
         --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
         --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
         -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
         -e EXP_GATEWAY_IP=$gateway \
-        --entrypoint /bin/bash \
-        $::env(EXP_OTBR_DOCKER_IMAGE) \
-        -c "sleep infinity"
-
-    # 2. Start otbr-agent in the child container, which connects to socat
-    exec docker exec -d $name bash -c "otbr-agent -d7 -v --vendor-name=OpenThread --model-name=OTBR -I wpan0 -B eth0 spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh >/var/log/otbr-agent.log 2>&1"
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
     sleep 2
 
     # 3. Now start the simulated RCP binary on the host!
@@ -147,11 +148,21 @@ exec docker exec -i $container ot-ctl srp server auto disable
 exec docker exec -i $container ot-ctl srp server enable
 sleep 2
 
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its dynamic OMR prefix
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Get the running Border Router's active dataset dynamically to configure the client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
 # Join Thread network from Node 4 (ot-cli-ftd)
 spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
-send "dataset set active ${dataset}\n"
+send "dataset set active $active_dataset\n"
 expect_line "Done"
-send "mode n\r\n"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
 expect_line "Done"
 send "ifconfig up\r\n"
 expect_line "Done"
@@ -172,8 +183,43 @@ send "srp client service add ot-service _ipps._tcp 12345\r\n"
 expect_line "Done"
 sleep 10
 
-# Verify service via mdns-scan from our test client container
-spawn docker run --rm --network infrastructure-link test-client-mdnsresponder
+# Set up a single background test-client container to perform both mDNS resolution and ping tests
+set test_client "test-client"
+exec docker run -d \
+    --name $test_client \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+
+# Check if the host kernel supports Route Information Option (RIO) / accept_ra_rt_info_max_plen processing
+set has_rio [expr {[catch {exec docker exec -i $test_client test -f /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+
+if {$has_rio} {
+    send_user "Host kernel supports RIO processing. Enabling accept_ra_rt_info_max_plen.\n"
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+    # Trigger a Router Solicitation to fetch RAs immediately and let kernel auto-install the OMR route
+    exec docker exec -i $test_client rdisc6 eth0
+} else {
+    send_user "Warning: Host kernel does NOT support RIO processing (CONFIG_IPV6_ROUTE_INFO is disabled). Falling back to static route.\n"
+
+    # Retrieve the global IPv6 address of the OTBR container on the bridge network
+    set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+    set otbr_ip [exec docker inspect otbr-test-container -f $format]
+    send_user "OTBR Infrastructure IPv6 Address: $otbr_ip\n"
+
+    # Manually install static route to Thread ULA subnet (fc00::/7) via the OTBR, bypassing host kernel RIO limitation
+    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
+}
+send_user "Test Client routing table:\n"
+send_user [exec docker exec -i $test_client ip -6 route]
+
+# 1. Verify service via mdns-scan from our single test client container
+spawn docker exec -i $test_client mdns-scan
 set timeout 10
 expect {
     "ot-service._ipps._tcp.local" {
@@ -185,6 +231,37 @@ expect {
 }
 catch {close}
 catch {wait}
+
+# 2. Discover the Thread device's IPv6 address via mDNS and verify connectivity (OMR)
+set py_cmd {from zeroconf import Zeroconf, IPVersion; import socket; info = Zeroconf().get_service_info('_ipps._tcp.local.', 'ot-service._ipps._tcp.local.'); addrs = info.addresses_by_version(IPVersion.V6Only) if info else []; print(socket.inet_ntop(socket.AF_INET6, addrs[0])) if addrs else None}
+set discovered_ip [exec docker exec -i $test_client python3 -c $py_cmd]
+set discovered_ip [string trim $discovered_ip]
+if {$discovered_ip == ""} {
+    send_user "Error: Failed to discover Thread device IPv6 address via mDNS\n"
+    exit 1
+}
+send_user "Discovered Thread device IPv6 address via mDNS: $discovered_ip\n"
+
+spawn docker exec -i $test_client ping6 -c 5 $discovered_ip
+set timeout 15
+expect {
+    "5 packets transmitted, 5 received, 0% packet loss" {
+        send_user "\n# Ping from infra host to discovered Thread device succeeded!\n"
+    }
+    timeout {
+        send_user "Error: Ping from infra host to discovered Thread device timed out\n"
+        exit 1
+    }
+    eof {
+        send_user "Error: Ping from infra host to discovered Thread device failed (EOF)\n"
+        exit 1
+    }
+}
+catch {close}
+catch {wait}
+
+exec docker stop $test_client
+exec docker rm $test_client
 
 exec docker stop $container
 exec docker rm $container
