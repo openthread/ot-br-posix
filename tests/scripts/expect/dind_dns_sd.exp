@@ -36,20 +36,6 @@ source "tests/scripts/expect/_common.exp"
 
 # Custom start_otbr_docker for our network name
 proc start_otbr_docker_dind {name sim_app sim_id pty} {
-    set format "\{\{range .IPAM.Config\}\}\{\{.Gateway\}\}\n\{\{end\}\}"
-    set output [exec docker network inspect infrastructure-link -f $format]
-    set gateway ""
-    foreach line [split $output "\n"] {
-        if {[string match "*.*" $line]} {
-            set gateway $line
-            break
-        }
-    }
-    if {$gateway == ""} {
-        set gateway [lindex [split $output "\n"] 0]
-    }
-    send_user "Network Gateway: $gateway\n"
-
     # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
     exec docker run -d \
         --name $name \
@@ -63,7 +49,6 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
         --sysctl net.ipv6.conf.all.forwarding=1 \
         --sysctl net.ipv6.conf.default.forwarding=1 \
         -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
-        -e EXP_GATEWAY_IP=$gateway \
         -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
         -e OT_INFRA_IF=eth0 \
         -e OT_THREAD_IF=wpan0 \
@@ -259,6 +244,97 @@ expect {
 }
 catch {close}
 catch {wait}
+
+# 3. Verify DNS-SD Discovery Proxy: Thread device discovers service on infra link
+
+# Get the global IPv6 address of the test client
+set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+set test_client_ip [exec docker inspect $test_client -f $format]
+set test_client_ip [string trim $test_client_ip]
+send_user "Test Client IPv6 Address: $test_client_ip\n"
+
+# Publish a service on the infrastructure link from the test client
+# Write python script to file in container
+exec docker exec -i $test_client bash -c "cat << EOF > /tmp/publish.py
+from zeroconf import IPVersion, ServiceInfo, Zeroconf, ServiceBrowser
+import socket
+import time
+
+class MyListener:
+    def remove_service(self, zc, type, name):
+        print(f'Service {name} removed')
+    def add_service(self, zc, type, name):
+        print(f'Service {name} added')
+
+desc = {'path': '/'}
+info = ServiceInfo('_http._tcp.local.', 'test-service._http._tcp.local.', addresses=\[socket.inet_pton(socket.AF_INET6, '$test_client_ip')\], port=12345, properties=desc, server='test-host.local.')
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+print('Registering service...')
+zc.register_service(info)
+print('Service registered. Sleeping...')
+
+browser = ServiceBrowser(zc, '_http._tcp.local.', MyListener())
+
+time.sleep(60)
+zc.unregister_service(info)
+zc.close()
+EOF"
+
+# Run python script in background and redirect output to log file
+exec docker exec -d $test_client bash -c "python3 -u /tmp/publish.py > /tmp/publish.log 2>&1"
+
+# Get OTBR's RLOC or OMR address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr == ""} {
+    set otbr_dns_addr [lindex [split $otbr_addrs "\n"] 0]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Switch to Node 4 to send commands
+switch_node 4
+
+# Configure DNS client on Node 4
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+
+# Browse for the service from Node 4
+send "dns browse _http._tcp.default.service.arpa.\r\n"
+set timeout 20
+expect {
+    "test-service" {
+        send_user "\n# Service successfully discovered from Thread device!\n"
+    }
+    timeout {
+        send_user "Error: Service not found from Thread device\n"
+        if {[catch {exec docker exec -i $test_client cat /tmp/publish.log} result]} {
+            send_user "Failed to cat log: $result\n"
+        } else {
+            send_user "Publish log:\n$result\n"
+        }
+
+        exit 1
+    }
+}
+
+# Resolve the service to get the IP address
+send "dns servicehost test-service _http._tcp.default.service.arpa.\r\n"
+expect {
+    -re {HostAddress:(\S+)} {
+        set resolved_ip $expect_out(1,string)
+        send_user "Resolved IP via Discovery Proxy: $resolved_ip\n"
+    }
+    timeout {
+        send_user "Error: Failed to resolve service host from Thread device\n"; exit 1
+    }
+}
 
 exec docker stop $test_client
 exec docker rm $test_client
