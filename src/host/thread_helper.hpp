@@ -274,6 +274,7 @@ private:
 
     void    ActiveDatasetChangedCallback(void);
     bool    AreDatasetTlvsEqualToLocalDatasetTlvs(const otOperationalDatasetTlvs &aDatasetTlvs) const;
+    bool    CanImpactNetworkConnectivity(const otOperationalDatasetTlvs &aDatasetTlvs) const;
     otError StartThreadStack(void);
 
 #if OTBR_ENABLE_DHCP6_PD
