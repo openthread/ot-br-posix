@@ -304,6 +304,7 @@ switch_node 4
 # Configure DNS client on Node 4
 send "dns config $otbr_dns_addr\r\n"
 expect_line "Done"
+expect "> "
 
 # Browse for the service from Node 4
 send "dns browse _http._tcp.default.service.arpa.\r\n"
@@ -323,6 +324,8 @@ expect {
         exit 1
     }
 }
+expect_line "Done"
+expect "> "
 
 # Resolve the service to get the IP address
 send "dns servicehost test-service _http._tcp.default.service.arpa.\r\n"
@@ -330,9 +333,45 @@ expect {
     -re {HostAddress:(\S+)} {
         set resolved_ip $expect_out(1,string)
         send_user "Resolved IP via Discovery Proxy: $resolved_ip\n"
+        exp_continue
+    }
+    "Error" {
+        fail "Failed to resolve service host from Thread device"
     }
     timeout {
-        send_user "Error: Failed to resolve service host from Thread device\n"; exit 1
+        fail "Timed out resolving service host from Thread device"
+    }
+    -re "Done\r?\n> " {
+        # Finished successfully
+    }
+}
+
+if {![info exists resolved_ip]} {
+    fail "Failed to resolve service host address"
+}
+
+# Ping the resolved address from Thread device
+set ping_success false
+send "ping $resolved_ip 8 5\r\n"
+expect {
+    -re {5 packets transmitted, 5 packets received\. Packet loss = 0\.0\%} {
+        set ping_success true
+        send_user "\n# Ping from Thread device to resolved address succeeded!\n"
+        exp_continue
+    }
+    "0 packets received" {
+        fail "Ping failed (0 packets received)"
+    }
+    "Error" {
+        fail "Ping command failed"
+    }
+    timeout {
+        fail "Ping timed out"
+    }
+    -re "Done\r?\n> " {
+        if {!$ping_success} {
+            fail "Ping failed to achieve 100% success"
+        }
     }
 }
 
