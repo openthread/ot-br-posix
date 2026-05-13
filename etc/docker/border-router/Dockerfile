@@ -32,13 +32,17 @@ ARG GITHUB_REPO="openthread/ot-br-posix"
 ARG GIT_COMMIT="HEAD"
 ARG TARGETARCH
 ARG TARGETVARIANT
+ARG OTBR_MDNS="openthread"
 ARG OTBR_OPTIONS=""
 
+ENV MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147
 ENV S6_OVERLAY_VERSION=3.2.1.0
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /usr/src
+
+COPY etc/docker/border-router/rootfs /rootfs-add
 
 RUN set -x \
     && apt-get update \
@@ -72,6 +76,16 @@ RUN set -x \
     \
     && git clone --depth 1 -b main https://github.com/"${GITHUB_REPO}".git \
     \
+    && if [ "${OTBR_MDNS}" = "mDNSResponder" ]; then \
+           curl -L -f -s -o ${MDNS_RESPONDER_SOURCE_NAME}.tar.gz https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/${MDNS_RESPONDER_SOURCE_NAME}.tar.gz \
+           && mkdir -p ${MDNS_RESPONDER_SOURCE_NAME} \
+           && tar xvf ${MDNS_RESPONDER_SOURCE_NAME}.tar.gz -C ${MDNS_RESPONDER_SOURCE_NAME} --strip-components=1 \
+           && cd ${MDNS_RESPONDER_SOURCE_NAME}/mDNSPosix \
+           && make os=linux tls=no \
+           && make install os=linux tls=no \
+           && cd ../..; \
+       fi \
+    \
     && cd ot-br-posix \
     && git fetch origin "${GIT_COMMIT}" \
     && git checkout "${GIT_COMMIT}" \
@@ -83,7 +97,7 @@ RUN set -x \
                -DBUILD_TESTING=OFF \
                -DCMAKE_INSTALL_PREFIX=/usr \
                -DOTBR_DBUS=OFF \
-               -DOTBR_MDNS=openthread \
+               -DOTBR_MDNS="${OTBR_MDNS}" \
                -DOTBR_REST=ON \
                -DOTBR_WEB=ON \
                -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
@@ -93,7 +107,12 @@ RUN set -x \
         && ninja \
         && ninja install) \
     \
-    && cp -r etc/docker/border-router/rootfs/. / \
+    && cp -r /rootfs-add/. / \
+    && if [ "${OTBR_MDNS}" != "mDNSResponder" ]; then \
+           rm -rf /etc/s6-overlay/s6-rc.d/mdns \
+                  /etc/s6-overlay/s6-rc.d/otbr-agent/dependencies.d/mdns \
+                  /etc/s6-overlay/s6-rc.d/user/contents.d/mdns; \
+       fi \
     && apt-get purge -y --auto-remove \
            build-essential \
            ca-certificates \

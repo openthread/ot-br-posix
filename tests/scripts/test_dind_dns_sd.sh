@@ -43,6 +43,8 @@ readonly OTBR_DOCKER_IMAGE
 OTBR_DOCKER_FILE="${OTBR_DOCKER_FILE:-${REPO_ROOT}/etc/docker/border-router/Dockerfile}"
 readonly OTBR_DOCKER_FILE
 
+OTBR_MDNS="openthread"
+
 INFRA_NET_NAME="infrastructure-link"
 readonly INFRA_NET_NAME
 
@@ -120,8 +122,8 @@ test_setup()
     iptables -I INPUT 1 -p tcp --dport 9000 -j ACCEPT || true
 
     # 1. Build the production Docker image
-    echo "Building production border-router image..."
-    docker build --build-arg OTBR_OPTIONS="-DOTBR_BACKBONE_ROUTER=OFF" -t "${OTBR_DOCKER_IMAGE}" -f "${OTBR_DOCKER_FILE}" "${REPO_ROOT}"
+    echo "Building production border-router image with OTBR_MDNS=${OTBR_MDNS}..."
+    docker build --build-arg OTBR_MDNS="${OTBR_MDNS}" --build-arg OTBR_OPTIONS="-DOTBR_BACKBONE_ROUTER=OFF" -t "${OTBR_DOCKER_IMAGE}" -f "${OTBR_DOCKER_FILE}" "${REPO_ROOT}"
 
     # 2. Create the IPv6-enabled Docker bridge network for infrastructure-link
     if ! docker network inspect "${INFRA_NET_NAME}" >/dev/null 2>&1; then
@@ -183,6 +185,18 @@ test_run()
 
 main()
 {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --mdnsresponder)
+                OTBR_MDNS="mDNSResponder"
+                shift
+                ;;
+            *)
+                die "Unknown option: $1"
+                ;;
+        esac
+    done
+
     test_setup
     test_run
 }

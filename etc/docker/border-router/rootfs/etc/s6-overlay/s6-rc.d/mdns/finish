@@ -1,5 +1,6 @@
+#!/usr/bin/env bash
 #
-#  Copyright (c) 2026, The OpenThread Authors.
+#  Copyright (c) 2025, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,43 +27,4 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-name: Docker Test
-
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
-    branches:
-      - 'main'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  docker-check:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        mdns: ["", "--mdnsresponder"]
-    env:
-      VERBOSE: 1
-    steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2
-      with:
-        submodules: recursive
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
-    - name: Build DinD Runner Image
-      run: |
-        docker build -t otbr-dind-runner -f etc/docker/test/Dockerfile.dind_runner .
-    - name: Run DinD Integration Test
-      run: |
-        docker run --privileged --rm \
-          -v "$(pwd)":/usr/src/ot-br-posix \
-          -w /usr/src/ot-br-posix \
-          -e DOCKER_HOST=unix:///var/run/docker.sock \
-          otbr-dind-runner \
-          bash -c "dockerd --host=unix:///var/run/docker.sock >/dev/null 2>&1 & ./tests/scripts/test_dind_dns_sd.sh ${{ matrix.mdns }}"
+echo "mDNS ended with exit code ${1} (signal ${2})..."
