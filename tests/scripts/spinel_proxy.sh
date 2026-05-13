@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-exec 3<>/dev/tcp/"${EXP_GATEWAY_IP:-host.docker.internal}"/9000
+exec 3<>/dev/tcp/"${EXP_GATEWAY_IP:-host.docker.internal}"/"${EXP_RCP_PORT:-9000}"
 stdbuf -i0 -o0 -e0 cat <&3 &
 stdbuf -i0 -o0 -e0 cat >&3
 kill $!

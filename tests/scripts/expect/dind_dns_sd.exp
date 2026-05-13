@@ -27,11 +27,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-proc fail {message} {
-    send_user "Error: $message\n"
-    exit 1
-}
-
 source "tests/scripts/expect/_common.exp"
 
 # Custom start_otbr_docker for our network name
@@ -60,21 +55,6 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
     sleep 5
 }
 
-proc create_socat_tcp {id port} {
-    global socat_pid
-    spawn socat -d -d pty,raw,echo=0 tcp-listen:$port,reuseaddr,bind=0.0.0.0
-    set socat_pid [exp_pid]
-    set pty ""
-    expect {
-        -re {PTY is (\S+)} {
-            set pty $expect_out(1,string)
-        }
-        timeout {
-            send_user "Error: Timed out starting socat\n"; exit 1
-        }
-    }
-    return $pty
-}
 
 set pty1 [create_socat_tcp 1 9000]
 set container "otbr-test-container"

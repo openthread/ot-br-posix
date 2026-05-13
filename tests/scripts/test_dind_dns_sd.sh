@@ -73,12 +73,20 @@ test_teardown()
     echo "Active and inactive containers:"
     docker ps -a || true
     echo "Container logs:"
-    docker logs "${CONTAINER_NAME}" || true
-    echo "Test client logs:"
-    docker logs "test-client" || true
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "test-client"; do
+        docker logs "$c" || true
+    done
+
     echo "Agent logs:"
-    docker exec -i "${CONTAINER_NAME}" cat /var/log/otbr-agent.log || true
-    docker stop "${CONTAINER_NAME}" || true
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2"; do
+        docker exec -i "$c" cat /var/log/otbr-agent.log || true
+    done
+
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "test-client"; do
+        docker stop "$c" || true
+        docker rm "$c" || true
+    done
+
     for c in $(docker network inspect "${INFRA_NET_NAME}" -f '{{range $id, $el := .Containers}}{{$id}} {{end}}' 2>/dev/null || true); do
         docker stop "$c" || true
         docker rm "$c" || true
@@ -87,6 +95,7 @@ test_teardown()
     docker network rm "${INFRA_NET_NAME}" || true
     pkill -f ot-rcp || true
     pkill -f ot-cli-ftd || true
+    pkill -f socat || true
     rm -vf /tmp/otbr-pty1 /tmp/otbr-pty2 || true
     rm -vf "${REPO_ROOT}"/*.flash* || true
 }
@@ -147,7 +156,7 @@ test_run()
 {
     trap test_teardown EXIT
 
-    echo "--- Running integration expect script ---"
+    echo "--- Running integration expect scripts ---"
     export EXP_OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE}"
     export EXP_OTBR_AGENT_PATH="${REPO_ROOT}/build/src/agent/otbr-agent"
     export EXP_TUN_NAME="wpan0"
@@ -165,7 +174,11 @@ test_run()
     export EXP_OT_CLI_PATH="$ot_cli"
     export EXP_OT_RCP_PATH="$ot_rcp"
 
+    echo "--- Running DNS-SD integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_dns_sd.exp"
+
+    echo "--- Running TREL integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 }
 
 main()

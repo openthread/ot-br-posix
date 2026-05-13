@@ -27,6 +27,11 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+proc fail {message} {
+    send_user "Error: $message\n"
+    exit 1
+}
+
 proc wait_for {command success {failure {[\r\n]FAILURE_NOT_EXPECTED[\r\n]}}} {
     set timeout 1
     for {set i 0} {$i < 40} {incr i} {
@@ -130,6 +135,22 @@ proc create_socat {id} {
     return [list $pty1 $pty2]
 }
 
+proc create_socat_tcp {id port} {
+    global socat_pids
+    spawn socat -d -d pty,raw,echo=0 tcp-listen:$port,reuseaddr,bind=0.0.0.0
+    lappend socat_pids [exp_pid]
+    set pty ""
+    expect {
+        -re {PTY is (\S+)} {
+            set pty $expect_out(1,string)
+        }
+        timeout {
+            fail "Error: Timed out starting socat for id $id on port $port"
+        }
+    }
+    return $pty
+}
+
 proc start_otbr_docker {name sim_app sim_id pty1 pty2} {
     exec $sim_app $sim_id <$pty1 >$pty1 &
     exec docker run -d \
@@ -159,8 +180,16 @@ proc dispose_node {id} {
 }
 proc dispose_socat {} {
     global socat_pid
+    global socat_pids
     if { [info exists socat_pid] } {
-        exec kill $socat_pid
+        catch { exec kill $socat_pid }
+        unset socat_pid
+    }
+    if { [info exists socat_pids] } {
+        foreach pid $socat_pids {
+            catch { exec kill $pid }
+        }
+        set socat_pids {}
     }
 }
 proc dispose_all {} {
