@@ -185,6 +185,11 @@ test_run()
 
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
+
+    if [[ "$(uname)" != "Darwin" && "$(uname -r)" != *"linuxkit"* ]]; then
+        echo "--- Running BBR Multicast Forwarding integration test ---"
+        expect -df "${SCRIPT_DIR}/expect/dind_multicast.exp"
+    fi
 }
 
 main()
