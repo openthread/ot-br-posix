@@ -122,8 +122,12 @@ test_setup()
     iptables -I INPUT 1 -p tcp --dport 9000 -j ACCEPT || true
 
     # 1. Build the production Docker image
-    echo "Building production border-router image with OTBR_MDNS=${OTBR_MDNS}..."
-    docker build --build-arg OTBR_MDNS="${OTBR_MDNS}" --build-arg OTBR_OPTIONS="-DOTBR_BACKBONE_ROUTER=OFF" -t "${OTBR_DOCKER_IMAGE}" -f "${OTBR_DOCKER_FILE}" "${REPO_ROOT}"
+    local otbr_options=""
+    if [[ "$(uname)" == "Darwin" || "$(uname -r)" == *"linuxkit"* ]]; then
+        otbr_options="-DOTBR_BACKBONE_ROUTER=OFF"
+    fi
+    echo "Building production border-router image with OTBR_MDNS=${OTBR_MDNS} OTBR_OPTIONS=${otbr_options}..."
+    docker build --build-arg OTBR_MDNS="${OTBR_MDNS}" --build-arg OTBR_OPTIONS="${otbr_options}" -t "${OTBR_DOCKER_IMAGE}" -f "${OTBR_DOCKER_FILE}" "${REPO_ROOT}"
 
     # 2. Create the IPv6-enabled Docker bridge network for infrastructure-link
     if ! docker network inspect "${INFRA_NET_NAME}" >/dev/null 2>&1; then
