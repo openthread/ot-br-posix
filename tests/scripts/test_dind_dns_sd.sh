@@ -75,16 +75,16 @@ test_teardown()
     echo "Active and inactive containers:"
     docker ps -a || true
     echo "Container logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "test-client"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client"; do
         docker logs "$c" || true
     done
 
     echo "Agent logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web"; do
         docker exec -i "$c" cat /var/log/otbr-agent.log || true
     done
 
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "test-client"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client"; do
         docker stop "$c" || true
         docker rm "$c" || true
     done
@@ -186,10 +186,20 @@ test_run()
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
+    echo "--- Cleaning up TREL containers and orphaned processes ---"
+    docker stop otbr-test-container-1 otbr-test-container-2 || true
+    pkill -f ot-rcp || true
+    pkill -f socat || true
+
     if [[ "$(uname)" != "Darwin" && "$(uname -r)" != *"linuxkit"* ]]; then
         echo "--- Running BBR Multicast Forwarding integration test ---"
         expect -df "${SCRIPT_DIR}/expect/dind_multicast.exp"
+        pkill -f ot-rcp || true
+        pkill -f socat || true
     fi
+
+    echo "--- Running Web UI integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_web.exp"
 }
 
 main()
