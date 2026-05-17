@@ -1,0 +1,33 @@
+{
+	"luci-app-openthread": {
+		"description": "Grant access to OpenThread Border Router controls",
+		"read": {
+			"ubus": {
+				"luci.openthread": [
+					"state_summary",
+					"neighbors_summary",
+					"scan"
+				]
+			}
+		},
+		"write": {
+			"ubus": {
+				"luci.openthread": [
+					"settings_get",
+					"get_networkkey",
+					"settings_apply",
+					"attach",
+					"thread_start",
+					"thread_stop",
+					"leave",
+					"commissioner_start",
+					"joiner_add",
+					"joiner_remove",
+					"macfilter_clear",
+					"macfilter_add",
+					"macfilter_remove"
+				]
+			}
+		}
+	}
+}
