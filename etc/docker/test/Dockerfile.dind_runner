@@ -33,6 +33,7 @@ RUN apk add --no-cache \
     bash \
     build-base \
     cmake \
+    curl \
     expect \
     git \
     ninja \
