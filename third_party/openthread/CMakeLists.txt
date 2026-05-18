@@ -74,6 +74,9 @@ set(OT_SRP_CLIENT ON CACHE STRING "enable SRP client" FORCE)
 set(OT_SRP_SERVER ON CACHE STRING "enable SRP server")
 set(OT_TARGET_OPENWRT ${OTBR_OPENWRT} CACHE STRING "target on OpenWRT" FORCE)
 set(OT_TCP OFF CACHE STRING "disable TCP")
+# ====================================================================================================
+set(OT_TIME_EXCEEDED_DETECTION ${OTBR_TIME_EXCEEDED_DETECTION} CACHE STRING "enable Time Exceeded Detection" FORCE)
+# ====================================================================================================
 set(OT_TREL ${OTBR_TREL} CACHE STRING "enable TREL" FORCE)
 set(OT_UDP_FORWARD OFF CACHE STRING "disable udp forward" FORCE)
 set(OT_UPTIME ON CACHE STRING "enable uptime" FORCE)
