@@ -77,8 +77,8 @@ public:
 class DBusObject : private NonCopyable
 {
 public:
-    using MethodHandlerType        = std::function<void(DBusRequest &)>;
-    using AsyncPropertyHandlerType = std::function<void(DBusRequest &)>;
+    using MethodHandlerType        = std::function<void(std::shared_ptr<DBusRequest>)>;
+    using AsyncPropertyHandlerType = std::function<void(std::shared_ptr<DBusRequest>)>;
     using PropertyHandlerType      = std::function<otError(DBusMessageIter &)>;
 
     /**
@@ -245,10 +245,10 @@ protected:
     otbrError Initialize(bool aIsAsyncPropertyHandler);
 
 private:
-    void GetAllPropertiesMethodHandler(DBusRequest &aRequest);
-    void GetPropertyMethodHandler(DBusRequest &aRequest);
-    void SetPropertyMethodHandler(DBusRequest &aRequest);
-    void AsyncGetPropertyMethodHandler(DBusRequest &aRequest);
+    void GetAllPropertiesMethodHandler(std::shared_ptr<DBusRequest> aRequest);
+    void GetPropertyMethodHandler(std::shared_ptr<DBusRequest> aRequest);
+    void SetPropertyMethodHandler(std::shared_ptr<DBusRequest> aRequest);
+    void AsyncGetPropertyMethodHandler(std::shared_ptr<DBusRequest> aRequest);
 
     static DBusHandlerResult sMessageHandler(DBusConnection *aConnection, DBusMessage *aMessage, void *aData);
     DBusHandlerResult        MessageHandler(DBusConnection *aConnection, DBusMessage *aMessage);

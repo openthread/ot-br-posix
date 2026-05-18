@@ -149,11 +149,12 @@ DBusHandlerResult DBusObject::sMessageHandler(DBusConnection *aConnection, DBusM
 
 DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMessage *aMessage)
 {
-    DBusHandlerResult handled = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-    DBusRequest       request(aConnection, aMessage);
-    std::string       interface  = dbus_message_get_interface(aMessage);
-    std::string       memberName = interface + "." + dbus_message_get_member(aMessage);
-    auto              iter       = mMethodHandlers.find(memberName);
+    DBusHandlerResult handled   = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    auto              request   = std::make_shared<DBusRequest>(aConnection, aMessage);
+    std::string       interface = dbus_message_get_interface(aMessage);
+
+    std::string memberName = interface + "." + dbus_message_get_member(aMessage);
+    auto        iter       = mMethodHandlers.find(memberName);
 
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
     {
@@ -169,9 +170,9 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
     return handled;
 }
 
-void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
+void DBusObject::GetPropertyMethodHandler(std::shared_ptr<DBusRequest> aRequest)
 {
-    UniqueDBusMessage reply{dbus_message_new_method_return(aRequest.GetMessage())};
+    UniqueDBusMessage reply{dbus_message_new_method_return(aRequest->GetMessage())};
 
     DBusMessageIter iter;
     std::string     interfaceName;
@@ -180,7 +181,7 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
     otError         replyError = OT_ERROR_NONE;
 
     VerifyOrExit(reply != nullptr, error = OT_ERROR_NO_BUFS);
-    VerifyOrExit(dbus_message_iter_init(aRequest.GetMessage(), &iter), error = OT_ERROR_FAILED);
+    VerifyOrExit(dbus_message_iter_init(aRequest->GetMessage(), &iter), error = OT_ERROR_FAILED);
     VerifyOrExit(DBusMessageExtract(&iter, interfaceName) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
     VerifyOrExit(DBusMessageExtract(&iter, propertyName) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
     {
@@ -207,32 +208,32 @@ exit:
             DumpDBusMessage(*reply);
         }
 
-        dbus_connection_send(aRequest.GetConnection(), reply.get(), nullptr);
+        dbus_connection_send(aRequest->GetConnection(), reply.get(), nullptr);
     }
     else if (error == OT_ERROR_NONE)
     {
         otbrLogInfo("GetProperty %s.%s reply:%s", interfaceName.c_str(), propertyName.c_str(),
                     ConvertToDBusErrorName(replyError));
-        aRequest.ReplyOtResult(replyError);
+        aRequest->ReplyOtResult(replyError);
     }
     else
     {
         otbrLogWarning("GetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
                        ConvertToDBusErrorName(error));
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusObject::GetAllPropertiesMethodHandler(DBusRequest &aRequest)
+void DBusObject::GetAllPropertiesMethodHandler(std::shared_ptr<DBusRequest> aRequest)
 {
-    UniqueDBusMessage reply{dbus_message_new_method_return(aRequest.GetMessage())};
+    UniqueDBusMessage reply{dbus_message_new_method_return(aRequest->GetMessage())};
     DBusMessageIter   iter, subIter, dictEntryIter;
     std::string       interfaceName;
     auto              args  = std::tie(interfaceName);
     otError           error = OT_ERROR_NONE;
 
     VerifyOrExit(reply != nullptr, error = OT_ERROR_NO_BUFS);
-    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
+    VerifyOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
     VerifyOrExit(mGetPropertyHandlers.find(interfaceName) != mGetPropertyHandlers.end(), error = OT_ERROR_NOT_FOUND);
     dbus_message_iter_init_append(reply.get(), &iter);
 
@@ -255,15 +256,15 @@ void DBusObject::GetAllPropertiesMethodHandler(DBusRequest &aRequest)
 exit:
     if (error == OT_ERROR_NONE)
     {
-        dbus_connection_send(aRequest.GetConnection(), reply.get(), nullptr);
+        dbus_connection_send(aRequest->GetConnection(), reply.get(), nullptr);
     }
     else
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusObject::SetPropertyMethodHandler(DBusRequest &aRequest)
+void DBusObject::SetPropertyMethodHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     DBusMessageIter iter;
     std::string     interfaceName;
@@ -271,7 +272,7 @@ void DBusObject::SetPropertyMethodHandler(DBusRequest &aRequest)
     std::string     propertyFullPath;
     otError         error = OT_ERROR_NONE;
 
-    VerifyOrExit(dbus_message_iter_init(aRequest.GetMessage(), &iter), error = OT_ERROR_FAILED);
+    VerifyOrExit(dbus_message_iter_init(aRequest->GetMessage(), &iter), error = OT_ERROR_FAILED);
     VerifyOrExit(DBusMessageExtract(&iter, interfaceName) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
     VerifyOrExit(DBusMessageExtract(&iter, propertyName) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
 
@@ -290,18 +291,18 @@ exit:
         otbrLogWarning("SetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
                        ConvertToDBusErrorName(error));
     }
-    aRequest.ReplyOtResult(error);
+    aRequest->ReplyOtResult(error);
     return;
 }
 
-void DBusObject::AsyncGetPropertyMethodHandler(DBusRequest &aRequest)
+void DBusObject::AsyncGetPropertyMethodHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     DBusMessageIter iter;
     std::string     interfaceName;
     otError         error = OT_ERROR_NONE;
     std::string     propertyName;
 
-    VerifyOrExit(dbus_message_iter_init(aRequest.GetMessage(), &iter), error = OT_ERROR_FAILED);
+    VerifyOrExit(dbus_message_iter_init(aRequest->GetMessage(), &iter), error = OT_ERROR_FAILED);
     SuccessOrExit(error = OtbrErrorToOtError(DBusMessageExtract(&iter, interfaceName)));
     SuccessOrExit(error = OtbrErrorToOtError(DBusMessageExtract(&iter, propertyName)));
 
@@ -324,7 +325,7 @@ exit:
     {
         otbrLogWarning("GetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
                        ConvertToDBusErrorName(error));
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 

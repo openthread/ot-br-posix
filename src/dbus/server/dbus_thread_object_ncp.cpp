@@ -82,16 +82,16 @@ exit:
     return error;
 }
 
-void DBusThreadObjectNcp::AsyncGetDeviceRoleHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::AsyncGetDeviceRoleHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otDeviceRole role = mHost.GetDeviceRole();
 
     ReplyAsyncGetProperty(aRequest, GetDeviceRoleName(role));
 }
 
-void DBusThreadObjectNcp::ReplyAsyncGetProperty(DBusRequest &aRequest, const std::string &aContent)
+void DBusThreadObjectNcp::ReplyAsyncGetProperty(std::shared_ptr<DBusRequest> aRequest, const std::string &aContent)
 {
-    UniqueDBusMessage reply{dbus_message_new_method_return(aRequest.GetMessage())};
+    UniqueDBusMessage reply{dbus_message_new_method_return(aRequest->GetMessage())};
     DBusMessageIter   replyIter;
     otError           error = OT_ERROR_NONE;
 
@@ -101,15 +101,15 @@ void DBusThreadObjectNcp::ReplyAsyncGetProperty(DBusRequest &aRequest, const std
 exit:
     if (error == OT_ERROR_NONE)
     {
-        dbus_connection_send(aRequest.GetConnection(), reply.get(), nullptr);
+        dbus_connection_send(aRequest->GetConnection(), reply.get(), nullptr);
     }
     else
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectNcp::JoinHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::JoinHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     std::vector<uint8_t>     dataset;
     otOperationalDatasetTlvs activeOpDatasetTlvs;
@@ -117,33 +117,33 @@ void DBusThreadObjectNcp::JoinHandler(DBusRequest &aRequest)
 
     auto args = std::tie(dataset);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
     VerifyOrExit(dataset.size() <= sizeof(activeOpDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
     std::copy(dataset.begin(), dataset.end(), activeOpDatasetTlvs.mTlvs);
     activeOpDatasetTlvs.mLength = dataset.size();
 
-    mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectNcp::LeaveHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::LeaveHandler(std::shared_ptr<DBusRequest> aRequest)
 {
-    mHost.Leave(true /* aEraseDataset */, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Leave(true /* aEraseDataset */, [aRequest](otError aError, const std::string &aErrorInfo) {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     });
 }
 
-void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::ScheduleMigrationHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     std::vector<uint8_t>     dataset;
     uint32_t                 delayInMilli;
@@ -152,117 +152,116 @@ void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
 
     auto args = std::tie(dataset, delayInMilli);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
     VerifyOrExit(dataset.size() <= sizeof(pendingOpDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
     std::copy(dataset.begin(), dataset.end(), pendingOpDatasetTlvs.mTlvs);
-    pendingOpDatasetTlvs.mLength = dataset.size();
 
+    pendingOpDatasetTlvs.mLength = dataset.size();
     SuccessOrExit(error = Host::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
 
-    mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectNcp::HostPowerStateHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::HostPowerStateHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error = OT_ERROR_NONE;
     uint8_t state = 0;
     auto    args  = std::tie(state);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
-    mHost.SetHostPowerState(state, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.SetHostPowerState(state, [aRequest](otError aError, const std::string &aErrorInfo) {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
 #if OTBR_ENABLE_EPSKC
-void DBusThreadObjectNcp::EnableEphemeralKeyModeHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::EnableEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error = OT_ERROR_NONE;
     bool    enable;
     auto    args = std::tie(enable);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
-    mHost.EnableEphemeralKey(enable, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.EnableEphemeralKey(enable, [aRequest](otError aError, const std::string &aErrorInfo) {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest->ReplyOtResult(aError);
     });
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::ActivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError     error    = OT_ERROR_NONE;
     uint32_t    lifetime = 0;
     std::string ePskc;
     auto        args = std::tie(lifetime);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
     VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OT_ERROR_INVALID_ARGS);
     SuccessOrExit(mBorderAgent.CreateEphemeralKey(ePskc), error = OT_ERROR_INVALID_ARGS);
     otbrLogInfo("Created Ephemeral Key: %s", ePskc.c_str());
 
     mHost.ActivateEphemeralKey(ePskc.c_str(), lifetime, OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT,
-                               [aRequest, ePskc](otError aError, const std::string &aErrorInfo) mutable {
+                               [aRequest, ePskc](otError aError, const std::string &aErrorInfo) {
                                    OT_UNUSED_VARIABLE(aErrorInfo);
                                    if (aError != OT_ERROR_NONE)
                                    {
-                                       aRequest.ReplyOtResult(aError);
+                                       aRequest->ReplyOtResult(aError);
                                    }
                                    else
                                    {
-                                       aRequest.Reply(std::tie(ePskc));
+                                       aRequest->Reply(std::tie(ePskc));
                                    }
                                });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 
-void DBusThreadObjectNcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+void DBusThreadObjectNcp::DeactivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest)
 {
     otError error = OT_ERROR_NONE;
     bool    retain_active_session;
     auto    args = std::tie(retain_active_session);
 
-    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    SuccessOrExit(DBusMessageToTuple(*aRequest->GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
-    mHost.DeactivateEphemeralKey(retain_active_session,
-                                 [aRequest](otError aError, const std::string &aErrorInfo) mutable {
-                                     OT_UNUSED_VARIABLE(aErrorInfo);
-                                     aRequest.ReplyOtResult(aError);
-                                 });
+    mHost.DeactivateEphemeralKey(retain_active_session, [aRequest](otError aError, const std::string &aErrorInfo) {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest->ReplyOtResult(aError);
+    });
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aRequest.ReplyOtResult(error);
+        aRequest->ReplyOtResult(error);
     }
 }
 #endif
