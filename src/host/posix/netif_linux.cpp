@@ -41,8 +41,11 @@
 #include <linux/rtnetlink.h>
 #include <net/if.h>
 #include <net/if_arp.h>
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <chrono>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -196,16 +199,23 @@ void Netif::SetAddrGenModeToNone(void)
     }
 }
 
-void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
+otbrError Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
 {
+    constexpr int kNetlinkAckTimeoutMs = 1000;
+
     struct
     {
         nlmsghdr  nh;
         ifaddrmsg ifa;
         char      buf[512];
     } req;
+    uint32_t  seq;
+    otbrError error = OTBR_ERROR_NONE;
+    auto      deadline =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<int>(kNetlinkAckTimeoutMs));
 
     assert(mIpFd >= 0);
+    assert(mNetlinkFd >= 0);
     memset(&req, 0, sizeof(req));
 
     req.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(ifaddrmsg));
@@ -213,6 +223,7 @@ void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool
     req.nh.nlmsg_type  = aIsAdded ? RTM_NEWADDR : RTM_DELADDR;
     req.nh.nlmsg_pid   = 0;
     req.nh.nlmsg_seq   = ++mNetlinkSequence;
+    seq                = req.nh.nlmsg_seq;
 
     req.ifa.ifa_family    = AF_INET6;
     req.ifa.ifa_prefixlen = aAddressInfo.mPrefixLength;
@@ -232,16 +243,101 @@ void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool
         AddRtAttr(&req.nh, sizeof(req), IFA_CACHEINFO, &cacheinfo, sizeof(cacheinfo));
     }
 
-    if (send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) != -1)
+    VerifyOrExit(send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) != -1, error = OTBR_ERROR_ERRNO);
+
+    otbrLogInfo("Sent request#%u to %s %s/%u", seq, (aIsAdded ? "add" : "remove"),
+                Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+
+    for (;;)
     {
-        otbrLogInfo("Sent request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
-                    Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+        struct pollfd pfd;
+        int           pollResult;
+        auto          now = std::chrono::steady_clock::now();
+        int           pollTimeoutMs;
+
+        if (now >= deadline)
+        {
+            errno = ETIMEDOUT;
+            ExitNow(error = OTBR_ERROR_ERRNO);
+        }
+
+        pollTimeoutMs = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count());
+
+        pfd.fd      = mNetlinkFd;
+        pfd.events  = POLLIN;
+        pfd.revents = 0;
+
+        pollResult = poll(&pfd, 1, pollTimeoutMs);
+        if (pollResult == 0)
+        {
+            errno = ETIMEDOUT;
+            ExitNow(error = OTBR_ERROR_ERRNO);
+        }
+        if (pollResult < 0 && errno == EINTR)
+        {
+            continue;
+        }
+        VerifyOrExit(pollResult >= 0, error = OTBR_ERROR_ERRNO);
+
+        if ((pfd.revents & POLLIN) != 0)
+        {
+            union
+            {
+                nlmsghdr mHeader;
+                uint8_t  mBuffer[2048];
+            } response;
+            ssize_t length;
+
+            length = recv(mNetlinkFd, response.mBuffer, sizeof(response.mBuffer), /* flags */ 0);
+            if (length < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
+            {
+                continue;
+            }
+            VerifyOrExit(length >= 0, error = OTBR_ERROR_ERRNO);
+
+            for (nlmsghdr *header = &response.mHeader; NLMSG_OK(header, static_cast<size_t>(length));
+                 header           = NLMSG_NEXT(header, length))
+            {
+                if (header->nlmsg_seq != seq)
+                {
+                    continue;
+                }
+
+                VerifyOrExit(header->nlmsg_type == NLMSG_ERROR, errno = EPROTO; error = OTBR_ERROR_ERRNO);
+                VerifyOrExit(header->nlmsg_len >= NLMSG_LENGTH(sizeof(nlmsgerr)), errno = EBADMSG;
+                             error = OTBR_ERROR_ERRNO);
+
+                {
+                    nlmsgerr *errMsg    = reinterpret_cast<nlmsgerr *>(NLMSG_DATA(header));
+                    int       kernelErr = (errMsg->error < 0) ? -errMsg->error : errMsg->error;
+
+                    if (kernelErr == 0 || (aIsAdded && kernelErr == EEXIST) ||
+                        (!aIsAdded && (kernelErr == ENOENT || kernelErr == EADDRNOTAVAIL)))
+                    {
+                        ExitNow(error = OTBR_ERROR_NONE);
+                    }
+
+                    errno = kernelErr;
+                    ExitNow(error = OTBR_ERROR_ERRNO);
+                }
+            }
+        }
+        else
+        {
+            errno = EIO;
+            ExitNow(error = OTBR_ERROR_ERRNO);
+        }
     }
-    else
+
+exit:
+    if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarning("Failed to send request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
-                       Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+        otbrLogWarning("Failed request#%u to %s %s/%u: %s", seq, (aIsAdded ? "add" : "remove"),
+                       Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength,
+                       strerror(errno));
     }
+
+    return error;
 }
 
 } // namespace otbr
