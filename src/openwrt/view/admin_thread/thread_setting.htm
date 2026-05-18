@@ -44,12 +44,11 @@
 <%+header%>
 
 <h2><%:Thread Network: %><%=threadget("networkname").NetworkName%><%: (wpan0)%></h2>
-<div> The Network Configuration section covers physical settings of the Thread Network such as channel, PAN ID. Per interface related settings like networkkey or MAC-filter are grouped in the Interface Configuration.</div>
+<div class="cbi-map-descr">The Network Configuration section covers physical settings of the Thread network such as channel, PAN ID. Per interface related settings like network key or MAC-filter are grouped in the Interface Configuration.</div>
 <br />
 
 <form class="inline" action="<%=url('admin/network/thread_handler_setting')%>" method="post" id="settingForm" name="settingForm" onsubmit="return validateForm()">
 	<h3><%:Network Configuration%></h3>
-	<br />
 	<ul class="cbi-tabmenu">
 		<li class="cbi-tab" id="generaltab"><a href="javascript:generalSetting();"><%:General Setup%></a></li>
 		<li class="cbi-tab-disabled" id="advancedtab"><a href="javascript:advancedSetting();"><%:Advanced Settings%></a></li>
@@ -61,15 +60,17 @@
 	<!-- General Setup -->
 	<div style="width:80%;margin-left:10%;" id="generaldiv">
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Thread Name</label>
-			<div class="cbi-value-title">
-				<input type="text" name="threadname" value="<%=threadget("networkname").NetworkName%>" style="width:30%;"/>
+			<label for="cbid-value-field-threadname" class="cbi-value-title">Thread Name</label>
+			<div class="cbi-value-field">
+				<div id="cbid-value-field-threadname" class="threadname">
+					<input type="text" name="threadname" value="<%=threadget("networkname").NetworkName%>" class="cbi-input-text" />
+				</div>
 			</div>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Status</label>
-			<div class="cbi-value-title">
-				<span class="ifacebadge large" style="padding:2%;">
+			<label class="cbi-value-title">Status</label>
+			<div class="cbi-value-field">
+				<span class="ifacebadge large" id="cbid-value-field-ifacebadge" style="width: 50%;">
 					<span>
 					<strong>PAN ID: </strong>
 						<%=threadget("panid").PanId%>
@@ -88,21 +89,21 @@
 		</div>
 		<div class="cbi-value">
 			<% if state == "disabled" then %>
-			<label class="cbi-value-title" style="margin-right:5%;">Thread network is disabled</label>
+			<label for="enable" class="cbi-value-title">Thread network is disabled</label>
 			<div class="cbi-value-field">
 				<input class="cbi-button cbi-button-add" type="submit" id="enable" name="enable" value="Enable" />
 			</div>
 			<% else %>
-			<label class="cbi-value-title" style="margin-right:5%;">Thread network is enabled</label>
+			<label for="disable" class="cbi-value-title">Thread network is enabled</label>
 			<div class="cbi-value-field">
 				<input class="cbi-button cbi-button-reset" type="submit" id="disable" name="disable" value="Disable" />
 			</div>
 			<% end %>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Protocol</label>
+			<label for="protocol" class="cbi-value-title">Protocol</label>
 			<div class="cbi-value-field">
-				<select style="width:30%;" id="protocol" name="protocol">
+				<select id="protocol" name="protocol" class="cbi-input-select">
 					<option value>unmanaged</option>
 				</select>
 			</div>
@@ -110,48 +111,48 @@
 	</div>
 
 	<!-- Advanced Settings -->
-	<div style="width:70%;margin-left:10%;display:none;" id="advanceddiv">
+	<div style="width:80%;margin-left:10%;display:none;" id="advanceddiv">
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Channel</label>
-			<div class="cbi-value-title">
-				<input type="text" name="channel" value="<%=threadget("channel").Channel%>" style="width:50%;"/>
+			<label for="cbid-value-field-channel" class="cbi-value-title">Channel</label>
+			<div class="cbi-value-field">
+				<input type="text" id="cbid-value-field-channel" name="channel" value="<%=threadget("channel").Channel%>" class="cbi-input-text" />
 			</div>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">PAN ID</label>
-			<div class="cbi-value-title">
-				<input type="text" name="panid" value="<%=threadget("panid").PanId%>" style="width:50%;"/>
+			<label for="cbid-value-field-panid" class="cbi-value-title">PAN ID</label>
+			<div class="cbi-value-field">
+				<input type="text" id="cbid-value-field-panid" name="panid" value="<%=threadget("panid").PanId%>" class="cbi-input-text" />
 			</div>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Extended PAN ID</label>
-			<div class="cbi-value-title">
-				<input type="text" name="extpanid" value="<%=threadget("extpanid").ExtPanId%>" style="width:50%;"/>
+			<label for="cbid-value-field-extpanid" class="cbi-value-title">Extended PAN ID</label>
+			<div class="cbi-value-field">
+				<input type="text" id="cbid-value-field-extpanid" name="extpanid" value="<%=threadget("extpanid").ExtPanId%>" class="cbi-input-text" />
 			</div>
 		</div>
 		<div class="cbi-value">
 			<% if state == 'disabled' then %>
-			<label class="cbi-value-title" style="margin-right:5%;">Mode</label>
-			<div class="cbi-value-title">
-			<input type="text" name="mode" value="<%=threadget("mode").Mode%>" style="width:50%;"/>
-			</div>
-			<div style="margin-left:30%;margin-top:1%;">
-				<span><img src="<%=resource .. "/cbi/help.gif"%>"/><%:set the thread device mode value, must be consist of 'r', 's', 'd', 'n'.%></span>
+			<label for="cbid-value-field-mode" class="cbi-value-title">Mode</label>
+			<div class="cbi-value-field">
+				<input type="text" name="mode" id="cbid-value-field-mode" value="<%=threadget("mode").Mode%>" class="cbi-input-text" />
+				<div class="cbi-value-description">
+					<%:Set the thread device mode value, must be consist of 'r', 's', 'd', 'n'.%>
+				</div>
 			</div>
 			<% else %>
-			<label class="cbi-value-title" style="margin-right:5%;">Mode</label>
-			<div class="cbi-value-title">
-			<input type="text" name="mode" value="<%=threadget("mode").Mode%>" readonly="readonly" style="width:50%;"/>
-			</div>
-			<div style="margin-left:30%;margin-top:1%;">
-				<span><img src="<%=resource .. "/cbi/help.gif"%>"/><%:can not change mode when thread network is started.%></span>
+			<label for="cbid-value-field-mode" class="cbi-value-title">Mode</label>
+			<div class="cbi-value-field">
+				<input type="text" name="mode" id="cbid-value-field-mode" value="<%=threadget("mode").Mode%>" class="cbi-input-text" disabled />
+				<div class="cbi-value-description">
+					<%:Can't change mode when Thread network is started.%>
+				</div>
 			</div>
 			<% end %>
 		</div>
 		<div class="cbi-value" style="display:none">
-			<label class="cbi-value-title" style="margin-right:5%;">State</label>
+			<label for="state" class="cbi-value-title">State</label>
 			<div class="cbi-value-field">
-				<select style="width:30%;" id="state" name="state" value="<%=state%>">
+				<select class="cbi-input-select" id="state" name="state" value="<%=state%>" disabled>
 					<option value="disabled">disabled</option>
 					<option value="leader">leader</option>
 					<option value="router">router</option>
@@ -160,27 +161,26 @@
 			</div>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">PartitionId</label>
-			<div class="cbi-value-title">
-			<%=threadget("partitionid").Partitionid%>
-			</div>
-			<div style="margin-left:30%;margin-top:1%;">
-				<span><img src="<%=resource .. "/cbi/help.gif"%>"/><%:can not change partitionid when thread network is started.%></span>
+			<label for="cbid-value-field-partitionid" class="cbi-value-title">Partition ID</label>
+			<div class="cbi-value-field">
+				<input type="text" name="partitionid" id="cbid-value-field-partitionid" value="<%=threadget("partitionid").Partitionid%>" class="cbi-input-text" disabled />
+				<div class="cbi-value-description">
+					<%:Can't change partition id when Thread network is started.%>
+				</div>
 			</div>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Leave</label>
+			<label for="leave" class="cbi-value-title">Leave Thread Network</label>
 			<div class="cbi-value-field">
-				<input class="cbi-button cbi-button-reset" type="submit" id="leave" name="leave" value="LEAVE" />
-			</div>
-			<div style="margin-left:30%;margin-top:1%;">
-				<span><img src="<%=resource .. "/cbi/help.gif"%>"/><%:This will delete all the existed Configuration of your thread network!%></span>
+				<input class="cbi-button cbi-button-reset" type="submit" id="leave" name="leave" value="Leave" />
+				<div class="cbi-value-description">
+					<%:This will delete all the existed configuration of your Thread network!%>
+				</div>
 			</div>
 		</div>
 	</div>
 
 	<h3><%:Interface Configuration%></h3>
-	<br />
 	<ul class="cbi-tabmenu">
 		<li class="cbi-tab" id="securitytab"><a href="javascript:securitySetting();"><%:Thread Security%></a></li>
 		<li class="cbi-tab-disabled" id="macfiltertab"><a href="javascript:macfilterSetting();"><%:MAC-Filter%></a></li>
@@ -188,72 +188,74 @@
 	<br/>
 
 	<!-- Thread Security -->
-	<div style="width:60%;margin-left:10%;" id="securitydiv">
+	<div style="width:80%;margin-left:10%;" id="securitydiv">
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Network Key</label>
-			<div class="cbi-value-title">
-				<input type="text" name="networkkey" value="<%=threadget("networkkey").Networkkey%>" style="width:60%;"/>
+			<label for="cbid-value-field-networkkey" class="cbi-value-title">Network Key</label>
+			<div class="cbi-value-field">
+				<input type="text" id="cbid-value-field-networkkey" name="networkkey" value="<%=threadget("networkkey").Networkkey%>" class="cbi-input-text" style="width:50%;" />
 			</div>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Network Password</label>
-			<div class="cbi-value-title">
-				<input type="text" name="pskc" value="<%=threadget("pskc").pskc%>" style="width:60%;"/>
+			<label for="cbid-value-field-pskc" class="cbi-value-title">Network Password</label>
+			<div class="cbi-value-field">
+				<input type="text" id="cbid-value-field-pskc" name="pskc" value="<%=threadget("pskc").pskc%>" class="cbi-input-text" style="width:50%;" />
 			</div>
 		</div>
 	</div>
 
 	<!-- MAC Filter -->
-	<div style="width:60%;margin-left:10%;display:none;" id="macfilterdiv">
+	<div style="width:80%;margin-left:10%;display:none;" id="macfilterdiv">
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:1%;">Protocol</label>
+			<label class="cbi-value-title">Protocol</label>
 			<div class="cbi-value-field">
-				<select style="width:30%;" id="macfilterselect" name="macfilterselect" onchange='macselectchange()' autocomplete="off">
+				<select class="cbi-input-select" id="macfilterselect" name="macfilterselect" onchange='macselectchange()' autocomplete="off">
 					<option value="disable">Disable</option>
 					<option value="allowlist">Allowlist</option>
 					<option value="denylist">Denylist</option>
 				</select>
 			</div>
 		</div>
-		<div class="cbi-value" id="macfilterlistdiv" style="display:none;">
-			<div class="table">
-				<label class="cbi-value-title" style="margin-right:1%;">Existed Address</label>
-				<div class="cbi-value-field">
+		<div id="macfilterlistdiv">
+			<% local addresses = addrlist() %>
+			<% if #addresses > 0 then %>
+			<div class="cbi-value">
+				<label class="cbi-value-title">Existing Address</label>
+				<div class="cbi-value-field" style="flex: 0;">
 					<!-- addr list -->
-					<% for i, addr in ipairs(addrlist()) do %>
-					<input type="hidden" id="macfilterremove" name="macfilterremove" value="<%=addr%>" />
+					<% for i, addr in ipairs(addresses) do %>
+					<div>
+					<input type="hidden" name="macfilterremove" value="<%=addr%>" />
 					<% if i == 1 then %>
-					<div class="tr">
-						<div class="center" style="margin-top:15px;"><%=addr%></div>
-						<div class="th cbi-section-actions">
-							<input class="cbi-button cbi-button-reset" type="submit" id="removeAddr<%=i%>" name="removeAddr<%=i%>" value="<%:Remove%>" />
-						</div>
+					<div style="display: flex; align-items: center;">
+						<div style="margin-right: 20px; padding: 6px 0;"><%=addr%></div>
+						<input class="cbi-button cbi-button-reset" type="submit" id="removeAddr<%=i%>" name="removeAddr<%=i%>" value="<%:Remove%>" />
 					</div>
 					<% else %>
-					<div class="tr cbi-rowstyle-<%=1 + ((i-1) % 2)%>">
-						<div class="td col-2 center"><%=addr%></div>
-						<div class="td cbi-section-actions">
-							<input class="cbi-button cbi-button-reset" type="submit" id="removeAddr<%=i%>" name="removeAddr<%=i%>" value="<%:Remove%>" />
-						</div>
+					<div class="cbi-rowstyle-<%=1 + ((i-1) % 2)%>" style="display: flex; align-items: center;">
+						<div style="margin-right: 20px; padding: 6px 0;"><%=addr%></div>
+						<input class="cbi-button cbi-button-reset" type="submit" id="removeAddr<%=i%>" name="removeAddr<%=i%>" value="<%:Remove%>" />
 					</div>
 					<% end %>
+					</div>
 					<% end %>
 					<!-- /addr list -->
 				</div>
 			</div>
-
 			<div class="cbi-value">
+				<label class="cbi-value-title"></label>
 				<div class="cbi-value-field">
-					<input class="cbi-button cbi-button-reset" type="submit" id="clearAddr" name="clearAddr" value="<%:Clear%>" />
-					<span style="margin-left:3%"><img src="<%=resource .. "/cbi/help.gif"%>" style="margin-right:2%"/><%:This will clear all existed macfilter address!%></span>
+					<input class="cbi-button cbi-button-reset" type="submit" id="clearAddr" name="clearAddr" value="<%:Clear All%>" />
+					<div class="cbi-value-description">
+						<%:This will clear all existing macfilter address!%>
+					</div>
 				</div>
 			</div>
-
-			<label class="cbi-value-title" style="margin-right:1%;">Add Address</label>
-			<div class="cbi-value-field">
-				<div class="table">
-					<div class="tr table-titles">
-						<label><input type="text" id="macfilteradd" name="macfilteradd"/></label>
+			<% end %>
+			<div class="cbi-value">
+				<label for="macfilteradd" class="cbi-value-title">MAC-Filter Address</label>
+				<div class="cbi-value-field">
+					<div class="add-item control-group">
+						<input class="cbi-input-text" type="text" id="macfilteradd" name="macfilteradd" />
 						<input class="cbi-button cbi-button-add" type="submit" id="addAddr" name="addAddr" value="<%:Add%>" />
 					</div>
 				</div>

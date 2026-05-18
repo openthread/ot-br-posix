@@ -41,7 +41,7 @@
 	<div class="cbi-map" style="width:90%;margin-left:5%;">
 		<div class="cbi-section">
 			<div class="table">
-				<div class="tr table-titles" style="background-color:#eee;">
+				<div class="tr table-titles">
 					<div class="th col-3 center"><%:Leader Router Id%></div>
 					<div class="th col-3 center"><%:Partition Id%></div>
 					<div class="th col-2 center"><%:Weighting%></div>
@@ -51,7 +51,7 @@
 
 				<!-- leader situatioin -->
 				<% leader = threadget("leaderdata").leaderdata %>
-				<div class="tr cbi-rowstyle-2%>" style="border:solid 1px #ddd; border-top:hidden;">
+				<div class="tr cbi-rowstyle-2">
 					<div class="td col-3 center"><%=leader.LeaderRouterId%></div>
 					<div class="td col-3 center"><%=leader.PartitionId%></div>
 					<div class="td col-2 center"><%=leader.Weighting%></div>
@@ -66,7 +66,7 @@
 	<h3><%: Neighbor Situation of Network%></h3><br />
 	<!-- neighbor list -->
 	<div class="table" id="neighbors" style="width:90%;margin-left:5%;">
-		<div class="tr table-titles" style="background-color:#eee;">
+		<div class="tr table-titles">
 			<div class="th col-2 center"><%:RLOC16%></div>
 			<div class="th col-2 center"><%:Role%></div>
 			<div class="th col-2 center"><%:Age%></div>
@@ -84,7 +84,7 @@
 
 	<!-- parent list -->
 	<div class="table" id="parent" style="width:90%;margin-left:5%;display:none;">
-		<div class="tr table-titles" style="background-color:#eee;">
+		<div class="tr table-titles">
 			<div class="th col-2 center"><%:RLOC16%></div>
 			<div class="th col-2 center"><%:Role%></div>
 			<div class="th col-2 center"><%:Age%></div>
@@ -100,7 +100,7 @@
 </div>
 
 <!-- graph div -->
-<div style="width:100%;margin-left:5%;display:none;" id="graphdiv">
+<div style="width:100%;background-color:whitesmoke;display:none;border-radius:4px;" id="graphdiv">
 	<div style="width:20%"><svg id="topologyLegend"></svg></div>
 	<svg width="960" height="500" id="graph"></svg>
 </div>
@@ -244,7 +244,8 @@
 						} );
 						localIndex = getNodesIndex(bss.rloc);
 					}
-					bss.childdata.forEach(function(child) {
+					Object.keys(bss.childdata).forEach(function(key) {
+						var child = bss.childdata[key];
 						if(getNodesIndex(child.rloc) == -1)
 						{
 							nodes.push( {
@@ -257,7 +258,8 @@
 							target: getNodesIndex(child.rloc)
 						} );
 					});
-					bss.routedata.forEach(function(router) {
+					Object.keys(bss.routedata).forEach(function(key) {
+						var router = bss.routedata[key];
 						if(getNodesIndex(router.rloc) == -1)
 						{
 							nodes.push( {
@@ -306,7 +308,8 @@
 				{
 					var rows = [];
 
-					st.neighbor.forEach(function(bss) {
+					Object.keys(st.neighbor).forEach(function(key) {
+						var bss = st.neighbor[key];
 						rows.push([
 						'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
 						'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
@@ -345,7 +348,8 @@
 				{
 					var rows = [];
 
-					st.neighbor.forEach(function(bss) {
+					Object.keys(st.neighbor).forEach(function(key) {
+						var bss = st.neighbor[key];
 						rows.push([
 						'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
 						'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
