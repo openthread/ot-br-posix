@@ -161,6 +161,12 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
         ExitNow();
     }
 
+    if (memchr(&mBuffer[1], '\n', ret) != nullptr || memchr(&mBuffer[1], '\r', ret) != nullptr)
+    {
+        otbrLogErr("OT CLI command contains line break; rejecting to prevent command injection");
+        ExitNow();
+    }
+
     mBuffer[0]       = '\n';
     mBuffer[ret + 1] = '\n';
     ret += 2;
