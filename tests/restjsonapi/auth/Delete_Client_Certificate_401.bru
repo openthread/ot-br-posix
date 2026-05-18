@@ -1,0 +1,37 @@
+meta {
+  name: DELETE Client Certificate
+  type: http
+  seq: 1010
+  tags: client-certificate-mtls
+}
+
+delete {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs/{{client_cert_id}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: in [401]
+}
+
+tests {
+  test("DELETE client certificate", function() {
+    if (res.status === 204) {
+      console.log("Certificate deleted successfully");
+    } else if (res.status === 404) {
+      console.log("Certificate not found");
+    } else if (res.status === 401) {
+      console.log("Authentication required");
+    }
+  });
+}
+
+docs {
+  Test: DELETE /api/auth/certs/{id}
+  
+  Removes a client certificate by its ID.
+  After deletion, the client will no longer be able to authenticate.
+  
+  Returns 204 No Content on success, 404 if not found.
+}

@@ -1,0 +1,39 @@
+meta {
+  name: PUT .well-known/thread/ldevid (No Auth - 401)
+  type: http
+  seq: 1002
+  tags: client-basic-auth
+}
+
+put {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread/ldevid
+  body: text
+  auth: none
+}
+
+headers {
+  Content-Type: application/x-pem-file
+}
+
+body:text {
+  -----BEGIN CERTIFICATE-----
+  MIICdummy
+  -----END CERTIFICATE-----
+}
+
+assert {
+  res.status: eq 401
+}
+
+tests {
+  test("PUT LDevID requires authentication", function() {
+    expect(res.status).to.equal(401);
+  });
+}
+
+docs {
+  Test 2.2: Verify PUT /.well-known/thread/ldevid requires authentication
+  
+  Attempting to upload an LDevID certificate without authentication
+  should be rejected with HTTP 401.
+}

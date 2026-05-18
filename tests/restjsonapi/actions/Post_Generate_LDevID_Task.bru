@@ -1,0 +1,68 @@
+meta {
+  name: POST Generate LDevID Task
+  type: http
+  seq: 1000
+  tags: secure-enrollment-server
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: json
+  auth: basic
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("new_admin_pass") || bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+  Accept: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": [
+      {
+        "type": "generateLDevIdTask",
+        "attributes": {}
+      }
+    ]
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("generateLDevIdTask enqueued successfully", function() {
+    const data = res.getBody().data;
+    expect(data).to.be.an.instanceOf(Array);
+    expect(data.length).to.equal(1);
+    
+    const task = data[0];
+    expect(task).to.have.property("id");
+    expect(task).to.have.property("type");
+    expect(task.type).to.equal("generateLDevIdTask");
+    expect(task).to.have.property("attributes");
+    expect(task.attributes).to.have.property("status");
+    expect(task.attributes.status).to.be.oneOf(["pending", "active", "completed"]);
+    
+    // Store task ID for later use
+    bru.setEnvVar("ldevid_task_id", task.id);
+    console.log("LDevID task ID:", task.id);
+  });
+}
+
+docs {
+  Generates a new operational certificate (LDevID) for the Thread Border Router.
+}

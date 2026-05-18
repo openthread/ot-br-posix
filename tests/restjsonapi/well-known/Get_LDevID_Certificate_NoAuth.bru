@@ -1,0 +1,36 @@
+meta {
+  name: GET .well-known/thread/ldevid
+  type: http
+  seq: 1003
+  tags: secure-enrollment-server
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread/ldevid
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/pkcs7-mime
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("LDevID certificate retrieved", function() {
+    expect(res.status).to.equal(200);
+    expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+  });
+}
+
+docs {
+  Test: GET .well-known/thread/ldevid
+  
+  Retrieves the operational LDevID certificate after it has been generated
+  and activated. Returns 404 if no LDevID is available.
+  
+  Response format: PKCS#7 DER (application/pkcs7-mime; smime-type=certs-only)
+}

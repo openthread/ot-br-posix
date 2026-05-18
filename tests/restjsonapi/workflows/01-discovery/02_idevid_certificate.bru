@@ -1,0 +1,56 @@
+meta {
+  name: GET IDevID Certificate
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread/idevid
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/pkcs7-mime
+}
+
+assert {
+  res.status: eq {{idevid_expected_status}}
+}
+
+tests {
+  test("IDevID certificate endpoint responds correctly", function() {
+    const expectedStatus = Number(bru.getEnvVar("idevid_expected_status"));
+    expect(res.status).to.equal(expectedStatus);
+    
+    if (res.status === 200) {
+      expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+      console.log("✓ IDevID certificate retrieved successfully");
+    }
+  });
+  
+  test("Response format is PKCS#7", function() {
+    if (res.status === 200) {
+      expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+      // Response body is binary PKCS#7 DER format
+      const bodyLength = res.getBody().length;
+      expect(bodyLength).to.be.greaterThan(0);
+      console.log(`  IDevID certificate size: ${bodyLength} bytes`);
+    }
+  });
+}
+
+docs {
+  Retrieves factory IDevID certificate in PKCS#7 format (public access).
+}

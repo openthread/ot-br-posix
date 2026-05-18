@@ -1,0 +1,400 @@
+#!/bin/bash
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+
+# Parse arguments
+usage()
+{
+    cat <<EOF
+Usage: $0 --env ENV --cacert FILE --client-cert-config NAME
+
+OPTIONS:
+    --env ENV                    Bruno environment name (required)
+    --cacert FILE                Bundle of CA certificates (required)
+    --client-cert-config FILE    Bruno client cert config name (required)
+    --help                       Show this help message
+
+EXAMPLE:
+    $0 --env enrolled --cacert /path/to/ca-bundle.pem --client-cert-config idevid
+
+EOF
+    exit 0
+}
+
+BRU_ENV=""
+BRU_CACERT=""
+BRU_CLIENT_CERT_CONFIG=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --env)
+            BRU_ENV="$2"
+            shift 2
+            ;;
+        --cacert)
+            BRU_CACERT="$2"
+            shift 2
+            ;;
+        --client-cert-config)
+            BRU_CLIENT_CERT_CONFIG="$2"
+            shift 2
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            echo "ERROR: Unknown option: $1" >&2
+            usage
+            ;;
+    esac
+done
+
+if [[ -z $BRU_ENV ]] || [[ -z $BRU_CACERT ]] || [[ -z $BRU_CLIENT_CERT_CONFIG ]]; then
+    echo "ERROR: Missing required arguments" >&2
+    usage
+fi
+
+if [[ ! -f $BRU_CACERT ]]; then
+    echo "ERROR: CA certificate bundle not found: $BRU_CACERT" >&2
+    exit 1
+fi
+
+source ./setup-sec-enroll-test-env.sh
+
+##############################################################
+## Phase 6: Server Authentication - EST Pull Mode
+##############################################################
+echo -e "\n${BLUE}=== Phase 6: Server Authentication - EST Pull Mode (Optional) ===${NC}"
+
+# Setup EST server using step-ca
+echo -e "\n${YELLOW}Setting up EST server (simple EST implementation on localhost:8888)...${NC}"
+
+# Create EST server directory
+EST_DIR="/tmp/est-server-$$"
+mkdir -p "$EST_DIR/certs" "$EST_DIR/csr" "$EST_DIR/.well-known/est"
+
+# Copy CA certificates
+cp "${TEST_CERTS_DIR}/root-ca-cert.pem" "$EST_DIR/certs/root_ca.pem"
+cp "${TEST_CERTS_DIR}/issuing-ca-cert.pem" "$EST_DIR/certs/intermediate_ca.pem"
+cp "${TEST_CERTS_DIR}/issuing-ca-key.pem" "$EST_DIR/certs/intermediate_ca_key.pem"
+
+# Generate server certificate for EST server
+echo "  Generating EST server certificate..."
+openssl ecparam -genkey -name secp256r1 -out "$EST_DIR/certs/est-server-key.pem" 2>/dev/null
+openssl req -new \
+    -key "$EST_DIR/certs/est-server-key.pem" \
+    -out "$EST_DIR/est-server.csr" \
+    -subj "/C=CH/O=OpenThread/CN=localhost" 2>/dev/null
+
+openssl x509 -req -in "$EST_DIR/est-server.csr" \
+    -CA "${TEST_CERTS_DIR}/issuing-ca-cert.pem" \
+    -CAkey "${TEST_CERTS_DIR}/issuing-ca-key.pem" \
+    -CAcreateserial -out "$EST_DIR/certs/est-server-cert.pem" \
+    -days 1 -sha256 \
+    -extfile <(printf "[v3_server]\nbasicConstraints = critical,CA:FALSE\nkeyUsage = critical,digitalSignature,keyEncipherment\nextendedKeyUsage = serverAuth\nsubjectAltName = DNS:localhost,IP:127.0.0.1\n") \
+    -extensions v3_server 2>/dev/null
+
+# Create EST cacerts endpoint (returns CA certificate chain in PKCS#7 format)
+cat >"$EST_DIR/.well-known/est/cacerts" <<'ESTEOF'
+#!/bin/bash
+# EST cacerts endpoint - returns CA certificate chain in PKCS#7 DER format
+echo "Content-Type: application/pkcs7-mime"
+echo "Content-Transfer-Encoding: base64"
+echo ""
+
+# Create PKCS#7 with root and intermediate certificates
+openssl crl2pkcs7 -nocrl \
+    -certfile "EST_DIR_PLACEHOLDER/certs/root_ca.pem" \
+    -certfile "EST_DIR_PLACEHOLDER/certs/intermediate_ca.pem" \
+    -outform DER | base64
+ESTEOF
+
+# Create EST simpleenroll endpoint (accepts CSR, returns signed certificate)
+cat >"$EST_DIR/.well-known/est/simpleenroll" <<'ESTEOF'
+#!/bin/bash
+# EST simpleenroll endpoint - accepts CSR and returns signed certificate
+echo "Content-Type: application/pkcs7-mime"
+echo "Content-Transfer-Encoding: base64"
+echo ""
+
+# Read CSR from stdin (base64-encoded PKCS#10)
+CSR_DATA=$(cat)
+
+# Decode base64 CSR
+echo "$CSR_DATA" | base64 -d > "EST_DIR_PLACEHOLDER/csr/request-$$.der"
+
+# Convert DER to PEM
+openssl req -inform DER -in "EST_DIR_PLACEHOLDER/csr/request-$$.der" \
+    -out "EST_DIR_PLACEHOLDER/csr/request-$$.pem" 2>/dev/null
+
+# Sign CSR with intermediate CA
+openssl x509 -req -in "EST_DIR_PLACEHOLDER/csr/request-$$.pem" \
+    -CA "EST_DIR_PLACEHOLDER/certs/intermediate_ca.pem" \
+    -CAkey "EST_DIR_PLACEHOLDER/certs/intermediate_ca_key.pem" \
+    -CAcreateserial -out "EST_DIR_PLACEHOLDER/csr/cert-$$.pem" \
+    -days 365 -sha256 \
+    -extensions v3_ldevid -extfile <(cat <<EOF
+[v3_ldevid]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth,clientAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+EOF
+) 2>/dev/null
+
+# Return certificate chain in PKCS#7 DER format (base64-encoded)
+# RFC 7030: Response should include leaf cert + CA chain for full verification
+openssl crl2pkcs7 -nocrl \
+    -certfile "EST_DIR_PLACEHOLDER/csr/cert-$$.pem" \
+    -certfile "EST_DIR_PLACEHOLDER/certs/intermediate_ca.pem" \
+    -outform DER | base64
+
+# Cleanup
+rm -f "EST_DIR_PLACEHOLDER/csr/request-$$.der" \
+      "EST_DIR_PLACEHOLDER/csr/request-$$.pem" \
+      "EST_DIR_PLACEHOLDER/csr/cert-$$.pem"
+ESTEOF
+
+# Replace EST_DIR_PLACEHOLDER in EST server scripts
+sed -i "s|EST_DIR_PLACEHOLDER|$EST_DIR|g" "$EST_DIR/.well-known/est/cacerts"
+sed -i "s|EST_DIR_PLACEHOLDER|$EST_DIR|g" "$EST_DIR/.well-known/est/simpleenroll"
+chmod +x "$EST_DIR/.well-known/est/cacerts"
+chmod +x "$EST_DIR/.well-known/est/simpleenroll"
+
+echo -e "${GREEN}✓ EST server endpoints configured${NC}"
+
+# Start simple HTTPS server for EST using Python
+echo "  Starting EST server on https://localhost:8888..."
+cd "$EST_DIR"
+
+# Create Python EST server script (implements EST RFC 7030 directly)
+cat >est-server.py <<'PYEOF'
+#!/usr/bin/env python3
+import http.server
+import ssl
+import subprocess
+import os
+import sys
+import base64
+from pathlib import Path
+
+class ESTHandler(http.server.BaseHTTPRequestHandler):
+    
+    def do_GET(self):
+        """Handle EST cacerts endpoint"""
+        if self.path == '/.well-known/est/cacerts':
+            try:
+                # Create PKCS#7 with root and intermediate certificates
+                result = subprocess.run([
+                    'openssl', 'crl2pkcs7', '-nocrl',
+                    '-certfile', 'certs/root_ca.pem',
+                    '-certfile', 'certs/intermediate_ca.pem',
+                    '-outform', 'DER'
+                ], capture_output=True, check=True)
+                
+                # EST RFC 7030: base64-encode the PKCS#7 DER data
+                pkcs7_b64 = base64.b64encode(result.stdout).decode('ascii')
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/pkcs7-mime')
+                self.send_header('Content-Transfer-Encoding', 'base64')
+                self.end_headers()
+                # RFC 7030: body is base64-encoded text (not raw DER)
+                self.wfile.write(pkcs7_b64.encode('ascii'))
+                
+            except Exception as e:
+                self.send_error(500, f'EST cacerts error: {str(e)}')
+        else:
+            self.send_error(404, 'Not Found')
+    
+    def do_POST(self):
+        """Handle EST simpleenroll endpoint"""
+        if self.path == '/.well-known/est/simpleenroll':
+            try:
+                # Read CSR from request body (base64-encoded per EST RFC 7030)
+                content_length = int(self.headers.get('Content-Length', 0))
+                csr_b64 = self.rfile.read(content_length).decode('ascii').strip()
+                csr_der = base64.b64decode(csr_b64)
+                
+                # Save CSR to temp file
+                pid = os.getpid()
+                csr_der_file = f'csr/request-{pid}.der'
+                csr_pem_file = f'csr/request-{pid}.pem'
+                cert_pem_file = f'csr/cert-{pid}.pem'
+                
+                os.makedirs('csr', exist_ok=True)
+                with open(csr_der_file, 'wb') as f:
+                    f.write(csr_der)
+                
+                # Convert DER to PEM
+                subprocess.run([
+                    'openssl', 'req', '-inform', 'DER',
+                    '-in', csr_der_file,
+                    '-out', csr_pem_file
+                ], check=True, capture_output=True)
+                
+                # Extract SAN from CSR
+                san_result = subprocess.run([
+                    'openssl', 'req', '-in', csr_pem_file,
+                    '-noout', '-text'
+                ], capture_output=True, text=True)
+                
+                # Parse all SAN entries from CSR output (DNS, IP, URI, email, etc.)
+                san_line = ""
+                in_san_section = False
+                san_entries = []
+                for line in san_result.stdout.split('\n'):
+                    if 'Subject Alternative Name' in line:
+                        in_san_section = True
+                        continue
+                    if in_san_section:
+                        if ':' in line and any(prefix in line for prefix in ['DNS:', 'IP:', 'URI:', 'email:']):
+                            # Extract all SAN entries from this line
+                            entries = [e.strip() for e in line.strip().split(',')]
+                            san_entries.extend(entries)
+                        elif line.strip() and not line.startswith(' '):
+                            # Exited SAN section
+                            break
+                
+                if san_entries:
+                    san_line = ', '.join(san_entries)
+                
+                # Build certificate extensions config with SAN from CSR
+                extensions_config = '''[v3_ldevid]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth,clientAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+'''
+                if san_line:
+                    extensions_config += f'subjectAltName = {san_line}\n'
+                
+                # Sign CSR with intermediate CA
+                subprocess.run([
+                    'openssl', 'x509', '-req',
+                    '-in', csr_pem_file,
+                    '-CA', 'certs/intermediate_ca.pem',
+                    '-CAkey', 'certs/intermediate_ca_key.pem',
+                    '-CAcreateserial',
+                    '-out', cert_pem_file,
+                    '-days', '365',
+                    '-sha256',
+                    '-extensions', 'v3_ldevid',
+                    '-extfile', '/dev/stdin'
+                ], input=extensions_config.encode('utf-8'), check=True, capture_output=True)
+                
+                # Return certificate in PKCS#7 DER format
+                result = subprocess.run([
+                    'openssl', 'crl2pkcs7', '-nocrl',
+                    '-certfile', cert_pem_file,
+                    '-outform', 'DER'
+                ], capture_output=True, check=True)
+                
+                # Base64-encode per RFC 7030
+                cert_b64 = base64.b64encode(result.stdout).decode('ascii')
+                
+                # Cleanup temp files
+                for f in [csr_der_file, csr_pem_file, cert_pem_file]:
+                    if os.path.exists(f):
+                        os.unlink(f)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/pkcs7-mime')
+                self.send_header('Content-Transfer-Encoding', 'base64')
+                self.end_headers()
+                # RFC 7030: body is base64-encoded text
+                self.wfile.write(cert_b64.encode('ascii'))
+                
+            except Exception as e:
+                self.send_error(500, f'EST simpleenroll error: {str(e)}')
+        else:
+            self.send_error(404, 'Not Found')
+
+# Configure HTTPS server
+server_address = ('127.0.0.1', 8888)
+httpd = http.server.HTTPServer(server_address, ESTHandler)
+
+# Setup TLS
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain('certs/est-server-cert.pem', 'certs/est-server-key.pem')
+context.minimum_version = ssl.TLSVersion.TLSv1_2
+httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+
+print(f"EST server running on https://localhost:8888", file=sys.stderr)
+httpd.serve_forever()
+PYEOF
+
+chmod +x est-server.py
+python3 est-server.py >"$EST_DIR/est-server.log" 2>&1 &
+EST_SERVER_PID=$!
+cd - >/dev/null
+
+# Wait for EST server to be ready
+echo "  Waiting for EST server to start..."
+MAX_WAIT=10
+WAIT_COUNT=0
+SKIP_EST_TESTS=false
+
+while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
+    if curl -sk https://localhost:8888/.well-known/est/cacerts &>/dev/null; then
+        echo -e "${GREEN}✓ EST server is running (PID: $EST_SERVER_PID)${NC}"
+        export est_server_url="https://localhost:8888"
+        break
+    fi
+    sleep 1
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+done
+
+if [ $WAIT_COUNT -eq $MAX_WAIT ]; then
+    echo -e "${RED}✗ EST server failed to start within ${MAX_WAIT} seconds${NC}"
+    echo "  Log: $EST_DIR/est-server.log"
+    cat "$EST_DIR/est-server.log" 2>/dev/null || true
+    kill $EST_SERVER_PID 2>/dev/null || true
+    SKIP_EST_TESTS=true
+fi
+
+if [ "$SKIP_EST_TESTS" = "true" ]; then
+    echo -e "${YELLOW}Skipping EST tests - server not available${NC}"
+else
+    echo "Running Phase 6 workflow: EST pull mode enrollment..."
+    TIMESTAMP=$(date +%s)
+    bru run workflows/06-est-pull-mode/ --env "$BRU_ENV" --cacert "$BRU_CACERT" --client-cert-config "$BRU_CLIENT_CERT_CONFIG" --noproxy --reporter-json results-sec-enroll-EST-pull_${LINENO}_${TIMESTAMP}.json || true
+fi
+
+# Cleanup EST server if running
+if [ -n "${EST_SERVER_PID:-}" ] && kill -0 $EST_SERVER_PID 2>/dev/null; then
+    echo "Stopping EST server (PID: $EST_SERVER_PID)..."
+    kill $EST_SERVER_PID 2>/dev/null || true
+    wait $EST_SERVER_PID 2>/dev/null || true
+fi
+
+# Cleanup temporary EST server directory
+if [ -n "${EST_DIR:-}" ] && [ -d "$EST_DIR" ]; then
+    rm -rf "$EST_DIR"
+fi

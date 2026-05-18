@@ -1,0 +1,58 @@
+meta {
+  name: PUT Client Certificate
+  type: http
+  seq: 1006
+  tags: client-certificate-mtls
+}
+
+put {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs
+  body: text
+  auth: basic
+}
+
+auth:basic {
+  username: {{admin_user}}
+  password: {{admin_pass}}
+}
+
+headers {
+  Content-Type: application/x-pem-file; charset=ASCII
+  Accept: application/json
+}
+
+body:text {
+  {{process.env.CLIENT_CERT_PEM}}
+}
+
+assert {
+  res.status: eq 201
+  res.body: isJson
+}
+
+tests {
+  test("Client certificate enrolled successfully", function() {
+    const data = res.getBody();
+    expect(res.status).to.equal(201);
+    expect(data).to.have.property("id");
+    expect(data.id).to.match(/^[a-f0-9]{32}$/);
+    
+    // Store certificate ID for later use
+    bru.setEnvVar("client_cert_id", data.id);
+    console.log("Client certificate ID:", data.id);
+  });
+}
+
+docs {
+  Test: PUT client certificate to /api/auth/certs
+  
+  Enrolls a client certificate for mutual TLS authentication.
+  The server:
+  - Generates certificate ID from SHA-256 fingerprint (first 32 chars)
+  - Validates certificate chain and expiration
+  - Stores certificate metadata in authorization database
+  - Returns the generated certificate ID
+  
+  First certificate is automatically enrolled as admin with full access.
+  Subsequent certificates inherit scope from authenticating client.
+}

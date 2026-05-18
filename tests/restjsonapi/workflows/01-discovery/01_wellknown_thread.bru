@@ -1,0 +1,54 @@
+meta {
+  name: GET .well-known/thread
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq {{wellknown_expected_status}}
+  res.body: isJson
+}
+
+tests {
+  test("Well-known thread metadata endpoint responds correctly", function() {
+    const expectedStatus = Number(bru.getEnvVar("wellknown_expected_status"));
+    expect(res.status).to.equal(expectedStatus);
+    
+    if (res.status === 200) {
+      const data = res.getBody();
+      expect(data).to.be.an('object');
+      console.log("✓ Well-known metadata retrieved successfully");
+    }
+  });
+  
+  test("Response is valid JSON", function() {
+    expect(res.getHeader('content-type')).to.contain('application/json');
+    const data = res.getBody();
+    expect(data).to.be.an('object');
+  });
+}
+
+docs {
+  Tests .well-known/thread discovery endpoint (public access, no auth required).
+}
