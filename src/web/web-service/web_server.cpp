@@ -36,6 +36,7 @@
 #include "web/web-service/web_server.hpp"
 
 #include <errno.h>
+#include <json/json.h>
 #include <string.h>
 
 #include "common/code_utils.hpp"
@@ -50,16 +51,20 @@
 #define OT_GET_QRCODE_PATH "^/get_qrcode$"
 #define OT_SET_NETWORK_PATH "^/settings$"
 #define OT_COMMISSIONER_START_PATH "^/commission$"
+#define OT_GET_REST_API_INFO_PATH "^/get_rest_api_info$"
 #define OT_REQUEST_METHOD_GET "GET"
 #define OT_REQUEST_METHOD_POST "POST"
 #define OT_RESPONSE_SUCCESS_STATUS "HTTP/1.1 200 OK\r\n"
 #define OT_RESPONSE_HEADER_LENGTH "Content-Length: "
 #define OT_RESPONSE_HEADER_CSS_TYPE "\r\nContent-Type: text/css"
 #define OT_RESPONSE_HEADER_TEXT_HTML_TYPE "\r\nContent-Type: text/html; charset=utf-8"
-#define OT_RESPONSE_HEADER_TYPE "Content-Type: application/json\r\n charset=utf-8"
+#define OT_RESPONSE_HEADER_TYPE "application/json; charset=utf-8"
 #define OT_RESPONSE_PLACEHOLD "\r\n\r\n"
 #define OT_RESPONSE_FAILURE_STATUS "HTTP/1.1 400 Bad Request\r\n"
 #define OT_BUFFER_SIZE 1024
+
+static const char kDefaultRestListenAddr[] = "127.0.0.1";
+static const char kDefaultRestListenPort[] = "8081";
 
 namespace otbr {
 namespace Web {
@@ -68,11 +73,25 @@ using httplib::Request;
 using httplib::Response;
 
 WebServer::WebServer(void)
+    : mRestListenAddr(kDefaultRestListenAddr)
+    , mRestListenPort(kDefaultRestListenPort)
 {
 }
 
 WebServer::~WebServer(void)
 {
+}
+
+void WebServer::SetRestApiInfo(const char *aRestListenAddr, const char *aRestListenPort)
+{
+    if (aRestListenAddr != nullptr)
+    {
+        mRestListenAddr = aRestListenAddr;
+    }
+    if (aRestListenPort != nullptr)
+    {
+        mRestListenPort = aRestListenPort;
+    }
 }
 
 void WebServer::Init()
@@ -97,6 +116,7 @@ otbrError WebServer::StartWebServer(const char *aIfName, const char *aListenAddr
     ResponseGetStatus();
     ResponseGetAvailableNetwork();
     ResponseCommission();
+    ResponseGetRestApiInfo();
     mServer.set_mount_point("/", WEB_FILE_PATH);
 
     if (!mServer.listen(aListenAddr, aPort))
@@ -282,6 +302,23 @@ std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGet
 std::string WebServer::HandleCommission(const std::string &aCommissionRequest)
 {
     return mWpanService.HandleCommission(aCommissionRequest);
+}
+
+void WebServer::ResponseGetRestApiInfo(void)
+{
+    mServer.Get(OT_GET_REST_API_INFO_PATH, [this](const Request &aRequest, Response &aResponse) {
+        OTBR_UNUSED_VARIABLE(aRequest);
+        Json::Value               root;
+        Json::StreamWriterBuilder writerBuilder;
+        std::string               response;
+
+        root["error"] = OTBR_ERROR_NONE;
+        root["port"]  = mRestListenPort;
+        root["host"]  = mRestListenAddr;
+
+        response = Json::writeString(writerBuilder, root);
+        aResponse.set_content(response, OT_RESPONSE_HEADER_TYPE);
+    });
 }
 
 } // namespace Web
