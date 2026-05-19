@@ -1,0 +1,7 @@
+build/
+tmp/
+logs_*/
+stage/
+.DS_Store
+.git/
+.github/
