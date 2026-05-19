@@ -108,9 +108,21 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
                 else
                 {
                     otOperationalDataset emptyDataset = {};
-                    otError              error =
-                        otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, mAttachPendingDatasetTlvs.mTlvs,
-                                                    mAttachPendingDatasetTlvs.mLength, MgmtSetResponseHandler, this);
+                    otError              error        = OT_ERROR_NONE;
+
+                    if (mAttachDelayMs == 0)
+                    {
+                        error =
+                            otDatasetSendMgmtActiveSet(mInstance, &emptyDataset, mAttachPendingDatasetTlvs.mTlvs,
+                                                       mAttachPendingDatasetTlvs.mLength, MgmtSetResponseHandler, this);
+                    }
+                    else
+                    {
+                        error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, mAttachPendingDatasetTlvs.mTlvs,
+                                                            mAttachPendingDatasetTlvs.mLength, MgmtSetResponseHandler,
+                                                            this);
+                    }
+
                     if (error != OT_ERROR_NONE)
                     {
                         AttachHandler handler = mAttachHandler;
@@ -532,6 +544,52 @@ exit:
     return ret;
 }
 
+/**
+ * This method checks if applying the given dataset can impact the Thread network connectivity.
+ *
+ * Changes in any of the following fields of the dataset can impact the Thread network connectivity:
+ * - Channel
+ * - Mesh-Local Prefix
+ * - PAN ID
+ * - Network Key
+ * - Security Policy fields:
+ *   - R bit (when changed from 1 to 0)
+ *   - NCR bit (when changed from 0 to 1)
+ *   - VR field (when increasing the value VR)
+ *
+ * @param[in] aDatasetTlvs  The Operational Dataset in TLVs format.
+ *
+ * @retval true   The given dataset can impact the network connectivity.
+ * @retval false  The given dataset does not impact the network connectivity.
+ */
+bool ThreadHelper::CanImpactNetworkConnectivity(const otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    bool                 ret = true;
+    otOperationalDataset dataset;
+    otOperationalDataset localDataset;
+
+    SuccessOrExit(otDatasetIsValid(&aDatasetTlvs, /* aActive */ false));
+    SuccessOrExit(otDatasetParseTlvs(&aDatasetTlvs, &dataset));
+    SuccessOrExit(otDatasetGetActive(mInstance, &localDataset));
+
+    VerifyOrExit(dataset.mChannel == localDataset.mChannel);
+    VerifyOrExit(dataset.mPanId == localDataset.mPanId);
+    VerifyOrExit(memcmp(dataset.mNetworkKey.m8, localDataset.mNetworkKey.m8, sizeof(dataset.mNetworkKey.m8)) == 0);
+    VerifyOrExit(memcmp(dataset.mMeshLocalPrefix.m8, localDataset.mMeshLocalPrefix.m8,
+                        sizeof(dataset.mMeshLocalPrefix.m8)) == 0);
+
+    VerifyOrExit(!(!dataset.mSecurityPolicy.mRoutersEnabled && localDataset.mSecurityPolicy.mRoutersEnabled));
+    VerifyOrExit(
+        !(dataset.mSecurityPolicy.mNonCcmRoutersEnabled && !localDataset.mSecurityPolicy.mNonCcmRoutersEnabled));
+    VerifyOrExit(!(dataset.mSecurityPolicy.mVersionThresholdForRouting >
+                   localDataset.mSecurityPolicy.mVersionThresholdForRouting));
+
+    ret = false;
+
+exit:
+    return ret;
+}
+
 otError ThreadHelper::StartThreadStack(void)
 {
     otError error = OT_ERROR_NONE;
@@ -557,7 +615,9 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     otError                  error = OT_ERROR_NONE;
     otOperationalDatasetTlvs datasetTlvs;
     otOperationalDataset     emptyDataset{};
-    otDeviceRole             role = mHost->GetDeviceRole();
+    otDeviceRole             role                         = mHost->GetDeviceRole();
+    uint32_t                 attachDelayMs                = 0;
+    bool                     canImpactNetworkConnectivity = true;
 
     if (aHandler == nullptr)
     {
@@ -578,7 +638,12 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
         ExitNow(error = OT_ERROR_NONE);
     }
 
-    SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, kDelayTimerMilliseconds));
+    canImpactNetworkConnectivity = CanImpactNetworkConnectivity(datasetTlvs);
+    if (canImpactNetworkConnectivity)
+    {
+        attachDelayMs = kDelayTimerMilliseconds;
+        SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, attachDelayMs));
+    }
 
     assert(datasetTlvs.mLength > 0);
 
@@ -614,9 +679,19 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
         ExitNow();
     }
 
-    SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
-                                                      MgmtSetResponseHandler, this));
-    mAttachDelayMs          = kDelayTimerMilliseconds;
+    if (canImpactNetworkConnectivity)
+    {
+        SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs,
+                                                          datasetTlvs.mLength, MgmtSetResponseHandler, this));
+    }
+    else
+    {
+        otbrLogInfo("No impact on Thread network connectivity, use MGMT_ACTIVE_SET");
+        SuccessOrExit(error = otDatasetSendMgmtActiveSet(mInstance, &emptyDataset, datasetTlvs.mTlvs,
+                                                         datasetTlvs.mLength, MgmtSetResponseHandler, this));
+    }
+
+    mAttachDelayMs          = attachDelayMs;
     mAttachHandler          = aHandler;
     mWaitingMgmtSetResponse = true;
 
