@@ -57,7 +57,7 @@ An example response to `curl -G http://otbr.local/api/devices -H 'Accept: applic
         "hostname": "<hostname defined by SRP>",
         "role": "router",
         "mode": {
-          "deviceTypeFTD": true,
+          "fullThreadDevice": true,
           "rxOnWhenIdle": true,
           "fullNetworkData": true
         },
@@ -72,11 +72,11 @@ An example response to `curl -G http://otbr.local/api/devices -H 'Accept: applic
         "extAddress": "de62e016db392477",
         "mlEidIid": "2ea45067f32f46",
         "omrIpv6Address": <Ipv6Address>,
-        "eui64": "<eui64>",
+        "eui": "<eui>",
         "hostname": "<hostname defined by SRP>",
         "role": "router",
         "mode": {
-          "deviceTypeFTD": true,
+          "fullThreadDevice": true,
           "rxOnWhenIdle": true,
           "fullNetworkData": true
         },
@@ -158,8 +158,8 @@ An example response to `curl -G http://otbr.local/api/actions -H 'Accept: applic
           "maxChildTimeout",
           "lDevIdSubject",
           "iDevIdCert",
-          "eui64",
-          "version",
+          "eui",
+          "threadVersion",
           "vendorName",
           "vendorModel",
           "vendorSwVersion",
@@ -403,8 +403,8 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | 20 | LDevID Subject Public Key Info | lDevIdSubject | The identity of the LDevID (operational) certificate of a CCM Thread Device, encoded as Subject Public Key Info. Defined in Section 10.11.4.8, LDevID Subject Public Key Info TLV (20). | N |
 | 21 | IDevID Certificate | lDevIdCert | The IDevID (manufacturer) certificate of a CCM Thread Device, encoded in X.509 format. Defined in Section 10.11.4.9, IDevID Certificate TLV (21). | N |
 | 22 | (reserved) | - | (reserved) | N |
-| 23 | EUI-64 | eui64 | The EUI-64 of a Thread Device, binary encoded with Length = 8. | N |
-| 24 | Version | version | Same format and semantics as the Version TLV (MLE TLV Type 18) in Section 4.4.17, Version TLV in Chapter 4, Mesh Link Establishment. | N |
+| 23 | EUI-64 | eui | The EUI-64 of a Thread Device, binary encoded with Length = 8. | N |
+| 24 | Version | threadVersion | Same format and semantics as the Version TLV (MLE TLV Type 18) in Section 4.4.17, Version TLV in Chapter 4, Mesh Link Establishment. | N |
 | 25 | Vendor Name | vendorName | Same format and semantics as the Vendor Name TLV (TMF Provisioning/Discovery TLV Type 33) in Section 8.10.3.2, Vendor Name TLV in Chapter 8, Mesh Commissioning Protocol. | N |
 | 26 | Vendor Model | vendorModel | Same format and semantics as the Vendor Model TLV (TMF Provisioning/Discovery TLV Type 34) in Section 8.10.3.3, Vendor Model TLV in Chapter 8, Mesh Commissioning Protocol. | N |
 | 27 | Vendor SW Version | vendorSwVersion | Same format and semantics as the Vendor SW Version TLV (TMF Provisioning/Discovery TLV Type 35) in Section 8.10.3.4, Vendor SW Version TLV in Chapter 8, Mesh Commissioning Protocol. | N |
@@ -423,25 +423,29 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | Active Routers in Partition | activeRouterCount | v1.1 | 4 |
 | Age | age | FTD, v1.3.1 | 29 |
 | Attach Attempts Counter | attachAttemptsCount | v1.3.1 | 34 |
-| Average RSSI | avgRssi | FTD, v1.3.1 | 29, 31 |
+| Average RSSI | averageRssi | FTD, v1.3.1 | 29, 31 |
 | Battery Level | batteryLevel | v1.1 | 14 |
 | Better-Partition Attach Attempts Counter | betterPartIdAttachAttemptsCount | v1.3.1 | 34 |
 | C | isCslSychronized | FTD, v1.3.1 | 29 |
 | Child Role Counter | childRoleCount | v1.3.1 | 34 |
 | Child Role Time | childRoleTime | v1.3.1 | 34 |
-| Child Timeout | childTimeout | FTD, v1.1 | 16 |
+| Child Timeout | timeout | Child, v1.1 | 3 |
+| Child Timeout | timeout | FTD, v1.3.1 | 29 |
+| Child Timeout (compressed) | timeout | FTD, v1.1 | 16 |
 | Connection Time | linkAge | FTD, v1.3.1 | 29, 31 |
 | CSL Channel | cslChannel | FTD, v1.3.1 | 29 |
 | CSL Period | cslPeriod | FTD, v1.3.1 | 29 |
 | CSL Timeout | cslTimeout | FTD, v1.3.1 | 29 |
-| D | isFTD | FTD, v1.3.1 | 29 |
+| D | fullThreadDevice | v1.1 | 2 |
+| D | fullThreadDevice | FTD, v1.3.1 | 29 |
 | Detached Role Counter | detachedRoleCount | v1.3.1 | 34 |
 | Detached Role Time | detachedRoleTime | v1.3.1 | 34 |
 | E | errorTracking | FTD, v1.3.1 | 29, 31 |
-| EUI64 | eui64 | v1.3.1 | 23 |
+| EUI-64 | eui | v1.3.1 | 23 |
 | Extended Address | extAddress | FTD, v1.3.1 | 0, 29, 31 |
 | Frame Error Rate | frameErrorRate | FTD, v1.3.1 | 29, 31 |
-| ILQ | inLQ | FTD, v1.3.1 | 16 |
+| Incoming Link Quality (ILQ) | linkQuality | FTD, v1.1 | 16 |
+| Incoming Link Quality | linkQualityIn | FTD, v1.3.1 | 5 |
 | Inbound Broadcast Packet Counter | ifInBroadcastPkts | v1.1 | 9 |
 | Inbound Packet Discarded Counter | ifInDiscards | v1.1 | 9 |
 | Inbound Packet Error Counter | ifInErrors | v1.1 | 9 |
@@ -457,14 +461,17 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | Link Quality 2 Count | linkQuality2 | v1.1 | 4 |
 | Link Quality 3 Count | linkQuality3 | v1.1 | 4 |
 | Message Error Rate | messageErrorRate | FTD, v1.3.1 | 29, 31 |
-| N | hasNetworkData | FTD, v1.3.1 | 29 |
+| N | fullNetworkData | v1.1 | 2 |
+| N | fullNetworkData | FTD, v1.3.1 | 29 |
 | New Parent Counter | newParentCount | v1.3.1 | 34 |
 | Outbound Broadcast Packet Counter | ifOutBroadcastPkts | v1.1 | 9 |
 | Outbound Packet Discarded Counter | ifOutDiscards | v1.1 | 9 |
 | Outbound Packet Error Counter | ifOutErrors | v1.1 | 9 |
 | Outbound Unicast Packet Counter | ifOutUcastPkts | v1.1 | 9 |
+| Outgoing Link Quality | linkQualityOut | FTD, v1.3.1 | 5 |
 | Partition ID Changes Counter | partIdChangesCount | v1.3.1 | 34 |
 | Queued Message Count | queuedMessageCount | FTD, v1.3.1 | 29 |
+| R | rxOnWhenIdle | v1.1 | 2 |
 | R | rxOnWhenIdle | FTD, v1.3.1 | 29 |
 | Radio Disabled Counter | radioDisabledCount | v1.3.1 | 34 |
 | Radio Disabled Time | radioDisabledTime | v1.3.1 | 34 |
