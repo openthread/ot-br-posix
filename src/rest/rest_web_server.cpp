@@ -154,6 +154,7 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     mServer.Options(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&RestWebServer::DatasetActive));
     mServer.Get(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
     mServer.Put(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
+    mServer.Delete(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
     mServer.Options(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
     mServer.Get(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&RestWebServer::CommissionerState));
     mServer.Put(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&RestWebServer::CommissionerState));
@@ -756,6 +757,28 @@ exit:
     }
 }
 
+void RestWebServer::DeletePendingDataset(Response &aResponse) const
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    SuccessOrExit(error = RunInMainLoop([this]() {
+                      otOperationalDatasetTlvs datasetTlvs;
+
+                      datasetTlvs.mLength = 0;
+                      VerifyOrReturn(otDatasetSetPendingTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE,
+                                     OTBR_ERROR_REST);
+                      return OTBR_ERROR_NONE;
+                  }));
+
+    aResponse.status = StatusCode::OK_200;
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, StatusCode::InternalServerError_500);
+    }
+}
+
 void RestWebServer::Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
     switch (GetMethod(aRequest))
@@ -765,6 +788,16 @@ void RestWebServer::Dataset(DatasetType aDatasetType, const Request &aRequest, R
         break;
     case HttpMethod::kPut:
         SetDataset(aDatasetType, aRequest, aResponse);
+        break;
+    case HttpMethod::kDelete:
+        if (aDatasetType == DatasetType::kPending)
+        {
+            DeletePendingDataset(aResponse);
+        }
+        else
+        {
+            ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
+        }
         break;
     case HttpMethod::kOptions:
         aResponse.status = StatusCode::OK_200;
