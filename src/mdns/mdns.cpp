@@ -213,6 +213,12 @@ void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aIns
     otbrLogInfo("Service %s is resolved successfully: %s %s host %s addresses %zu", aType.c_str(),
                 aInstanceInfo.mRemoved ? "remove" : "add", aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
                 aInstanceInfo.mAddresses.size());
+    if (aInstanceInfo.mRemoved)
+    {
+        otbrLogInfo(
+            "DNSSD lc mDNS publisher: dispatching removal to subscribers (DnssdPlatform/others) for inst=%s type=%s",
+            aInstanceInfo.mName.c_str(), aType.c_str());
+    }
 
     if (!aInstanceInfo.mRemoved)
     {
@@ -276,7 +282,9 @@ void Publisher::OnServiceRemoved(uint32_t aNetifIndex, std::string aType, std::s
 {
     DiscoveredInstanceInfo instanceInfo;
 
-    otbrLogInfo("Service %s.%s is removed from netif %u.", aInstanceName.c_str(), aType.c_str(), aNetifIndex);
+    otbrLogInfo("DNSSD lc mDNS publisher: service instance departed inst=%s type=%s ifIndex=%u "
+                "(reason=browse_remove_event from mDNS stack; not an OTBR subscription cleanup)",
+                aInstanceName.c_str(), aType.c_str(), static_cast<unsigned>(aNetifIndex));
 
     instanceInfo.mRemoved    = true;
     instanceInfo.mNetifIndex = aNetifIndex;

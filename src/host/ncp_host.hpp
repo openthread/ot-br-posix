@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_NCP_HOST_HPP_
 #define OTBR_AGENT_NCP_HOST_HPP_
 
+#include <openthread/platform/dnssd.h>
+
 #include "lib/spinel/coprocessor_type.h"
 #include "lib/spinel/spinel_driver.hpp"
 
@@ -82,7 +84,7 @@ class NcpHost : public MainloopProcessor,
                 public NcpNetworkProperties,
                 public Netif::Dependencies,
                 public InfraIf::Dependencies
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_MDNS && (OTBR_ENABLE_SRP_ADVERTISING_PROXY || OTBR_ENABLE_DNSSD_PLAT)
     ,
                 public Mdns::StateObserver
 #endif
@@ -151,6 +153,14 @@ public:
     void SetMdnsPublisher(Mdns::Publisher *aPublisher);
 #endif
 
+#if OTBR_ENABLE_DNSSD_PLAT
+    void NotifyDnssdPlatformStateToNcp(otPlatDnssdState aState);
+#endif
+#if OTBR_ENABLE_TREL
+    void    SetTrelStateChangedCallback(NcpSpinel::TrelStateChangedCallback aCallback);
+    otError SetTrelHostUdpPort(bool aEnabled, uint16_t aHostPort);
+#endif
+
     void InitNetifCallbacks(Netif &aNetif);
     void InitInfraIfCallbacks(InfraIf &aInfraIf);
     void SetHostPowerState(uint8_t aPowerState, const AsyncResultReceiver &aReceiver);
@@ -165,7 +175,7 @@ public:
 #endif
 
 private:
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_MDNS && (OTBR_ENABLE_SRP_ADVERTISING_PROXY || OTBR_ENABLE_DNSSD_PLAT)
     void HandleMdnsState(Mdns::Publisher::State aState) override;
 #endif
     otbrError UdpForward(const uint8_t      *aUdpPayload,

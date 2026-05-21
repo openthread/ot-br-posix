@@ -1191,6 +1191,9 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
         Resolve(aInterfaceIndex, aProtocol, aName, aType);
         break;
     case AVAHI_BROWSER_REMOVE:
+        otbrLogInfo("DNSSD lc mDNS (Avahi): browse REMOVE inst=%s type=%s ifIndex=%u "
+                    "(AVAHI_BROWSER_REMOVE — service departed on this interface)",
+                    aName, aType, static_cast<unsigned>(aInterfaceIndex));
         mPublisherAvahi->OnServiceRemoved(static_cast<uint32_t>(aInterfaceIndex), aType, aName);
         RemoveServiceResolver(aName);
         break;
