@@ -79,6 +79,14 @@ public:
      */
     void StopWebServer(void);
 
+    /**
+     * This method sets the REST API listen address and port.
+     *
+     * @param[in] aRestListenAddr  The pointer to the REST API listen address.
+     * @param[in] aRestListenPort  The pointer to the REST API listen port.
+     */
+    void SetRestApiInfo(const char *aRestListenAddr, const char *aRestListenPort);
+
 private:
     typedef std::string (*HttpRequestCallback)(const std::string &aRequest, void *aUserData);
     static std::string HandleJoinNetworkRequest(const std::string &aJoinRequest, void *aUserData);
@@ -110,11 +118,14 @@ private:
     void ResponseGetAvailableNetwork(void);
     void DefaultHttpResponse(void);
     void ResponseCommission(void);
+    void ResponseGetRestApiInfo(void);
 
     void Init(void);
 
     httplib::Server        mServer;
     otbr::Web::WpanService mWpanService;
+    std::string            mRestListenAddr;
+    std::string            mRestListenPort;
 };
 
 } // namespace Web
