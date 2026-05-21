@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020-2021, The OpenThread Authors.
+#  Copyright (c) 2026, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,46 +26,23 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_subdirectory(agent)
-if(OTBR_BORDER_AGENT)
-    add_subdirectory(border_agent)
-endif()
-add_subdirectory(common)
-if(OTBR_DBUS OR OTBR_FEATURE_FLAGS OR OTBR_TELEMETRY_DATA_API)
-    add_subdirectory(proto)
-endif()
-add_subdirectory(host)
+set(OTBR_FIREWALL_SOURCES
+    firewall_manager.cpp
+)
 
-if(OTBR_DBUS)
-    add_subdirectory(dbus)
+if(OTBR_NFTABLES)
+    list(APPEND OTBR_FIREWALL_SOURCES nftables_impl.cpp)
 endif()
 
-if(OTBR_MDNS)
-    add_subdirectory(mdns)
-    if(NOT OTBR_MDNS STREQUAL "openthread")
-        add_subdirectory(sdp_proxy)
-    endif()
-    if(OTBR_TREL_DNSSD)
-        add_subdirectory(trel_dnssd)
-    endif()
-endif()
+add_library(otbr-firewall ${OTBR_FIREWALL_SOURCES})
 
-add_subdirectory(utils)
+target_link_libraries(otbr-firewall PUBLIC
+    otbr-common
+)
 
-add_subdirectory(firewall)
-
-if(OTBR_OPENWRT)
-    add_subdirectory(openwrt)
-endif()
-
-if(OTBR_WEB)
-    add_subdirectory(web)
-endif()
-
-if(OTBR_REST)
-    add_subdirectory(rest)
-endif()
-
-if (OTBR_BACKBONE_ROUTER)
-    add_subdirectory(backbone_router)
+if(OTBR_NFTABLES)
+    target_link_libraries(otbr-firewall PRIVATE
+        ${LIBNFTNL_LIBRARY}
+        ${LIBMNL_LIBRARY}
+    )
 endif()

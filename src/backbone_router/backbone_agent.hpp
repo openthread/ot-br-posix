@@ -47,6 +47,7 @@
 #include "backbone_router/dua_routing_manager.hpp"
 #include "backbone_router/nd_proxy.hpp"
 #include "common/code_utils.hpp"
+#include "firewall/firewall_manager.hpp"
 #include "host/rcp_host.hpp"
 
 namespace otbr {
@@ -72,9 +73,17 @@ public:
     /**
      * This constructor intiializes the `BackboneAgent` instance.
      *
-     * @param[in] aHost  The Thread controller instance.
+     * @param[in] aHost                   The Thread controller instance.
+     * @param[in] aInterfaceName          The Thread interface name.
+     * @param[in] aBackboneInterfaceName  The backbone interface name.
+     * @param[in] aFirewall               Firewall manager for nftables-backed
+     *                                    rule installation. May be nullptr
+     *                                    when OTBR_ENABLE_NFTABLES is off.
      */
-    BackboneAgent(otbr::Host::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName);
+    BackboneAgent(otbr::Host::RcpHost       &aHost,
+                  std::string                aInterfaceName,
+                  std::string                aBackboneInterfaceName,
+                  Firewall::FirewallManager *aFirewall);
 
     /**
      * This method initializes the Backbone agent.
