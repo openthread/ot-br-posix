@@ -72,7 +72,7 @@
 #include "utils/hex.hpp"
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
-#if !(OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO)
+#if !(OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO)
 #error "Border Agent meshcop service feature requires at least one `OTBR_MDNS` implementation"
 #endif
 #endif

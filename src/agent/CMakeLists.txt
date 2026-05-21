@@ -76,8 +76,6 @@ set(OTBR_AGENT_GROUP "root" CACHE STRING "set the group using otbr-agent client"
 if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     if(OTBR_MDNS STREQUAL "mDNSResponder")
         set(EXEC_START_PRE "ExecStartPre=/usr/sbin/service mdns start\n")
-    elseif(OTBR_MDNS STREQUAL "avahi")
-        set(EXEC_START_PRE "ExecStartPre=/usr/sbin/service avahi-daemon start\n")
     else()
         message(WARNING "OTBR_MDNS=\"${OTBR_MDNS}\" is not supported")
     endif()
