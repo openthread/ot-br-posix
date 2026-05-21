@@ -55,8 +55,6 @@ install_common_dependencies()
         doxygen \
         expect \
         net-tools \
-        libavahi-common-dev \
-        libavahi-client-dev \
         libgmock-dev \
         libgtest-dev \
         libreadline-dev \

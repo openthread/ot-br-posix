@@ -63,13 +63,6 @@ jobs:
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
-          - name: "Border Router (Avahi)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "avahi"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
-            packet_verification: 1
           - name: "Border Router TREL (OT mDNS)"
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
@@ -118,13 +111,6 @@ jobs:
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
-            packet_verification: 1
-          - name: "Border Router with OT Core Advertising Proxy (avahi)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF -DOTBR_OT_SRP_ADV_PROXY=ON"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "avahi"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router with OT Core Advertising Proxy (mDNSResponder)"
             otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF -DOTBR_OT_SRP_ADV_PROXY=ON"

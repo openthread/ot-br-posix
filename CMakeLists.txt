@@ -44,7 +44,7 @@ set(OTBR_MDNS "openthread" CACHE STRING "mDNS publisher provider")
 set(OTBR_SYSLOG_FACILITY_ID LOG_USER CACHE STRING "Syslog logging facility")
 set(OTBR_RADIO_URL "spinel+hdlc+uart:///dev/ttyACM0" CACHE STRING "The radio URL")
 
-set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder" "openthread")
+set_property(CACHE OTBR_MDNS PROPERTY STRINGS "mDNSResponder" "openthread")
 
 include("${PROJECT_SOURCE_DIR}/etc/cmake/options.cmake")
 

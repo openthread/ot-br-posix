@@ -44,12 +44,6 @@ case "${OTBR_MDNS}" in
         sleep 1
         ;;
 
-    avahi)
-        sudo killall mdnsd || true
-        sudo service avahi-daemon restart
-        sleep 1
-        ;;
-
     *)
         echo >&2 "Not supported"
         exit 128
