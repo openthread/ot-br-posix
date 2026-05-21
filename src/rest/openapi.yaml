@@ -24,6 +24,26 @@ tags:
     description: Collection of Thread network diagnostic responses.
 paths:
 
+  ### Well-Known ##############################################################
+  #############################################################################
+  /.well-known/thread:
+    get:
+      operationId: getWellKnownThread
+      summary: Read API version and entry points
+      description: |
+        Information about the supported API version (see gray tag at the top of this specification), API location (base path), and links to its entry points.
+
+        ## Static
+        API version, location, and entry points are known at compile time.
+
+        ## Link Attributes (`/.well-known/thread`)
+        `rel="self" type="application/json"`
+      tags:
+        - Well-Known
+      responses:
+        "200":
+          $ref: "#/components/responses/WellKnownThread200"
+
   ### Information #############################################################
   #############################################################################
   /api/node:
@@ -2399,6 +2419,45 @@ components:
           description: Joiner expiration time in milliseconds on response and seconds on request 
           default: 60 
 
+    WellKnownThread:
+      type: object
+      required:
+        - api
+        - links
+      properties:
+        api:
+          type: object
+          required:
+            - version
+            - base
+          properties:
+            version:
+              type: string
+              pattern: ^[0-9]+\.[0-9]+(\.[0-9]+)?$
+              description: Semantic version (MAJOR.MINOR.PATCH) of the API
+            base:
+              type: string
+              pattern: ^/[/.a-zA-Z0-9-_]*$
+        links:
+          type: array
+          items:
+            type: object
+            required:
+              - href
+            properties:
+              href:
+                type: string
+                format: uri-reference
+              rel:
+                type: string
+              type:
+                type: array
+                minItems: 1
+                items:
+                  type: string
+              title:
+                type: string
+
   ### Parameters ##############################################################
   #############################################################################
   parameters:
@@ -2516,6 +2575,39 @@ components:
   ### Responses ###############################################################
   #############################################################################
   responses:
+
+    WellKnownThread200:
+      description: |
+        JSON (RFC 8259) providing the API version resource object and links to the API entry points.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/WellKnownThread"
+          example:
+            api:
+              version: 0.3.0
+              base: /api/
+            links:
+              - href: /.well-known/thread
+                rel: self
+                type:
+                  - application/json
+              - href: /api/node
+                rel: node
+                type:
+                  - application/vnd.api+json
+              - href: /api/actions
+                rel: task
+                type:
+                  - application/vnd.api+json
+              - href: /api/devices
+                rel: device
+                type:
+                  - application/vnd.api+json
+              - href: /api/diagnostics
+                rel: diagnostic
+                type:
+                  - application/vnd.api+json
 
     BadRequestError:
       description: |
