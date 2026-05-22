@@ -1335,6 +1335,9 @@ void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     for (const auto &entry : updatedTxtEntries)
     {
+        VerifyOrExit(!entry.mKey.empty() &&
+                         entry.mKey.length() + entry.mValue.size() + 1 <= Mdns::Publisher::kMaxTextEntrySize,
+                     error = OT_ERROR_INVALID_ARGS);
         update[entry.mKey] = entry.mValue;
     }
     for (const auto reservedKey : {"rv", "tv", "sb", "nn", "xp", "at", "pt", "dn", "sq", "bb", "omr"})
