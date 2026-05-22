@@ -85,7 +85,7 @@ exec kill -9 \$agent_pid
 expect -i \$otbr_agent eof
 
 spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 -B lo "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
-expect "Start Thread Border Agent"
+expect "RestWebServer listening on"
 
 spawn curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8081/node/state
 expect {
