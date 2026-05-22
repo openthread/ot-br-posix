@@ -41,9 +41,36 @@ namespace rest {
 class DiagnosticTypes
 {
 public:
-    static constexpr uint32_t kMaxTotalCount      = 26; ///< Total number of recognized types
+    static constexpr uint32_t kMaxTotalCount      = 27; ///< Total number of recognized types
     static constexpr uint32_t kMaxQueryCount      = 3;  ///< Number of types that require a diag query
     static constexpr uint32_t kMaxResettableCount = 2;  ///< Number of types that can be reset
+
+    static constexpr uint32_t CountTotalTypes(uint32_t aIndex)
+    {
+        return (aIndex >= kTypeListSize)
+                   ? 0
+                   : ((kTypeInfos[aIndex].mJsonKey != nullptr) ? 1 : 0) + CountTotalTypes(aIndex + 1);
+    }
+
+    static constexpr uint32_t CountQueryTypes(uint32_t aIndex)
+    {
+        return (aIndex >= kTypeListSize)
+                   ? 0
+                   : (((kTypeInfos[aIndex].mJsonKey != nullptr) && (kTypeInfos[aIndex].mProperties & kPropertyQuery))
+                          ? 1
+                          : 0) +
+                         CountQueryTypes(aIndex + 1);
+    }
+
+    static constexpr uint32_t CountResettableTypes(uint32_t aIndex)
+    {
+        return (aIndex >= kTypeListSize)
+                   ? 0
+                   : (((kTypeInfos[aIndex].mJsonKey != nullptr) && (kTypeInfos[aIndex].mProperties & kPropertyCanReset))
+                          ? 1
+                          : 0) +
+                         CountResettableTypes(aIndex + 1);
+    }
 
     static const char *GetJsonKey(uint8_t aTypeId);
     static bool        RequiresQuery(uint8_t aTypeId);
@@ -108,6 +135,13 @@ private:
 
     static const std::unordered_map<std::string, uint8_t> kKeyMap;
 };
+
+static_assert(DiagnosticTypes::kMaxTotalCount == DiagnosticTypes::CountTotalTypes(0),
+              "kMaxTotalCount must match the number of recognized types");
+static_assert(DiagnosticTypes::kMaxQueryCount == DiagnosticTypes::CountQueryTypes(0),
+              "kMaxQueryCount must match the number of query types");
+static_assert(DiagnosticTypes::kMaxResettableCount == DiagnosticTypes::CountResettableTypes(0),
+              "kMaxResettableCount must match the number of resettable types");
 
 } // namespace rest
 } // namespace otbr
