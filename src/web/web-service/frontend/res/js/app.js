@@ -439,7 +439,19 @@
         };
 
         $scope.restServerPort = '8081';
-        $scope.ipAddr = window.location.hostname + ':' + $scope.restServerPort;
+        var formatRestAddr = function(host, port) {
+            return (host.indexOf(':') > -1) ? '[' + host + ']:' + port : host + ':' + port;
+        };
+        $scope.ipAddr = formatRestAddr(window.location.hostname, $scope.restServerPort);
+
+        $http.get('get_rest_api_info').then(function(response) {
+            if (response.data.error == 0) {
+                $scope.restServerPort = response.data.port;
+                var host = response.data.host;
+                var targetHost = (host && host !== '127.0.0.1' && host !== 'localhost' && host !== '0.0.0.0' && host !== '::1' && host !== '::') ? host : window.location.hostname;
+                $scope.ipAddr = formatRestAddr(targetHost, $scope.restServerPort);
+            }
+        });
 
         // Basic information line
         $scope.basicInfo = {
