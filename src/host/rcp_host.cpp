@@ -389,7 +389,8 @@ void RcpHost::HandleStateChanged(otChangedFlags aFlags)
         if (IsAttached() && mJoinReceiver != nullptr)
         {
             otbrLogInfo("Join succeeded");
-            SafeInvokeAndClear(mJoinReceiver, OT_ERROR_NONE, "Join succeeded");
+            auto joinReceiver = std::move(mJoinReceiver);
+            SafeInvoke(joinReceiver, OT_ERROR_NONE, "Join succeeded");
         }
     }
 }
@@ -575,11 +576,11 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     SuccessOrExit(error = otThreadSetEnabled(mInstance, true), errorMsg = "Failed to bring up Thread stack");
 
     // Abort an ongoing join()
-    if (mJoinReceiver != nullptr)
     {
-        SafeInvoke(mJoinReceiver, OT_ERROR_ABORT, "Join() is aborted");
+        auto joinReceiver = std::move(mJoinReceiver);
+        mJoinReceiver     = aReceiver;
+        SafeInvoke(joinReceiver, OT_ERROR_ABORT, "Join() is aborted");
     }
-    mJoinReceiver     = aReceiver;
     receiveResultHere = false;
 
 exit:
@@ -664,7 +665,8 @@ void RcpHost::SendMgmtPendingSetCallback(otError aError, void *aContext)
 
 void RcpHost::SendMgmtPendingSetCallback(otError aError)
 {
-    SafeInvokeAndClear(mScheduleMigrationReceiver, aError, "");
+    auto migrationReceiver = std::move(mScheduleMigrationReceiver);
+    SafeInvoke(migrationReceiver, aError, "");
 }
 
 void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
@@ -779,14 +781,19 @@ void RcpHost::ThreadDetachGracefullyCallback(void *aContext)
 
 void RcpHost::ThreadDetachGracefullyCallback(void)
 {
-    SafeInvokeAndClear(mJoinReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
-    SafeInvokeAndClear(mScheduleMigrationReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
+    std::vector<DetachGracefullyCallback> callbacks;
 
-    for (auto &callback : mDetachGracefullyCallbacks)
+    callbacks.swap(mDetachGracefullyCallbacks);
+    auto joinReceiver      = std::move(mJoinReceiver);
+    auto migrationReceiver = std::move(mScheduleMigrationReceiver);
+
+    SafeInvoke(joinReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
+    SafeInvoke(migrationReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
+
+    for (auto &callback : callbacks)
     {
         callback();
     }
-    mDetachGracefullyCallbacks.clear();
 }
 
 void RcpHost::ConditionalErasePersistentInfo(bool aErase)
@@ -808,7 +815,8 @@ void RcpHost::DisableThreadAfterDetach(void)
     UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
 
 exit:
-    SafeInvokeAndClear(mSetThreadEnabledReceiver, error, errorMsg);
+    auto receiver = std::move(mSetThreadEnabledReceiver);
+    SafeInvoke(receiver, error, errorMsg);
 }
 
 void RcpHost::SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver)
