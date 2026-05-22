@@ -181,26 +181,27 @@ std::string UnescapeInstanceName(const std::string &aName)
     return newName;
 }
 
-void CheckHostnameSanity(const std::string &aHostName)
+otbrError CheckHostnameSanity(const std::string &aHostName)
 {
-    OTBR_UNUSED_VARIABLE(aHostName);
+    otbrError error = OTBR_ERROR_NONE;
 
-    assert(aHostName.length() > 0);
-    assert(aHostName.back() == '.');
+    VerifyOrExit(aHostName.length() > 0, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aHostName.back() == '.', error = OTBR_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
 }
 
-void CheckServiceNameSanity(const std::string &aServiceName)
+otbrError CheckServiceNameSanity(const std::string &aServiceName)
 {
-    size_t dotpos;
+    otbrError error = OTBR_ERROR_NONE;
 
-    OTBR_UNUSED_VARIABLE(aServiceName);
-    OTBR_UNUSED_VARIABLE(dotpos);
+    VerifyOrExit(aServiceName.length() > 0, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aServiceName.back() != '.', error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aServiceName.find_first_of('.') != std::string::npos, error = OTBR_ERROR_INVALID_ARGS);
 
-    assert(aServiceName.length() > 0);
-    assert(aServiceName[aServiceName.length() - 1] != '.');
-    dotpos = aServiceName.find_first_of('.');
-    assert(dotpos != std::string::npos);
-    assert(dotpos == aServiceName.find_last_of('.'));
+exit:
+    return error;
 }
 
 } // namespace DnsUtils

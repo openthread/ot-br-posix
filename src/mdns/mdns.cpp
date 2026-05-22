@@ -208,7 +208,8 @@ uint64_t Publisher::AddSubscriptionCallbacks(Publisher::DiscoveredServiceInstanc
 
 void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aInstanceInfo)
 {
-    bool checkToInvoke = false;
+    otbrError error         = OTBR_ERROR_NONE;
+    bool      checkToInvoke = false;
 
     otbrLogInfo("Service %s is resolved successfully: %s %s host %s addresses %zu", aType.c_str(),
                 aInstanceInfo.mRemoved ? "remove" : "add", aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
@@ -229,13 +230,13 @@ void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aIns
         otbrLogInfo("addresses: [ %s ]", addressesString.c_str());
     }
 
-    DnsUtils::CheckServiceNameSanity(aType);
+    SuccessOrExit(error = DnsUtils::CheckServiceNameSanity(aType));
 
-    assert(aInstanceInfo.mNetifIndex > 0);
+    VerifyOrExit(aInstanceInfo.mNetifIndex > 0, error = OTBR_ERROR_INVALID_ARGS);
 
     if (!aInstanceInfo.mRemoved)
     {
-        DnsUtils::CheckHostnameSanity(aInstanceInfo.mHostName);
+        SuccessOrExit(error = DnsUtils::CheckHostnameSanity(aInstanceInfo.mHostName));
     }
 
     UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, OTBR_ERROR_NONE);
@@ -270,6 +271,13 @@ void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aIns
             }
         }
     }
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, error);
+        UpdateServiceInstanceResolutionEmaLatency(aInstanceInfo.mName, aType, error);
+    }
 }
 
 void Publisher::OnServiceRemoved(uint32_t aNetifIndex, std::string aType, std::string aInstanceName)
@@ -287,14 +295,15 @@ void Publisher::OnServiceRemoved(uint32_t aNetifIndex, std::string aType, std::s
 
 void Publisher::OnHostResolved(std::string aHostName, Publisher::DiscoveredHostInfo aHostInfo)
 {
-    bool checkToInvoke = false;
+    otbrError error         = OTBR_ERROR_NONE;
+    bool      checkToInvoke = false;
 
     otbrLogInfo("Host %s is resolved successfully: host %s addresses %zu ttl %u", aHostName.c_str(),
                 aHostInfo.mHostName.c_str(), aHostInfo.mAddresses.size(), aHostInfo.mTtl);
 
     if (!aHostInfo.mHostName.empty())
     {
-        DnsUtils::CheckHostnameSanity(aHostInfo.mHostName);
+        SuccessOrExit(error = DnsUtils::CheckHostnameSanity(aHostInfo.mHostName));
     }
 
     UpdateMdnsResponseCounters(mTelemetryInfo.mHostResolutions, OTBR_ERROR_NONE);
@@ -329,6 +338,13 @@ void Publisher::OnHostResolved(std::string aHostName, Publisher::DiscoveredHostI
                 break;
             }
         }
+    }
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        UpdateMdnsResponseCounters(mTelemetryInfo.mHostResolutions, error);
+        UpdateHostResolutionEmaLatency(aHostName, error);
     }
 }
 
