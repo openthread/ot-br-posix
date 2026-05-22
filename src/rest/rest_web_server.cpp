@@ -1839,10 +1839,10 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
         {
             otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
             self->mServer.set_ipv6_v6only(false);
-            self->mServer.set_socket_options([](socket_t sock) {
+            self->mServer.set_socket_options([](socket_t aSock) {
                 int opt = 1;
                 // cpp-httplib defaults to SO_REUSEPORT instead of SO_REUSEADDR
-                setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+                setsockopt(aSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
             });
             const httplib::Headers defaultHeaders = {
                 {"Access-Control-Allow-Origin", OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN},
