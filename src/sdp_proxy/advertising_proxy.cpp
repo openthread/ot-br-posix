@@ -123,10 +123,17 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
 
     error = PublishHostAndItsServices(aHost, update);
 
-    if (error != OTBR_ERROR_NONE || update->mCallbackCount == 0)
+    for (auto it = mOutstandingUpdates.begin(); it != mOutstandingUpdates.end(); ++it)
     {
-        mOutstandingUpdates.pop_back();
-        otSrpServerHandleServiceUpdateResult(GetInstance(), aId, OtbrErrorToOtError(error));
+        if (it->mId == aId)
+        {
+            if (error != OTBR_ERROR_NONE || it->mCallbackCount == 0)
+            {
+                mOutstandingUpdates.erase(it);
+                otSrpServerHandleServiceUpdateResult(GetInstance(), aId, OtbrErrorToOtError(error));
+            }
+            break;
+        }
     }
 
 exit:
