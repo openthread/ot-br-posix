@@ -256,6 +256,7 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string                      
             instanceInfo.mHostName = translatedHostName.c_str();
 
             otDnssdQueryHandleDiscoveredServiceInstance(mHost.GetInstance(), serviceFullName.c_str(), &instanceInfo);
+            query = nullptr;
         }
     }
 }
@@ -310,6 +311,7 @@ void DiscoveryProxy::OnHostDiscovered(const std::string                         
             std::string hostFullName = TranslateDomain(resolvedHostName, domain);
 
             otDnssdQueryHandleDiscoveredHost(mHost.GetInstance(), hostFullName.c_str(), &hostInfo);
+            query = nullptr;
         }
     }
 
