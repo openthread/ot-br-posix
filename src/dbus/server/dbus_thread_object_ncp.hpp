@@ -80,16 +80,16 @@ public:
     otbrError Init(void) override;
 
 private:
-    void AsyncGetDeviceRoleHandler(DBusRequest &aRequest);
-    void ReplyAsyncGetProperty(DBusRequest &aRequest, const std::string &aContent);
+    void AsyncGetDeviceRoleHandler(std::shared_ptr<DBusRequest> aRequest);
+    void ReplyAsyncGetProperty(std::shared_ptr<DBusRequest> aRequest, const std::string &aContent);
 
-    void JoinHandler(DBusRequest &aRequest);
-    void LeaveHandler(DBusRequest &aRequest);
-    void ScheduleMigrationHandler(DBusRequest &aRequest);
-    void HostPowerStateHandler(DBusRequest &aRequest);
-    void EnableEphemeralKeyModeHandler(DBusRequest &aRequest);
-    void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
-    void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
+    void JoinHandler(std::shared_ptr<DBusRequest> aRequest);
+    void LeaveHandler(std::shared_ptr<DBusRequest> aRequest);
+    void ScheduleMigrationHandler(std::shared_ptr<DBusRequest> aRequest);
+    void HostPowerStateHandler(std::shared_ptr<DBusRequest> aRequest);
+    void EnableEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest);
+    void ActivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest);
+    void DeactivateEphemeralKeyModeHandler(std::shared_ptr<DBusRequest> aRequest);
 
     otbr::Host::NcpHost &mHost;
 
