@@ -56,7 +56,6 @@ EXTRA_OECMAKE += " \
     -DOTBR_VENDOR_NAME="OpenThread" \
     -DOTBR_PRODUCT_NAME="Border Router" \
     -DOTBR_MESHCOP_SERVICE_INSTANCE_NAME="OpenThread Border Router" \
-    -DOT_DUA=OFF \
     -DOT_POSIX_SETTINGS_PATH='"/tmp/"' \
     -DOT_MLR=OFF \
 "
