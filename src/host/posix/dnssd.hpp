@@ -343,13 +343,48 @@ private:
 
         bool IsEmpty(void) { return mEntries.empty(); }
 
+        /**
+         * Returns how many registered callbacks should receive results for @p aReportedInfraIfIndex.
+         * A registered index of 0 matches any reported index (NCP may use 0 before infra-if is known).
+         */
+        size_t GetMatchCountForInfraIf(uint64_t aReportedInfraIfIndex) const
+        {
+            size_t n = 0;
+
+            for (const auto &entry : mEntries)
+            {
+                if (InfraIfIndexMatches(entry.first, aReportedInfraIfIndex))
+                {
+                    n++;
+                }
+            }
+            return n;
+        }
+
+        /** Comma-separated registered `mInfraIfIndex` values (0 means wildcard for matching; see
+         * `InfraIfIndexMatches`). */
+        std::string ListRegisteredInfraIfIndices(void) const
+        {
+            std::string s;
+
+            for (const auto &entry : mEntries)
+            {
+                if (!s.empty())
+                {
+                    s += ",";
+                }
+                s += std::to_string(entry.first);
+            }
+            return s.empty() ? std::string("(none)") : s;
+        }
+
         void InvokeAllCallbacks(uint64_t aInfraIfIndex, CallbackResultType &aResult)
         {
             std::vector<CallbackPtrType> copyCallbacks;
 
             for (auto &entry : mEntries)
             {
-                if (entry.first == aInfraIfIndex)
+                if (InfraIfIndexMatches(entry.first, aInfraIfIndex))
                 {
                     copyCallbacks.push_back(entry.second);
                 }
@@ -362,6 +397,11 @@ private:
         }
 
     private:
+        static bool InfraIfIndexMatches(uint64_t aRegisteredIfIndex, uint64_t aReportedIfIndex)
+        {
+            return aRegisteredIfIndex == aReportedIfIndex || aRegisteredIfIndex == 0;
+        }
+
         using IteratorType = typename std::vector<RequestType>::iterator;
 
         IteratorType FindEntry(uint64_t aInfraIfIndex, const CallbackType &aCallback)

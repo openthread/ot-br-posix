@@ -291,6 +291,9 @@ private:
 #endif
 
 #endif
+#if OTBR_ENABLE_TREL
+    UdpProxy mTrelUdpProxy;
+#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
     std::unique_ptr<MulticastRoutingManager>       mMulticastRoutingManager;

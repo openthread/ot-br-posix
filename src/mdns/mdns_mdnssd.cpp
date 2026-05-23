@@ -1194,6 +1194,9 @@ void PublisherMDnsSd::ServiceSubscription::HandleBrowseResult(DNSServiceRef     
     }
     else
     {
+        otbrLogInfo("DNSSD lc mDNS (dns_sd): browse REMOVE inst=%s type=%s ifIndex=%u "
+                    "(DNSServiceBrowse callback without kDNSServiceFlagsAdd — service left or goodbye)",
+                    aInstanceName, aType, aInterfaceIndex);
         mPublisher.OnServiceRemoved(aInterfaceIndex, mType, aInstanceName);
         Remove(aInterfaceIndex, aInstanceName, aType, aDomain);
     }
