@@ -87,11 +87,6 @@ if (OTBR_TELEMETRY_DATA_API)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TELEMETRY_DATA_API=1)
 endif()
 
-option(OTBR_DUA_ROUTING "Enable Backbone Router DUA Routing" OFF)
-if (OTBR_DUA_ROUTING)
-    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DUA_ROUTING=1)
-endif()
-
 option(OTBR_OPENWRT "Enable OpenWrt support" OFF)
 if(OTBR_OPENWRT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_OPENWRT=1)

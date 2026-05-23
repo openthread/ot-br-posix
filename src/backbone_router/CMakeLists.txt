@@ -28,12 +28,9 @@
 
 add_library(otbr-backbone-router
     backbone_agent.cpp
-    dua_routing_manager.cpp
-    nd_proxy.cpp
 )
 
 target_link_libraries(otbr-backbone-router PRIVATE
     otbr-common
     otbr-utils
-    $<$<BOOL:${OTBR_DUA_ROUTING}>:netfilter_queue>
 )
