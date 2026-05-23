@@ -148,19 +148,25 @@ std::string UnescapeInstanceName(const std::string &aName);
  *      The host name must ends with dot.
  *
  * @param[in] aHostName  The host name to check.
+ *
+ * @retval OTBR_ERROR_NONE          The host name is valid.
+ * @retval OTBR_ERROR_INVALID_ARGS  The host name is invalid.
  */
-void CheckHostnameSanity(const std::string &aHostName);
+otbrError CheckHostnameSanity(const std::string &aHostName);
 
 /**
  * This function checks a given service name for sanity.
  *
  * Check criteria:
- *      The service name must contain exactly one dot.
+ *      The service name must contain at least one dot.
  *      The service name must not end with dot.
  *
  * @param[in] aServiceName  The service name to check.
+ *
+ * @retval OTBR_ERROR_NONE          The service name is valid.
+ * @retval OTBR_ERROR_INVALID_ARGS  The service name is invalid.
  */
-void CheckServiceNameSanity(const std::string &aServiceName);
+otbrError CheckServiceNameSanity(const std::string &aServiceName);
 
 } // namespace DnsUtils
 } // namespace otbr
