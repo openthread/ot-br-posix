@@ -206,10 +206,15 @@ bool NetworkDiagnostic::Validate(const cJSON &aJson)
     errormsg = KEY_TYPES;
     VerifyOrExit(types != nullptr);
     VerifyOrExit(cJSON_IsArray(types));
-    cJSON_ArrayForEach(item, types)
     {
-        VerifyOrExit(cJSON_IsString(item));
-        SuccessOrExit(DiagnosticTypes::FindId(item->valuestring, id));
+        std::set<uint8_t> uniqueTypes;
+        cJSON_ArrayForEach(item, types)
+        {
+            VerifyOrExit(cJSON_IsString(item));
+            SuccessOrExit(DiagnosticTypes::FindId(item->valuestring, id));
+            uniqueTypes.insert(id);
+        }
+        VerifyOrExit(uniqueTypes.size() <= DiagnosticTypes::kMaxTotalCount);
     }
 
     ok = true;
