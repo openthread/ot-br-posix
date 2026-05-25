@@ -1335,6 +1335,9 @@ void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     for (const auto &entry : updatedTxtEntries)
     {
+        VerifyOrExit(!entry.mKey.empty() &&
+                         entry.mKey.length() + entry.mValue.size() + 1 <= Mdns::Publisher::kMaxTextEntrySize,
+                     error = OT_ERROR_INVALID_ARGS);
         update[entry.mKey] = entry.mValue;
     }
     for (const auto reservedKey : {"rv", "tv", "sb", "nn", "xp", "at", "pt", "dn", "sq", "bb", "omr"})
@@ -2166,14 +2169,16 @@ exit:
 
 void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
 {
-    otError     error        = OT_ERROR_NONE;
-    auto        threadHelper = mHost.GetThreadHelper();
-    uint32_t    lifetime     = 0;
-    auto        args         = std::tie(lifetime);
-    std::string ePskc;
+    otError                        error        = OT_ERROR_NONE;
+    auto                           threadHelper = mHost.GetThreadHelper();
+    uint32_t                       lifetime     = 0;
+    auto                           args         = std::tie(lifetime);
+    std::string                    ePskc;
+    otBorderAgentEphemeralKeyState state;
 
-    VerifyOrExit(otBorderAgentEphemeralKeyGetState(threadHelper->GetInstance()) != OT_BORDER_AGENT_STATE_DISABLED,
-                 error = OT_ERROR_NOT_CAPABLE);
+    state = otBorderAgentEphemeralKeyGetState(threadHelper->GetInstance());
+    VerifyOrExit(state != OT_BORDER_AGENT_STATE_DISABLED, error = OT_ERROR_NOT_CAPABLE);
+    VerifyOrExit(state == OT_BORDER_AGENT_STATE_STOPPED, error = OT_ERROR_BUSY);
 
     SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OT_ERROR_INVALID_ARGS);

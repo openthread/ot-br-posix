@@ -1,0 +1,269 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+
+
+# Dynamic helper to start the OTBR docker container and map the spinel relay
+proc start_otbr_docker_trel {name sim_app sim_id pty rcp_port} {
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --add-host=host.docker.internal:host-gateway \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
+        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        -e EXP_RCP_PORT=$rcp_port \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
+    sleep 2
+
+    # Start the simulated RCP binary on the host
+    exec $sim_app $sim_id <$pty >$pty &
+    sleep 5
+}
+
+# Start relays and containers
+set pty1 [create_socat_tcp 1 9000]
+set pty2 [create_socat_tcp 2 9001]
+
+set container1 "otbr-test-container-1"
+set container2 "otbr-test-container-2"
+
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+send_user -- "--- Starting container 1 ---\n"
+start_otbr_docker_trel $container1 $::env(EXP_OT_RCP_PATH) 2 $pty1 9000
+
+send_user -- "--- Starting container 2 ---\n"
+start_otbr_docker_trel $container2 $::env(EXP_OT_RCP_PATH) 3 $pty2 9001
+
+# Ensure both containers have initialized correctly and otbr-agent socket is ready
+foreach c [list $container1 $container2] {
+    set socket_ready false
+    for {set i 0} {$i < 10} {incr i} {
+        if {![catch {exec docker exec -i $c ot-ctl state}]} {
+            set socket_ready true
+            break
+        }
+        sleep 2
+    }
+    if {!$socket_ready} {
+        fail "ot-ctl failed to communicate with otbr-agent on $c"
+    }
+}
+
+# Stop Thread and down interface on both containers initially to prevent default auto-start
+foreach c [list $container1 $container2] {
+    exec docker exec -i $c ot-ctl thread stop
+    exec docker exec -i $c ot-ctl ifconfig down
+}
+
+# 1. Configure Active Dataset on both containers BEFORE starting Thread
+send_user -- "--- Configuring Active Dataset on both containers ---\n"
+exec docker exec -i $container1 ot-ctl dataset set active $dataset
+exec docker exec -i $container2 ot-ctl dataset set active $dataset
+
+# Start Thread on Container 1 to form the network
+send_user -- "--- Starting Thread on Container 1 ---\n"
+exec docker exec -i $container1 ot-ctl ifconfig up
+exec docker exec -i $container1 ot-ctl thread start
+
+# Wait for Container 1 to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    spawn docker exec -i $container1 ot-ctl state
+    set timeout 3
+    expect {
+        "leader" {
+            set leader true
+        }
+        timeout {}
+    }
+    catch {close}; catch {wait}
+    if {$leader} {
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "Container 1 did not become leader."
+}
+
+# 2. Start Thread on Container 2 to join the network
+send_user -- "--- Starting Thread on Container 2 ---\n"
+exec docker exec -i $container2 ot-ctl ifconfig up
+exec docker exec -i $container2 ot-ctl thread start
+
+# Wait for Container 2 to join successfully (router or child state)
+set joined false
+for {set i 0} {$i < 25} {incr i} {
+    spawn docker exec -i $container2 ot-ctl state
+    set timeout 3
+    expect {
+        "router" {
+            set joined true
+        }
+        "child" {
+            set joined true
+        }
+        timeout {}
+    }
+    catch {close}; catch {wait}
+    if {$joined} {
+        break
+    }
+    sleep 2
+}
+if {!$joined} {
+    fail "Container 2 failed to join the network."
+}
+
+# 3. Fetch Extended MAC Addresses to verify TREL peer discovery later
+send_user -- "--- Fetching Extended MAC Addresses for TREL verification ---\n"
+set otbr1_extaddr [exec docker exec -i $container1 ot-ctl extaddr]
+set otbr1_extaddr [lindex [split $otbr1_extaddr "\n"] 0]
+set otbr1_extaddr [string trim $otbr1_extaddr]
+set otbr2_extaddr [exec docker exec -i $container2 ot-ctl extaddr]
+set otbr2_extaddr [lindex [split $otbr2_extaddr "\n"] 0]
+set otbr2_extaddr [string trim $otbr2_extaddr]
+
+# Retrieve infrastructure global IP address of both containers to verify TREL SocketAddress mappings
+set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+set otbr1_infra_ip [exec docker inspect $container1 -f $format]
+set otbr1_infra_ip [string trim $otbr1_infra_ip]
+
+set otbr2_infra_ip [exec docker inspect $container2 -f $format]
+set otbr2_infra_ip [string trim $otbr2_infra_ip]
+
+send_user "Container 1 Infra IP: $otbr1_infra_ip\n"
+send_user "Container 2 Infra IP: $otbr2_infra_ip\n"
+
+# 4. Verify peer discovery via 'trel peers' matching peer's Extended MAC address using glob wildcards
+send_user -- "--- Verifying TREL peer discovery on Container 1 ---\n"
+set discovered false
+for {set i 0} {$i < 15} {incr i} {
+    spawn docker exec -i $container1 ot-ctl trel peers
+    set timeout 3
+    expect {
+        "*$otbr2_extaddr*" {
+            send_user "Found Container 2 TREL peer (Ext MAC: $otbr2_extaddr) on Container 1!\n"
+            set discovered true
+        }
+        timeout {}
+    }
+    catch {close}; catch {wait}
+    if {$discovered} {
+        break
+    }
+    sleep 1
+}
+if {!$discovered} {
+    fail "Error: Container 2 TREL peer not discovered on Container 1 (Timeout)."
+}
+
+send_user -- "--- Verifying TREL peer discovery on Container 2 ---\n"
+set discovered false
+for {set i 0} {$i < 15} {incr i} {
+    spawn docker exec -i $container2 ot-ctl trel peers
+    set timeout 3
+    expect {
+        "*$otbr1_extaddr*" {
+            send_user "Found Container 1 TREL peer (Ext MAC: $otbr1_extaddr) on Container 2!\n"
+            set discovered true
+        }
+        timeout {}
+    }
+    catch {close}; catch {wait}
+    if {$discovered} {
+        break
+    }
+    sleep 1
+}
+if {!$discovered} {
+    fail "Error: Container 1 TREL peer not discovered on Container 2 (Timeout)."
+}
+
+# 5. Ping peer and verify UDP packet encapsulation counters
+set otbr2_addrs [exec docker exec -i $container2 ot-ctl ipaddr]
+set ping_target ""
+foreach addr [split $otbr2_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match "fd*" $addr] && ![string match "*ff:fe00:*" $addr]} {
+        set ping_target $addr
+        break
+    }
+}
+if {$ping_target == ""} {
+    fail "Error: Could not locate a routable Thread OMR/ML-EID address for Container 2."
+}
+send_user "Pinging Container 2 Thread Routable Address: $ping_target\n"
+
+spawn docker exec -i $container1 ot-ctl ping $ping_target
+set timeout 10
+expect {
+    "16 bytes from" {
+        send_user "Ping succeeded!\n"
+    }
+    timeout {
+        fail "Error: Ping timed out."
+    }
+    eof {
+        fail "Error: Ping failed (EOF)."
+    }
+}
+catch {close}; catch {wait}
+
+# Verify TREL link counters (either keep-alives or data packets must be present)
+spawn docker exec -i $container1 ot-ctl trel counters
+expect {
+    -re {Inbound:\s+Packets\s+([1-9][0-9]*)} {
+        send_user "TREL link traffic verified: Inbound $expect_out(1,string) packets received over TREL!\n"
+    }
+    timeout {
+        fail "Error: TREL Inbound counter is zero (Timeout)."
+    }
+    eof {
+        fail "Error: TREL Inbound counter is zero (EOF)."
+    }
+}
+catch {close}; catch {wait}
+
+dispose_all
+
+send_user -- "--- TREL Integration Test PASSED successfully! ---\n"
+exit 0

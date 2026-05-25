@@ -1118,7 +1118,7 @@ std::string ErrorDetails2JsonString(httplib::StatusCode aErrorCode,
 
     cJSON_AddItemToObject(error, "title", cJSON_CreateString(aErrorMessage.c_str()));
     cJSON_AddItemToObject(error, "status", cJSON_CreateNumber(static_cast<int16_t>(aErrorCode)));
-    cJSON_AddItemToObject(error, "details", cJSON_CreateString(aErrorDetails.c_str()));
+    cJSON_AddItemToObject(error, "detail", cJSON_CreateString(aErrorDetails.c_str()));
 
     ret = Json2String(error);
 

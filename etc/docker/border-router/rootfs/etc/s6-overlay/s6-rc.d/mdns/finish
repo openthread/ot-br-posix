@@ -1,6 +1,6 @@
-#!/command/with-contenv bash
+#!/usr/bin/env bash
 #
-#  Copyright (c) 2026, The OpenThread Authors.
+#  Copyright (c) 2025, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,21 +27,4 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-OT_THREAD_IF="${OT_THREAD_IF:-wpan0}"
-readonly OT_THREAD_IF
-
-OT_WEB_LISTEN_ADDR="${OT_WEB_LISTEN_ADDR:-127.0.0.1}"
-readonly OT_WEB_LISTEN_ADDR
-
-OT_WEB_LISTEN_PORT="${OT_WEB_LISTEN_PORT:-8080}"
-readonly OT_WEB_LISTEN_PORT
-
-OT_REST_LISTEN_ADDR="${OT_REST_LISTEN_ADDR:-127.0.0.1}"
-readonly OT_REST_LISTEN_ADDR
-
-OT_REST_LISTEN_PORT="${OT_REST_LISTEN_PORT:-8081}"
-readonly OT_REST_LISTEN_PORT
-
-echo "Starting otbr-web..."
-
-exec stdbuf -oL /usr/sbin/otbr-web -I "${OT_THREAD_IF}" -d6 -s -a "${OT_WEB_LISTEN_ADDR}" -p "${OT_WEB_LISTEN_PORT}" -A "${OT_REST_LISTEN_ADDR}" -P "${OT_REST_LISTEN_PORT}"
+echo "mDNS ended with exit code ${1} (signal ${2})..."

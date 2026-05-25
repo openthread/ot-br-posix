@@ -44,8 +44,6 @@
 
 #include <openthread/backbone_router_ftd.h>
 
-#include "backbone_router/dua_routing_manager.hpp"
-#include "backbone_router/nd_proxy.hpp"
 #include "common/code_utils.hpp"
 #include "host/rcp_host.hpp"
 
@@ -74,7 +72,7 @@ public:
      *
      * @param[in] aHost  The Thread controller instance.
      */
-    BackboneAgent(otbr::Host::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName);
+    BackboneAgent(otbr::Host::RcpHost &aHost);
 
     /**
      * This method initializes the Backbone agent.
@@ -82,32 +80,16 @@ public:
     void Init(void);
 
 private:
-    void        OnBecomePrimary(void);
-    void        OnResignPrimary(void);
-    bool        IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
-    void        HandleThreadStateChanged(otChangedFlags aFlags);
-    void        HandleBackboneRouterState(void);
-    static void HandleBackboneRouterDomainPrefixEvent(void                             *aContext,
-                                                      otBackboneRouterDomainPrefixEvent aEvent,
-                                                      const otIp6Prefix                *aDomainPrefix);
-    void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
-                                                      const otIp6Prefix                *aDomainPrefix);
-#if OTBR_ENABLE_DUA_ROUTING
-    static void HandleBackboneRouterNdProxyEvent(void                        *aContext,
-                                                 otBackboneRouterNdProxyEvent aEvent,
-                                                 const otIp6Address          *aAddress);
-    void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
-#endif
+    void OnBecomePrimary(void);
+    void OnResignPrimary(void);
+    bool IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
+    void HandleThreadStateChanged(otChangedFlags aFlags);
+    void HandleBackboneRouterState(void);
 
     static const char *StateToString(otBackboneRouterState aState);
 
     otbr::Host::RcpHost  &mHost;
     otBackboneRouterState mBackboneRouterState;
-    Ip6Prefix             mDomainPrefix;
-#if OTBR_ENABLE_DUA_ROUTING
-    NdProxyManager    mNdProxyManager;
-    DuaRoutingManager mDuaRoutingManager;
-#endif
 };
 
 /**

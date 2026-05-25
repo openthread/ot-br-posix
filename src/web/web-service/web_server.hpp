@@ -68,13 +68,24 @@ public:
      * @param[in] aIfName      The pointer to the Thread interface name.
      * @param[in] aListenAddr  The http server listen address, can be nullptr for any address.
      * @param[in] aPort        The port of http server.
+     *
+     * @retval OTBR_ERROR_NONE  Successfully started the Web Server.
+     * @retval OTBR_ERROR_ERRNO Failed to start the Web Server.
      */
-    void StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort);
+    otbrError StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort);
 
     /**
      * This method stops the Web Server.
      */
     void StopWebServer(void);
+
+    /**
+     * This method sets the REST API listen address and port.
+     *
+     * @param[in] aRestListenAddr  The pointer to the REST API listen address.
+     * @param[in] aRestListenPort  The pointer to the REST API listen port.
+     */
+    void SetRestApiInfo(const char *aRestListenAddr, const char *aRestListenPort);
 
 private:
     typedef std::string (*HttpRequestCallback)(const std::string &aRequest, void *aUserData);
@@ -107,11 +118,14 @@ private:
     void ResponseGetAvailableNetwork(void);
     void DefaultHttpResponse(void);
     void ResponseCommission(void);
+    void ResponseGetRestApiInfo(void);
 
     void Init(void);
 
     httplib::Server        mServer;
     otbr::Web::WpanService mWpanService;
+    std::string            mRestListenAddr;
+    std::string            mRestListenPort;
 };
 
 } // namespace Web

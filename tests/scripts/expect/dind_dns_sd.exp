@@ -1,0 +1,363 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+# Custom start_otbr_docker for our network name
+proc start_otbr_docker_dind {name sim_app sim_id pty} {
+    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --add-host=host.docker.internal:host-gateway \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
+        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
+    sleep 2
+
+    # 3. Now start the simulated RCP binary on the host!
+    exec $sim_app $sim_id <$pty >$pty &
+    sleep 5
+}
+
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# Start border router in Docker on the DinD host
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    send_user "Error: ot-ctl failed to communicate with otbr-agent\n"; exit 1
+}
+
+# Setup active dataset on OTBR via ot-ctl
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    spawn docker exec -i $container ot-ctl state
+    set timeout 3
+    expect {
+        "leader" {
+            set leader true
+            break
+        }
+        timeout {
+            # Not leader yet
+        }
+    }
+    catch {close}
+    catch {wait}
+    sleep 2
+}
+if {!$leader} {
+    send_user "Error: OTBR did not become leader. Agent logs:\n"
+    catch {send_user [exec docker exec -i $container cat /var/log/otbr-agent.log]}
+    exit 1
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its dynamic OMR prefix
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Get the running Border Router's active dataset dynamically to configure the client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ot-cli-ftd)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+set omr_addr [get_omr_addr]
+sleep 1
+
+# Configure SRP client on simulated Thread device
+send "srp client autostart enable\r\n"
+expect_line "Done"
+send "srp client host name otbr-ncp-test\r\n"
+expect_line "Done"
+send "srp client host address $omr_addr\r\n"
+expect_line "Done"
+send "srp client service add ot-service _ipps._tcp 12345\r\n"
+expect_line "Done"
+sleep 10
+
+# Set up a single background test-client container to perform both mDNS resolution and ping tests
+set test_client "test-client"
+exec docker run -d \
+    --name $test_client \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+
+# Check if the host kernel supports Route Information Option (RIO) / accept_ra_rt_info_max_plen processing
+set has_rio [expr {[catch {exec docker exec -i $test_client test -f /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+
+if {$has_rio} {
+    send_user "Host kernel supports RIO processing. Enabling accept_ra_rt_info_max_plen.\n"
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+    # Trigger a Router Solicitation to fetch RAs immediately and let kernel auto-install the OMR route
+    exec docker exec -i $test_client rdisc6 eth0
+} else {
+    send_user "Warning: Host kernel does NOT support RIO processing (CONFIG_IPV6_ROUTE_INFO is disabled). Falling back to static route.\n"
+
+    # Retrieve the global IPv6 address of the OTBR container on the bridge network
+    set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+    set otbr_ip [exec docker inspect otbr-test-container -f $format]
+    send_user "OTBR Infrastructure IPv6 Address: $otbr_ip\n"
+
+    # Manually install static route to Thread ULA subnet (fc00::/7) via the OTBR, bypassing host kernel RIO limitation
+    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
+}
+send_user "Test Client routing table:\n"
+send_user [exec docker exec -i $test_client ip -6 route]
+
+# 1. Verify service via mdns-scan from our single test client container
+spawn docker exec -i $test_client mdns-scan
+set timeout 10
+expect {
+    "ot-service._ipps._tcp.local" {
+        send_user "\n# Service successfully discovered via mdns-scan!\n"
+    }
+    timeout {
+        send_user "Error: Service not found via mdns-scan\n"; exit 1
+    }
+}
+catch {close}
+catch {wait}
+
+# 2. Discover the Thread device's IPv6 address via mDNS and verify connectivity (OMR)
+set py_cmd {from zeroconf import Zeroconf, IPVersion; import socket; info = Zeroconf().get_service_info('_ipps._tcp.local.', 'ot-service._ipps._tcp.local.'); addrs = info.addresses_by_version(IPVersion.V6Only) if info else []; print(socket.inet_ntop(socket.AF_INET6, addrs[0])) if addrs else None}
+set discovered_ip [exec docker exec -i $test_client python3 -c $py_cmd]
+set discovered_ip [string trim $discovered_ip]
+if {$discovered_ip == ""} {
+    send_user "Error: Failed to discover Thread device IPv6 address via mDNS\n"
+    exit 1
+}
+send_user "Discovered Thread device IPv6 address via mDNS: $discovered_ip\n"
+
+spawn docker exec -i $test_client ping6 -c 5 $discovered_ip
+set timeout 15
+expect {
+    "5 packets transmitted, 5 received, 0% packet loss" {
+        send_user "\n# Ping from infra host to discovered Thread device succeeded!\n"
+    }
+    timeout {
+        send_user "Error: Ping from infra host to discovered Thread device timed out\n"
+        exit 1
+    }
+    eof {
+        send_user "Error: Ping from infra host to discovered Thread device failed (EOF)\n"
+        exit 1
+    }
+}
+catch {close}
+catch {wait}
+
+# 3. Verify DNS-SD Discovery Proxy: Thread device discovers service on infra link
+
+# Get the global IPv6 address of the test client
+set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+set test_client_ip [exec docker inspect $test_client -f $format]
+set test_client_ip [string trim $test_client_ip]
+send_user "Test Client IPv6 Address: $test_client_ip\n"
+
+# Publish a service on the infrastructure link from the test client
+# Write python script to file in container
+exec docker exec -i $test_client bash -c "cat << EOF > /tmp/publish.py
+from zeroconf import IPVersion, ServiceInfo, Zeroconf, ServiceBrowser
+import socket
+import time
+
+class MyListener:
+    def remove_service(self, zc, type, name):
+        print(f'Service {name} removed')
+    def add_service(self, zc, type, name):
+        print(f'Service {name} added')
+
+desc = {'path': '/'}
+info = ServiceInfo('_http._tcp.local.', 'test-service._http._tcp.local.', addresses=\[socket.inet_pton(socket.AF_INET6, '$test_client_ip')\], port=12345, properties=desc, server='test-host.local.')
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+print('Registering service...')
+zc.register_service(info)
+print('Service registered. Sleeping...')
+
+browser = ServiceBrowser(zc, '_http._tcp.local.', MyListener())
+
+time.sleep(60)
+zc.unregister_service(info)
+zc.close()
+EOF"
+
+# Run python script in background and redirect output to log file
+exec docker exec -d $test_client bash -c "python3 -u /tmp/publish.py > /tmp/publish.log 2>&1"
+
+# Get OTBR's RLOC or OMR address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr == ""} {
+    set otbr_dns_addr [lindex [split $otbr_addrs "\n"] 0]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Switch to Node 4 to send commands
+switch_node 4
+
+# Configure DNS client on Node 4
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+expect "> "
+
+# Browse for the service from Node 4
+send "dns browse _http._tcp.default.service.arpa.\r\n"
+set timeout 20
+expect {
+    "test-service" {
+        send_user "\n# Service successfully discovered from Thread device!\n"
+    }
+    timeout {
+        send_user "Error: Service not found from Thread device\n"
+        if {[catch {exec docker exec -i $test_client cat /tmp/publish.log} result]} {
+            send_user "Failed to cat log: $result\n"
+        } else {
+            send_user "Publish log:\n$result\n"
+        }
+
+        exit 1
+    }
+}
+expect_line "Done"
+expect "> "
+
+# Resolve the service to get the IP address
+send "dns servicehost test-service _http._tcp.default.service.arpa.\r\n"
+expect {
+    -re {HostAddress:(\S+)} {
+        set resolved_ip $expect_out(1,string)
+        send_user "Resolved IP via Discovery Proxy: $resolved_ip\n"
+        exp_continue
+    }
+    "Error" {
+        fail "Failed to resolve service host from Thread device"
+    }
+    timeout {
+        fail "Timed out resolving service host from Thread device"
+    }
+    -re "Done\r?\n> " {
+        # Finished successfully
+    }
+}
+
+if {![info exists resolved_ip]} {
+    fail "Failed to resolve service host address"
+}
+
+# Ping the resolved address from Thread device
+set ping_success false
+send "ping $resolved_ip 8 5\r\n"
+expect {
+    -re {5 packets transmitted, 5 packets received\. Packet loss = 0\.0\%} {
+        set ping_success true
+        send_user "\n# Ping from Thread device to resolved address succeeded!\n"
+        exp_continue
+    }
+    "0 packets received" {
+        fail "Ping failed (0 packets received)"
+    }
+    "Error" {
+        fail "Ping command failed"
+    }
+    timeout {
+        fail "Ping timed out"
+    }
+    -re "Done\r?\n> " {
+        if {!$ping_success} {
+            fail "Ping failed to achieve 100% success"
+        }
+    }
+}
+
+exec docker stop $test_client
+exec docker rm $test_client
+
+exec docker stop $container
+exec docker rm $container
+dispose_all

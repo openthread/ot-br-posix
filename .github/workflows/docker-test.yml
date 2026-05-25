@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2026, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-name: MeshCoP
+name: Docker Test
 
 on:
   push:
@@ -41,54 +41,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-  meshcop:
-    runs-on: ubuntu-latest
+  docker-check:
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        mdns: ["openthread", "avahi"]
+        mdns: ["", "--mdnsresponder"]
+    env:
+      VERBOSE: 1
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2
       with:
         submodules: recursive
-    - name: Bootstrap
-      env:
-        BUILD_TARGET: "meshcop"
-        OTBR_MDNS: ${{ matrix.mdns }}
-      run: tests/scripts/bootstrap.sh
-    - name: Build
-      env:
-        OTBR_MDNS: ${{ matrix.mdns }}
-        OTBR_COVERAGE: 1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+    - name: Build DinD Runner Image
       run: |
-        script/bootstrap
-        script/test build
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version: '24'
-    - name: Install Bruno CLI
-      run: npm install -g @usebruno/cli
-    - name: mDNS service
-      env:
-        TEST_CASE: "mdns_service"
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: MTD
-      env:
-        OT_CLI: "ot-cli-mtd"
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: FTD
-      env:
-        OT_CLI: "ot-cli-ftd"
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: Web Commissioner
-      env:
-        OTBR_USE_WEB_COMMISSIONER: 1
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: HTTP REST API
-      env:
-        TEST_CASE: "http_restapi"
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
-    - name: Codecov
-      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+        docker build -t otbr-dind-runner -f etc/docker/test/Dockerfile.dind_runner .
+    - name: Run DinD Integration Test
+      run: |
+        docker run --privileged --rm \
+          -v "$(pwd)":/usr/src/ot-br-posix \
+          -w /usr/src/ot-br-posix \
+          -e DOCKER_HOST=unix:///var/run/docker.sock \
+          otbr-dind-runner \
+          bash -c "dockerd --host=unix:///var/run/docker.sock >/dev/null 2>&1 & ./tests/scripts/test_dind_dns_sd.sh ${{ matrix.mdns }}"

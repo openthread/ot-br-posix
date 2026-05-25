@@ -383,12 +383,14 @@ otError NetworkDiagHandler::GetDiagnosticsStatus(const char  *aAddressString,
 
 void NetworkDiagHandler::StopDiagnosticsRequest(void)
 {
+    otMeshDiagCancel(mInstance);
     mRequestState          = RequestState::kIdle;
     mDiagQueryRequestState = RequestState::kIdle;
 }
 
 void NetworkDiagHandler::Clear(void)
 {
+    StopDiagnosticsRequest();
     mDiagSet.clear();
     mChildTables.clear();
     mChildIps.clear();
@@ -1095,12 +1097,12 @@ void NetworkDiagHandler::MeshChildIp6AddrResponseHandler(otError                
     otIp6Address   ip6Address;
     auto           it = mChildIps.find(mDiagQueryRequestRloc);
 
+    VerifyOrExit(it != mChildIps.end(), error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(it->second.mState == RequestState::kPending, error = OT_ERROR_INVALID_STATE);
+
     VerifyOrExit(aError == OT_ERROR_NONE || aError == OT_ERROR_PENDING || aError == OT_ERROR_RESPONSE_TIMEOUT);
     VerifyOrExit(aIp6AddrIterator != nullptr);
     VerifyOrExit(aChildRloc16 != 65534);
-
-    VerifyOrExit(it != mChildIps.end(), error = OT_ERROR_INVALID_STATE);
-    VerifyOrExit(it->second.mState == RequestState::kPending, error = OT_ERROR_INVALID_STATE);
 
     // otbrLogWarning("%s:%d Have child IP from 0x%04x for child 0x%04x", __FILE__, __LINE__, mDiagQueryRequestRloc,
     //                aChildRloc16);

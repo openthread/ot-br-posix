@@ -419,9 +419,9 @@ public:
      */
     static otbrError DecodeTxtData(TxtList &aTxtList, const uint8_t *aTxtData, uint16_t aTxtLength);
 
-protected:
     static constexpr uint8_t kMaxTextEntrySize = 255;
 
+protected:
 #if !OTBR_ENABLE_MDNS_OPENTHREAD
 
     class Registration

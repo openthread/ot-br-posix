@@ -307,12 +307,20 @@ bool OpenThreadClient::FactoryReset(void)
     signal(SIGPIPE, handler);
     Disconnect();
     sleep(4);
-    VerifyOrExit(rval = Connect());
-
-    result = Execute("version");
-    VerifyOrExit(result != nullptr);
-
-    rval = strstr(result, "OPENTHREAD") != nullptr;
+    for (int i = 0; i < 10; ++i)
+    {
+        if (Connect())
+        {
+            if ((result = Execute("version")) != nullptr)
+            {
+                rval = strstr(result, "OPENTHREAD") != nullptr;
+                break;
+            }
+        }
+        Disconnect();
+        sleep(1);
+    }
+    VerifyOrExit(rval);
 
 exit:
     return rval;

@@ -24,14 +24,18 @@
 <br/><br/>
 
 <form class="inline" action="<%=url('admin/network/thread_attach')%>" method="post" onsubmit="return validateForm()" name="networkkeyForm">
-<div style="width:80%;margin-left:20%;">
-	<span><strong><%:Network Key %></strong></span>
-	<span style="margin-left:3%;"></span>
-	<input type="text" name="networkkey" value="<%=getnetworkkey()%>" style="width:50%;"/>
-	<div style="margin-left:13%;margin-top:1%;">
-		<span><img src="<%=resource .. "/cbi/help.gif"%>"/><%:Please  input your network key to ensure you join the right network.%></span>
+<div style="width:80%;margin-left:10%;">
+	<div class="cbi-value">
+		<label for="cbid-value-field-networkkey" class="cbi-value-title"><%:Network Key %></label>
+		<div class="cbi-value-field">
+			<div class="networkkey">
+				<input id="cbid-value-field-networkkey" type="text" name="networkkey" placeholder="<%=getnetworkkey()%>" class="cbi-input-text" style="width:50%;"/>
+			</div>
+			<div class="cbi-value-description"><%:Please input your network key to ensure you join the right network.%></div>
+		</div>
 	</div>
 </div>
+
 <br/><br/><br/>
 <div class="cbi-page-actions right">
 	<input class="cbi-button cbi-button-neutral" style="float:left;" type="button" onclick="window.location.href='thread_scan'" value="<%:Back to scan result%>" />

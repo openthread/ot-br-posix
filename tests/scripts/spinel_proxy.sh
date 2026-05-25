@@ -1,4 +1,4 @@
-#!/command/with-contenv bash
+#!/bin/bash
 #
 #  Copyright (c) 2026, The OpenThread Authors.
 #  All rights reserved.
@@ -11,8 +11,7 @@
 #     notice, this list of conditions and the following disclaimer in the
 #     documentation and/or other materials provided with the distribution.
 #  3. Neither the name of the copyright holder nor the
-#     names of its contributors may be used to endorse or promote products
-#     derived from this software without specific prior written permission.
+#     names of its contributors derived from this software without specific prior written permission.
 #
 #  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 #  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -27,21 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-OT_THREAD_IF="${OT_THREAD_IF:-wpan0}"
-readonly OT_THREAD_IF
-
-OT_WEB_LISTEN_ADDR="${OT_WEB_LISTEN_ADDR:-127.0.0.1}"
-readonly OT_WEB_LISTEN_ADDR
-
-OT_WEB_LISTEN_PORT="${OT_WEB_LISTEN_PORT:-8080}"
-readonly OT_WEB_LISTEN_PORT
-
-OT_REST_LISTEN_ADDR="${OT_REST_LISTEN_ADDR:-127.0.0.1}"
-readonly OT_REST_LISTEN_ADDR
-
-OT_REST_LISTEN_PORT="${OT_REST_LISTEN_PORT:-8081}"
-readonly OT_REST_LISTEN_PORT
-
-echo "Starting otbr-web..."
-
-exec stdbuf -oL /usr/sbin/otbr-web -I "${OT_THREAD_IF}" -d6 -s -a "${OT_WEB_LISTEN_ADDR}" -p "${OT_WEB_LISTEN_PORT}" -A "${OT_REST_LISTEN_ADDR}" -P "${OT_REST_LISTEN_PORT}"
+exec 3<>/dev/tcp/"${EXP_GATEWAY_IP:-host.docker.internal}"/"${EXP_RCP_PORT:-9000}"
+stdbuf -i0 -o0 -e0 cat <&3 &
+stdbuf -i0 -o0 -e0 cat >&3
+kill $!

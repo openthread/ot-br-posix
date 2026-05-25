@@ -26,14 +26,19 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:24.04
+# ==========================================
+# Stage 1: Build Environment and Compilation
+# ==========================================
+FROM ubuntu:24.04 AS builder
 
 ARG GITHUB_REPO="openthread/ot-br-posix"
 ARG GIT_COMMIT="HEAD"
 ARG TARGETARCH
 ARG TARGETVARIANT
+ARG OTBR_MDNS="openthread"
+ARG OTBR_OPTIONS=""
 
-ENV S6_OVERLAY_VERSION=3.2.1.0
+ENV MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-2600.100.147
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -47,16 +52,90 @@ RUN set -x \
            cmake \
            curl \
            git \
-           ipset \
-           iptables \
            libjsoncpp-dev \
-           libjsoncpp25 \
            ninja-build \
            nodejs \
            npm \
            pkg-config \
-           wget \
+           wget
+
+RUN set -x \
+    && if [ "${OTBR_MDNS}" = "mDNSResponder" ]; then \
+           curl -L -f -s -o ${MDNS_RESPONDER_SOURCE_NAME}.tar.gz https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/${MDNS_RESPONDER_SOURCE_NAME}.tar.gz \
+           && mkdir -p ${MDNS_RESPONDER_SOURCE_NAME} \
+           && tar xvf ${MDNS_RESPONDER_SOURCE_NAME}.tar.gz -C ${MDNS_RESPONDER_SOURCE_NAME} --strip-components=1 \
+           && cd ${MDNS_RESPONDER_SOURCE_NAME}/mDNSPosix \
+           && make os=linux tls=no \
+           && make install os=linux tls=no; \
+       fi
+
+COPY . /usr/src/ot-br-posix-local
+
+RUN set -x \
+    && if [ -f /usr/src/ot-br-posix-local/CMakeLists.txt ] && [ "${GIT_COMMIT}" = "HEAD" ]; then \
+           cp -r /usr/src/ot-br-posix-local /usr/src/ot-br-posix; \
+       else \
+           git clone --depth 1 -b main https://github.com/"${GITHUB_REPO}".git /usr/src/ot-br-posix; \
+       fi \
     \
+    && cd /usr/src/ot-br-posix \
+    && if [ ! -f /usr/src/ot-br-posix-local/CMakeLists.txt ] || [ "${GIT_COMMIT}" != "HEAD" ]; then \
+           git fetch origin "${GIT_COMMIT}" \
+           && git checkout "${GIT_COMMIT}"; \
+       fi \
+    && if [ -d .git ]; then \
+           git submodule update --depth 1 --init --recursive; \
+       fi \
+    \
+    && rm -rf build && mkdir build \
+    && cd build \
+    && cmake -GNinja \
+           -DBUILD_TESTING=OFF \
+           -DCMAKE_INSTALL_PREFIX=/usr \
+           -DOTBR_DBUS=OFF \
+           -DOTBR_MDNS="${OTBR_MDNS}" \
+           -DOTBR_REST=ON \
+           -DOTBR_WEB=ON \
+           -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
+           -DOT_FIREWALL=ON \
+           ${OTBR_OPTIONS} \
+           .. \
+    && ninja \
+    && DESTDIR=/tmp/otbr-install ninja install \
+    && if [ "${OTBR_MDNS}" = "mDNSResponder" ]; then \
+           mkdir -p /tmp/otbr-install/usr/sbin /tmp/otbr-install/usr/lib \
+           && cp -d /usr/sbin/mdnsd /tmp/otbr-install/usr/sbin/ \
+           && cp -d /usr/lib/libdns_sd.so* /tmp/otbr-install/usr/lib/; \
+       fi \
+    && cp -r /usr/src/ot-br-posix/etc/docker/border-router/rootfs/. /tmp/otbr-install/ \
+    && if [ "${OTBR_MDNS}" != "mDNSResponder" ]; then \
+           rm -rf /tmp/otbr-install/etc/s6-overlay/s6-rc.d/mdns \
+                  /tmp/otbr-install/etc/s6-overlay/s6-rc.d/otbr-agent/dependencies.d/mdns \
+                  /tmp/otbr-install/etc/s6-overlay/s6-rc.d/user/contents.d/mdns; \
+       fi
+
+# ==========================================
+# Stage 2: Final Runtime Image
+# ==========================================
+FROM ubuntu:24.04
+
+ARG TARGETARCH
+ARG TARGETVARIANT
+ARG OTBR_MDNS="openthread"
+
+ENV S6_OVERLAY_VERSION=3.2.1.0
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN set -x \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+           ca-certificates \
+           curl \
+           ipset \
+           iptables \
+           libjsoncpp25 \
+           xz-utils \
     && PLATFORM_SPEC="${TARGETARCH}${TARGETVARIANT:+/$TARGETVARIANT}" \
     && case "${PLATFORM_SPEC}" in \
          "amd64") S6_ARCH="x86_64" ;; \
@@ -68,43 +147,12 @@ RUN set -x \
         | tar Jxvf - -C / \
     && curl -L -f -s "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz" \
         | tar Jxvf - -C / \
-    \
-    && git clone --depth 1 -b main https://github.com/"${GITHUB_REPO}".git \
-    \
-    && cd ot-br-posix \
-    && git fetch origin "${GIT_COMMIT}" \
-    && git checkout "${GIT_COMMIT}" \
-    && git submodule update --depth 1 --init --recursive \
-    \
-    && (mkdir build \
-        && cd build \
-        && cmake -GNinja \
-               -DBUILD_TESTING=OFF \
-               -DCMAKE_INSTALL_PREFIX=/usr \
-               -DOTBR_DBUS=OFF \
-               -DOTBR_MDNS=openthread \
-               -DOTBR_REST=ON \
-               -DOTBR_WEB=ON \
-               -DOT_POSIX_NAT64_CIDR="192.168.255.0/24" \
-               -DOT_FIREWALL=ON \
-               .. \
-        && ninja \
-        && ninja install) \
-    \
-    && cp -r etc/docker/border-router/rootfs/. / \
     && apt-get purge -y --auto-remove \
-           build-essential \
            ca-certificates \
-           cmake \
            curl \
-           git \
-           libjsoncpp-dev \
-           ninja-build \
-           nodejs \
-           npm \
-           pkg-config \
-           wget \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /usr/src/*
+           xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /tmp/otbr-install/ /
 
 ENTRYPOINT ["/init"]

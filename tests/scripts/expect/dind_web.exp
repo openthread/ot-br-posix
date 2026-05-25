@@ -1,0 +1,207 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or paragraphs provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+proc start_otbr_docker_web {name sim_app sim_id pty1 pty2 {rest_addr ""} {rest_port ""}} {
+    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
+    set docker_opts [list \
+        "docker" "run" "-d" \
+        "--name" $name \
+        "--network" "infrastructure-link" \
+        "--cap-add=NET_ADMIN" \
+        "--privileged" \
+        "--add-host=host.docker.internal:host-gateway" \
+        "--sysctl" "net.ipv6.conf.all.disable_ipv6=0" \
+        "--sysctl" "net.ipv4.conf.all.forwarding=1" \
+        "--sysctl" "net.ipv4.conf.default.forwarding=1" \
+        "--sysctl" "net.ipv6.conf.all.forwarding=1" \
+        "--sysctl" "net.ipv6.conf.default.forwarding=1" \
+        "-v" "$pty2:/dev/ttyUSB0" \
+        "-e" "OT_RCP_DEVICE=spinel+hdlc+uart:///dev/ttyUSB0" \
+        "-e" "OT_INFRA_IF=eth0" \
+        "-e" "OT_THREAD_IF=wpan0" \
+        "-e" "OT_WEB_LISTEN_ADDR=0.0.0.0" \
+        "-p" "8080:8080" \
+    ]
+
+    if {$rest_addr != ""} {
+        lappend docker_opts "-e" "OT_REST_LISTEN_ADDR=$rest_addr"
+    }
+    if {$rest_port != ""} {
+        lappend docker_opts "-e" "OT_REST_LISTEN_PORT=$rest_port"
+        lappend docker_opts "-p" "$rest_port:$rest_port"
+    }
+
+    lappend docker_opts $::env(EXP_OTBR_DOCKER_IMAGE)
+
+    eval exec $docker_opts
+    sleep 2
+}
+
+set ptys [create_socat 1]
+set pty1 [lindex $ptys 0]
+set pty2 [lindex $ptys 1]
+set container "otbr-test-container-web"
+
+# Start the simulated RCP binary on the host in a dedicated script restart loop keeping PTY open
+exec bash -c "exec 3<>$pty1; while true; do \"$::env(EXP_OT_RCP_PATH)\" 2 <&3 >&3; sleep 1; done </dev/null >/tmp/ot_rcp_web.log 2>&1 & echo \$! > /tmp/ot_rcp_web_loop.pid"
+sleep 5
+
+# ==========================================
+# SCENARIO 1: Verification with Default Values
+# ==========================================
+send_user -- "--- SCENARIO 1: Testing Web UI and REST API with Default Values ---\n"
+start_otbr_docker_web $container $::env(EXP_OT_RCP_PATH) 2 $pty1 $pty2
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    send_user "Error: ot-ctl failed to communicate with otbr-agent in Scenario 1\n"; exit 1
+}
+
+# 1. Verify get_rest_api_info returns default values
+send_user "Testing Web UI get_rest_api_info for defaults (127.0.0.1:8081)...\n"
+set rest_info [exec curl -s http://127.0.0.1:8080/get_rest_api_info]
+send_user "get_rest_api_info response: $rest_info\n"
+if {[string first "8081" $rest_info] == -1 || [string first "127.0.0.1" $rest_info] == -1} {
+    send_user "Error: Default REST API port/address not found in get_rest_api_info response\n"
+    exit 1
+}
+send_user "Scenario 1 get_rest_api_info verified successfully!\n"
+
+send_user "Scenario 1 default REST API verified successfully!\n"
+
+# Clean up Scenario 1 container and PTYs
+exec docker stop $container
+exec docker rm $container
+catch {exec bash -c "kill \$(cat /tmp/ot_rcp_web_loop.pid) 2>/dev/null"}
+dispose_all
+sleep 2
+
+# Re-create socat PTYs and RCP loop for Scenario 2
+set ptys [create_socat 1]
+set pty1 [lindex $ptys 0]
+set pty2 [lindex $ptys 1]
+
+exec bash -c "exec 3<>$pty1; while true; do \"$::env(EXP_OT_RCP_PATH)\" 2 <&3 >&3; sleep 1; done </dev/null >/tmp/ot_rcp_web.log 2>&1 & echo \$! > /tmp/ot_rcp_web_loop.pid"
+sleep 5
+
+# ==========================================
+# SCENARIO 2: Verification with Custom Values
+# ==========================================
+send_user -- "--- SCENARIO 2: Testing Web UI and REST API with Custom Values (0.0.0.0:9090) ---\n"
+start_otbr_docker_web $container $::env(EXP_OT_RCP_PATH) 2 $pty1 $pty2 "0.0.0.0" "9090"
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    send_user "Error: ot-ctl failed to communicate with otbr-agent in Scenario 2\n"; exit 1
+}
+
+# Stop Thread and down interface initially so we can form network via Web UI
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+
+send_user "Testing Web UI index.html...\n"
+set web_ready false
+for {set i 0} {$i < 15} {incr i} {
+    if {![catch {exec curl -s http://127.0.0.1:8080/index.html} result]} {
+        if {[string first "What is OpenThread" $result] != -1} {
+            set web_ready true
+            break
+        }
+    }
+    sleep 2
+}
+if {!$web_ready} {
+    send_user "Error: Web UI index.html validation failed in Scenario 2\n"
+    exit 1
+}
+send_user "Web UI index.html validated successfully!\n"
+
+send_user "Testing Web UI form_network...\n"
+set network_key "00112233445566778899aabbccddeeff"
+set ext_pan_id "0011223344556677"
+set pan_id "0xface"
+set passphrase "123456"
+set channel 12
+set network_name "OpenThreadDocker"
+
+set form_data "{\"networkKey\":\"$network_key\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"$ext_pan_id\",\"panId\":\"$pan_id\",\"passphrase\":\"$passphrase\",\"channel\":$channel,\"networkName\":\"$network_name\"}"
+
+set result [exec curl -s --header "Content-Type: application/json" --request POST --data $form_data http://127.0.0.1:8080/form_network]
+if {[string first "success" $result] == -1} {
+    send_user "Error: Web UI form_network validation failed: $result\n"
+    exit 1
+}
+send_user "Web UI form_network validated successfully!\n"
+
+# 1. Verify get_rest_api_info returns custom values
+send_user "Testing Web UI get_rest_api_info for custom port 9090 and address 0.0.0.0...\n"
+set rest_info [exec curl -s http://127.0.0.1:8080/get_rest_api_info]
+send_user "get_rest_api_info response: $rest_info\n"
+if {[string first "9090" $rest_info] == -1 || [string first "0.0.0.0" $rest_info] == -1} {
+    send_user "Error: Custom REST API port 9090 or address 0.0.0.0 not found in get_rest_api_info response\n"
+    exit 1
+}
+send_user "Scenario 2 get_rest_api_info verified successfully!\n"
+
+# 2. Verify REST API directly from host on custom port 9090
+send_user "Testing REST API response from host on custom port 9090...\n"
+set rest_node [exec curl -s http://127.0.0.1:9090/api/node]
+send_user "api/node response: $rest_node\n"
+if {[string first "networkName" $rest_node] == -1} {
+    send_user "Error: REST API on custom port 9090 failed to respond correctly from host\n"
+    exit 1
+}
+send_user "Scenario 2 custom REST API responsiveness verified successfully!\n"
+
+catch {exec bash -c "kill \$(cat /tmp/ot_rcp_web_loop.pid) 2>/dev/null"}
+
+exec docker stop $container
+exec docker rm $container
+dispose_all
+
+send_user -- "--- DinD Web UI Integration Test PASSED successfully! ---\n"
+exit 0

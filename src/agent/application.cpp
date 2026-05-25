@@ -230,7 +230,7 @@ void Application::CreateRcpMode(void)
 {
     otbr::Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent = MakeUnique<BackboneRouter::BackboneAgent>(rcpHost, mInterfaceName, mBackboneInterfaceName);
+    mBackboneAgent = MakeUnique<BackboneRouter::BackboneAgent>(rcpHost);
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy = MakeUnique<AdvertisingProxy>(rcpHost, *mPublisher);
