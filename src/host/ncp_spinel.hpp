@@ -494,7 +494,7 @@ private:
 
     static constexpr uint8_t  kMaxTids             = 16;
     static constexpr uint16_t kCallbackDataMaxSize = sizeof(uint64_t); // Maximum size of a function pointer.
-    static constexpr uint16_t kMaxSubTypes         = 8;                // Maximum number of sub types in a MDNS service.
+    static constexpr uint16_t kMaxSubTypes         = 64;               // Maximum number of sub types in a MDNS service.
 
     template <typename Function, typename... Args> static void SafeInvoke(Function &aFunc, Args &&...aArgs)
     {

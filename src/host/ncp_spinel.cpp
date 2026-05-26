@@ -676,7 +676,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         otPlatDnssdService           service;
         Mdns::Publisher::SubTypeList subTypeList;
         const char                  *subTypeArray[kMaxSubTypes];
-        uint16_t                     subTypeCount;
+        uint16_t                     subTypeCount = kMaxSubTypes;
         Mdns::Publisher::TxtData     txtData;
         otPlatDnssdRequestId         requestId;
         const uint8_t               *callbackData;
@@ -788,7 +788,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
     {
         otPlatDnssdService   service;
         const char          *subTypeArray[kMaxSubTypes];
-        uint16_t             subTypeCount;
+        uint16_t             subTypeCount = kMaxSubTypes;
         otPlatDnssdRequestId requestId;
         const uint8_t       *callbackData;
         uint16_t             callbackDataSize;
@@ -799,7 +799,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->UnpublishService(
-            service.mHostName, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
+            service.mServiceInstance, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
                 OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
             });
         break;
