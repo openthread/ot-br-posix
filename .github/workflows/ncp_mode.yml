@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mdns: ["mDNSResponder", "avahi"]
+        mdns: ["mDNSResponder"]
     env:
         BUILD_TARGET: ncp_mode
         OTBR_MDNS: ${{ matrix.mdns }}

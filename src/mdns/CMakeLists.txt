@@ -26,21 +26,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-if(OTBR_MDNS STREQUAL "avahi")
-    add_library(otbr-mdns
-        mdns.cpp
-        mdns_avahi.cpp
-    )
-    target_link_libraries(otbr-mdns
-        PUBLIC
-            otbr-common
-        PRIVATE
-            otbr-utils
-            avahi-client
-            avahi-common
-    )
-endif()
-
 if(OTBR_MDNS STREQUAL "mDNSResponder")
     add_library(otbr-mdns
         mdns.cpp
