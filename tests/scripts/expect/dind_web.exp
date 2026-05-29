@@ -30,6 +30,7 @@
 source "tests/scripts/expect/_common.exp"
 
 proc start_otbr_docker_web {name sim_app sim_id pty1 pty2 {rest_addr ""} {rest_port ""}} {
+    track_container $name
     # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
     set docker_opts [list \
         "docker" "run" "-d" \
@@ -105,20 +106,9 @@ send_user "Scenario 1 get_rest_api_info verified successfully!\n"
 
 send_user "Scenario 1 default REST API verified successfully!\n"
 
-# Clean up Scenario 1 container and PTYs
-exec docker stop $container
-exec docker rm $container
-catch {exec bash -c "kill \$(cat /tmp/ot_rcp_web_loop.pid) 2>/dev/null"}
-dispose_all
+# Clean up Scenario 1 container but keep PTYs and RCP loop
+exec docker rm -f $container
 sleep 2
-
-# Re-create socat PTYs and RCP loop for Scenario 2
-set ptys [create_socat 1]
-set pty1 [lindex $ptys 0]
-set pty2 [lindex $ptys 1]
-
-exec bash -c "exec 3<>$pty1; while true; do \"$::env(EXP_OT_RCP_PATH)\" 2 <&3 >&3; sleep 1; done </dev/null >/tmp/ot_rcp_web.log 2>&1 & echo \$! > /tmp/ot_rcp_web_loop.pid"
-sleep 5
 
 # ==========================================
 # SCENARIO 2: Verification with Custom Values
@@ -197,10 +187,6 @@ if {[string first "networkName" $rest_node] == -1} {
 }
 send_user "Scenario 2 custom REST API responsiveness verified successfully!\n"
 
-catch {exec bash -c "kill \$(cat /tmp/ot_rcp_web_loop.pid) 2>/dev/null"}
-
-exec docker stop $container
-exec docker rm $container
 dispose_all
 
 send_user -- "--- DinD Web UI Integration Test PASSED successfully! ---\n"

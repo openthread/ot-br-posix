@@ -33,6 +33,8 @@ source "tests/scripts/expect/_common.exp"
 
 # Dynamic helper to start the OTBR docker container and map the spinel relay
 proc start_otbr_docker_trel {name sim_app sim_id pty rcp_port} {
+    global rcp_pids
+    track_container $name
     exec docker run -d \
         --name $name \
         --network infrastructure-link \
@@ -53,7 +55,8 @@ proc start_otbr_docker_trel {name sim_app sim_id pty rcp_port} {
     sleep 2
 
     # Start the simulated RCP binary on the host
-    exec $sim_app $sim_id <$pty >$pty &
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
     sleep 5
 }
 
@@ -262,7 +265,6 @@ expect {
     }
 }
 catch {close}; catch {wait}
-
 dispose_all
 
 send_user -- "--- TREL Integration Test PASSED successfully! ---\n"

@@ -31,6 +31,8 @@ source "tests/scripts/expect/_common.exp"
 
 # Custom start_otbr_docker for our network name
 proc start_otbr_docker_dind {name sim_app sim_id pty} {
+    global rcp_pids
+    track_container $name
     # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
     exec docker run -d \
         --name $name \
@@ -51,7 +53,8 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
     sleep 2
 
     # 3. Now start the simulated RCP binary on the host!
-    exec $sim_app $sim_id <$pty >$pty &
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
     sleep 5
 }
 
@@ -150,6 +153,7 @@ sleep 10
 
 # Set up a single background test-client container to perform both mDNS resolution and ping tests
 set test_client "test-client"
+track_container $test_client
 exec docker run -d \
     --name $test_client \
     --network infrastructure-link \
@@ -354,10 +358,4 @@ expect {
         }
     }
 }
-
-exec docker stop $test_client
-exec docker rm $test_client
-
-exec docker stop $container
-exec docker rm $container
 dispose_all
