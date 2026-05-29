@@ -295,6 +295,7 @@ otbr_exec_expect_script()
         sudo killall ot-cli-mtd || true
         sudo killall ot-ncp-ftd || true
         sudo killall ot-ncp-mtd || true
+        sudo killall "${OTBR_AGENT}" || true
         sudo rm -rf tmp
         mkdir tmp
         # avahi-browser is used to discover the service and verify in the test cases no matter what OTBR_MDNS is.
