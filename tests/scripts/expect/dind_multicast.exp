@@ -30,6 +30,8 @@
 source "tests/scripts/expect/_common.exp"
 
 proc start_otbr_docker_dind {name sim_app sim_id pty} {
+    global rcp_pids
+    track_container $name
     # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
     exec docker run -d \
         --name $name \
@@ -50,12 +52,14 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
     sleep 2
 
     # Now start the simulated RCP binary on the host!
-    exec $sim_app $sim_id <$pty >$pty &
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
     sleep 5
 }
 
 set container "otbr-test-container"
 set test_client "test-client"
+track_container $test_client
 
 set pty1 [create_socat_tcp 1 9000]
 
@@ -186,12 +190,6 @@ expect {
 }
 catch {close}
 catch {wait}
-
-exec docker stop $test_client
-exec docker rm $test_client
-
-exec docker stop $container
-exec docker rm $container
 dispose_all
 
 send_user -- "--- Multicast Forwarding Integration Test PASSED successfully! ---\n"
