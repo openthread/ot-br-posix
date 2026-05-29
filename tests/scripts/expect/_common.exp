@@ -32,6 +32,25 @@ proc fail {message} {
     send_user "Error: $message\n"
     if {![info exists in_fail]} {
         set in_fail 1
+        global docker_containers
+        if {[info exists docker_containers]} {
+            foreach c $docker_containers {
+                send_user "\n=== $c logs ===\n"
+                if {[catch {exec docker logs $c 2>&1} log_out]} {
+                    send_user "Failed to get logs: $log_out\n"
+                } else {
+                    send_user "$log_out\n"
+                }
+                if {[string match "*otbr*" $c]} {
+                    send_user "\n=== $c otbr-agent logs ===\n"
+                    if {[catch {exec docker exec -i $c cat /var/log/otbr-agent.log 2>&1} agent_out]} {
+                        send_user "Failed to get agent logs: $agent_out\n"
+                    } else {
+                        send_user "$agent_out\n"
+                    }
+                }
+            }
+        }
         catch { dispose_all }
     }
     exit 1

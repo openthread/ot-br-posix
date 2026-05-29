@@ -75,7 +75,7 @@ test_teardown()
     echo "Active and inactive containers:"
     docker ps -a || true
     echo "Container logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client" "dhcp6-server"; do
         docker logs "$c" || true
     done
 
@@ -84,7 +84,7 @@ test_teardown()
         docker exec -i "$c" cat /var/log/otbr-agent.log || true
     done
 
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client" "dhcp6-server"; do
         docker stop "$c" || true
         docker rm "$c" || true
     done
@@ -122,9 +122,9 @@ test_setup()
     iptables -I INPUT 1 -p tcp --dport 9000 -j ACCEPT || true
 
     # 1. Build the production Docker image
-    local otbr_options=""
+    local otbr_options="-DOTBR_DHCP6_PD=ON -DOTBR_DHCP6_PD_CLIENT=openthread"
     if [[ "$(uname)" == "Darwin" || "$(uname -r)" == *"linuxkit"* ]]; then
-        otbr_options="-DOTBR_BACKBONE_ROUTER=OFF"
+        otbr_options="${otbr_options} -DOTBR_BACKBONE_ROUTER=OFF"
     fi
     echo "Building production border-router image with OTBR_MDNS=${OTBR_MDNS} OTBR_OPTIONS=${otbr_options}..."
     docker build --build-arg OTBR_MDNS="${OTBR_MDNS}" --build-arg OTBR_OPTIONS="${otbr_options}" -t "${OTBR_DOCKER_IMAGE}" -f "${OTBR_DOCKER_FILE}" "${REPO_ROOT}"
@@ -141,7 +141,7 @@ test_setup()
     echo "Building test client image with mdns-scan and ping/ndisc6 tools..."
     docker build -t "${TEST_CLIENT_IMAGE}" - <<EOF
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server --no-install-recommends && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["mdns-scan"]
 EOF
 
@@ -186,6 +186,8 @@ test_run()
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
+    echo "--- Running DHCPv6 Prefix Delegation integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_dhcp6_pd.exp"
     if [[ "$(uname)" != "Darwin" && "$(uname -r)" != *"linuxkit"* ]]; then
         echo "--- Running BBR Multicast Forwarding integration test ---"
         expect -df "${SCRIPT_DIR}/expect/dind_multicast.exp"
