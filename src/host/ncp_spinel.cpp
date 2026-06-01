@@ -889,36 +889,68 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
     switch (mWaitingKeyTable[aTid])
     {
     case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
-        VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, error = OTBR_ERROR_INVALID_STATE);
-        CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
         {
-            otOperationalDatasetTlvs datasetTlvs;
-            VerifyOrExit(ParseOperationalDatasetTlvs(aData, aLength, datasetTlvs) == OT_ERROR_NONE,
-                         error = OTBR_ERROR_PARSE);
-            mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mDatasetSetActiveTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
+            {
+                otOperationalDatasetTlvs datasetTlvs;
+                VerifyOrExit(ParseOperationalDatasetTlvs(aData, aLength, datasetTlvs) == OT_ERROR_NONE,
+                             error = OTBR_ERROR_PARSE);
+                mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+            }
         }
         break;
 
     case SPINEL_PROP_NET_IF_UP:
-        VerifyOrExit(aKey == SPINEL_PROP_NET_IF_UP, error = OTBR_ERROR_INVALID_STATE);
-        CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
         {
-            bool isUp;
-            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_BOOL_S, &isUp));
-            SafeInvoke(mNetifStateChangedCallback, isUp);
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mIp6SetEnabledTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_NET_IF_UP, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
+            {
+                bool isUp;
+                SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_BOOL_S, &isUp));
+                SafeInvoke(mNetifStateChangedCallback, isUp);
+            }
         }
         break;
 
     case SPINEL_PROP_NET_STACK_UP:
-        VerifyOrExit(aKey == SPINEL_PROP_NET_STACK_UP, error = OTBR_ERROR_INVALID_STATE);
-        CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mThreadSetEnabledTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_NET_STACK_UP, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        }
         break;
 
     case SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS:
         if (aKey == SPINEL_PROP_LAST_STATUS)
         { // Failed case
-            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
-            CallAndClear(mDatasetMgmtSetPendingTask, ot::Spinel::SpinelStatusToOtError(status));
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mDatasetMgmtSetPendingTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
         }
         else if (aKey != SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS)
         {
@@ -951,22 +983,66 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
         break;
 
     case SPINEL_PROP_HOST_POWER_STATE:
-        CallAndClear(mSetHostPowerStateTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mSetHostPowerStateTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_HOST_POWER_STATE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mSetHostPowerStateTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Set Host Power result: %s", spinel_status_to_cstr(status));
         break;
 
     case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ENABLE:
-        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mEphemeralKeyTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ENABLE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Set Ephemeral Key Enable result: %s", spinel_status_to_cstr(status));
         break;
 
     case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ACTIVATE:
-        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mEphemeralKeyTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ACTIVATE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Activate Ephemeral Key result: %s", spinel_status_to_cstr(status));
         break;
 
     case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_DEACTIVATE:
-        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mEphemeralKeyTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_DEACTIVATE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Deactivate Ephemeral Key result: %s", spinel_status_to_cstr(status));
         break;
 
