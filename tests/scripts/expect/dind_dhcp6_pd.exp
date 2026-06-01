@@ -94,7 +94,7 @@ exec docker run -d \
     --sysctl net.ipv6.conf.all.disable_ipv6=0 \
     --entrypoint /bin/bash \
     $::env(EXP_TEST_CLIENT_IMAGE) \
-    -c {mkdir -p /var/lib/kea /var/run/kea && chmod -R 777 /var/lib/kea /var/run/kea && echo '{"Dhcp6": {"interfaces-config": {"interfaces": ["eth0"]}, "lease-database": {"type": "memfile", "persist": true, "name": "/var/lib/kea/kea-leases6.csv"}, "preferred-lifetime": 54000, "valid-lifetime": 86400, "subnet6": [{"subnet": "fd00:db8:1::/64", "interface": "eth0", "pd-pools": [{"prefix": "2001:db8:9000:200::", "prefix-len": 56, "delegated-len": 64}], "rapid-commit": true}], "loggers": [{"name": "kea-dhcp6", "output_options": [{"output": "stdout"}], "severity": "DEBUG", "debuglevel": 99}]}}' > /etc/kea/kea-dhcp6.conf && sleep 2 && /usr/sbin/kea-dhcp6 -c /etc/kea/kea-dhcp6.conf}
+    -c {mkdir -p /var/lib/kea /var/run/kea && chmod -R 777 /var/lib/kea /var/run/kea && echo '{"Dhcp6": {"interfaces-config": {"interfaces": ["eth0"]}, "lease-database": {"type": "memfile", "persist": true, "name": "/var/lib/kea/kea-leases6.csv"}, "preferred-lifetime": 54000, "valid-lifetime": 86400, "subnet6": [{"subnet": "fd00:db8:1::/64", "interface": "eth0", "pd-pools": [{"prefix": "2001:db8:9000:200::", "prefix-len": 56, "delegated-len": 64}], "rapid-commit": true}], "loggers": [{"name": "kea-dhcp6", "output_options": [{"output": "stdout"}], "severity": "DEBUG", "debuglevel": 99}]}}' > /etc/kea/kea-dhcp6.conf && for i in {1..100}; do addr=$(ip -6 addr show dev eth0 scope link 2>/dev/null); [[ $addr == *"fe80::"* && $addr != *"tentative"* ]] && break; sleep 0.1; done && /usr/sbin/kea-dhcp6 -c /etc/kea/kea-dhcp6.conf}
 # Give Kea server time to initialize
 sleep 3
 
