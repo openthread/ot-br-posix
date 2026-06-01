@@ -186,8 +186,12 @@ test_run()
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
+    echo "--- Running NAT64 integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_nat64.exp"
+
     echo "--- Running DHCPv6 Prefix Delegation integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_dhcp6_pd.exp"
+
     if [[ "$(uname)" != "Darwin" && "$(uname -r)" != *"linuxkit"* ]]; then
         echo "--- Running BBR Multicast Forwarding integration test ---"
         expect -df "${SCRIPT_DIR}/expect/dind_multicast.exp"
