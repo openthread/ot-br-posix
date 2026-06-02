@@ -667,7 +667,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->PublishHost(host.mHostName, addressList, [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
@@ -694,7 +694,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
 
         mPublisher->PublishService(service.mHostName, service.mServiceInstance, service.mServiceType, subTypeList,
                                    service.mPort, txtData, [this, requestId, callbackDataCopy](otbrError aError) {
-                                       OT_UNUSED_VARIABLE(
+                                       IgnoreError(
                                            SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
                                    });
         break;
@@ -713,7 +713,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->PublishKey(KeyNameFor(key), keyData, [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
@@ -729,12 +729,12 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         SuccessOrExit(ot::Spinel::DecodeDnssdBrowser(decoder, browser, callbackData, callbackDataSize));
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
-        DnssdPlatform::Get().StartServiceBrowser(
-            browser, std::make_shared<DnssdPlatform::StdBrowseCallback>(
-                         [this, callbackDataCopy](const otPlatDnssdBrowseResult &aResult) {
-                             OT_UNUSED_VARIABLE(SendDnssdBrowseResult(aResult, callbackDataCopy));
-                         },
-                         mDiscoveryProxyId++));
+        DnssdPlatform::Get().StartServiceBrowser(browser,
+                                                 std::make_shared<DnssdPlatform::StdBrowseCallback>(
+                                                     [this, callbackDataCopy](const otPlatDnssdBrowseResult &aResult) {
+                                                         IgnoreError(SendDnssdBrowseResult(aResult, callbackDataCopy));
+                                                     },
+                                                     mDiscoveryProxyId++));
         break;
     }
 #endif // OTBR_ENABLE_DNSSD_PLAT
@@ -780,7 +780,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->UnpublishHost(host.mHostName, [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
@@ -800,7 +800,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
 
         mPublisher->UnpublishService(
             service.mHostName, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
-                OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+                IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
             });
         break;
     }
@@ -816,7 +816,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->UnpublishKey(KeyNameFor(key), [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
