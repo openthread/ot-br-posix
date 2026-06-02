@@ -41,7 +41,7 @@ S = "${WORKDIR}/git"
 SRCREV = "${AUTOREV}"
 PV_append = "+${SRCPV}"
 
-DEPENDS += "avahi dbus iproute2 jsoncpp ncurses"
+DEPENDS += "dbus iproute2 jsoncpp ncurses"
 
 inherit autotools cmake
 
@@ -52,11 +52,10 @@ EXTRA_OECMAKE += " \
     -DCMAKE_BUILD_TYPE="Release" \
     -DOTBR_BACKBONE_ROUTER=OFF \
     -DOTBR_COVERAGE=OFF \
-    -DOTBR_MDNS=avahi \
+    -DOTBR_MDNS=openthread \
     -DOTBR_VENDOR_NAME="OpenThread" \
     -DOTBR_PRODUCT_NAME="Border Router" \
     -DOTBR_MESHCOP_SERVICE_INSTANCE_NAME="OpenThread Border Router" \
-    -DOT_DUA=OFF \
     -DOT_POSIX_SETTINGS_PATH='"/tmp/"' \
     -DOT_MLR=OFF \
 "

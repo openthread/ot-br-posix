@@ -29,7 +29,6 @@
 set(OT_15_4 ON CACHE STRING "enable 802.15.4 radio link" FORCE)
 set(OT_ANYCAST_LOCATOR ON CACHE STRING "enable anycast locator" FORCE)
 set(OT_BACKBONE_ROUTER ${OTBR_BACKBONE_ROUTER} CACHE STRING "Enable Backbone Router feature in OpenThread" FORCE)
-set(OT_BACKBONE_ROUTER_DUA_NDPROXYING ${OTBR_DUA_ROUTING} CACHE STRING "Configure DUA ND Proxy feature in OpenThread" FORCE)
 set(OT_BORDER_AGENT ON CACHE STRING "enable border agent" FORCE)
 set(OT_BORDER_AGENT_EPSKC ON CACHE STRING "enable border agent ephemeral PSKc" FORCE)
 set(OT_BORDER_AGENT_ID ON CACHE STRING "enable border agent ID" FORCE)
@@ -126,9 +125,6 @@ if (OTBR_BORDER_AGENT)
 endif()
 
 if (NOT OT_THREAD_VERSION STREQUAL "1.1")
-    if (OT_REFERENCE_DEVICE)
-        set(OT_DUA ON CACHE STRING "Enable Thread 1.2 DUA for reference devices")
-    endif()
     set(OT_LINK_METRICS_SUBJECT ON CACHE STRING "enable link metrics subject" FORCE)
 endif()
 
@@ -157,7 +153,6 @@ target_compile_definitions(ot-config INTERFACE
 
 if (NOT OT_THREAD_VERSION STREQUAL "1.1")
     target_compile_definitions(ot-config INTERFACE
-        "-DOPENTHREAD_CONFIG_TMF_PROXY_DUA_ENABLE=1"
         "-DOPENTHREAD_CONFIG_TMF_PROXY_MLR_ENABLE=1"
     )
 endif()

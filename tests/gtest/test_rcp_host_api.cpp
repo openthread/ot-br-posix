@@ -526,3 +526,67 @@ TEST(RcpHostApi, ThreadRoleChangedCallbackInvoked)
 
     host.Deinit();
 }
+
+TEST(RcpHostApi, ThreadDetachGracefullyCallbackReentrancy)
+{
+    otbr::MainloopContext mainloop;
+    otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                               /* aDryRun */ false,
+                               /* aEnableAutoAttach */ false);
+
+    host.Init();
+
+    otInstance              *instance = ot::FakePlatform::CurrentInstance();
+    otOperationalDataset     dataset;
+    otOperationalDatasetTlvs datasetTlvs;
+
+    ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+    ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs), OT_ERROR_NONE);
+
+    // Make sure the device is in Leader role first.
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
+    ASSERT_EQ(otThreadSetEnabled(instance, true), OT_ERROR_NONE);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                         [&]() { return host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+    ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    // Queue multiple Join calls with a different dataset to trigger the ThreadDetachGracefully recursive scenario
+    otOperationalDataset     joinDataset;
+    otOperationalDatasetTlvs joinDatasetTlvs;
+    ASSERT_EQ(otDatasetCreateNewNetwork(instance, &joinDataset), OT_ERROR_NONE);
+    otDatasetConvertToTlvs(&joinDataset, &joinDatasetTlvs);
+
+    bool done1 = false, done2 = false, done3 = false, done4 = false;
+    host.Join(joinDatasetTlvs, [&](otError aError, const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aError);
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        done1 = true;
+    });
+    host.Join(joinDatasetTlvs, [&](otError aError, const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aError);
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        done2 = true;
+    });
+    host.Join(joinDatasetTlvs, [&](otError aError, const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aError);
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        done3 = true;
+    });
+    host.Join(joinDatasetTlvs, [&](otError aError, const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aError);
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        done4 = true;
+    });
+
+    // Force the detach callbacks to run.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&]() { return done1 && done2 && done3 && done4; });
+
+    EXPECT_TRUE(done1);
+    EXPECT_TRUE(done2);
+    EXPECT_TRUE(done3);
+    EXPECT_TRUE(done4);
+
+    host.Deinit();
+}

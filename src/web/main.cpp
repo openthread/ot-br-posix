@@ -73,18 +73,23 @@ int main(int argc, char **argv)
     const char  *interfaceName  = nullptr;
     const char  *httpListenAddr = nullptr;
     const char  *httpPort       = nullptr;
+    const char  *restListenAddr = nullptr;
+    const char  *restListenPort = nullptr;
     otbrLogLevel logLevel       = OTBR_LOG_INFO;
     int          ret            = 0;
     int          opt;
     uint16_t     port          = OT_HTTP_PORT;
     bool         syslogDisable = false;
 
-    while ((opt = getopt(argc, argv, "d:I:p:va:s")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:p:va:sA:P:")) != -1)
     {
         switch (opt)
         {
         case 'a':
             httpListenAddr = optarg;
+            break;
+        case 'A':
+            restListenAddr = optarg;
             break;
         case 'd':
             logLevel = static_cast<otbrLogLevel>(atoi(optarg));
@@ -99,6 +104,14 @@ int main(int argc, char **argv)
             port = atoi(httpPort);
             break;
 
+        case 'P':
+            restListenPort = optarg;
+            {
+                int portNum = atoi(restListenPort);
+                VerifyOrExit(portNum > 0 && portNum <= 65535, ret = -1);
+            }
+            break;
+
         case 'v':
             PrintVersion();
             ExitNow();
@@ -109,7 +122,9 @@ int main(int argc, char **argv)
             break;
 
         default:
-            fprintf(stderr, "Usage: %s [-d DEBUG_LEVEL] [-I interfaceName] [-p port] [-a listenAddress] [-v]\n",
+            fprintf(stderr,
+                    "Usage: %s [-d DEBUG_LEVEL] [-I interfaceName] [-p port] [-a listenAddress] [-A restListenAddress] "
+                    "[-P restListenPort] [-v]\n",
                     argv[0]);
             ExitNow(ret = -1);
             break;
@@ -143,6 +158,7 @@ int main(int argc, char **argv)
     signal(SIGINT, HandleSignal);
 
     sServer.reset(new otbr::Web::WebServer());
+    sServer->SetRestApiInfo(restListenAddr, restListenPort);
     if (sServer->StartWebServer(interfaceName, httpListenAddr, port) != OTBR_ERROR_NONE)
     {
         ret = -1;

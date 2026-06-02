@@ -31,13 +31,12 @@ find_package(PkgConfig)
 
 option(OTBR_DOC "Build documentation" OFF)
 
-if (OTBR_MDNS STREQUAL "avahi")
-    message(DEPRECATION "OTBR_MDNS=avahi is deprecated. Use OTBR_MDNS=openthread or OTBR_MDNS=mDNSResponder instead.")
-    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_AVAHI=1)
-elseif (OTBR_MDNS STREQUAL "mDNSResponder")
+if (OTBR_MDNS STREQUAL "mDNSResponder")
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_MDNSSD=1)
 elseif (OTBR_MDNS STREQUAL "openthread")
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_OPENTHREAD=1)
+elseif (OTBR_MDNS STREQUAL "avahi")
+    message(FATAL_ERROR "OTBR_MDNS=avahi is no longer supported. Use OTBR_MDNS=openthread or OTBR_MDNS=mDNSResponder.")
 endif()
 
 option(OTBR_BORDER_AGENT "Enable Border Agent" ON)
@@ -85,11 +84,6 @@ endif()
 option(OTBR_TELEMETRY_DATA_API "Enable telemetry data API support" OFF)
 if (OTBR_TELEMETRY_DATA_API)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TELEMETRY_DATA_API=1)
-endif()
-
-option(OTBR_DUA_ROUTING "Enable Backbone Router DUA Routing" OFF)
-if (OTBR_DUA_ROUTING)
-    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DUA_ROUTING=1)
 endif()
 
 option(OTBR_OPENWRT "Enable OpenWrt support" OFF)

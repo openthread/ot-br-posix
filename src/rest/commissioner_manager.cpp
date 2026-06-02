@@ -541,17 +541,21 @@ void CommissionerManager::HandleEnergyScanReportCallback(uint32_t       aChannel
                                                          uint8_t        aEnergyListLength)
 {
     std::bitset<32> mask(aChannelMask);
-    size_t          reportCount = aEnergyListLength / mask.count();
+    size_t          reportCount;
+    size_t          numChannels = mask.count();
 
     VerifyOrExit(mEnergyScanState == kEnergyScanStateSent);
     VerifyOrExit(mEnergyScanChannelMask == aChannelMask);
-    VerifyOrExit(aEnergyListLength == reportCount * mask.count());
+
+    VerifyOrExit(numChannels > 0 && numChannels <= kMaxEnergyScanResults);
+    reportCount = aEnergyListLength / numChannels;
+    VerifyOrExit(aEnergyListLength == reportCount * numChannels);
 
     for (size_t i = 0; i < reportCount; i++)
     {
-        for (size_t channel = 0; channel < mask.count(); channel++)
+        for (size_t channel = 0; channel < numChannels; channel++)
         {
-            int8_t rssi = aEnergyList[(i * mask.count()) + channel];
+            int8_t rssi = aEnergyList[(i * numChannels) + channel];
             mEnergyScanReport.mReports[channel].mMaxRssi.push_back(rssi);
         }
     }

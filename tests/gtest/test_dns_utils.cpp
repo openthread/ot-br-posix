@@ -92,3 +92,21 @@ TEST(DnsUtils, TestSplitFullDnsName)
     CheckSplitFullDnsName("com", false, false, true, "", "", "com", ".");
     CheckSplitFullDnsName("", false, false, true, "", "", "", ".");
 }
+
+TEST(DnsUtils, CheckServiceNameSanity)
+{
+    EXPECT_EQ(otbr::DnsUtils::CheckServiceNameSanity("_ipps._tcp"), OTBR_ERROR_NONE);
+    EXPECT_EQ(otbr::DnsUtils::CheckServiceNameSanity("_meshcop._udp"), OTBR_ERROR_NONE);
+    EXPECT_EQ(otbr::DnsUtils::CheckServiceNameSanity("_S840._sub._matterc._udp"), OTBR_ERROR_NONE);
+    EXPECT_EQ(otbr::DnsUtils::CheckServiceNameSanity("_x._sub._foo._tcp"), OTBR_ERROR_NONE);
+    EXPECT_EQ(otbr::DnsUtils::CheckServiceNameSanity(""), OTBR_ERROR_INVALID_ARGS);
+    EXPECT_EQ(otbr::DnsUtils::CheckServiceNameSanity("_ipps._tcp."), OTBR_ERROR_INVALID_ARGS);
+    EXPECT_EQ(otbr::DnsUtils::CheckServiceNameSanity("nodots"), OTBR_ERROR_INVALID_ARGS);
+}
+
+TEST(DnsUtils, CheckHostnameSanity)
+{
+    EXPECT_EQ(otbr::DnsUtils::CheckHostnameSanity("host."), OTBR_ERROR_NONE);
+    EXPECT_EQ(otbr::DnsUtils::CheckHostnameSanity(""), OTBR_ERROR_INVALID_ARGS);
+    EXPECT_EQ(otbr::DnsUtils::CheckHostnameSanity("nodot"), OTBR_ERROR_INVALID_ARGS);
+}

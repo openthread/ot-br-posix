@@ -241,14 +241,6 @@ public:
     bool IsAttached(void);
 
 private:
-    static void SafeInvokeAndClear(AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
-    {
-        if (aReceiver)
-        {
-            aReceiver(aError, aErrorInfo);
-            aReceiver = nullptr;
-        }
-    }
     static void SafeInvoke(const AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
     {
         if (aReceiver)

@@ -1,0 +1,269 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+# Custom start_otbr_docker for our network name
+proc start_otbr_docker_dind {name sim_app sim_id pty} {
+    global rcp_pids
+    track_container $name
+    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --add-host=host.docker.internal:host-gateway \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
+        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
+    sleep 2
+
+    # Now start the simulated RCP binary on the host!
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
+    sleep 5
+}
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set ipv4_server "ipv4-server"
+
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start the IPv4 Server container on infrastructure-link
+send_user "Starting IPv4 Server container...\n"
+track_container $ipv4_server
+exec docker run -d \
+    --name $ipv4_server \
+    --network infrastructure-link \
+    --entrypoint sleep \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    86400
+
+# Retrieve the IPv4 address of the server container
+set format {{{(index .NetworkSettings.Networks "infrastructure-link").IPAddress}}}
+set server_ip4 ""
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker inspect $ipv4_server -f $format} inspect_out]} {
+        set server_ip4 [string trim $inspect_out]
+        if {$server_ip4 != "" && [regexp {^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$} $server_ip4]} {
+            break
+        }
+    }
+    sleep 1
+}
+if {$server_ip4 == ""} {
+    fail "Failed to retrieve IPv4 address for $ipv4_server"
+}
+send_user "IPv4 Server IP address: $server_ip4\n"
+
+# 2. Start border router in Docker on the DinD host
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# Setup active dataset on OTBR via ot-ctl
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# 3. Enable NAT64 explicitly on the OTBR
+send_user "Enabling NAT64 on the OTBR...\n"
+exec docker exec -i $container ot-ctl nat64 enable
+# Verify NAT64 state with retries
+set nat64_active false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl nat64 state} nat64_state]} {
+        set nat64_state [string trim $nat64_state]
+        send_user "NAT64 State:\n$nat64_state\n"
+        if {[string match "*PrefixManager: Active*" $nat64_state] && [string match "*Translator: Active*" $nat64_state]} {
+            set nat64_active true
+            break
+        }
+    }
+    sleep 2
+}
+if {!$nat64_active} {
+    fail "NAT64 PrefixManager or Translator is not active on the Border Router"
+}
+
+# Query the local NAT64 prefix advertised by the Border Router
+set nat64_prefix ""
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl br nat64prefix local} prefix_out]} {
+        set prefix_out [string trim $prefix_out]
+        if {[regexp {([0-9a-fA-F:]+/96)} $prefix_out match prefix]} {
+            set nat64_prefix $prefix
+            break
+        }
+    }
+    sleep 2
+}
+if {$nat64_prefix == ""} {
+    fail "Failed to retrieve local NAT64 prefix from Border Router"
+}
+send_user "Discovered local NAT64 prefix: $nat64_prefix\n"
+
+# Get the running Border Router's active dataset dynamically to configure the client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [lindex [split [string trim $active_dataset] "\n"] 0]
+
+# 4. Join Thread network from Node 4 (ot-cli-ftd)
+send_user "Starting Simulated Thread Device (Node 4)...\n"
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\n"
+expect_line "Done"
+send "routereligible disable\n"
+expect_line "Done"
+send "ifconfig up\n"
+expect_line "Done"
+send "thread start\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+# 5. Verify NAT64 prefix discovery on Thread Client Node 4
+send_user "Verifying NAT64 prefix discovery on Thread Client Node 4...\n"
+set discovered_prefix false
+for {set i 0} {$i < 15} {incr i} {
+    send "netdata show\n"
+    set timeout 3
+    expect {
+        -re "Routes:" {
+            exp_continue
+        }
+        -re {([0-9a-fA-F:]+/96) sn} {
+            set client_prefix $expect_out(1,string)
+            if {[string equal -nocase $client_prefix $nat64_prefix]} {
+                set discovered_prefix true
+            }
+            exp_continue
+        }
+        -re "Done\r?\n> " {
+            # finished parsing
+        }
+        timeout {
+            # do nothing
+        }
+    }
+    if {$discovered_prefix} {
+        break
+    }
+    sleep 2
+}
+if {!$discovered_prefix} {
+    fail "Thread Client Node 4 did not discover the NAT64 prefix in Network Data"
+}
+send_user "Thread Client Node 4 successfully discovered NAT64 prefix: $nat64_prefix\n"
+
+# 6. Verify NAT64 Translation & Bidirectional Routing (Ping from Thread Client Node 4 to Infrastructure IPv4 Host)
+send_user "Pinging IPv4 server ($server_ip4) from Thread Client Node 4...\n"
+switch_node 4
+send "ping $server_ip4 56 5\n"
+set timeout 15
+set ping_success false
+expect {
+    -re {bytes from} {
+        set ping_success true
+        exp_continue
+    }
+    -re "Done\r?\n> " {
+        # finished parsing
+    }
+    timeout {
+        send_user "Error: Ping timed out\n"
+    }
+}
+if {!$ping_success} {
+    fail "NAT64 Ping verification failed"
+}
+send_user "Ping from Thread Client to IPv4 Server through NAT64 succeeded!\n"
+
+# 7. Verify NAT64 mappings and counters on the Border Router
+send_user "Auditing NAT64 mappings and counters on the Border Router...\n"
+set mappings [exec docker exec -i $container ot-ctl nat64 mappings]
+send_user "Active NAT64 Mappings:\n$mappings\n"
+if {![string match "*192.168.255.*" $mappings]} {
+    fail "No active mapping entry found in the NAT64 translator"
+}
+send_user "NAT64 mapping verified successfully.\n"
+
+set counters [exec docker exec -i $container ot-ctl nat64 counters]
+send_user "NAT64 Counters:\n$counters\n"
+set counters_verified false
+if {[regexp {Total\s+\|\s+([1-9][0-9]*)} $counters match total_rx_packets]} {
+    send_user "Total Translated Packets: $total_rx_packets\n"
+    set counters_verified true
+}
+if {!$counters_verified} {
+    fail "NAT64 translation counters did not register any translated packets"
+}
+send_user "NAT64 counters verified successfully.\n"
+
+# 8. Clean up containers
+send_user "Tearing down containers...\n"
+dispose_all
+send_user "# NAT64 integration test completed successfully!\n"

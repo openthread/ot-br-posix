@@ -34,8 +34,10 @@
 #include <chrono>
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <httplib.h>
+#include <string.h>
 
 #include <openthread/commissioner.h>
 
@@ -959,35 +961,40 @@ void RestWebServer::RemoveJoiner(const Request &aRequest, Response &aResponse) c
     };
     std::string body;
 
-    VerifyOrExit(otCommissionerGetState(GetInstance()) == OT_COMMISSIONER_STATE_ACTIVE,
-                 error = OTBR_ERROR_INVALID_STATE);
-
     VerifyOrExit(Json::JsonString2String(aRequest.body, body), error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(!body.empty(), error = OTBR_ERROR_INVALID_ARGS);
     if (body != "*")
     {
-        error = Json::StringDiscerner2Discerner(const_cast<char *>(body.c_str()), discerner);
-        if (error == OTBR_ERROR_NOT_FOUND)
+        otbrError err = Json::StringDiscerner2Discerner(&body[0], discerner);
+        if (err == OTBR_ERROR_NOT_FOUND)
         {
-            error = OTBR_ERROR_NONE;
             VerifyOrExit(Json::Hex2BytesJsonString(body, eui64.m8, OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE,
                          error = OTBR_ERROR_INVALID_ARGS);
             addrPtr = &eui64;
         }
-        else if (error != OTBR_ERROR_NONE)
+        else if (err != OTBR_ERROR_NONE)
         {
             ExitNow(error = OTBR_ERROR_INVALID_ARGS);
         }
     }
 
-    // These functions should only return OT_ERROR_NONE or OT_ERROR_NOT_FOUND both treated as successful
-    if (discerner.mLength == 0)
-    {
-        (void)otCommissionerRemoveJoiner(GetInstance(), addrPtr);
-    }
-    else
-    {
-        (void)otCommissionerRemoveJoinerWithDiscerner(GetInstance(), &discerner);
-    }
+    SuccessOrExit(error = RunInMainLoop([this, addrPtr, &discerner]() {
+                      VerifyOrReturn(otCommissionerGetState(GetInstance()) == OT_COMMISSIONER_STATE_ACTIVE,
+                                     OTBR_ERROR_INVALID_STATE);
+
+                      // These functions should only return OT_ERROR_NONE or OT_ERROR_NOT_FOUND both treated as
+                      // successful
+                      if (discerner.mLength == 0)
+                      {
+                          (void)otCommissionerRemoveJoiner(GetInstance(), addrPtr);
+                      }
+                      else
+                      {
+                          (void)otCommissionerRemoveJoinerWithDiscerner(GetInstance(), &discerner);
+                      }
+
+                      return OTBR_ERROR_NONE;
+                  }));
 
 exit:
     switch (error)
@@ -1839,6 +1846,14 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
         {
             otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
             self->mServer.set_ipv6_v6only(false);
+            self->mServer.set_socket_options([](socket_t aSock) {
+                int opt = 1;
+                // cpp-httplib defaults to SO_REUSEPORT instead of SO_REUSEADDR
+                if (setsockopt(aSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0)
+                {
+                    otbrLogWarning("Failed to set SO_REUSEADDR: %s", strerror(errno));
+                }
+            });
             const httplib::Headers defaultHeaders = {
                 {"Access-Control-Allow-Origin", OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN},
                 {"Access-Control-Allow-Methods", OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS},

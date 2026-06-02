@@ -37,7 +37,7 @@
 #include "openthread-br/config.h"
 
 #ifndef OTBR_ENABLE_MDNS
-#define OTBR_ENABLE_MDNS (OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_OPENTHREAD)
+#define OTBR_ENABLE_MDNS (OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_OPENTHREAD)
 #endif
 
 #include <functional>
@@ -419,9 +419,9 @@ public:
      */
     static otbrError DecodeTxtData(TxtList &aTxtList, const uint8_t *aTxtData, uint16_t aTxtLength);
 
-protected:
     static constexpr uint8_t kMaxTextEntrySize = 255;
 
+protected:
 #if !OTBR_ENABLE_MDNS_OPENTHREAD
 
     class Registration
