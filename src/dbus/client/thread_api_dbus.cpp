@@ -882,9 +882,9 @@ void ThreadApiDBus::sHandleDBusPendingCall(DBusPendingCall *aPending, void *aThr
     (api->*Handler)(aPending);
 }
 
-ClientError ThreadApiDBus::AttachAllNodesTo(const std::vector<uint8_t> &aDataset)
+ClientError ThreadApiDBus::AttachAllNodesTo(const std::vector<uint8_t> &aDataset, uint32_t aDelayMs)
 {
-    auto args = std::tie(aDataset);
+    auto args = std::tie(aDataset, aDelayMs);
     return CallDBusMethodSync(OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD, args);
 }
 

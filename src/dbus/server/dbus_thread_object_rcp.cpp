@@ -463,15 +463,17 @@ void DBusThreadObjectRcp::AttachHandler(DBusRequest &aRequest)
 void DBusThreadObjectRcp::AttachAllNodesToHandler(DBusRequest &aRequest)
 {
     std::vector<uint8_t> dataset;
-    otError              error = OT_ERROR_NONE;
+    uint32_t             delayTimerMs = 0;
+    otError              error        = OT_ERROR_NONE;
 
-    auto args = std::tie(dataset);
+    auto args = std::tie(dataset, delayTimerMs);
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    mHost.GetThreadHelper()->AttachAllNodesTo(dataset, [aRequest](otError error, int64_t aAttachDelayMs) mutable {
-        aRequest.ReplyOtResult<int64_t>(error, aAttachDelayMs);
-    });
+    mHost.GetThreadHelper()->AttachAllNodesTo(dataset, delayTimerMs,
+                                              [aRequest](otError error, int64_t aAttachDelayMs) mutable {
+                                                  aRequest.ReplyOtResult<int64_t>(error, aAttachDelayMs);
+                                              });
 
 exit:
     if (error != OT_ERROR_NONE)
