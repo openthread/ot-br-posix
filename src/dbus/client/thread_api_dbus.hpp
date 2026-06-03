@@ -174,6 +174,8 @@ public:
      *                       automatically.
      * @param[in] aDelayMs   The delay timer in milliseconds to embed in the pending dataset.
      *                       Use 0 (default) for 300 seconds (5 minutes). Maximum is 72 hours.
+     *                       When 0, the delay_timer_ms argument is omitted from the DBus call for
+     *                       backward compatibility with older servers.
      *
      * @retval ERROR_NONE              Successfully requested the Thread network migration.
      * @retval ERROR_DBUS              D-Bus encode/decode error.

@@ -67,7 +67,7 @@
     <!-- AttachAllNodesTo: Request to attach all nodes to the specified Thread network.
       @dataset: The Operational Dataset that contains parameter values of the Thread network
                 to attach to. It must be a full dataset.
-      @delay_timer_ms: The delay timer value in milliseconds to embed in the pending dataset.
+      @delay_timer_ms: (Optional) The delay timer value in milliseconds to embed in the pending dataset.
                        If 0, the default of 300 seconds (300000 ms) is used. Maximum is 72 hours
                        (259200000 ms).
       @delay_ms: The delay between the method returns and the dataset takes effect, in
