@@ -110,7 +110,7 @@ private:
     enum StopMode : uint8_t
     {
         kNormalStop,
-        kStopOnServiceNotRunningError,
+        kStopOnRetryableError,
     };
 
     class DnssdKeyRegistration;
@@ -125,13 +125,13 @@ private:
 
         ~DnssdServiceRegistration(void) override { Unregister(); }
 
-        void      Update(MainloopContext &aMainloop) const;
-        void      Process(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
+        otbrError Update(MainloopContext &aMainloop) const;
+        otbrError Process(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
         otbrError Register(void);
+        void      Unregister(void);
 
     private:
-        void             Unregister(void);
-        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+        PublisherMDnsSd &GetPublisher(void) const { return *static_cast<PublisherMDnsSd *>(mPublisher); }
         void             HandleRegisterResult(DNSServiceFlags aFlags, DNSServiceErrorType aError);
         static void      HandleRegisterResult(DNSServiceRef       aServiceRef,
                                               DNSServiceFlags     aFlags,
@@ -153,10 +153,10 @@ private:
         ~DnssdHostRegistration(void) override { Unregister(); }
 
         otbrError Register(void);
+        void      Unregister(void);
 
     private:
-        void             Unregister(void);
-        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+        PublisherMDnsSd &GetPublisher(void) const { return *static_cast<PublisherMDnsSd *>(mPublisher); }
         void             HandleRegisterResult(DNSRecordRef aRecordRef, DNSServiceErrorType aError);
         static void      HandleRegisterResult(DNSServiceRef       aServiceRef,
                                               DNSRecordRef        aRecordRef,
@@ -178,10 +178,10 @@ private:
         ~DnssdKeyRegistration(void) override { Unregister(); }
 
         otbrError Register(void);
+        void      Unregister(void);
 
     private:
-        void             Unregister(void);
-        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+        PublisherMDnsSd &GetPublisher(void) const { return *static_cast<PublisherMDnsSd *>(mPublisher); }
         void             HandleRegisterResult(DNSServiceErrorType aError);
         static void      HandleRegisterResult(DNSServiceRef       aServiceRef,
                                               DNSRecordRef        aRecordRef,
@@ -206,10 +206,10 @@ private:
 
         ~ServiceRef() { Release(); }
 
-        void Update(MainloopContext &aMainloop) const;
-        void Process(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
-        void Release(void);
-        void DeallocateServiceRef(void);
+        otbrError Update(MainloopContext &aMainloop) const;
+        otbrError Process(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
+        void      Release(void);
+        void      DeallocateServiceRef(void);
     };
 
     struct ServiceSubscription;
@@ -291,18 +291,18 @@ private:
         {
         }
 
-        void Release(void);
-        void Browse(void);
-        void Resolve(uint32_t           aNetifIndex,
-                     const std::string &aInstanceName,
-                     const std::string &aType,
-                     const std::string &aDomain);
-        void Remove(uint32_t           aNetifIndex,
-                    const std::string &aInstanceName,
-                    const std::string &aType,
-                    const std::string &aDomain);
-        void UpdateAll(MainloopContext &aMainloop) const;
-        void ProcessAll(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
+        void      Release(void);
+        void      Browse(void);
+        void      Resolve(uint32_t           aNetifIndex,
+                          const std::string &aInstanceName,
+                          const std::string &aType,
+                          const std::string &aDomain);
+        void      Remove(uint32_t           aNetifIndex,
+                         const std::string &aInstanceName,
+                         const std::string &aType,
+                         const std::string &aDomain);
+        otbrError UpdateAll(MainloopContext &aMainloop) const;
+        otbrError ProcessAll(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
 
         static void HandleBrowseResult(DNSServiceRef       aServiceRef,
                                        DNSServiceFlags     aFlags,
