@@ -799,7 +799,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->UnpublishService(
-            service.mHostName, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
+            service.mServiceInstance, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
                 IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
             });
         break;
