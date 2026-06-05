@@ -189,6 +189,9 @@ test_run()
     echo "--- Running SRP Name Conflicts (1_3_SRP_TC_2) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_2.exp"
 
+    echo "--- Running SRP Service Instance Lease (1_3_SRP_TC_3) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_3.exp"
+
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
