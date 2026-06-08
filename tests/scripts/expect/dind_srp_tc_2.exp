@@ -1,0 +1,414 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+# Custom start_otbr_docker for our network name
+proc start_otbr_docker_dind {name sim_app sim_id pty} {
+    global rcp_pids
+    track_container $name
+    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --add-host=host.docker.internal:host-gateway \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
+        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
+    sleep 2
+
+    # Now start the simulated RCP binary on the host
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
+    sleep 5
+}
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start border router in Docker
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# 2. Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its dynamic OMR prefix
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Step 3: Verify the SRP Server information (specifically DNS-SD Unicast Dataset) is in Network Data on DUT
+send_user "Verifying DNS-SD Unicast Dataset in Network Data...\n"
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+
+# Get the running Border Router's active dataset dynamically to configure the clients
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ED_1)
+send_user "Starting ED_1 (Node 4) and joining Thread network...\n"
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set ed1_omr [get_omr_addr]
+set ed1_mleid [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $ed1_mleid\n"
+send_user "ED_1 OMR Address: $ed1_omr\n"
+sleep 1
+
+# Join Thread network from Node 5 (ED_2)
+send_user "Starting ED_2 (Node 5) and joining Thread network...\n"
+spawn_node 5 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set ed2_omr [get_omr_addr]
+set ed2_mleid [get_ipaddr mleid]
+send_user "ED_2 ML-EID Address: $ed2_mleid\n"
+send_user "ED_2 OMR Address: $ed2_omr\n"
+sleep 1
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+exec docker run -d \
+    --name $test_client \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+
+# Configure routes on test client
+set has_rio [expr {[catch {exec docker exec -i $test_client test -f /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+if {$has_rio} {
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client rdisc6 eth0
+} else {
+    set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+    set otbr_ip [exec docker inspect $container -f $format]
+    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
+}
+sleep 2
+
+# Step 4: Register initial service on SRP Client (ED_1)
+send_user "Step 4: Register initial service on ED_1...\n"
+switch_node 4
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $ed1_omr\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 33333\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 5: Verify registration is successful on ED_1 (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Step 6: Register conflicting service on ED_2
+send_user "Step 6: Register conflicting service on ED_2...\n"
+switch_node 5
+send "srp client callback enable\r\n"
+expect_line "Done"
+send "srp client host name host-test-2\r\n"
+expect_line "Done"
+send "srp client host address $ed2_omr\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 33333\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 7: Verify registration failed with YXDOMAIN (RCODE=6) on ED_2
+set timeout 10
+expect {
+    "SRP client callback - error:Duplicated" {
+        # Succeeded
+    }
+    timeout {
+        fail "ED_2 failed to detect name conflict"
+    }
+}
+
+# Step 8-9c: Verify only service-test-1 is advertised on Infrastructure Link (Eth_1)
+set py_check_only_service1 {import time
+import socket
+import os
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+
+# 1. Verify service-test-1 is present and correct
+info1 = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+resolved1 = False
+for _ in range(10):
+    info1.request(zc, 2000)
+    if info1.port == 33333 and info1.server == 'host-test-1.local.':
+        resolved1 = True
+        break
+    time.sleep(1)
+
+if not resolved1:
+    print("FAIL: service-test-1 not resolved correctly")
+    zc.close()
+    exit(1)
+
+# Verify OMR address of ED_1 is present
+addrs1 = info1.addresses_by_version(IPVersion.V6Only)
+ips1 = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs1]
+expected_omr1 = ipaddress.IPv6Address(os.environ['EXPECTED_OMR1'])
+if expected_omr1 not in ips1:
+    print(f"FAIL: OMR address of ED_1 {expected_omr1} not found in {ips1}")
+    zc.close()
+    exit(1)
+
+# 2. Verify service-test-2 is NOT present
+info2 = ServiceInfo('_thread-test._udp.local.', 'service-test-2._thread-test._udp.local.')
+info2.request(zc, 2000)
+if info2.server is not None:
+    print(f"FAIL: service-test-2 resolved when it shouldn't: {info2.server}")
+    zc.close()
+    exit(1)
+
+print("OK")
+zc.close()
+}
+
+set status [catch {exec docker exec -e EXPECTED_OMR1=$ed1_omr -i $test_client python3 -c $py_check_only_service1} output]
+send_user "mDNS Step 8-9c check result: $output\n"
+if {$status != 0} {
+    fail "mDNS validation failed: OMR1 missing or service-test-2 leaked: $output"
+}
+
+# Step 10: Register conflicting hostname on ED_2
+send_user "Step 10: Register conflicting hostname on ED_2...\n"
+switch_node 5
+send "srp client host remove 1\r\n"
+expect_line "Done"
+sleep 2
+send "srp client host clear\r\n"
+expect_line "Done"
+send "srp client host name host-test-1\r\n" ;# conflicting hostname
+expect_line "Done"
+send "srp client host address $ed2_omr\r\n"
+expect_line "Done"
+send "srp client service add service-test-2 _thread-test._udp 44444\r\n"
+expect_line "Done"
+send "srp client autostart disable\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 11: Verify registration failed with YXDOMAIN (RCODE=6) on ED_2
+set timeout 10
+expect {
+    "SRP client callback - error:Duplicated" {
+        # Succeeded
+    }
+    timeout {
+        fail "ED_2 failed to detect hostname conflict"
+    }
+}
+
+# Step 12-13: Repeat checks to ensure only service-test-1 remains registered
+set status [catch {exec docker exec -e EXPECTED_OMR1=$ed1_omr -i $test_client python3 -c $py_check_only_service1} output]
+send_user "mDNS Step 12-13 check result: $output\n"
+if {$status != 0} {
+    fail "mDNS validation failed in Step 12-13: $output"
+}
+
+# Step 14: Register non-conflicting host and service on ED_2
+send_user "Step 14: Register non-conflicting host and service on ED_2...\n"
+switch_node 5
+send "srp client host remove 1\r\n"
+expect_line "Done"
+sleep 2
+send "srp client host clear\r\n"
+expect_line "Done"
+send "srp client callback disable\r\n"
+expect_line "Done"
+send "srp client host name host-test-2\r\n"
+expect_line "Done"
+send "srp client host address $ed2_omr\r\n"
+expect_line "Done"
+send "srp client service add service-test-2 _thread-test._udp 44444\r\n"
+expect_line "Done"
+send "srp client autostart disable\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 15: Verify registration is successful on ED_2 (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Step 16-17e: Verify both services resolve on Infrastructure Link (Eth_1)
+set py_check_both_services {import time
+import socket
+import os
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+
+# 1. Verify service-test-1 is present
+info1 = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+resolved1 = False
+for _ in range(10):
+    info1.request(zc, 2000)
+    if info1.port == 33333 and info1.server == 'host-test-1.local.':
+        resolved1 = True
+        break
+    time.sleep(1)
+
+if not resolved1:
+    print("FAIL: service-test-1 not resolved correctly")
+    zc.close()
+    exit(1)
+
+# Verify OMR address of ED_1 is present
+addrs1 = info1.addresses_by_version(IPVersion.V6Only)
+ips1 = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs1]
+expected_omr1 = ipaddress.IPv6Address(os.environ['EXPECTED_OMR1'])
+if expected_omr1 not in ips1:
+    print(f"FAIL: OMR address of ED_1 {expected_omr1} not found in {ips1}")
+    zc.close()
+    exit(1)
+
+# 2. Verify service-test-2 is present
+info2 = ServiceInfo('_thread-test._udp.local.', 'service-test-2._thread-test._udp.local.')
+resolved2 = False
+for _ in range(10):
+    info2.request(zc, 2000)
+    if info2.port == 44444 and info2.server == 'host-test-2.local.':
+        resolved2 = True
+        break
+    time.sleep(1)
+
+if not resolved2:
+    print("FAIL: service-test-2 not resolved correctly")
+    zc.close()
+    exit(1)
+
+# Verify OMR address of ED_2 is present
+addrs2 = info2.addresses_by_version(IPVersion.V6Only)
+ips2 = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs2]
+expected_omr2 = ipaddress.IPv6Address(os.environ['EXPECTED_OMR2'])
+if expected_omr2 not in ips2:
+    print(f"FAIL: OMR address of ED_2 {expected_omr2} not found in {ips2}")
+    zc.close()
+    exit(1)
+
+print("OK")
+zc.close()
+}
+
+set status [catch {exec docker exec -e EXPECTED_OMR1=$ed1_omr -e EXPECTED_OMR2=$ed2_omr -i $test_client python3 -c $py_check_both_services} output]
+send_user "mDNS Step 16-17e check result: $output\n"
+if {$status != 0} {
+    fail "mDNS validation failed for both services: $output"
+}
+
+# Cleanup
+dispose_all
+send_user "# SRP Name Conflicts (1_3_SRP_TC_2) integration test completed successfully!\n"
+exit 0
