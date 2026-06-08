@@ -32,6 +32,8 @@ on:
   push:
     branches-ignore:
       - 'dependabot/**'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - 'main'
@@ -158,6 +160,7 @@ jobs:
             ${{ env.DOCKERHUB_REPO }}
           tags: |
             type=ref,event=branch
+            type=ref,event=tag
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
 
