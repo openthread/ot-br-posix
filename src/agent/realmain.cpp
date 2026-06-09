@@ -55,6 +55,7 @@
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "host/thread_host.hpp"
+#include "utils/trel_extpanid.hpp"
 
 #ifdef OTBR_ENABLE_PLATFORM_ANDROID
 #include <log/log.h>
@@ -92,6 +93,7 @@ enum
 #ifndef OTBR_PRODUCT_NAME
     OTBR_OPT_MODEL_NAME,
 #endif
+    OTBR_OPT_TREL_EXCLUDE_EXTPANID,
 };
 
 #ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
@@ -119,6 +121,7 @@ static const struct option kOptions[] = {
 #ifndef OTBR_PRODUCT_NAME
     {"model-name", required_argument, nullptr, OTBR_OPT_MODEL_NAME},
 #endif
+    {"trel-exclude-extpanid", required_argument, nullptr, OTBR_OPT_TREL_EXCLUDE_EXTPANID},
     {0, 0, 0, 0}};
 
 static bool ParseInteger(const char *aStr, long &aOutResult)
@@ -185,6 +188,9 @@ static void PrintHelp(const char *aProgramName)
 #ifndef OTBR_PRODUCT_NAME
     fprintf(stderr, "     --model-name           Model Name.\n");
 #endif
+    fprintf(stderr,
+            "     --trel-exclude-extpanid  Exclude discovered TREL peers whose Extended PAN ID matches the given "
+            "16-character hex value. May be specified multiple times. ':' and '-' separators are accepted.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
@@ -242,20 +248,21 @@ static otbrLogLevel GetDefaultLogLevel(void)
 
 static int realmain(int argc, char *argv[])
 {
-    otbrLogLevel              logLevel = GetDefaultLogLevel();
-    int                       opt;
-    int                       ret               = EXIT_SUCCESS;
-    const char               *interfaceName     = kDefaultInterfaceName;
-    bool                      verbose           = false;
-    bool                      syslogDisable     = false;
-    bool                      printRadioVersion = false;
-    bool                      enableAutoAttach  = true;
-    const char               *restListenAddress = "127.0.0.1";
-    int                       restListenPort    = kPortNumber;
-    const char               *dataPath          = "";
-    std::vector<const char *> radioUrls;
-    std::vector<const char *> backboneInterfaceNames;
-    long                      parseResult;
+    otbrLogLevel                           logLevel = GetDefaultLogLevel();
+    int                                    opt;
+    int                                    ret               = EXIT_SUCCESS;
+    const char                            *interfaceName     = kDefaultInterfaceName;
+    bool                                   verbose           = false;
+    bool                                   syslogDisable     = false;
+    bool                                   printRadioVersion = false;
+    bool                                   enableAutoAttach  = true;
+    const char                            *restListenAddress = "127.0.0.1";
+    int                                    restListenPort    = kPortNumber;
+    const char                            *dataPath          = "";
+    std::vector<const char *>              radioUrls;
+    std::vector<const char *>              backboneInterfaceNames;
+    std::vector<otbr::Utils::TrelExtPanId> trelExcludeExtPanIds;
+    long                                   parseResult;
 
 #ifdef OTBR_VENDOR_NAME
     const char *vendorName = OTBR_VENDOR_NAME;
@@ -345,6 +352,20 @@ static int realmain(int argc, char *argv[])
             dataPath = optarg;
             break;
 
+        case OTBR_OPT_TREL_EXCLUDE_EXTPANID:
+        {
+            otbr::Utils::TrelExtPanId extPanId;
+
+            if (!otbr::Utils::ParseTrelExcludeExtPanId(optarg, extPanId))
+            {
+                fprintf(stderr, "Invalid Extended PAN ID for --trel-exclude-extpanid: %s\n", optarg);
+                ExitNow(ret = EXIT_FAILURE);
+            }
+
+            trelExcludeExtPanIds.push_back(extPanId);
+            break;
+        }
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -406,6 +427,10 @@ static int realmain(int argc, char *argv[])
         otbr::Application app(*host, interfaceName, backboneInterfaceName);
 
         gApp = &app;
+
+#if OTBR_ENABLE_TREL_DNSSD
+        app.SetTrelExcludeExtPanIds(std::move(trelExcludeExtPanIds));
+#endif
 
 #if OTBR_ENABLE_BORDER_AGENT
 #if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)

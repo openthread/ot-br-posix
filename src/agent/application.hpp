@@ -76,6 +76,7 @@
 #include "host/posix/multicast_routing_manager.hpp"
 #include "host/posix/netif.hpp"
 #include "utils/infra_link_selector.hpp"
+#include "utils/trel_extpanid.hpp"
 
 namespace otbr {
 
@@ -121,6 +122,15 @@ public:
      * This method initializes the Application instance.
      */
     void Init(const std::string &aRestListenAddress, int aRestListenPort);
+
+#if OTBR_ENABLE_TREL_DNSSD
+    /**
+     * This method sets the Extended PAN IDs to exclude from discovered TREL peers.
+     *
+     * @param[in] aExcludeExtPanIds  The Extended PAN IDs to exclude.
+     */
+    void SetTrelExcludeExtPanIds(std::vector<Utils::TrelExtPanId> aExcludeExtPanIds);
+#endif
 
     /**
      * This method de-initializes the Application instance.
@@ -303,6 +313,7 @@ private:
 #endif
 #if OTBR_ENABLE_TREL_DNSSD
     std::unique_ptr<TrelDnssd::TrelDnssd> mTrelDnssd;
+    std::vector<Utils::TrelExtPanId>      mTrelExcludeExtPanIds;
 #endif
 #if OTBR_ENABLE_OPENWRT
     std::unique_ptr<ubus::UBusAgent> mUbusAgent;

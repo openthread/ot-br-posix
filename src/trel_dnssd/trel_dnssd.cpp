@@ -47,6 +47,7 @@
 #include "common/code_utils.hpp"
 #include "utils/hex.hpp"
 #include "utils/string_utils.hpp"
+#include "utils/trel_extpanid.hpp"
 
 static const char kTrelServiceName[] = "_trel._udp";
 
@@ -283,6 +284,11 @@ void TrelDnssd::HandleUnpublishTrelServiceError(otbrError aError)
     }
 }
 
+void TrelDnssd::SetExcludeExtPanIds(const std::vector<Utils::TrelExtPanId> &aExcludeExtPanIds)
+{
+    mExcludeExtPanIds = aExcludeExtPanIds;
+}
+
 void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)
 {
     std::string        instanceName = StringUtils::ToLowercase(aInstanceInfo.mName);
@@ -330,6 +336,12 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
         Peer peer(aInstanceInfo.mTxtData, peerInfo.mSockAddr);
 
         VerifyOrExit(peer.mValid, otbrLogWarning("Peer %s is invalid", aInstanceInfo.mName.c_str()));
+
+        if (ShouldExcludePeer(peer))
+        {
+            otbrLogInfo("Peer %s excluded by Extended PAN ID filter", aInstanceInfo.mName.c_str());
+            ExitNow();
+        }
 
         otPlatTrelHandleDiscoveredPeerInfo(mHost.GetInstance(), &peerInfo);
 
@@ -528,6 +540,21 @@ exit:
     }
 
     return;
+}
+
+void TrelDnssd::Peer::ReadExtPanIdFromTxtData(void)
+{
+    mHasExtPanId = false;
+    SuccessOrExit(Utils::ReadTrelExtPanIdFromTxtData(mTxtData.data(), static_cast<uint16_t>(mTxtData.size()), mExtPanId,
+                                                     mHasExtPanId));
+
+exit:
+    return;
+}
+
+bool TrelDnssd::ShouldExcludePeer(const Peer &aPeer) const
+{
+    return Utils::ShouldExcludeTrelPeer(aPeer.mHasExtPanId, aPeer.mExtPanId, mExcludeExtPanIds);
 }
 
 } // namespace TrelDnssd

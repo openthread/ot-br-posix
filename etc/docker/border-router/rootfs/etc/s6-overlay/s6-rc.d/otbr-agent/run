@@ -51,6 +51,9 @@ readonly OT_REST_LISTEN_ADDR
 OT_REST_LISTEN_PORT="${OT_REST_LISTEN_PORT:-8081}"
 readonly OT_REST_LISTEN_PORT
 
+TREL_EXCLUDE_EXTPANID="${TREL_EXCLUDE_EXTPANID:-}"
+readonly TREL_EXCLUDE_EXTPANID
+
 OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
 readonly OT_FORWARD_INGRESS_CHAIN
 
@@ -85,6 +88,21 @@ iptables -t nat -A POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
 iptables -t filter -A FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
 iptables -t filter -A FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
 
+trel_filter_args=()
+
+if [ -n "${TREL_EXCLUDE_EXTPANID}" ]; then
+    OLD_IFS="${IFS}"
+    IFS=','
+    for extpanid in ${TREL_EXCLUDE_EXTPANID}; do
+        extpanid="$(echo "${extpanid}" | tr -d '[:space:]')"
+        if [ -n "${extpanid}" ]; then
+            trel_filter_args+=(--trel-exclude-extpanid "${extpanid}")
+        fi
+    done
+    IFS="${OLD_IFS}"
+fi
+
+echo "TREL excluded Extended PAN IDs: ${TREL_EXCLUDE_EXTPANID:-<none>}"
 echo "Starting otbr-agent..."
 
 exec s6-notifyoncheck -d -s 300 -w 300 -n 0 stdbuf -oL \
@@ -94,6 +112,7 @@ exec s6-notifyoncheck -d -s 300 -w 300 -n 0 stdbuf -oL \
         --model-name "${OT_VENDOR_MODEL}" \
         -I "${OT_THREAD_IF}" \
         -B "${OT_INFRA_IF}" \
+        "${trel_filter_args[@]}" \
         "${OT_RCP_DEVICE}" \
         "trel://${OT_INFRA_IF}" \
         --rest-listen-address "${OT_REST_LISTEN_ADDR}" \

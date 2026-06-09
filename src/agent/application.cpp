@@ -125,6 +125,13 @@ void Application::Init(const std::string &aRestListenAddress, int aRestListenPor
                 mHost.GetCoprocessorVersion());
 }
 
+#if OTBR_ENABLE_TREL_DNSSD
+void Application::SetTrelExcludeExtPanIds(std::vector<Utils::TrelExtPanId> aExcludeExtPanIds)
+{
+    mTrelExcludeExtPanIds = std::move(aExcludeExtPanIds);
+}
+#endif
+
 void Application::Deinit(void)
 {
     switch (mHost.GetCoprocessorType())
@@ -272,6 +279,7 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #endif
 #if OTBR_ENABLE_TREL_DNSSD
     mMdnsStateSubject.AddObserver(*mTrelDnssd);
+    mTrelDnssd->SetExcludeExtPanIds(mTrelExcludeExtPanIds);
 #endif
 #if OTBR_ENABLE_DNSSD_PLAT
     mMdnsStateSubject.AddObserver(mDnssdPlatform);
