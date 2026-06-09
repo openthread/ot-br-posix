@@ -58,11 +58,10 @@ void Netif::PlatformSpecificInit(void)
     /* Empty */
 }
 
-otbrError Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
+std::vector<Netif::UnicastAddressChangeResult> Netif::ProcessUnicastAddressChanges(
+    const std::vector<UnicastAddressChange> &aChanges)
 {
-    OTBR_UNUSED_VARIABLE(aAddressInfo);
-    OTBR_UNUSED_VARIABLE(aIsAdded);
-    return OTBR_ERROR_NONE;
+    return std::vector<UnicastAddressChangeResult>(aChanges.size(), {OTBR_ERROR_NONE, 0});
 }
 
 } // namespace otbr
