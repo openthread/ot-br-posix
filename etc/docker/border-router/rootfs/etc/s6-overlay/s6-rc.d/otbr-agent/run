@@ -94,7 +94,7 @@ if [ -n "${TREL_EXCLUDE_EXTPANID}" ]; then
     OLD_IFS="${IFS}"
     IFS=','
     for extpanid in ${TREL_EXCLUDE_EXTPANID}; do
-        extpanid="$(echo "${extpanid}" | tr -d '[:space:]')"
+        extpanid="$(printf '%s' "${extpanid}" | tr -d '[:space:]')"
         if [ -n "${extpanid}" ]; then
             trel_filter_args+=(--trel-exclude-extpanid "${extpanid}")
         fi

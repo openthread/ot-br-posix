@@ -34,10 +34,8 @@
 #include "utils/trel_extpanid.hpp"
 
 #include <cstring>
-#include <string>
 
 #include "common/code_utils.hpp"
-#include "utils/string_utils.hpp"
 
 namespace otbr {
 namespace Utils {
@@ -133,17 +131,15 @@ bool IsTrelExcludedExtPanId(const TrelExtPanId &aPeer, const std::vector<TrelExt
     return false;
 }
 
-bool ShouldExcludeTrelPeer(bool                             aHasExtPanId,
-                           const TrelExtPanId              &aPeerExtPanId,
-                           const std::vector<TrelExtPanId> &aExcluded)
+bool ShouldExcludeTrelPeer(bool aHasExtPanId, const TrelExtPanId &aPeerExtPanId, const std::vector<TrelExtPanId> &aExcluded)
 {
     return aHasExtPanId && !aExcluded.empty() && IsTrelExcludedExtPanId(aPeerExtPanId, aExcluded);
 }
 
 bool ReadTrelExtPanIdFromTxtData(const uint8_t *aTxtData, uint16_t aTxtLength, TrelExtPanId &aOut, bool &aHasExtPanId)
 {
-    bool     success = true;
-    uint16_t offset  = 0;
+    bool   success = true;
+    size_t offset  = 0;
 
     aHasExtPanId = false;
 
@@ -151,10 +147,10 @@ bool ReadTrelExtPanIdFromTxtData(const uint8_t *aTxtData, uint16_t aTxtLength, T
 
     while (offset < aTxtLength)
     {
-        uint16_t entrySize = aTxtData[offset];
-        uint16_t keyStart  = offset + 1;
-        uint16_t entryEnd  = keyStart + entrySize;
-        uint16_t keyEnd    = keyStart;
+        size_t entrySize = aTxtData[offset];
+        size_t keyStart  = offset + 1;
+        size_t entryEnd  = keyStart + entrySize;
+        size_t keyEnd    = keyStart;
 
         VerifyOrExit(entryEnd <= aTxtLength, success = false);
 
@@ -165,11 +161,11 @@ bool ReadTrelExtPanIdFromTxtData(const uint8_t *aTxtData, uint16_t aTxtLength, T
 
         if (keyEnd != entryEnd)
         {
-            uint16_t valStart = keyEnd + 1;
-            uint16_t valLen   = entryEnd - valStart;
+            size_t valStart = keyEnd + 1;
+            size_t valLen   = entryEnd - valStart;
 
-            if (StringUtils::EqualCaseInsensitive(
-                    std::string(reinterpret_cast<const char *>(&aTxtData[keyStart]), keyEnd - keyStart), "xp"))
+            if (keyEnd - keyStart == 2 && (aTxtData[keyStart] == 'x' || aTxtData[keyStart] == 'X') &&
+                (aTxtData[keyStart + 1] == 'p' || aTxtData[keyStart + 1] == 'P'))
             {
                 VerifyOrExit(valLen == kTrelExtPanIdLength, success = false);
                 memcpy(aOut.data(), &aTxtData[valStart], kTrelExtPanIdLength);
