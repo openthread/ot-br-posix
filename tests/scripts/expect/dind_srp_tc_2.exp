@@ -29,34 +29,6 @@
 
 source "tests/scripts/expect/_common.exp"
 
-# Custom start_otbr_docker for our network name
-proc start_otbr_docker_dind {name sim_app sim_id pty} {
-    global rcp_pids
-    track_container $name
-    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
-    exec docker run -d \
-        --name $name \
-        --network infrastructure-link \
-        --cap-add=NET_ADMIN \
-        --privileged \
-        --add-host=host.docker.internal:host-gateway \
-        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
-        --sysctl net.ipv4.conf.all.forwarding=1 \
-        --sysctl net.ipv4.conf.default.forwarding=1 \
-        --sysctl net.ipv6.conf.all.forwarding=1 \
-        --sysctl net.ipv6.conf.default.forwarding=1 \
-        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
-        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
-        -e OT_INFRA_IF=eth0 \
-        -e OT_THREAD_IF=wpan0 \
-        $::env(EXP_OTBR_DOCKER_IMAGE)
-    sleep 2
-
-    # Now start the simulated RCP binary on the host
-    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
-    lappend rcp_pids $rcp_pid
-    sleep 5
-}
 
 set pty1 [create_socat_tcp 1 9000]
 set container "otbr-test-container"
