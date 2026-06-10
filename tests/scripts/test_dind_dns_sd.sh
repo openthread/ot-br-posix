@@ -195,6 +195,9 @@ test_run()
     echo "--- Running SRP Key Lease (1_3_SRP_TC_4) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_4.exp"
 
+    echo "--- Running SRP KEY Record Inclusion/Omission (1_3_SRP_TC_5) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_5.exp"
+
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
