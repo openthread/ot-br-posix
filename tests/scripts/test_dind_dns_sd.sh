@@ -198,6 +198,9 @@ test_run()
     echo "--- Running SRP KEY Record Inclusion/Omission (1_3_SRP_TC_5) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_5.exp"
 
+    echo "--- Running SRP Name Compression (1_3_SRP_TC_6) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_6.exp"
+
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
