@@ -201,6 +201,9 @@ test_run()
     echo "--- Running SRP Name Compression (1_3_SRP_TC_6) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_6.exp"
 
+    echo "--- Running Removing Some Published Services (1_3_SRP_TC_8) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_8.exp"
+
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
