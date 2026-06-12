@@ -98,7 +98,7 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
                     otbrLogInfo("StateChangedCallback is called during waiting for Mgmt Set Response");
                     ExitNow();
                 }
-                if (mAttachPendingDatasetTlvs.mLength == 0)
+                if (mAttachDatasetTlvs.mLength == 0)
                 {
                     AttachHandler handler = mAttachHandler;
 
@@ -108,16 +108,26 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
                 else
                 {
                     otOperationalDataset emptyDataset = {};
-                    otError              error =
-                        otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, mAttachPendingDatasetTlvs.mTlvs,
-                                                    mAttachPendingDatasetTlvs.mLength, MgmtSetResponseHandler, this);
+                    otError              error        = OT_ERROR_NONE;
+
+                    if (mAttachDelayMs == 0)
+                    {
+                        error = otDatasetSendMgmtActiveSet(mInstance, &emptyDataset, mAttachDatasetTlvs.mTlvs,
+                                                           mAttachDatasetTlvs.mLength, MgmtSetResponseHandler, this);
+                    }
+                    else
+                    {
+                        error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, mAttachDatasetTlvs.mTlvs,
+                                                            mAttachDatasetTlvs.mLength, MgmtSetResponseHandler, this);
+                    }
+
                     if (error != OT_ERROR_NONE)
                     {
                         AttachHandler handler = mAttachHandler;
 
-                        mAttachHandler            = nullptr;
-                        mAttachPendingDatasetTlvs = {};
-                        mWaitingMgmtSetResponse   = false;
+                        mAttachHandler          = nullptr;
+                        mAttachDatasetTlvs      = {};
+                        mWaitingMgmtSetResponse = false;
                         handler(error, 0);
                     }
                     else
@@ -557,7 +567,9 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     otError                  error = OT_ERROR_NONE;
     otOperationalDatasetTlvs datasetTlvs;
     otOperationalDataset     emptyDataset{};
-    otDeviceRole             role = mHost->GetDeviceRole();
+    otDeviceRole             role                         = mHost->GetDeviceRole();
+    uint32_t                 attachDelayMs                = 0;
+    bool                     canImpactNetworkConnectivity = true;
 
     if (aHandler == nullptr)
     {
@@ -578,7 +590,12 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
         ExitNow(error = OT_ERROR_NONE);
     }
 
-    SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, kDelayTimerMilliseconds));
+    canImpactNetworkConnectivity = otDatasetAffectsConnectivity(mInstance, &datasetTlvs);
+    if (canImpactNetworkConnectivity)
+    {
+        attachDelayMs = kDelayTimerMilliseconds;
+        SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, attachDelayMs));
+    }
 
     assert(datasetTlvs.mLength > 0);
 
@@ -601,22 +618,32 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
 
         if (hasActiveDataset)
         {
-            mAttachDelayMs            = kDelayTimerMilliseconds;
-            mAttachPendingDatasetTlvs = datasetTlvs;
+            mAttachDelayMs     = attachDelayMs;
+            mAttachDatasetTlvs = datasetTlvs;
         }
         else
         {
-            mAttachDelayMs            = 0;
-            mAttachPendingDatasetTlvs = {};
+            mAttachDelayMs     = 0;
+            mAttachDatasetTlvs = {};
         }
         mWaitingMgmtSetResponse = false;
         mAttachHandler          = aHandler;
         ExitNow();
     }
 
-    SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
-                                                      MgmtSetResponseHandler, this));
-    mAttachDelayMs          = kDelayTimerMilliseconds;
+    if (canImpactNetworkConnectivity)
+    {
+        SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs,
+                                                          datasetTlvs.mLength, MgmtSetResponseHandler, this));
+    }
+    else
+    {
+        otbrLogInfo("No impact on Thread network connectivity, use MGMT_ACTIVE_SET");
+        SuccessOrExit(error = otDatasetSendMgmtActiveSet(mInstance, &emptyDataset, datasetTlvs.mTlvs,
+                                                         datasetTlvs.mLength, MgmtSetResponseHandler, this));
+    }
+
+    mAttachDelayMs          = attachDelayMs;
     mAttachHandler          = aHandler;
     mWaitingMgmtSetResponse = true;
 
@@ -643,8 +670,8 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
     if (mAttachHandler == nullptr)
     {
         otbrLogWarning("mAttachHandler is nullptr");
-        mAttachDelayMs            = 0;
-        mAttachPendingDatasetTlvs = {};
+        mAttachDelayMs     = 0;
+        mAttachDatasetTlvs = {};
         ExitNow();
     }
 
@@ -658,11 +685,11 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
         break;
     }
 
-    attachDelayMs             = mAttachDelayMs;
-    handler                   = mAttachHandler;
-    mAttachDelayMs            = 0;
-    mAttachHandler            = nullptr;
-    mAttachPendingDatasetTlvs = {};
+    attachDelayMs      = mAttachDelayMs;
+    handler            = mAttachHandler;
+    mAttachDelayMs     = 0;
+    mAttachHandler     = nullptr;
+    mAttachDatasetTlvs = {};
     if (aResult == OT_ERROR_NONE)
     {
         handler(aResult, attachDelayMs);
