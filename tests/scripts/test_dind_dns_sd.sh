@@ -210,6 +210,9 @@ test_run()
     echo "--- Running SRP Device Address Update (1_3_SRP_TC_13) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_13.exp"
 
+    echo "--- Running SRP Subtype Validation (1_3_SRP_TC_15) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_15.exp"
+
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 

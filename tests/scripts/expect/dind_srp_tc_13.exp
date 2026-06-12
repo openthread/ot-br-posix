@@ -180,7 +180,7 @@ if {!$found_addr1} {
 send_user "Step 7: Unicast DNS query returned address_1.\n"
 
 # Step 8: Compute new address_3 and re-register host with address_2 (ML-EID) and address_3 (new OMR)
-set address_3 [exec python3 -c {import sys, ipaddress; net = ipaddress.IPv6Network(f"{sys.argv[1]}/64", strict=False); addr = net.network_address + 99; words = [int.from_bytes(addr.packed[i:i+2], 'big') for i in range(0, 16, 2)]; print(':'.join(f'{x:x}' for x in words))} $address_1]
+set address_3 [exec python3 -c {import sys, ipaddress; net = ipaddress.IPv6Network(sys.argv[1] + "/64", strict=False); addr = ipaddress.IPv6Address(int(net.network_address) + 99); print(':'.join(f'{int(x, 16):x}' for x in addr.exploded.split(':')))} $address_1]
 set address_3 [string trim $address_3]
 send_user "Generated address_3 (OMR): $address_3\n"
 

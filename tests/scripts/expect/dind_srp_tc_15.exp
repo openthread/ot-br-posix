@@ -1,0 +1,357 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# Step 1: Start border router in Docker
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# Step 2 & 3: Setup active dataset and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its dynamic OMR prefix
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Step 3 Pass Criteria: Verify the SRP Server information (specifically DNS-SD Unicast/Anycast Dataset) is in Network Data on DUT
+send_user "Verifying DNS-SD Unicast Dataset in Network Data...\n"
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+
+# Get the running Border Router's active dataset dynamically to configure the client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ED_1)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr [get_omr_addr]
+expect_line "Done"
+set mleid [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $mleid\n"
+send_user "ED_1 OMR Address: $omr_addr\n"
+sleep 1
+
+# Step 4-5: Configure and Register host & service with subtype on SRP Client (ED_1)
+send_user "Registering service-test-1 with subtype _test-subtype...\n"
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $mleid $omr_addr\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _test-type._tcp,_test-subtype 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify registration is successful (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+
+# Configure routes on test client
+configure_test_client_routes $test_client $container
+sleep 2
+
+# Retrieve Border Router's RLOC address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr eq ""} {
+    set otbr_dns_addr [string trim [lindex [split $otbr_addrs "\n"] 0]]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Switch to Node 4 (ED_1) and configure DNS server
+switch_node 4
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+
+# Define the python script to check PTR records
+set py_check_ptr {import time
+import sys
+from zeroconf import Zeroconf, IPVersion, ServiceBrowser
+class L:
+    def __init__(self):
+        self.names = []
+    def add_service(self, zc, t, n):
+        self.names.append(n)
+    def update_service(self, zc, t, n):
+        pass
+    def remove_service(self, zc, t, n):
+        pass
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+listener = L()
+browser = ServiceBrowser(zc, sys.argv[1], listener)
+time.sleep(2)
+zc.close()
+expected = sys.argv[2] if len(sys.argv) > 2 else ""
+if expected:
+    print("FOUND" if expected in listener.names else f"NOT_FOUND: {listener.names}")
+else:
+    print("EMPTY" if len(listener.names) == 0 else f"NOT_EMPTY: {listener.names}")}
+
+# Step 6-7: Unicast DNS query for parent type from ED_1
+send_user "Step 6-7: Querying parent type via Unicast DNS...\n"
+send "dns browse _test-type._tcp.default.service.arpa.\r\n"
+set timeout 10
+set found_service 0
+expect {
+    -re "service-test-1" {
+        set found_service 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS PTR query failed"
+    }
+}
+if {!$found_service} {
+    fail "Unicast DNS PTR query response missing service-test-1"
+}
+
+# Step 8-9: mDNS Verification of parent service from Eth_1 (test client)
+send_user "Step 8-9: Verifying parent service via mDNS from Eth_1...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_test-type._tcp.local." "service-test-1._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS Parent Service Result: $res\n"
+if {![string equal $res "FOUND"]} {
+    fail "Parent service type PTR record not found or incorrect: $res"
+}
+
+# Step 9c: Resolve AAAA info using Python Zeroconf on Eth_1 and verify OMR address is present
+set py_aaaa_check_omr {import time
+import socket
+import os
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo(os.environ['SERVICE_TYPE'], os.environ['SERVICE_NAME'])
+for _ in range(10):
+    info.request(zc, 2000)
+    if info.server is not None and info.addresses_by_version(IPVersion.V6Only):
+        break
+    time.sleep(1)
+if info.server is None:
+    print("FAIL: Service resolution timed out")
+    exit(1)
+addrs = info.addresses_by_version(IPVersion.V6Only)
+resolved = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs]
+zc.close()
+expected_omr = ipaddress.IPv6Address(os.environ['EXPECTED_OMR'])
+if expected_omr not in resolved:
+    print(f"FAIL: OMR address {expected_omr} not found in resolved IPs: {resolved}")
+    exit(1)
+print(f"OK: Found {expected_omr}")}
+
+set status [catch {exec docker exec -e EXPECTED_OMR=$omr_addr -e SERVICE_TYPE=_test-type._tcp.local. -e SERVICE_NAME=service-test-1._test-type._tcp.local. -i $test_client python3 -c $py_aaaa_check_omr} aaaa_res]
+send_user "mDNS AAAA Result: $aaaa_res\n"
+if {$status != 0} {
+    fail "mDNS AAAA resolution failed or missing OMR address: $aaaa_res"
+}
+
+# Step 10-11: Unicast DNS query for subtype from ED_1
+send_user "Step 10-11: Querying subtype via Unicast DNS...\n"
+switch_node 4
+send "dns browse _test-subtype._sub._test-type._tcp.default.service.arpa.\r\n"
+set timeout 10
+set found_service 0
+expect {
+    -re "service-test-1" {
+        set found_service 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS browse query for subtype failed"
+    }
+}
+if {!$found_service} {
+    fail "Unicast DNS query for subtype response missing service-test-1"
+}
+
+# Step 12-13: mDNS Verification of subtype service from Eth_1
+send_user "Step 12-13: Verifying subtype service via mDNS from Eth_1...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_test-subtype._sub._test-type._tcp.local." "service-test-1._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS Subtype Service Result: $res\n"
+if {![string equal $res "FOUND"]} {
+    fail "Subtype _test-subtype PTR record not found or incorrect: $res"
+}
+
+# Step 14-15: Add new subtype (_other-subtype) to existing service
+send_user "Step 14-15: Adding _other-subtype on ED_1...\n"
+switch_node 4
+send "srp client service clear service-test-1 _test-type._tcp\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _test-type._tcp,_test-subtype,_other-subtype 55555\r\n"
+expect_line "Done"
+
+# Wait for client to become Registered again
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+sleep 1
+
+# Step 16-17: mDNS Verification of new subtype (_other-subtype) from Eth_1
+send_user "Step 16-17: Verifying _other-subtype via mDNS from Eth_1...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_other-subtype._sub._test-type._tcp.local." "service-test-1._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS Other-Subtype Result: $res\n"
+if {![string equal $res "FOUND"]} {
+    fail "New subtype _other-subtype PTR record not found or incorrect: $res"
+}
+
+# Step 18-19: Verify original subtype is still present on Eth_1
+send_user "Step 18-19: Checking that original subtype is still present...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_test-subtype._sub._test-type._tcp.local." "service-test-1._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS Original Subtype Result: $res\n"
+if {![string equal $res "FOUND"]} {
+    fail "Original subtype _test-subtype PTR record missing after adding new subtype: $res"
+}
+
+# Step 20-21: Verify parent type is still present on Eth_1
+send_user "Step 20-21: Checking that parent type is still present...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_test-type._tcp.local." "service-test-1._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS Parent Type Result: $res\n"
+if {![string equal $res "FOUND"]} {
+    fail "Parent type PTR record missing after adding new subtype: $res"
+}
+
+# Step 22-23: Verify query for non-existent subtype fails
+send_user "Step 22-23: Checking that non-existent subtype returns no answer...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_test-subtypee._sub._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS Non-Existent Subtype Result: $res\n"
+if {![string equal $res "EMPTY"]} {
+    fail "Non-existent subtype PTR record found: $res"
+}
+
+# Step 24-25: Remove _test-subtype (leaving only _other-subtype)
+send_user "Step 24-25: Removing original subtype on ED_1...\n"
+switch_node 4
+send "srp client service clear service-test-1 _test-type._tcp\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _test-type._tcp,_other-subtype 55555\r\n"
+expect_line "Done"
+
+# Wait for client to become Registered again
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+sleep 1
+
+# Step 26-27: Verify _other-subtype is still present
+send_user "Step 26-27: Checking that _other-subtype is still present...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_other-subtype._sub._test-type._tcp.local." "service-test-1._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS _other-subtype Result: $res\n"
+if {![string equal $res "FOUND"]} {
+    fail "Subtype _other-subtype PTR record missing after removing _test-subtype: $res"
+}
+
+# Step 28-29: Verify removed subtype is no longer present
+send_user "Step 28-29: Checking that removed subtype is no longer present...\n"
+set res [exec docker exec -i $test_client python3 -c $py_check_ptr "_test-subtype._sub._test-type._tcp.local."]
+set res [string trim $res]
+send_user "mDNS Removed Subtype Result: $res\n"
+if {![string equal $res "EMPTY"]} {
+    fail "Removed subtype _test-subtype PTR record still present: $res"
+}
+
+# Step 30-31: Skipped as noted in test plan (unsupported by reference CLI/API)
+send_user "Step 30-31: Skipping invalid update tests as per spec N/A...\n"
+
+send_user "All steps of 1_3_SRP_TC_15 passed!\n"
+dispose_all
