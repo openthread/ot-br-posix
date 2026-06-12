@@ -324,3 +324,29 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
     lappend rcp_pids $rcp_pid
     sleep 5
 }
+
+proc start_test_client {name image} {
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --entrypoint /bin/bash \
+        $image \
+        -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+}
+
+proc configure_test_client_routes {test_client container} {
+    set has_rio [expr {[catch {exec docker exec -i $test_client test -e /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+    if {$has_rio} {
+        exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+        exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+        exec docker exec -i $test_client rdisc6 eth0
+    } else {
+        set format {{{(index .NetworkSettings.Networks "infrastructure-link").GlobalIPv6Address}}}
+        set otbr_ip [string trim [exec docker inspect $container -f $format]]
+        exec docker exec -i $test_client ip -6 route replace fc00::/7 via $otbr_ip dev eth0
+    }
+}
+
