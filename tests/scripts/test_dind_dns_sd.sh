@@ -204,6 +204,9 @@ test_run()
     echo "--- Running Removing Some Published Services (1_3_SRP_TC_8) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_8.exp"
 
+    echo "--- Running SRP Recovery after reboot (1_3_SRP_TC_11) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_11.exp"
+
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
