@@ -91,18 +91,6 @@ proc reboot_otbr_dind {name sim_app sim_id port} {
     set spawn_id $old_spawn_id
 }
 
-proc start_test_client {name image} {
-    exec docker run -d \
-        --name $name \
-        --network infrastructure-link \
-        --cap-add=NET_ADMIN \
-        --privileged \
-        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
-        --entrypoint /bin/bash \
-        $image \
-        -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
-}
-
 set pty1 [create_socat_tcp 1 9000]
 set container "otbr-test-container"
 set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
@@ -191,16 +179,7 @@ track_container $test_client
 start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
 
 # Configure routes on test client
-set has_rio [expr {[catch {exec docker exec -i $test_client test -e /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
-if {$has_rio} {
-    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
-    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
-    exec docker exec -i $test_client rdisc6 eth0
-} else {
-    set format {{{range .NetworkSettings.Networks}}{{.GlobalIPv6Address}}{{end}}}
-    set otbr_ip [string trim [exec docker inspect $container -f $format]]
-    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
-}
+configure_test_client_routes $test_client $container
 sleep 2
 
 # Step 4: ED_1 sends SRP Update registering service-test-1
@@ -370,13 +349,7 @@ if {[string length $sdata_before] > 2} {
 }
 
 # Re-configure routing on test client after DUT reboot (just in case)
-if {$has_rio} {
-    exec docker exec -i $test_client rdisc6 eth0
-} else {
-    set format {{{range .NetworkSettings.Networks}}{{.GlobalIPv6Address}}{{end}}}
-    set otbr_ip [string trim [exec docker inspect $container -f $format]]
-    exec docker exec -i $test_client ip -6 route replace fc00::/7 via $otbr_ip dev eth0
-}
+configure_test_client_routes $test_client $container
 sleep 5
 
 
@@ -405,15 +378,7 @@ catch { exec docker rm -f $test_client 2>/dev/null }
 start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
 
 # Re-configure routes on new test client
-if {$has_rio} {
-    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
-    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
-    exec docker exec -i $test_client rdisc6 eth0
-} else {
-    set format {{{range .NetworkSettings.Networks}}{{.GlobalIPv6Address}}{{end}}}
-    set otbr_ip [string trim [exec docker inspect $container -f $format]]
-    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
-}
+configure_test_client_routes $test_client $container
 sleep 2
 
 # Step 19: ED_1 sends SRP Update, as in step 4
