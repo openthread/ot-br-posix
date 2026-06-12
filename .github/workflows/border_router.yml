@@ -106,18 +106,11 @@ jobs:
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Backbone Router (mDNSResponder)"
-            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_OT_DISCOVERY_PROXY=OFF"
+            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_OT_SRP_ADV_PROXY=OFF -DOTBR_OT_DISCOVERY_PROXY=OFF"
             border_routing: 0
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
-            packet_verification: 1
-          - name: "Border Router with OT Core Advertising Proxy (mDNSResponder)"
-            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF -DOTBR_OT_SRP_ADV_PROXY=ON"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "mDNSResponder"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
 
     name: ${{ matrix.name }}
