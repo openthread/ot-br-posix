@@ -118,8 +118,8 @@ test_setup()
         sleep 1
     done
 
-    echo "Adding iptables rule to allow port 9000 traffic..."
-    iptables -I INPUT 1 -p tcp --dport 9000 -j ACCEPT || true
+    echo "Adding iptables rule to allow ports 9000 to 9005 traffic..."
+    iptables -I INPUT 1 -p tcp --dport 9000:9005 -j ACCEPT || true
 
     # 1. Build the production Docker image
     local otbr_options="-DOTBR_DHCP6_PD=ON -DOTBR_DHCP6_PD_CLIENT=openthread"
@@ -185,6 +185,9 @@ test_run()
 
     echo "--- Running Service discovery on Thread and Infrastructure (1_3_DPR_TC_1) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_dpr_tc_1.exp"
+
+    echo "--- Running Service discovery on Thread and Infrastructure (1_3_DPR_TC_2) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_dpr_tc_2.exp"
 
     echo "--- Running SRP Register Single Service (1_3_SRP_TC_1) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_1.exp"

@@ -31,11 +31,6 @@ source "tests/scripts/expect/_common.exp"
 
 
 
-proc get_ipv6_regex {addr} {
-    regsub -all {:(?:0+:)+0*} $addr {::} addr
-    regsub -all {::} $addr {:(?:0+:)*0*:} regex
-    return "${regex}(?!\[0-9a-fA-F:\])"
-}
 
 
 
@@ -96,6 +91,7 @@ check_string_contains $netdata "44970 5d"
 
 # Get active dataset to join ED_1
 set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [lindex [split $active_dataset "\n"] 0]
 set active_dataset [string trim $active_dataset]
 
 # Join Thread network from Node 4 (ED_1)
@@ -238,7 +234,7 @@ if {!$registered} {
 switch_node 4
 send "srp client host name host-test-1\r\n"
 expect_line "Done"
-send "srp client host address $omr_addr\r\n"
+send "srp client host address $omr_addr $mleid\r\n"
 expect_line "Done"
 send "srp client service add service-test-6 _thread-test._udp 55551 0 0 157468726561642d74653d747269636b3d76616c7565\r\n"
 expect_line "Done"
@@ -287,7 +283,7 @@ set host_resolved ""
 set port_resolved ""
 set txt_resolved 0
 expect {
-    -re "Port:\\s*($port_expected)" {
+    -re "Port:\\s*(\\d+)" {
         set port_resolved $expect_out(1,string)
         exp_continue
     }
@@ -306,7 +302,7 @@ expect {
         fail "DNS service query timed out"
     }
 }
-if {$port_resolved eq "" || $host_resolved eq "" || !$txt_resolved} {
+if {$port_resolved ne $port_expected || $host_resolved eq "" || !$txt_resolved} {
     fail "Failed to resolve correct Port ($port_expected), Host, or TXT for service-test-$found_service (got Host: $host_resolved, Port: $port_resolved, TXT: $txt_resolved)"
 }
 
