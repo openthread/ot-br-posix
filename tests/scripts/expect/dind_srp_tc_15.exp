@@ -170,13 +170,19 @@ class L:
 zc = Zeroconf(ip_version=IPVersion.V6Only)
 listener = L()
 browser = ServiceBrowser(zc, sys.argv[1], listener)
-time.sleep(2)
-zc.close()
 expected = sys.argv[2] if len(sys.argv) > 2 else ""
 if expected:
-    print("FOUND" if expected in listener.names else f"NOT_FOUND: {listener.names}")
+    found = False
+    for _ in range(50):
+        if expected in listener.names:
+            found = True
+            break
+        time.sleep(0.1)
+    print("FOUND" if found else f"NOT_FOUND: {listener.names}")
 else:
-    print("EMPTY" if len(listener.names) == 0 else f"NOT_EMPTY: {listener.names}")}
+    time.sleep(2)
+    print("EMPTY" if len(listener.names) == 0 else f"NOT_EMPTY: {listener.names}")
+zc.close()}
 
 # Step 6-7: Unicast DNS query for parent type from ED_1
 send_user "Step 6-7: Querying parent type via Unicast DNS...\n"
