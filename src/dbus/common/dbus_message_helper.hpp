@@ -594,6 +594,10 @@ template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter 
             std::copy(val, val + n, aValue.begin());
         }
     }
+    else
+    {
+        VerifyOrExit(SIZE == 0, error = OTBR_ERROR_DBUS);
+    }
     dbus_message_iter_next(aIter);
 
 exit:
