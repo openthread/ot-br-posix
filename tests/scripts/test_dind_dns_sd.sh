@@ -183,6 +183,9 @@ test_run()
     echo "--- Running DNS-SD integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_dns_sd.exp"
 
+    echo "--- Running Service discovery on Thread and Infrastructure (1_3_DPR_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_dpr_tc_1.exp"
+
     echo "--- Running SRP Register Single Service (1_3_SRP_TC_1) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_1.exp"
 
