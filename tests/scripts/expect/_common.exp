@@ -297,7 +297,7 @@ proc check_string_contains {haystack needle} {
     }
 }
 
-proc start_otbr_docker_dind {name sim_app sim_id pty} {
+proc start_otbr_docker_dind {name sim_app sim_id pty {rcp_port 9000}} {
     global rcp_pids
     track_container $name
     # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
@@ -316,6 +316,7 @@ proc start_otbr_docker_dind {name sim_app sim_id pty} {
         -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
         -e OT_INFRA_IF=eth0 \
         -e OT_THREAD_IF=wpan0 \
+        -e EXP_RCP_PORT=$rcp_port \
         $::env(EXP_OTBR_DOCKER_IMAGE)
     sleep 2
 
@@ -348,5 +349,11 @@ proc configure_test_client_routes {test_client container} {
         set otbr_ip [string trim [exec docker inspect $container -f $format]]
         exec docker exec -i $test_client ip -6 route replace fc00::/7 via $otbr_ip dev eth0
     }
+}
+
+proc get_ipv6_regex {addr} {
+    regsub -all {:(?:0+:)+0*} $addr {::} addr
+    regsub -all {::} $addr {:(?:0+:)*0*:} regex
+    return "${regex}(?!\[0-9a-fA-F:\])"
 }
 

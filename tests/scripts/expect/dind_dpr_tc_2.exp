@@ -1,0 +1,422 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+
+# Start relays and containers
+set pty1 [create_socat_tcp 1 9000]
+set pty2 [create_socat_tcp 2 9001]
+
+set container1 "otbr-test-container-1"
+set container2 "otbr-test-container-2"
+
+# 1. Start border routers in Docker
+send_user "Starting BR_1 (DUT) container...\n"
+start_otbr_docker_dind $container1 $::env(EXP_OT_RCP_PATH) 2 $pty1 9000
+
+send_user "Starting BR_2 container...\n"
+start_otbr_docker_dind $container2 $::env(EXP_OT_RCP_PATH) 3 $pty2 9001
+
+# Wait for otbr-agents to create the domain sockets
+foreach c [list $container1 $container2] {
+    set socket_ready false
+    for {set i 0} {$i < 10} {incr i} {
+        if {![catch {exec docker exec -i $c ot-ctl state}]} {
+            set socket_ready true
+            break
+        }
+        sleep 2
+    }
+    if {!$socket_ready} {
+        fail "ot-ctl failed to communicate with otbr-agent on $c"
+    }
+}
+
+# Stop default thread and interfaces
+foreach c [list $container1 $container2] {
+    exec docker exec -i $c ot-ctl thread stop
+    exec docker exec -i $c ot-ctl ifconfig down
+}
+
+# 2. Setup Active Dataset on BR_1 (DUT) and start Thread (Network 1)
+exec docker exec -i $container1 ot-ctl dataset init new
+exec docker exec -i $container1 ot-ctl dataset channel 17
+exec docker exec -i $container1 ot-ctl dataset panid 0x1111
+exec docker exec -i $container1 ot-ctl dataset extpanid 1111111111111111
+exec docker exec -i $container1 ot-ctl dataset networkname OpenThread-1
+exec docker exec -i $container1 ot-ctl dataset commit active
+exec docker exec -i $container1 ot-ctl ifconfig up
+exec docker exec -i $container1 ot-ctl thread start
+
+# Wait for BR_1 to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container1 ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "BR_1 (DUT) did not become leader"
+}
+
+# Enable SRP server explicitly on BR_1
+exec docker exec -i $container1 ot-ctl srp server auto disable
+exec docker exec -i $container1 ot-ctl srp server enable
+
+# Retrieve BR_1's network dataset (only the first line, ignoring "Done")
+set active_dataset1 [exec docker exec -i $container1 ot-ctl dataset active -x]
+set active_dataset1 [lindex [split $active_dataset1 "\n"] 0]
+set active_dataset1 [string trim $active_dataset1]
+
+# Step 2: Confirm BR_1's SRP Server info is in network data (wait up to 10s for publication)
+send_user "Verifying BR_1 SRP Server information in Thread Network Data...\n"
+set srp_published1 0
+for {set i 0} {$i < 10} {incr i} {
+    set netdata1 [exec docker exec -i $container1 ot-ctl netdata show]
+    if {[string match "*44970 5d*" $netdata1]} {
+        set srp_published1 1
+        break
+    }
+    sleep 1
+}
+if {!$srp_published1} {
+    fail "BR_1 SRP Server info not found in network data"
+}
+
+# Spawn ED_1 (Node 4) and join Network 1
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset1\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr1 [get_omr_addr]
+expect_line "Done"
+set mleid1 [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $mleid1\n"
+send_user "ED_1 OMR Address: $omr_addr1\n"
+sleep 1
+
+# Setup Active Dataset on BR_2 and start Thread (Network 2)
+# We manually configure different channel, panid, extpanid, networkname to avoid collision
+exec docker exec -i $container2 ot-ctl dataset init new
+exec docker exec -i $container2 ot-ctl dataset channel 22
+exec docker exec -i $container2 ot-ctl dataset panid 0x2222
+exec docker exec -i $container2 ot-ctl dataset extpanid 2222222222222222
+exec docker exec -i $container2 ot-ctl dataset networkname OpenThread-2
+exec docker exec -i $container2 ot-ctl dataset commit active
+exec docker exec -i $container2 ot-ctl ifconfig up
+exec docker exec -i $container2 ot-ctl thread start
+
+# Wait for BR_2 to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container2 ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "BR_2 did not become leader"
+}
+
+# Enable SRP server explicitly on BR_2
+exec docker exec -i $container2 ot-ctl srp server auto disable
+exec docker exec -i $container2 ot-ctl srp server enable
+
+# Retrieve BR_2's network dataset (only the first line, ignoring "Done")
+set active_dataset2 [exec docker exec -i $container2 ot-ctl dataset active -x]
+set active_dataset2 [lindex [split $active_dataset2 "\n"] 0]
+set active_dataset2 [string trim $active_dataset2]
+
+# Step 6: Confirm BR_2's SRP Server info is in network data (wait up to 10s for publication)
+send_user "Verifying BR_2 SRP Server information in Thread Network Data...\n"
+set srp_published2 0
+for {set i 0} {$i < 10} {incr i} {
+    set netdata2 [exec docker exec -i $container2 ot-ctl netdata show]
+    if {[string match "*44970 5d*" $netdata2]} {
+        set srp_published2 1
+        break
+    }
+    sleep 1
+}
+if {!$srp_published2} {
+    fail "BR_2 SRP Server info not found in network data"
+}
+
+# Spawn ED_2 (Node 5) and join Network 2
+spawn_node 5 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset2\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr2 [get_omr_addr]
+expect_line "Done"
+set mleid2 [get_ipaddr mleid]
+send_user "ED_2 ML-EID Address: $mleid2\n"
+send_user "ED_2 OMR Address: $omr_addr2\n"
+sleep 1
+
+# Wait 15 seconds for border routers to stabilize their prefixes and configure routing
+send_user "Waiting 15 seconds for prefixes to stabilize...\n"
+sleep 15
+
+# Retrieve BR_1's RLOC address to use as DNS server for ED_1
+set br1_addrs [exec docker exec -i $container1 ot-ctl ipaddr]
+set br1_dns_addr ""
+foreach addr [split $br1_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+        set br1_dns_addr $addr
+        break
+    }
+}
+if {$br1_dns_addr eq ""} {
+    set br1_dns_addr [string trim [lindex [split $br1_addrs "\n"] 0]]
+}
+send_user "BR_1 DNS Server Address: $br1_dns_addr\n"
+
+# Retrieve BR_2's RLOC address to use as DNS server for ED_2
+set br2_addrs [exec docker exec -i $container2 ot-ctl ipaddr]
+set br2_dns_addr ""
+foreach addr [split $br2_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+        set br2_dns_addr $addr
+        break
+    }
+}
+if {$br2_dns_addr eq ""} {
+    set br2_dns_addr [string trim [lindex [split $br2_addrs "\n"] 0]]
+}
+send_user "BR_2 DNS Server Address: $br2_dns_addr\n"
+
+
+# Step 3: ED_1 registers service-test-1._thread-type-1._udp (on Thread Network 1)
+switch_node 4
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $omr_addr1 $mleid1\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-type-1._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 4: Verify SRP client 1 state is Registered
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+
+# Step 7: ED_2 registers service-test-2._thread-type-2._udp (on Thread Network 2)
+switch_node 5
+send "srp client host name host-test-2\r\n"
+expect_line "Done"
+send "srp client host address $omr_addr2 $mleid2\r\n"
+expect_line "Done"
+send "srp client service add service-test-2 _thread-type-2._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 8: Verify SRP client 2 state is Registered
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Wait a few seconds for mDNS/SRP server syncing to propagate to infrastructure link
+sleep 5
+
+
+# Step 9-10: ED_1 queries BR_1 (DUT) for type _thread-type-2._udp.default.service.arpa.
+switch_node 4
+send "dns config $br1_dns_addr\r\n"
+expect_line "Done"
+send "dns browse _thread-type-2._udp.default.service.arpa.\r\n"
+
+set found_service_2 0
+set timeout 15
+expect {
+    -re "service-test-2" {
+        set found_service_2 1
+        exp_continue
+    }
+    -re "Done" {
+        # Browse completed
+    }
+    timeout {
+        fail "DNS browse query for _thread-type-2 timed out"
+    }
+}
+if {!$found_service_2} {
+    fail "service-test-2 not found in browse response on ED_1"
+}
+send_user "Discovered service-test-2 successfully!\n"
+
+
+
+# Step 11-14: ED_2 queries BR_2 for type _thread-type-1._udp.default.service.arpa.
+switch_node 5
+send "dns config $br2_dns_addr\r\n"
+expect_line "Done"
+send "dns browse _thread-type-1._udp.default.service.arpa.\r\n"
+
+set found_service_1 0
+set timeout 15
+expect {
+    -re "service-test-1" {
+        set found_service_1 1
+        exp_continue
+    }
+    -re "Done" {
+        # Browse completed
+    }
+    timeout {
+        fail "DNS browse query for _thread-type-1 timed out"
+    }
+}
+if {!$found_service_1} {
+    fail "service-test-1 not found in browse response on ED_2"
+}
+send_user "Discovered service-test-1 successfully!\n"
+
+# Verify SRV / TXT resolution for service-test-1 from ED_2
+send "dns service service-test-1 _thread-type-1._udp.default.service.arpa.\r\n"
+set port_resolved ""
+set host_resolved ""
+expect {
+    -re "Port:\\s*(\\d+)" {
+        set port_resolved $expect_out(1,string)
+        exp_continue
+    }
+    -re "Host:\\s*host-test-1\\.default\\.service\\.arpa\\." {
+        set host_resolved "host-test-1.default.service.arpa."
+        exp_continue
+    }
+    -re "Done" {
+        # completed
+    }
+    timeout {
+        fail "DNS service query for service-test-1 timed out"
+    }
+}
+if {$port_resolved ne "55555" || $host_resolved eq ""} {
+    fail "Failed to resolve correct Port or Host for service-test-1 (got Host: $host_resolved, Port: $port_resolved)"
+}
+
+# Verify AAAA resolution for host-test-1 from ED_2
+send "dns resolve host-test-1.default.service.arpa.\r\n"
+set found_omr1 0
+set omr1_reg [get_ipv6_regex $omr_addr1]
+expect {
+    -re $omr1_reg {
+        set found_omr1 1
+        exp_continue
+    }
+    -re "Done" {
+        # resolved
+    }
+    timeout {
+        fail "DNS resolve host-test-1 query timed out"
+    }
+}
+if {!$found_omr1} {
+    fail "DNS resolve host-test-1 response did not contain OMR address ($omr_addr1)"
+}
+
+
+# Step 15-16: ED_1 queries BR_1 (DUT) for service service-test-2._thread-type-2._udp.default.service.arpa. (SRV query)
+switch_node 4
+send "dns service service-test-2 _thread-type-2._udp.default.service.arpa.\r\n"
+set port_resolved ""
+set host_resolved ""
+expect {
+    -re "Port:\\s*(\\d+)" {
+        set port_resolved $expect_out(1,string)
+        exp_continue
+    }
+    -re "Host:\\s*host-test-2\\.default\\.service\\.arpa\\." {
+        set host_resolved "host-test-2.default.service.arpa."
+        exp_continue
+    }
+    -re "Done" {
+        # completed
+    }
+    timeout {
+        fail "DNS SRV query for service-test-2 timed out"
+    }
+}
+if {$port_resolved ne "55555" || $host_resolved eq ""} {
+    fail "Failed to resolve correct Port or Host for service-test-2 SRV query (got Host: $host_resolved, Port: $port_resolved)"
+}
+
+# Verify AAAA resolution for host-test-2 from ED_1
+send "dns resolve host-test-2.default.service.arpa.\r\n"
+set found_omr2 0
+set omr2_reg [get_ipv6_regex $omr_addr2]
+expect {
+    -re $omr2_reg {
+        set found_omr2 1
+        exp_continue
+    }
+    -re "Done" {
+        # resolved
+    }
+    timeout {
+        fail "DNS resolve host-test-2 query timed out"
+    }
+}
+if {!$found_omr2} {
+    fail "DNS resolve host-test-2 response did not contain OMR address ($omr_addr2)"
+}
+
+# Cleanup
+dispose_all
+send_user "# Service discovery between Multiple BRs / Multiple Threads (1_3_DPR_TC_2) completed successfully!\n"
+exit 0
