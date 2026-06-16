@@ -357,3 +357,45 @@ proc get_ipv6_regex {addr} {
     return "${regex}(?!\[0-9a-fA-F:\])"
 }
 
+proc get_rloc_dns_addr {container} {
+    set addrs [exec docker exec -i $container ot-ctl ipaddr]
+    foreach addr [split $addrs "\n"] {
+        set addr [string trim $addr]
+        if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+            return $addr
+        }
+    }
+    return [string trim [lindex [split $addrs "\n"] 0]]
+}
+
+proc wait_for_otbr_agent {containers} {
+    foreach c $containers {
+        set socket_ready false
+        for {set i 0} {$i < 10} {incr i} {
+            if {![catch {exec docker exec -i $c ot-ctl state}]} {
+                set socket_ready true
+                break
+            }
+            sleep 2
+        }
+        if {!$socket_ready} {
+            fail "ot-ctl failed to communicate with otbr-agent on $c"
+        }
+    }
+}
+
+proc wait_for_container_state {container expected_state} {
+    set state_reached false
+    for {set i 0} {$i < 20} {incr i} {
+        if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*$expected_state*" $state]} {
+            set state_reached true
+            break
+        }
+        sleep 2
+    }
+    if {!$state_reached} {
+        fail "$container did not become $expected_state"
+    }
+}
+
+
