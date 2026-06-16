@@ -75,16 +75,16 @@ test_teardown()
     echo "Active and inactive containers:"
     docker ps -a || true
     echo "Container logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client" "dhcp6-server"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web" "test-client" "dhcp6-server"; do
         docker logs "$c" || true
     done
 
     echo "Agent logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web"; do
         docker exec -i "$c" cat /var/log/otbr-agent.log || true
     done
 
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client" "dhcp6-server"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web" "test-client" "dhcp6-server"; do
         docker stop "$c" || true
         docker rm "$c" || true
     done
@@ -224,6 +224,9 @@ test_run()
 
     echo "--- Running TREL Attach and Connectivity (1_4_TREL_TC_1) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_1.exp"
+
+    echo "--- Running TREL Multi-hop Routing (1_4_TREL_TC_2) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_2.exp"
 
     echo "--- Running NAT64 integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_nat64.exp"

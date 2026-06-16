@@ -397,5 +397,18 @@ proc wait_for_container_state {container expected_state} {
         fail "$container did not become $expected_state"
     }
 }
-
-
+proc verify_trel_traffic {c1 expected_dir1 c2 expected_dir2} {
+    foreach {c expected_dir} [list $c1 $expected_dir1 $c2 $expected_dir2] {
+        if {$expected_dir eq "none"} { continue }
+        set cnts [exec docker exec -i $c ot-ctl trel counters]
+        if {$expected_dir eq "out"} {
+            if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $cnts match val]} {
+                fail "TREL Outbound packet verification failed on $c."
+            }
+        } elseif {$expected_dir eq "in"} {
+            if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $cnts match val]} {
+                fail "TREL Inbound packet verification failed on $c."
+            }
+        }
+    }
+}
