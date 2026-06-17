@@ -228,6 +228,9 @@ test_run()
     echo "--- Running TREL Multi-hop Routing (1_4_TREL_TC_2) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_2.exp"
 
+    echo "--- Running TREL Radio Link (Re)discovery using Probe Mechanism (1_4_TREL_TC_3) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_3.exp"
+
     echo "--- Running NAT64 integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_nat64.exp"
 

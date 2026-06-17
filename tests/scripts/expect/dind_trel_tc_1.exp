@@ -82,6 +82,7 @@ set br_extaddr [string trim [lindex [split $br_extaddr "\n"] 0]]
 send_user "BR Leader ExtAddr: $br_extaddr\n"
 
 # Set up MAC isolation: Router_1 and Router_2 must only allow BR Leader (DUT)
+# We configure this BEFORE starting Thread to prevent them from discovering each other as neighbors.
 send_user -- "--- Setting up MAC filter isolation ---\n"
 exec docker exec -i $container2 ot-ctl macfilter addr clear
 exec docker exec -i $container2 ot-ctl macfilter addr allowlist
@@ -145,10 +146,10 @@ switch_node 4
 send "neighbor table\n"
 set found_leader false
 expect {
-    -re $r1_extaddr {
+    -re "(?i)$r1_extaddr" {
         fail "Router_2 neighbor table contains Router_1, isolation failed!"
     }
-    -re $br_extaddr {
+    -re "(?i)$br_extaddr" {
         set found_leader true
         exp_continue
     }
