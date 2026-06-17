@@ -45,19 +45,7 @@ send_user "Starting BR_2 container...\n"
 start_otbr_docker_dind $container2 $::env(EXP_OT_RCP_PATH) 3 $pty2 9001
 
 # Wait for otbr-agents to create the domain sockets
-foreach c [list $container1 $container2] {
-    set socket_ready false
-    for {set i 0} {$i < 10} {incr i} {
-        if {![catch {exec docker exec -i $c ot-ctl state}]} {
-            set socket_ready true
-            break
-        }
-        sleep 2
-    }
-    if {!$socket_ready} {
-        fail "ot-ctl failed to communicate with otbr-agent on $c"
-    }
-}
+wait_for_otbr_agent [list $container1 $container2]
 
 # Stop default thread and interfaces
 foreach c [list $container1 $container2] {
@@ -76,17 +64,7 @@ exec docker exec -i $container1 ot-ctl ifconfig up
 exec docker exec -i $container1 ot-ctl thread start
 
 # Wait for BR_1 to become leader
-set leader false
-for {set i 0} {$i < 20} {incr i} {
-    if {![catch {exec docker exec -i $container1 ot-ctl state} state] && [string match "*leader*" $state]} {
-        set leader true
-        break
-    }
-    sleep 2
-}
-if {!$leader} {
-    fail "BR_1 (DUT) did not become leader"
-}
+wait_for_container_state $container1 "leader"
 
 # Enable SRP server explicitly on BR_1
 exec docker exec -i $container1 ot-ctl srp server auto disable
@@ -146,17 +124,7 @@ exec docker exec -i $container2 ot-ctl ifconfig up
 exec docker exec -i $container2 ot-ctl thread start
 
 # Wait for BR_2 to become leader
-set leader false
-for {set i 0} {$i < 20} {incr i} {
-    if {![catch {exec docker exec -i $container2 ot-ctl state} state] && [string match "*leader*" $state]} {
-        set leader true
-        break
-    }
-    sleep 2
-}
-if {!$leader} {
-    fail "BR_2 did not become leader"
-}
+wait_for_container_state $container2 "leader"
 
 # Enable SRP server explicitly on BR_2
 exec docker exec -i $container2 ot-ctl srp server auto disable
@@ -209,33 +177,11 @@ send_user "Waiting 15 seconds for prefixes to stabilize...\n"
 sleep 15
 
 # Retrieve BR_1's RLOC address to use as DNS server for ED_1
-set br1_addrs [exec docker exec -i $container1 ot-ctl ipaddr]
-set br1_dns_addr ""
-foreach addr [split $br1_addrs "\n"] {
-    set addr [string trim $addr]
-    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
-        set br1_dns_addr $addr
-        break
-    }
-}
-if {$br1_dns_addr eq ""} {
-    set br1_dns_addr [string trim [lindex [split $br1_addrs "\n"] 0]]
-}
+set br1_dns_addr [get_rloc_dns_addr $container1]
 send_user "BR_1 DNS Server Address: $br1_dns_addr\n"
 
 # Retrieve BR_2's RLOC address to use as DNS server for ED_2
-set br2_addrs [exec docker exec -i $container2 ot-ctl ipaddr]
-set br2_dns_addr ""
-foreach addr [split $br2_addrs "\n"] {
-    set addr [string trim $addr]
-    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
-        set br2_dns_addr $addr
-        break
-    }
-}
-if {$br2_dns_addr eq ""} {
-    set br2_dns_addr [string trim [lindex [split $br2_addrs "\n"] 0]]
-}
+set br2_dns_addr [get_rloc_dns_addr $container2]
 send_user "BR_2 DNS Server Address: $br2_dns_addr\n"
 
 

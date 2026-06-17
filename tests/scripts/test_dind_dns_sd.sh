@@ -222,6 +222,9 @@ test_run()
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
+    echo "--- Running TREL Attach and Connectivity (1_4_TREL_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_1.exp"
+
     echo "--- Running NAT64 integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_nat64.exp"
 
