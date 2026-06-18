@@ -1,0 +1,415 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+# Start relays and containers for the three multi-radio / TREL instances
+set pty1 [create_socat_tcp 1 9000]
+set pty2 [create_socat_tcp 2 9001]
+set pty3 [create_socat_tcp 3 9002]
+
+set container1 "otbr-test-container-1"
+set container2 "otbr-test-container-2"
+set container3 "otbr-test-container-3"
+
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+proc start_otbr_docker_dind_custom {name sim_app sim_id pty rcp_port mac port_offset {block_mac ""}} {
+    global rcp_pids
+    track_container $name
+    
+    set entrypoint_cmd "exec /init"
+    if {$block_mac != ""} {
+        set entrypoint_cmd "iptables -A INPUT -m mac --mac-source $block_mac -j DROP && ip6tables -A INPUT -m mac --mac-source $block_mac -j DROP && exec /init"
+    }
+
+    exec docker run -d \
+        --name $name \
+        --mac-address $mac \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --add-host=host.docker.internal:host-gateway \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
+        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        -e EXP_RCP_PORT=$rcp_port \
+        --entrypoint /bin/bash \
+        $::env(EXP_OTBR_DOCKER_IMAGE) \
+        -c $entrypoint_cmd
+    sleep 2
+
+    # Now start the simulated RCP binary on the host with PORT_OFFSET env
+    set old_port_offset ""
+    if {[info exists ::env(PORT_OFFSET)]} {
+        set old_port_offset $::env(PORT_OFFSET)
+    }
+    set ::env(PORT_OFFSET) $port_offset
+
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
+
+    if {$old_port_offset != ""} {
+        set ::env(PORT_OFFSET) $old_port_offset
+    } else {
+        unset ::env(PORT_OFFSET)
+    }
+    sleep 5
+}
+
+set mac1 "02:00:00:00:00:01"
+set mac2 "02:00:00:00:00:02"
+set mac3 "02:00:00:00:00:03"
+
+send_user -- "--- Starting container 1 (BR Router_1 / DUT) ---\n"
+start_otbr_docker_dind_custom $container1 $::env(EXP_OT_RCP_PATH) 2 $pty1 9000 $mac1 1
+
+send_user -- "--- Starting container 2 (Leader) ---\n"
+start_otbr_docker_dind_custom $container2 $::env(EXP_OT_RCP_PATH) 3 $pty2 9001 $mac2 2 $mac3
+
+send_user -- "--- Starting container 3 (Router_4) ---\n"
+start_otbr_docker_dind_custom $container3 $::env(EXP_OT_RCP_PATH) 4 $pty3 9002 $mac3 3 $mac2
+
+# Spawn CLI Node 5 (Router_2), Node 6 (Router_3), and Node 7 (ED_1) on host
+send_user -- "--- Spawning CLI Node 5 (Router_2) ---\n"
+set ::env(PORT_OFFSET) 2
+spawn_node 5 cli $::env(EXP_OT_CLI_PATH)
+
+send_user -- "--- Spawning CLI Node 6 (Router_3) ---\n"
+set ::env(PORT_OFFSET) 1
+spawn_node 6 cli $::env(EXP_OT_CLI_PATH)
+
+send_user -- "--- Spawning CLI Node 7 (ED_1) ---\n"
+set ::env(PORT_OFFSET) 1
+spawn_node 7 cli $::env(EXP_OT_CLI_PATH)
+
+# Unset PORT_OFFSET from environment to avoid affecting other commands
+unset ::env(PORT_OFFSET)
+
+# Ensure all containers have initialized correctly and otbr-agent socket is ready
+wait_for_otbr_agent [list $container1 $container2 $container3]
+
+# Stop Thread, down interface, and set routerselectionjitter initially
+foreach c [list $container1 $container2 $container3] {
+    exec docker exec -i $c ot-ctl thread stop
+    exec docker exec -i $c ot-ctl ifconfig down
+    exec docker exec -i $c ot-ctl routerselectionjitter 1
+}
+
+for {set i 5} {$i <= 7} {incr i} {
+    switch_node $i
+    send "thread stop\n"
+    expect_line "Done"
+    send "ifconfig down\n"
+    expect_line "Done"
+}
+
+# Configure Active Dataset on all nodes
+send_user -- "--- Configuring Active Dataset on all nodes ---\n"
+exec docker exec -i $container1 ot-ctl dataset set active $dataset
+exec docker exec -i $container2 ot-ctl dataset set active $dataset
+exec docker exec -i $container3 ot-ctl dataset set active $dataset
+
+for {set i 5} {$i <= 7} {incr i} {
+    switch_node $i
+    send "dataset set active $dataset\n"
+    expect_line "Done"
+}
+
+# Configure ED_1 (Node 7) as non-sleepy MTD child (mode rn)
+send_user -- "--- Configuring ED_1 node mode ---\n"
+switch_node 7
+send "mode rn\n"
+expect_line "Done"
+
+# Retrieve all Extended MAC Addresses for configuration
+set dut_extaddr [exec docker exec -i $container1 ot-ctl extaddr]
+set dut_extaddr [string trim [lindex [split $dut_extaddr "\n"] 0]]
+send_user "DUT ExtAddr: $dut_extaddr\n"
+
+set leader_extaddr [exec docker exec -i $container2 ot-ctl extaddr]
+set leader_extaddr [string trim [lindex [split $leader_extaddr "\n"] 0]]
+send_user "Leader ExtAddr: $leader_extaddr\n"
+
+set r4_extaddr [exec docker exec -i $container3 ot-ctl extaddr]
+set r4_extaddr [string trim [lindex [split $r4_extaddr "\n"] 0]]
+send_user "Router_4 ExtAddr: $r4_extaddr\n"
+
+switch_node 5
+send "extaddr\n"
+set r2_extaddr [expect_line {[0-9a-fA-F]{16}}]
+expect_line "Done"
+send_user "Router_2 ExtAddr: $r2_extaddr\n"
+
+switch_node 6
+send "extaddr\n"
+set r3_extaddr [expect_line {[0-9a-fA-F]{16}}]
+expect_line "Done"
+send_user "Router_3 ExtAddr: $r3_extaddr\n"
+
+switch_node 7
+send "extaddr\n"
+set ed1_extaddr [expect_line {[0-9a-fA-F]{16}}]
+expect_line "Done"
+send_user "ED_1 ExtAddr: $ed1_extaddr\n"
+
+
+# Start Thread on container 2 (Leader) to form network
+send_user -- "--- Starting Thread on Container 2 (Leader) ---\n"
+exec docker exec -i $container2 ot-ctl ifconfig up
+exec docker exec -i $container2 ot-ctl thread start
+wait_for_container_state $container2 "leader"
+
+# Start Thread on all other nodes
+send_user -- "--- Starting Thread on Container 1 (DUT) ---\n"
+exec docker exec -i $container1 ot-ctl ifconfig up
+exec docker exec -i $container1 ot-ctl thread start
+
+send_user -- "--- Starting Thread on Container 3 (Router_4) ---\n"
+exec docker exec -i $container3 ot-ctl ifconfig up
+exec docker exec -i $container3 ot-ctl thread start
+
+for {set i 5} {$i <= 7} {incr i} {
+    send_user -- "--- Starting Thread on CLI Node $i ---\n"
+    switch_node $i
+    send "ifconfig up\n"
+    expect_line "Done"
+    send "thread start\n"
+    expect_line "Done"
+}
+
+# Wait for containers and CLI nodes to reach router / child state
+wait_for_container_state $container1 "router"
+wait_for_container_state $container3 "router"
+
+switch_node 5
+wait_for "state" "router"
+expect_line "Done"
+
+switch_node 6
+wait_for "state" "router"
+expect_line "Done"
+
+switch_node 7
+wait_for "state" "child"
+expect_line "Done"
+
+# Wait for neighbor tables to update and stabilize
+send_user -- "--- Waiting 15 seconds for neighbors to stabilize ---\n"
+sleep 15
+
+# Verify peer discovery via 'trel peers' on containers
+send_user -- "--- Verifying TREL peer discovery ---\n"
+set discovered false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container1 ot-ctl trel peers} trel_peers] && [string match -nocase "*$leader_extaddr*" $trel_peers] && [string match -nocase "*$r4_extaddr*" $trel_peers]} {
+        set discovered true
+        break
+    }
+    sleep 2
+}
+if {!$discovered} {
+    fail "DUT (Container 1) did not discover both Leader and Router_4 TREL peers. Current peers: $trel_peers"
+}
+
+set discovered false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container2 ot-ctl trel peers} trel_peers]} {
+        if {[string match -nocase "*$r4_extaddr*" $trel_peers]} {
+            fail "Leader (Container 2) incorrectly discovered Router_4 as TREL peer."
+        }
+        if {[string match -nocase "*$dut_extaddr*" $trel_peers]} {
+            set discovered true
+            break
+        }
+    }
+    sleep 2
+}
+if {!$discovered} {
+    fail "Leader (Container 2) did not discover DUT TREL peer."
+}
+
+
+# --- Retrieve ML-EID Addresses ---
+switch_node 5
+send "ipaddr mleid\n"
+set r2_mleid [expect_line {[0-9a-fA-F]{1,4}:[0-9a-fA-F:]+}]
+expect_line "Done"
+send_user "Router_2 ML-EID: $r2_mleid\n"
+
+switch_node 6
+send "ipaddr mleid\n"
+set r3_mleid [expect_line {[0-9a-fA-F]{1,4}:[0-9a-fA-F:]+}]
+expect_line "Done"
+send_user "Router_3 ML-EID: $r3_mleid\n"
+
+switch_node 7
+send "ipaddr mleid\n"
+set ed1_mleid [expect_line {[0-9a-fA-F]{1,4}:[0-9a-fA-F:]+}]
+expect_line "Done"
+send_user "ED_1 ML-EID: $ed1_mleid\n"
+
+set r4_mleid [exec docker exec -i $container3 ot-ctl ipaddr mleid]
+set r4_mleid [string trim [lindex [split $r4_mleid "\n"] 0]]
+send_user "Router_4 ML-EID: $r4_mleid\n"
+
+
+# --- Step 2: ED_1 pings Router_2 (Mesh-Local EID, routed via DUT & Leader) ---
+send_user -- "--- Step 2: ED_1 pings Router_2 (GUA/ML-EID) ---\n"
+exec docker exec -i $container1 ot-ctl trel counters reset
+exec docker exec -i $container2 ot-ctl trel counters reset
+
+switch_node 7
+send "ping $r2_mleid 500 1\n"
+expect {
+    -re "bytes from" {
+        send_user "Ping reply received by ED_1!\n"
+    }
+    timeout {
+        fail "Ping from ED_1 to Router_2 timed out."
+    }
+}
+expect_line "Done"
+
+# Verify TREL used between DUT (Container 1) and Leader (Container 2)
+verify_trel_traffic $container1 "out" $container2 "in"
+
+# --- Step 3: Router_2 pings ED_1 (Mesh-Local EID, routed via Leader & DUT) ---
+send_user -- "--- Step 3: Router_2 pings ED_1 ---\n"
+exec docker exec -i $container1 ot-ctl trel counters reset
+exec docker exec -i $container2 ot-ctl trel counters reset
+
+switch_node 5
+send "ping $ed1_mleid 500 1\n"
+expect {
+    -re "bytes from" {
+        send_user "Ping reply received by Router_2!\n"
+    }
+    timeout {
+        fail "Ping from Router_2 to ED_1 timed out."
+    }
+}
+expect_line "Done"
+
+# Verify TREL used between Leader (Container 2) and DUT (Container 1)
+# Leader sends request (outbound), DUT receives request (inbound)
+# DUT sends reply (outbound), Leader receives reply (inbound)
+verify_trel_traffic $container1 "in" $container2 "out"
+
+# --- Step 4: Router_4 pings Router_2 (Mesh-Local EID, routed via DUT & Leader) ---
+send_user -- "--- Step 4: Router_4 pings Router_2 ---\n"
+exec docker exec -i $container1 ot-ctl trel counters reset
+exec docker exec -i $container2 ot-ctl trel counters reset
+exec docker exec -i $container3 ot-ctl trel counters reset
+
+set ping_output [exec docker exec -i $container3 ot-ctl ping $r2_mleid 500 1]
+send_user "Ping output: $ping_output\n"
+check_string_contains $ping_output "bytes from"
+
+# Verify TREL traffic:
+# Router_4 (Container 3) outbound > 0, DUT (Container 1) inbound > 0 (for request)
+# DUT (Container 1) outbound > 0, Leader (Container 2) inbound > 0 (for request)
+# Leader (Container 2) outbound > 0, DUT (Container 1) inbound > 0 (for reply)
+# DUT (Container 1) outbound > 0, Router_4 (Container 3) inbound > 0 (for reply)
+verify_trel_traffic $container3 "out" $container3 "in"
+verify_trel_traffic $container1 "out" $container2 "in"
+
+# --- Step 5: Router_2 pings Router_4 (Mesh-Local EID, routed via Leader & DUT) ---
+send_user -- "--- Step 5: Router_2 pings Router_4 ---\n"
+exec docker exec -i $container1 ot-ctl trel counters reset
+exec docker exec -i $container2 ot-ctl trel counters reset
+exec docker exec -i $container3 ot-ctl trel counters reset
+
+switch_node 5
+send "ping $r4_mleid 500 1\n"
+expect {
+    -re "bytes from" {
+        send_user "Ping reply received by Router_2!\n"
+    }
+    timeout {
+        fail "Ping from Router_2 to Router_4 timed out."
+    }
+}
+expect_line "Done"
+
+# Verify TREL traffic:
+# Leader (Container 2) outbound > 0, DUT (Container 1) inbound > 0
+# DUT (Container 1) outbound > 0, Router_4 (Container 3) inbound > 0
+verify_trel_traffic $container3 "in" $container3 "out"
+verify_trel_traffic $container1 "in" $container2 "out"
+
+# --- Step 6: Router_3 pings Router_2 (Mesh-Local EID, routed via DUT & Leader) ---
+send_user -- "--- Step 6: Router_3 pings Router_2 ---\n"
+exec docker exec -i $container1 ot-ctl trel counters reset
+exec docker exec -i $container2 ot-ctl trel counters reset
+
+switch_node 6
+send "ping $r2_mleid 500 1\n"
+expect {
+    -re "bytes from" {
+        send_user "Ping reply received by Router_3!\n"
+    }
+    timeout {
+        fail "Ping from Router_3 to Router_2 timed out."
+    }
+}
+expect_line "Done"
+
+# Verify TREL traffic: DUT (Container 1) outbound > 0, Leader (Container 2) inbound > 0
+verify_trel_traffic $container1 "out" $container2 "in"
+
+# --- Step 7: Router_2 pings Router_3 (Mesh-Local EID, routed via Leader & DUT) ---
+send_user -- "--- Step 7: Router_2 pings Router_3 ---\n"
+exec docker exec -i $container1 ot-ctl trel counters reset
+exec docker exec -i $container2 ot-ctl trel counters reset
+
+switch_node 5
+send "ping $r3_mleid 500 1\n"
+expect {
+    -re "bytes from" {
+        send_user "Ping reply received by Router_2!\n"
+    }
+    timeout {
+        fail "Ping from Router_2 to Router_3 timed out."
+    }
+}
+expect_line "Done"
+
+# Verify TREL traffic: Leader (Container 2) outbound > 0, DUT (Container 1) inbound > 0
+verify_trel_traffic $container1 "in" $container2 "out"
+
+dispose_all
+send_user -- "--- TREL Multi-hop Routing (1_4_TREL_TC_2) Integration Test PASSED successfully! ---\n"
+exit 0

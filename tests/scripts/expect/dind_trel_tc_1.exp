@@ -135,7 +135,7 @@ sleep 15
 send_user -- "--- Verifying neighbors on Router_1 ---\n"
 set r1_neighbors [exec docker exec -i $container2 ot-ctl neighbor table]
 check_string_contains $r1_neighbors $br_extaddr
-if {[string match "*$r2_extaddr*" $r1_neighbors]} {
+if {[string match -nocase "*$r2_extaddr*" $r1_neighbors]} {
     fail "Router_1 neighbor table contains Router_2, isolation failed!"
 }
 
@@ -143,25 +143,28 @@ if {[string match "*$r2_extaddr*" $r1_neighbors]} {
 send_user -- "--- Verifying neighbors on Router_2 ---\n"
 switch_node 4
 send "neighbor table\n"
+set found_leader false
 expect {
     -re $r1_extaddr {
         fail "Router_2 neighbor table contains Router_1, isolation failed!"
     }
     -re $br_extaddr {
-        # Found Leader, good
+        set found_leader true
         exp_continue
     }
     -re "Done" {
         # completed
     }
 }
+if {!$found_leader} {
+    fail "Router_2 neighbor table does not contain BR Leader!"
+}
 
 # --- Step 2: Multi-Radio Detection ---
 send_user -- "--- Step 2: Verifying multi-radio peer discovery ---\n"
 set discovered false
 for {set i 0} {$i < 10} {incr i} {
-    set trel_peers [exec docker exec -i $container2 ot-ctl trel peers]
-    if {[string match "*$br_extaddr*" $trel_peers]} {
+    if {![catch {exec docker exec -i $container2 ot-ctl trel peers} trel_peers] && [string match -nocase "*$br_extaddr*" $trel_peers]} {
         set discovered true
         break
     }
@@ -172,10 +175,10 @@ if {!$discovered} {
 }
 
 set multiradio_list [exec docker exec -i $container2 ot-ctl multiradio neighbor list]
-if {![regexp "ExtAddr:\\s*$br_extaddr" $multiradio_list]} {
+if {![regexp -nocase "ExtAddr:\\s*$br_extaddr" $multiradio_list]} {
     fail "BR Leader not found in Router_1 multiradio neighbor list."
 }
-if {![regexp {Radios:\[.*15\.4.*TREL.*\]} $multiradio_list]} {
+if {![regexp {Radios:\s*\[.*15\.4.*TREL.*\]} $multiradio_list]} {
     fail "BR Leader entry in Router_1 does not support both 15.4 and TREL."
 }
 send_user "Multi-radio neighbor info verified successfully!\n"
@@ -195,24 +198,9 @@ set ping_output [exec docker exec -i $container2 ot-ctl ping $br_linklocal 500 1
 send_user "Ping output: $ping_output\n"
 check_string_contains $ping_output "bytes from"
 
-# Verify TREL counters
-set r1_trel_counters [exec docker exec -i $container2 ot-ctl trel counters]
-set br_trel_counters [exec docker exec -i $container1 ot-ctl trel counters]
-
-# Verify Router_1 TREL outbound packets > 0 and DUT TREL inbound packets > 0
-if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $r1_trel_counters match r1_out] || $r1_out == 0} {
-    fail "Router_1 did not send TREL packets."
-}
-if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $br_trel_counters match br_in] || $br_in == 0} {
-    fail "BR Leader did not receive TREL packets."
-}
-# Verify DUT TREL outbound packets > 0 and Router_1 TREL inbound packets > 0 (for ping reply)
-if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $br_trel_counters match br_out] || $br_out == 0} {
-    fail "BR Leader did not send TREL response."
-}
-if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $r1_trel_counters match r1_in] || $r1_in == 0} {
-    fail "Router_1 did not receive TREL response."
-}
+# Verify TREL counters: Router_1 outbound -> BR Leader inbound, and BR Leader outbound -> Router_1 inbound
+verify_trel_traffic $container2 "out" $container1 "in"
+verify_trel_traffic $container1 "out" $container2 "in"
 send_user "TREL Ping Link-Local verified: Router_1 -> BR (DUT) -> Router_1\n"
 
 # --- Step 4: Router_2 pings BR (DUT) (Link-Local) ---
@@ -233,7 +221,7 @@ expect_line "Done"
 
 # Verify Router_2 (15.4-only) is not discovered as a TREL peer on DUT
 set trel_peers [exec docker exec -i $container1 ot-ctl trel peers]
-if {[string match "*$r2_extaddr*" $trel_peers]} {
+if {[string match -nocase "*$r2_extaddr*" $trel_peers]} {
     fail "Router_2 (15.4-only) incorrectly discovered as TREL peer on DUT."
 }
 send_user "Verified: Router_2 (15.4 only) is not discovered as a TREL peer on DUT.\n"
@@ -256,25 +244,9 @@ set ping_output [exec docker exec -i $container2 ot-ctl ping $r2_mleid 500 1]
 send_user "Ping output: $ping_output\n"
 check_string_contains $ping_output "bytes from"
 
-# Verify TREL counters
-set r1_trel [exec docker exec -i $container2 ot-ctl trel counters]
-set br_trel [exec docker exec -i $container1 ot-ctl trel counters]
-
-# Verification:
-# Ping request: Router_1 (TREL Out) -> DUT (TREL In -> Forward over 15.4) -> Router_2
-# Ping reply:   Router_2 -> (15.4) -> DUT (Forward over TREL -> TREL Out) -> Router_1 (TREL In)
-if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $r1_trel match r1_out] || $r1_out == 0} {
-    fail "Router_1 did not send TREL packet for ping request."
-}
-if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $br_trel match br_in] || $br_in == 0} {
-    fail "BR Leader did not receive TREL packet for ping request."
-}
-if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $br_trel match br_out] || $br_out == 0} {
-    fail "BR Leader did not send TREL packet for ping reply."
-}
-if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $r1_trel match r1_in] || $r1_in == 0} {
-    fail "Router_1 did not receive TREL packet for ping reply."
-}
+# Verify TREL counters: Router_1 outbound -> BR Leader inbound, and BR Leader outbound -> Router_1 inbound
+verify_trel_traffic $container2 "out" $container1 "in"
+verify_trel_traffic $container1 "out" $container2 "in"
 send_user "Verified TREL routing for Router_1 -> Router_2 ping successfully!\n"
 
 # --- Step 6: Router_2 pings Router_1 (Mesh-Local EID) ---
@@ -301,25 +273,9 @@ expect {
 }
 expect_line "Done"
 
-# Verify TREL counters
-set r1_trel [exec docker exec -i $container2 ot-ctl trel counters]
-set br_trel [exec docker exec -i $container1 ot-ctl trel counters]
-
-# Verification:
-# Ping request: Router_2 -> (15.4) -> DUT (Forward over TREL -> TREL Out) -> Router_1 (TREL In)
-# Ping reply:   Router_1 (TREL Out) -> DUT (TREL In -> Forward over 15.4) -> Router_2
-if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $r1_trel match r1_in] || $r1_in == 0} {
-    fail "Router_1 did not receive TREL packet for ping request."
-}
-if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $br_trel match br_out] || $br_out == 0} {
-    fail "BR Leader did not send TREL packet for ping request."
-}
-if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $r1_trel match r1_out] || $r1_out == 0} {
-    fail "Router_1 did not send TREL packet for ping reply."
-}
-if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $br_trel match br_in] || $br_in == 0} {
-    fail "BR Leader did not receive TREL packet for ping reply."
-}
+# Verify TREL counters: BR Leader outbound -> Router_1 inbound, and Router_1 outbound -> BR Leader inbound
+verify_trel_traffic $container1 "out" $container2 "in"
+verify_trel_traffic $container2 "out" $container1 "in"
 send_user "Verified TREL routing for Router_2 -> Router_1 ping successfully!\n"
 
 dispose_all
