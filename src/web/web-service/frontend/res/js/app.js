@@ -287,7 +287,7 @@
                     console.log(response);
                     $scope.res = response.data.result;
                     if (response.data.result == 'successful') {
-                        var image = "http://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=v%3D1%26%26eui%3D" + response.data.eui64 +"%26%26cc%3D" + $scope.thread.pskd +"&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L";
+                        var image = "https://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=v%3D1%26%26eui%3D" + response.data.eui64 +"%26%26cc%3D" + $scope.thread.pskd +"&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L";
                         $scope.showQRCode(event, image);
                     } else {
                         $scope.showQRAlert(event, "sorry, can not generate the QR code.");
@@ -440,6 +440,10 @@
 
         $scope.restServerPort = '8081';
         var formatRestAddr = function(host, port) {
+            // When using HTTPS, omit port (assumes client sees 443 and reverse proxy routes to correct backend port)
+            if (window.location.protocol === 'https:') {
+                return (host.indexOf(':') > -1) ? '[' + host + ']' : host;
+            }
             return (host.indexOf(':') > -1) ? '[' + host + ']:' + port : host + ':' + port;
         };
         $scope.ipAddr = formatRestAddr(window.location.hostname, $scope.restServerPort);
@@ -505,7 +509,7 @@
         $scope.dataInit = async function() {
             let response;
         
-            $http.get('http://' + $scope.ipAddr + '/api/node', {
+            $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/node', {
                     headers: {
                         'Accept': 'application/json'
                     }
@@ -609,7 +613,7 @@
         // GET request to check action status
         $scope.getActionStatus = async function(action_id) {
 
-            const response = await $http.get('http://' + $scope.ipAddr + '/api/actions/' + action_id, {
+            const response = await $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/actions/' + action_id, {
                 headers: {
                     'Accept': 'application/vnd.api+json'
                 }
@@ -628,7 +632,7 @@
             console.log("discover network ...");  // Debugging log message
             do {
                 // start discovery task
-                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBodyUpdateDeviceCollection(deviceCount), {
+                const postResponse = await $http.post(window.location.protocol + '//' + $scope.ipAddr + '/api/actions', $scope.createRequestBodyUpdateDeviceCollection(deviceCount), {
                     headers: {
                         'Content-Type': 'application/vnd.api+json',
                         'Accept': 'application/vnd.api+json'
@@ -670,7 +674,7 @@
 
         // GET device collection
         $scope.fetchDevices = async function () {
-            const response = await $http.get('http://' + $scope.ipAddr + '/api/devices', {
+            const response = await $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/devices', {
                 headers: {
                     'Accept': 'application/json'
                 }
@@ -689,7 +693,7 @@
 
             do {
                 // Fetch device diagnostics
-                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBody(device_id), {
+                const postResponse = await $http.post(window.location.protocol + '//' + $scope.ipAddr + '/api/actions', $scope.createRequestBody(device_id), {
                     headers: {
                         'Content-Type': 'application/vnd.api+json',
                         'Accept': 'application/vnd.api+json'
@@ -785,7 +789,7 @@
             const devices = await $scope.fetchDevices();
 
             // Delete diagnostics entries
-            await $http.delete('http://' + $scope.ipAddr + '/api/diagnostics').then(function(response) {
+            await $http.delete(window.location.protocol + '//' + $scope.ipAddr + '/api/diagnostics').then(function(response) {
                 console.log(`Deleted diagnostics status ${response.status}`);
             });
 
@@ -793,7 +797,7 @@
             await $scope.fetchDiagnosticsForDevices(devices);
 
             // Fetch the list of device diagnostics
-            const getResponse = await $http.get('http://' + $scope.ipAddr + '/api/diagnostics', {
+            const getResponse = await $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/diagnostics', {
                 headers: {
                     'Accept': 'application/json'
                 }
