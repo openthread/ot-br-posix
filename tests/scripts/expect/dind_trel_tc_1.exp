@@ -81,6 +81,20 @@ set br_extaddr [exec docker exec -i $container1 ot-ctl extaddr]
 set br_extaddr [string trim [lindex [split $br_extaddr "\n"] 0]]
 send_user "BR Leader ExtAddr: $br_extaddr\n"
 
+# Set up MAC isolation: Router_1 and Router_2 must only allow BR Leader (DUT)
+send_user -- "--- Setting up MAC filter isolation ---\n"
+exec docker exec -i $container2 ot-ctl macfilter addr clear
+exec docker exec -i $container2 ot-ctl macfilter addr allowlist
+exec docker exec -i $container2 ot-ctl macfilter addr add $br_extaddr
+
+switch_node 4
+send "macfilter addr clear\n"
+expect_line "Done"
+send "macfilter addr allowlist\n"
+expect_line "Done"
+send "macfilter addr add $br_extaddr\n"
+expect_line "Done"
+
 # Start Thread on container 2 (Router_1)
 send_user -- "--- Starting Thread on Container 2 ---\n"
 exec docker exec -i $container2 ot-ctl ifconfig up
@@ -112,20 +126,6 @@ send "extaddr\n"
 set r2_extaddr [expect_line {[0-9a-fA-F]{16}}]
 expect_line "Done"
 send_user "Router_2 ExtAddr: $r2_extaddr\n"
-
-# Set up MAC isolation: Router_1 and Router_2 must only allow BR Leader (DUT)
-send_user -- "--- Setting up MAC filter isolation ---\n"
-exec docker exec -i $container2 ot-ctl macfilter addr clear
-exec docker exec -i $container2 ot-ctl macfilter addr allowlist
-exec docker exec -i $container2 ot-ctl macfilter addr add $br_extaddr
-
-switch_node 4
-send "macfilter addr clear\n"
-expect_line "Done"
-send "macfilter addr allowlist\n"
-expect_line "Done"
-send "macfilter addr add $br_extaddr\n"
-expect_line "Done"
 
 # Wait for neighbor tables to update and stabilize
 send_user -- "--- Waiting 15 seconds for neighbors to stabilize ---\n"
