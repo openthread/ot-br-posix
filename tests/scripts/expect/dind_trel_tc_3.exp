@@ -29,23 +29,6 @@
 
 source "tests/scripts/expect/_common.exp"
 
-# Helper to verify no TREL traffic has occurred
-proc verify_no_trel_traffic {c} {
-    set cnts [exec docker exec -i $c ot-ctl trel counters]
-    send_user "TREL counters on $c:\n$cnts\n"
-    set inbound_bytes 0
-    set outbound_bytes 0
-    if {[regexp {Inbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match ibytes]} {
-        set inbound_bytes $ibytes
-    }
-    if {[regexp {Outbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match obytes]} {
-        set outbound_bytes $obytes
-    }
-    if {$inbound_bytes > 1000 || $outbound_bytes > 1000} {
-        fail "TREL traffic occurred on $c (Inbound: $inbound_bytes bytes, Outbound: $outbound_bytes bytes) exceeding probe threshold!"
-    }
-}
-
 # Start relays and containers
 set pty1 [create_socat_tcp 1 9000]
 set pty2 [create_socat_tcp 2 9001]

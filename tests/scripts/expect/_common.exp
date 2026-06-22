@@ -292,8 +292,7 @@ proc get_omr_addr {} {
 
 proc check_string_contains {haystack needle} {
     if {![regexp $needle $haystack]} {
-        puts "Error: '$needle' not found."
-        exit 1
+        fail "'$needle' not found."
     }
 }
 
@@ -410,5 +409,21 @@ proc verify_trel_traffic {c1 expected_dir1 c2 expected_dir2} {
                 fail "TREL Inbound packet verification failed on $c."
             }
         }
+    }
+}
+
+proc verify_no_trel_traffic {c} {
+    set cnts [exec docker exec -i $c ot-ctl trel counters]
+    send_user "TREL counters on $c:\n$cnts\n"
+    set inbound_bytes 0
+    set outbound_bytes 0
+    if {[regexp {Inbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match ibytes]} {
+        set inbound_bytes $ibytes
+    }
+    if {[regexp {Outbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match obytes]} {
+        set outbound_bytes $obytes
+    }
+    if {$inbound_bytes > 1000 || $outbound_bytes > 1000} {
+        fail "TREL traffic occurred on $c (Inbound: $inbound_bytes bytes, Outbound: $outbound_bytes bytes) exceeding probe threshold!"
     }
 }
