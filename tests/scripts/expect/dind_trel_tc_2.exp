@@ -46,7 +46,7 @@ proc start_otbr_docker_dind_custom {name sim_app sim_id pty rcp_port mac port_of
     
     set entrypoint_cmd "exec /init"
     if {$block_mac != ""} {
-        set entrypoint_cmd "iptables -A INPUT -m mac --mac-source $block_mac -j DROP && ip6tables -A INPUT -m mac --mac-source $block_mac -j DROP && exec /init"
+        set entrypoint_cmd "iptables -A INPUT -m mac --mac-source $block_mac -j DROP; ip6tables -A INPUT -m mac --mac-source $block_mac -j DROP; exec /init"
     }
 
     exec docker run -d \
