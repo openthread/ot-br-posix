@@ -234,6 +234,9 @@ test_run()
     echo "--- Running TREL Radio Link (Re)discovery through Receive (1_4_TREL_TC_4) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_4.exp"
 
+    echo "--- Running TREL Discover Scan over multi-radio (1_4_TREL_TC_5) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_5.exp"
+
     echo "--- Running NAT64 integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_nat64.exp"
 
