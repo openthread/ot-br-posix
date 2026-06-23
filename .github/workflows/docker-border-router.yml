@@ -32,9 +32,19 @@ on:
   push:
     branches-ignore:
       - 'dependabot/**'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - 'main'
+  workflow_call:
+    inputs:
+      release_tag:
+        description: 'Release tag to assign to the image'
+        required: false
+        type: string
+        default: ''
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
@@ -158,8 +168,10 @@ jobs:
             ${{ env.DOCKERHUB_REPO }}
           tags: |
             type=ref,event=branch
+            type=ref,event=tag
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
+            type=raw,value=${{ inputs.release_tag || 'none' }},enable=${{ inputs.release_tag != '' && inputs.release_tag != null }}
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
