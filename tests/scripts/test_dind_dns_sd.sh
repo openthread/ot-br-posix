@@ -75,9 +75,14 @@ test_teardown()
     echo "Active and inactive containers:"
     docker ps -a || true
     echo "Container logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web" "test-client" "dhcp6-server"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web" "test-client" "dhcp6-server" "eth1-server" "eth2-server"; do
         docker logs "$c" || true
     done
+
+    echo "Radvd/Tcpdump logs on eth2-server:"
+    docker exec -i eth2-server cat /var/log/radvd.log || true
+    docker exec -i eth2-server cat /var/log/tcpdump.log || true
+    ip -6 route del 2002:1234::1234 || true
 
     echo "Agent logs:"
     for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web"; do
@@ -141,7 +146,7 @@ test_setup()
     echo "Building test client image with mdns-scan and ping/ndisc6 tools..."
     docker build -t "${TEST_CLIENT_IMAGE}" - <<EOF
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server dnsmasq python3-scapy radvd tcpdump --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server dnsmasq python3-scapy radvd tcpdump procps --no-install-recommends && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["mdns-scan"]
 EOF
 
@@ -256,6 +261,9 @@ test_run()
 
     echo "--- Running IPv6 Connectivity using DHCPv6-PD (1_4_PIC_TC_1) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_1.exp"
+
+    echo "--- Running IPv6 default route advertisement (1_4_PIC_TC_3) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_3.exp"
 }
 
 main()
