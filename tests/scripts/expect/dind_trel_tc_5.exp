@@ -128,27 +128,26 @@ set found_node3 false
 
 # We spawn ot-ctl on container 2 to execute discover scan interactively
 spawn docker exec -i $container2 ot-ctl
-set container2_ctl_spawn_id $spawn_id
 
-send -i $container2_ctl_spawn_id "discover\n"
+send "discover\n"
 expect {
-    -i $container2_ctl_spawn_id -re {otbr-net1} {
+    -re {otbr-net1} {
         set found_node1 true
         exp_continue
     }
-    -i $container2_ctl_spawn_id -re {otbr-net3} {
+    -re {otbr-net3} {
         set found_node3 true
         exp_continue
     }
-    -i $container2_ctl_spawn_id -re {Done} {
+    -re {Done} {
         # Scan completed
     }
     timeout {
         fail "discover scan timed out on Node 2"
     }
 }
-send -i $container2_ctl_spawn_id "exit\n"
-expect -i $container2_ctl_spawn_id eof
+send "exit\n"
+expect eof
 
 if {!$found_node1} {
     fail "Node 2 did not discover Node 1 (DUT)!"
