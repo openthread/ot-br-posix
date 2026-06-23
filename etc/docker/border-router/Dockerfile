@@ -134,6 +134,7 @@ RUN set -x \
            curl \
            ipset \
            iptables \
+           iproute2 \
            libjsoncpp25 \
            xz-utils \
     && PLATFORM_SPEC="${TARGETARCH}${TARGETVARIANT:+/$TARGETVARIANT}" \
