@@ -214,7 +214,7 @@ info1 = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._ud
 resolved1 = False
 for _ in range(10):
     info1.request(zc, 2000)
-    if info1.port == 33333 and info1.server == 'host-test-1.local.':
+    if info1.port == 33333 and info1.server == 'host-test-1.local.' and info1.addresses_by_version(IPVersion.V6Only):
         resolved1 = True
         break
     time.sleep(1)
@@ -327,7 +327,7 @@ info1 = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._ud
 resolved1 = False
 for _ in range(10):
     info1.request(zc, 2000)
-    if info1.port == 33333 and info1.server == 'host-test-1.local.':
+    if info1.port == 33333 and info1.server == 'host-test-1.local.' and info1.addresses_by_version(IPVersion.V6Only):
         resolved1 = True
         break
     time.sleep(1)
@@ -351,7 +351,7 @@ info2 = ServiceInfo('_thread-test._udp.local.', 'service-test-2._thread-test._ud
 resolved2 = False
 for _ in range(10):
     info2.request(zc, 2000)
-    if info2.port == 44444 and info2.server == 'host-test-2.local.':
+    if info2.port == 44444 and info2.server == 'host-test-2.local.' and info2.addresses_by_version(IPVersion.V6Only):
         resolved2 = True
         break
     time.sleep(1)

@@ -426,7 +426,7 @@ zc = Zeroconf(ip_version=IPVersion.V6Only)
 info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
 for _ in range(10):
     info.request(zc, 2000)
-    if info.server is not None:
+    if info.server is not None and info.addresses_by_version(IPVersion.V6Only):
         break
     time.sleep(1)
 if info.server is None:
