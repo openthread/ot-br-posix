@@ -1,0 +1,196 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+# Start relays and containers
+set pty1 [create_socat_tcp 1 9000]
+set pty2 [create_socat_tcp 2 9001]
+
+set container1 "otbr-test-container-1"
+set container2 "otbr-test-container-2"
+
+send_user -- "--- Starting container 1 (BR Leader/DUT) ---\n"
+start_otbr_docker_dind $container1 $::env(EXP_OT_RCP_PATH) 2 $pty1 9000
+
+send_user -- "--- Starting container 2 (Reference Multi-Radio BR) ---\n"
+start_otbr_docker_dind $container2 $::env(EXP_OT_RCP_PATH) 3 $pty2 9001
+
+# Spawn Node 4 (15.4-only Router) on host
+send_user -- "--- Spawning CLI Node 4 (15.4-only Router) ---\n"
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+
+# Ensure both containers have initialized correctly and otbr-agent socket is ready
+wait_for_otbr_agent [list $container1 $container2]
+
+# Stop Thread, down interface, and set routerselectionjitter initially
+foreach c [list $container1 $container2] {
+    exec docker exec -i $c ot-ctl thread stop
+    exec docker exec -i $c ot-ctl ifconfig down
+    exec docker exec -i $c ot-ctl routerselectionjitter 1
+}
+
+switch_node 4
+send "thread stop\n"
+expect_line "Done"
+send "ifconfig down\n"
+expect_line "Done"
+
+# Configure distinct Active Datasets on all nodes
+send_user -- "--- Configuring separate Active Datasets on all nodes ---\n"
+
+# Node 1 (DUT)
+exec docker exec -i $container1 ot-ctl dataset init new
+exec docker exec -i $container1 ot-ctl dataset panid 0x1111
+exec docker exec -i $container1 ot-ctl dataset extpanid 1111111111111111
+exec docker exec -i $container1 ot-ctl dataset networkname otbr-net1
+exec docker exec -i $container1 ot-ctl dataset channel 11
+exec docker exec -i $container1 ot-ctl dataset commit active
+
+# Node 2 (Reference Multi-Radio BR)
+exec docker exec -i $container2 ot-ctl dataset init new
+exec docker exec -i $container2 ot-ctl dataset panid 0x2222
+exec docker exec -i $container2 ot-ctl dataset extpanid 2222222222222222
+exec docker exec -i $container2 ot-ctl dataset networkname otbr-net2
+exec docker exec -i $container2 ot-ctl dataset channel 11
+exec docker exec -i $container2 ot-ctl dataset commit active
+
+# Node 3 (15.4-only Router)
+switch_node 4
+send "dataset init new\n"
+expect_line "Done"
+send "dataset panid 0x3333\n"
+expect_line "Done"
+send "dataset extpanid 3333333333333333\n"
+expect_line "Done"
+send "dataset networkname otbr-net3\n"
+expect_line "Done"
+send "dataset channel 11\n"
+expect_line "Done"
+send "dataset commit active\n"
+expect_line "Done"
+
+# Start Thread on all nodes
+send_user -- "--- Starting Thread on all nodes ---\n"
+exec docker exec -i $container1 ot-ctl ifconfig up
+exec docker exec -i $container1 ot-ctl thread start
+
+exec docker exec -i $container2 ot-ctl ifconfig up
+exec docker exec -i $container2 ot-ctl thread start
+
+switch_node 4
+send "ifconfig up\n"
+expect_line "Done"
+send "thread start\n"
+expect_line "Done"
+
+# Wait for all nodes to become leader of their respective networks
+wait_for_container_state $container1 "leader"
+wait_for_container_state $container2 "leader"
+switch_node 4
+wait_for "state" "leader"
+expect_line "Done"
+
+# Wait for neighbor discovery and stabilizers
+send_user -- "--- Waiting 10 seconds for networks to stabilize ---\n"
+sleep 10
+
+# Step 2: Node 2 performs MLE Discovery Scan
+send_user -- "--- Step 2: Node 2 performs MLE Discovery Scan ---\n"
+set found_node1 false
+set found_node3 false
+
+# We spawn ot-ctl on container 2 to execute discover scan interactively
+spawn docker exec -i $container2 ot-ctl
+set container2_ctl_spawn_id $spawn_id
+
+send -i $container2_ctl_spawn_id "discover\n"
+expect {
+    -i $container2_ctl_spawn_id -re {otbr-net1} {
+        set found_node1 true
+        exp_continue
+    }
+    -i $container2_ctl_spawn_id -re {otbr-net3} {
+        set found_node3 true
+        exp_continue
+    }
+    -i $container2_ctl_spawn_id -re {Done} {
+        # Scan completed
+    }
+    timeout {
+        fail "discover scan timed out on Node 2"
+    }
+}
+send -i $container2_ctl_spawn_id "exit\n"
+expect -i $container2_ctl_spawn_id eof
+
+if {!$found_node1} {
+    fail "Node 2 did not discover Node 1 (DUT)!"
+}
+if {!$found_node3} {
+    fail "Node 2 did not discover Node 3!"
+}
+send_user "Node 2 successfully discovered both Node 1 (DUT) and Node 3.\n"
+
+
+# Step 3: Node 3 performs MLE Discovery Scan
+send_user -- "--- Step 3: Node 3 performs MLE Discovery Scan ---\n"
+set found_node1 false
+set found_node2 false
+
+switch_node 4
+send "discover\n"
+expect {
+    -re {otbr-net1} {
+        set found_node1 true
+        exp_continue
+    }
+    -re {otbr-net2} {
+        set found_node2 true
+        exp_continue
+    }
+    -re {Done} {
+        # Scan completed
+    }
+    timeout {
+        fail "discover scan timed out on Node 3"
+    }
+}
+
+if {!$found_node1} {
+    fail "Node 3 did not discover Node 1 (DUT)!"
+}
+if {!$found_node2} {
+    fail "Node 3 did not discover Node 2!"
+}
+send_user "Node 3 successfully discovered both Node 1 (DUT) and Node 2.\n"
+
+dispose_all
+send_user -- "--- TREL Discover Scan over multi-radio (1_4_TREL_TC_5) Integration Test PASSED successfully! ---\n"
+exit 0
