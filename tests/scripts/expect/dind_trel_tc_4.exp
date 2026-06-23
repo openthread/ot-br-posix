@@ -301,22 +301,21 @@ expect_line "Done"
 
 # Spawn ot-ctl on Router and send commands one by one to avoid socket buffer overflow in daemon
 spawn docker exec -i $container2 ot-ctl
-set router_ctl_spawn_id $spawn_id
 
-send -i $router_ctl_spawn_id "udp open\n"
-expect -i $router_ctl_spawn_id "Done"
-expect -i $router_ctl_spawn_id "> "
+send "udp open\n"
+expect "Done"
+expect "> "
 
 for {set i 0} {$i < 300} {incr i} {
-    send -i $router_ctl_spawn_id "udp send $ed_mleid 1234 hello\n"
+    send "udp send $ed_mleid 1234 hello\n"
     expect {
-        -i $router_ctl_spawn_id -re {Done\r*\n> } {
+        -re {Done\r*\n> } {
             # success
         }
-        -i $router_ctl_spawn_id "Error" {
+        "Error" {
             fail "UDP send failed at message $i"
         }
-        -i $router_ctl_spawn_id timeout {
+        timeout {
             fail "UDP send timed out at message $i"
         }
     }
@@ -326,12 +325,12 @@ for {set i 0} {$i < 300} {incr i} {
     after 10
 }
 
-send -i $router_ctl_spawn_id "udp close\n"
-expect -i $router_ctl_spawn_id "Done"
-expect -i $router_ctl_spawn_id "> "
+send "udp close\n"
+expect "Done"
+expect "> "
 
-send -i $router_ctl_spawn_id "exit\n"
-expect -i $router_ctl_spawn_id eof
+send "exit\n"
+expect eof
 
 # Close socket on ED
 switch_node 4

@@ -237,6 +237,9 @@ test_run()
     echo "--- Running TREL Discover Scan over multi-radio (1_4_TREL_TC_5) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_5.exp"
 
+    echo "--- Running TREL mDNS Discovery of TREL Service (1_4_TREL_TC_6) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_6.exp"
+
     echo "--- Running NAT64 integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_nat64.exp"
 
