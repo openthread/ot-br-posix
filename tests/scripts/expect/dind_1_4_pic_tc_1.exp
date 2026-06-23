@@ -1,0 +1,555 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set eth2_server "eth2-server"
+set eth1_server "eth1-server"
+
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start Eth_2 container (DHCPv6 PD Server, DNS Server, Internet HTTP Server)
+send_user "Starting Eth_2 container (CPE/DNS/Internet)...\n"
+track_container $eth2_server
+exec docker run -d \
+    --name $eth2_server \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "sleep infinity"
+
+# Wait for eth2-server eth0 to be ready
+sleep 2
+
+# Add 2002:1234::1234 IP to loopback of eth2-server
+exec docker exec -i $eth2_server ip -6 addr add 2002:1234::1234/128 dev lo
+
+# Configure and start Kea DHCPv6 PD server on eth2-server (delegating 2005:1234:abcd:0::/56)
+set kea_conf {{"Dhcp6": {"interfaces-config": {"interfaces": ["eth0"]}, "lease-database": {"type": "memfile", "persist": true, "name": "/var/lib/kea/kea-leases6.csv"}, "preferred-lifetime": 54000, "valid-lifetime": 86400, "subnet6": [{"subnet": "fd00:db8:1::/64", "interface": "eth0", "pd-pools": [{"prefix": "2005:1234:abcd:0::", "prefix-len": 56, "delegated-len": 64}], "rapid-commit": true}], "loggers": [{"name": "kea-dhcp6", "output_options": [{"output": "stdout"}], "severity": "DEBUG", "debuglevel": 99}]}}}
+exec docker exec -i $eth2_server bash -c "echo '$kea_conf' > /etc/kea/kea-dhcp6.conf"
+exec docker exec -i $eth2_server mkdir -p /var/lib/kea /var/run/kea
+exec docker exec -d $eth2_server /usr/sbin/kea-dhcp6 -c /etc/kea/kea-dhcp6.conf
+
+# Start dnsmasq on eth2-server resolving threadgroup.org to 2002:1234::1234
+exec docker exec -d $eth2_server dnsmasq --address=/threadgroup.org/2002:1234::1234 --no-hosts --no-resolv --interface=eth0 --port=53
+
+# Start Python HTTP server on eth2-server serving test.html on 2002:1234::1234
+exec docker exec -i $eth2_server mkdir -p /var/www/html
+exec docker exec -i $eth2_server bash -c "echo 'test-content-eth2' > /var/www/html/test.html"
+exec docker exec -d $eth2_server bash -c "cd /var/www/html && python3 -m http.server 80 --bind 2002:1234::1234"
+
+# Enable IPv6 forwarding on eth2-server for radvd
+exec docker exec -i $eth2_server sysctl -w net.ipv6.conf.all.forwarding=1
+exec docker exec -i $eth2_server sysctl -w net.ipv6.conf.default.forwarding=1
+exec docker exec -i $eth2_server sysctl -w net.ipv6.conf.eth0.forwarding=1
+
+# Start radvd on eth2-server to advertise default route on infrastructure link
+set radvd_conf "interface eth0\n{\n  AdvSendAdvert on;\n  MinRtrAdvInterval 3;\n  MaxRtrAdvInterval 10;\n  prefix fd00:db8:1::/64\n  {\n    AdvOnLink on;\n    AdvAutonomous on;\n    AdvRouterAddr on;\n  };\n};"
+exec docker exec -i $eth2_server bash -c "echo '$radvd_conf' > /etc/radvd.conf"
+exec docker exec -i $eth2_server chmod 600 /etc/radvd.conf
+# We run radvd with -u root to avoid permission issues in some docker environments
+# We run it in foreground with -n and redirect to a log file so we can debug failures
+exec docker exec -d $eth2_server bash -c "radvd -C /etc/radvd.conf -u root -n -m stderr >/var/log/radvd.log 2>&1"
+sleep 1
+if {[catch {exec docker exec -i $eth2_server pgrep radvd} radvd_pid]} {
+    if {![catch {exec docker exec -i $eth2_server cat /var/log/radvd.log} radvd_log]} {
+        send_user "\n=== radvd.log ===\n$radvd_log\n=== end of radvd.log ===\n"
+    }
+    fail "Failed to start radvd on eth2-server: $radvd_pid"
+}
+send_user "radvd started on eth2-server with PID: [string trim $radvd_pid]\n"
+
+
+# 2. Start Eth_1 container (Local Infrastructure Host)
+send_user "Starting Eth_1 container (Local Host)...\n"
+track_container $eth1_server
+exec docker run -d \
+    --name $eth1_server \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "echo 1 > /proc/sys/net/ipv6/conf/all/autoconf && echo 1 > /proc/sys/net/ipv6/conf/default/autoconf && echo 1 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/default/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+
+# Start Python HTTP server on eth1-server serving test2.html
+exec docker exec -i $eth1_server mkdir -p /var/www/html
+exec docker exec -i $eth1_server bash -c "echo 'test-content-eth1' > /var/www/html/test2.html"
+exec docker exec -d $eth1_server bash -c "cd /var/www/html && python3 -m http.server 80 --bind ::"
+
+# Get eth2-server global IPv6 address on infrastructure-link
+set eth2_ip ""
+set format {{{(index .NetworkSettings.Networks "infrastructure-link").GlobalIPv6Address}}}
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker inspect $eth2_server -f $format} ip]} {
+        set eth2_ip [string trim $ip]
+        if {$eth2_ip ne ""} {
+            break
+        }
+    }
+    sleep 1
+}
+if {$eth2_ip eq ""} {
+    fail "Failed to get IPv6 address for eth2-server"
+}
+send_user "Eth_2 Server IPv6 Address: $eth2_ip\n"
+
+# Configure routing on DinD runner: route 2002:1234::1234 via eth2-server
+send_user "Configuring routing for internet server on DinD host...\n"
+exec ip -6 route replace 2002:1234::1234 via $eth2_ip
+
+# 3. Start Border Router in Docker (DUT)
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+wait_for_otbr_agent [list $container]
+
+# Configure DNS server of OTBR to use eth2-server
+exec docker exec -i $container bash -c "echo nameserver $eth2_ip > /etc/resolv.conf"
+
+# Setup active dataset on OTBR via ot-ctl
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+wait_for_container_state $container "leader"
+
+# Enable DHCPv6 Prefix Delegation explicitly on OTBR
+send_user "Enabling Prefix Delegation on the OTBR...\n"
+exec docker exec -i $container ot-ctl br pd enable
+sleep 5
+
+# 4. Validate OMR Prefix in Thread Network Data
+send_user "Step 4: Validating OMR Prefix in Thread Network Data...\n"
+set prefix_acquired false
+set delegated_prefix ""
+for {set i 0} {$i < 20} {incr i} {
+    if {[catch {exec docker exec -i $container ot-ctl br pd omrprefix} pd_omr]} {
+        set pd_omr ""
+    }
+    set pd_omr [string trim $pd_omr]
+    send_user "Current DHCPv6 PD OMR Prefix: $pd_omr\n"
+    
+    if {[regexp {([0-9a-fA-F:]+/64)} $pd_omr match prefix]} {
+        set delegated_prefix $prefix
+        set prefix_acquired true
+        break
+    }
+    sleep 2
+}
+
+if {!$prefix_acquired} {
+    fail "DHCPv6 PD client failed to acquire a prefix from the server"
+}
+send_user "Successfully Discovered Delegated Prefix: $delegated_prefix\n"
+
+# Verify OMR prefix properties in netdata
+# The OMR prefix should be subprefix of 2005:1234:abcd:0::/56, length /64, with 'r' (default) and 'med' preference
+set omr_regex {2005:1234:abcd:(?:[0-9a-fA-F]{1,2})?::/64\s+([a-z]*r[a-z]*)\s+med}
+set netdata_verified false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl netdata show} netdata]} {
+        send_user "DUT Network Data (Attempt $i):\n$netdata\n"
+        if {[regexp $omr_regex $netdata]} {
+            set netdata_verified true
+            break
+        }
+    }
+    sleep 2
+}
+if {!$netdata_verified} {
+    fail "OMR prefix in Network Data does not meet criteria (subprefix of 2005:1234:abcd:0::/56, /64, default route, med preference)"
+}
+send_user "OMR prefix verified in Thread Network Data successfully.\n"
+
+# 4b. Validate RA on AIL
+send_user "Step 4b: Validating RA on adjacent infrastructure link...\n"
+set py_ra_sniffer {import sys
+import ipaddress
+from scapy.all import *
+
+target_prefix = sys.argv[1]
+try:
+    target_net = ipaddress.IPv6Network(target_prefix, strict=False)
+except Exception as e:
+    print(f"FAIL: Invalid target prefix {target_prefix}: {e}")
+    sys.exit(1)
+
+found_otbr_ra = False
+
+def check_pkt(pkt):
+    global found_otbr_ra
+    if not pkt.haslayer(ICMPv6ND_RA):
+        return False
+    
+    # Check if it has RIO for target prefix
+    i = 1
+    target_opt = None
+    while True:
+        opt = pkt.getlayer(ICMPv6NDOptRouteInfo, nb=i)
+        if opt is None:
+            break
+        try:
+            opt_net = ipaddress.IPv6Network(f"{opt.prefix}/{opt.plen}", strict=False)
+            if opt_net == target_net:
+                target_opt = opt
+                break
+        except Exception as e:
+            pass
+        i += 1
+        
+    if target_opt is not None:
+        if pkt[IPv6].dst != "ff02::1":
+            return False
+
+        print(f"Captured OTBR RA from {pkt[IPv6].src} to {pkt[IPv6].dst}")
+            
+        ra = pkt[ICMPv6ND_RA]
+        raw_bytes = bytes(ra)
+        flags = raw_bytes[5]
+        # SNAC / Stub Router flag is bit 6 of RA flags (0x02)
+        if not (flags & 0x02):
+            print(f"FAIL: SNAC Router flag not set. Flags: {hex(flags)}")
+            sys.exit(1)
+            
+        if target_opt.prf in [0, 3] and target_opt.rtlifetime > 0:
+            found_otbr_ra = True
+            return True
+        else:
+            print(f"FAIL: RIO parameters invalid: prf={target_opt.prf}, lifetime={target_opt.rtlifetime}")
+            sys.exit(1)
+            
+    return False
+
+# Sniff until check_pkt returns True, or timeout
+sniff(filter="icmp6 and ip6[40] == 134", stop_filter=check_pkt, timeout=20)
+
+if not found_otbr_ra:
+    print("FAIL: OTBR RA packet not captured")
+    sys.exit(1)
+
+print("PASS")
+sys.exit(0)
+}
+
+# Run RA sniffer on eth1-server
+send_user "Running RA sniffer on Eth_1...\n"
+if {[catch {exec docker exec -i $eth1_server python3 -c $py_ra_sniffer $delegated_prefix} ra_res]} {
+    send_user "RA Sniffer Error: $ra_res\n"
+    fail "RA validation failed on Eth_1"
+}
+set ra_res [string trim $ra_res]
+send_user "RA Sniffer Result: $ra_res\n"
+if {![string match "*PASS*" $ra_res]} {
+    fail "RA validation failed on Eth_1"
+}
+send_user "RA validation passed.\n"
+
+# Get the running Border Router's active dataset dynamically to configure the client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [lindex [split [string trim $active_dataset] "\n"] 0]
+
+# Get DUT ExtAddr
+set dut_extaddr [exec docker exec -i $container ot-ctl extaddr]
+set dut_extaddr [lindex [split [string trim $dut_extaddr] "\n"] 0]
+send_user "DUT ExtAddr: $dut_extaddr\n"
+
+# 5. Spawn Router_1 (Node 3)
+send_user "Starting Router_1 (Node 3)...\n"
+spawn_node 3 cli $::env(EXP_OT_CLI_PATH)
+
+# Get Router_1 ExtAddr (while disabled)
+send "extaddr\r\n"
+expect_line "extaddr"
+set router_extaddr [expect_line {[0-9a-fA-F]{16}}]
+expect_line "Done"
+send_user "Router_1 ExtAddr: $router_extaddr\n"
+
+# Configure Router_1 (still disabled)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+
+# Spawn ED_1 (Node 4)
+send_user "Starting ED_1 (Node 4)...\n"
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+
+# Get ED_1 ExtAddr (while disabled)
+send "extaddr\r\n"
+expect_line "extaddr"
+set ed_extaddr [expect_line {[0-9a-fA-F]{16}}]
+expect_line "Done"
+send_user "ED_1 ExtAddr: $ed_extaddr\n"
+
+# Configure ED_1 (still disabled)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+
+# Configure MAC filters to restrict topology: ED_1 (4) <-> Router_1 (3) <-> DUT (1)
+send_user "Configuring MAC filters for topology ED_1 <-> Router_1 <-> DUT...\n"
+
+# On ED_1 (Node 4), only allow Router_1 (Node 3)
+switch_node 4
+send "macfilter addr add $router_extaddr\r\n"
+expect_line "Done"
+send "macfilter addr allowlist\r\n"
+expect_line "Done"
+
+# On Router_1 (Node 3), allow DUT and ED_1
+switch_node 3
+send "macfilter addr add $dut_extaddr\r\n"
+expect_line "Done"
+send "macfilter addr add $ed_extaddr\r\n"
+expect_line "Done"
+send "macfilter addr allowlist\r\n"
+expect_line "Done"
+
+# On DUT (Node 1/container), only allow Router_1
+exec docker exec -i $container ot-ctl macfilter addr add $router_extaddr
+exec docker exec -i $container ot-ctl macfilter addr allowlist
+
+# Now start Thread on Router_1 and wait for router state
+send_user "Starting Thread on Router_1...\n"
+switch_node 3
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "router"
+expect_line "Done"
+
+# Now start Thread on ED_1 and wait for child state
+send_user "Starting Thread on ED_1...\n"
+switch_node 4
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+sleep 5
+
+# Retrieve DUT's RLOC address to use as DNS server on ED_1
+set otbr_rloc [get_rloc_dns_addr $container]
+send_user "OTBR RLOC IP: $otbr_rloc\n"
+
+# Configure DNS server on ED_1 (Node 4)
+switch_node 4
+send "dns config $otbr_rloc\r\n"
+expect_line "Done"
+
+# Step 5-7: DNS resolution from ED_1
+send_user "Step 5-7: Resolving threadgroup.org from ED_1...\n"
+send "dns resolve threadgroup.org\r\n"
+set timeout 15
+set dns_resolved false
+expect {
+    -re "2002:1234:(0:0:0:0:0|):1234" {
+        set dns_resolved true
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "DNS resolution timed out"
+    }
+}
+if {!$dns_resolved} {
+    fail "DNS resolution failed to resolve threadgroup.org to 2002:1234::1234"
+}
+send_user "DNS resolution verified successfully.\n"
+
+# Step 8: Ping Internet Server (2002:1234::1234) from ED_1
+send_user "Step 8: Verifying Ping to Internet Server (2002:1234::1234)...\n"
+
+# Configure static route on eth2-server for OMR prefix via OTBR global IP
+set format {{{(index .NetworkSettings.Networks "infrastructure-link").GlobalIPv6Address}}}
+set otbr_ip [exec docker inspect $container -f $format]
+set otbr_ip [string trim $otbr_ip]
+send_user "OTBR Infrastructure IP: $otbr_ip\n"
+exec docker exec -i $eth2_server ip -6 route replace $delegated_prefix via $otbr_ip dev eth0
+
+# Send ping from ED_1
+switch_node 4
+send "ping 2002:1234::1234 56 5\r\n"
+set timeout 15
+set ping_success false
+expect {
+    -re "bytes from" {
+        set ping_success true
+        exp_continue
+    }
+    -re "Done" {
+        # Finished
+    }
+    timeout {
+        send_user "Error: Ping to internet server timed out\n"
+    }
+}
+if {!$ping_success} {
+    fail "Ping from ED_1 to Internet Server failed"
+}
+send_user "Ping to Internet Server verified successfully.\n"
+
+# Step 9: HTTP GET to Internet Server from ED_1
+send_user "Step 9: Verifying HTTP GET to Internet Server...\n"
+send "tcp init\r\n"
+expect_line "Done"
+send "tcp connect 2002:1234::1234 80\r\n"
+expect_line "Done"
+expect "TCP: Connection established"
+# Send GET request (hex representation)
+# "GET /test.html HTTP/1.1\r\nHost: threadgroup.org\r\n\r\n"
+send "tcp send -x 474554202F746573742E68746D6C20485454502F312E310D0A486F73743A2074687265616467726F75702E6F72670D0A0D0A\r\n"
+expect_line "Done"
+set timeout 15
+set http_success false
+expect {
+    -re "test-content-eth2" {
+        set http_success true
+        exp_continue
+    }
+    -re "TCP: Reached end of stream" {
+        # Done
+    }
+}
+send "tcp deinit\r\n"
+expect_line "Done"
+
+if {!$http_success} {
+    fail "HTTP GET to Internet Server failed"
+}
+send_user "HTTP GET to Internet Server verified successfully.\n"
+
+# Step 10: Ping Local Server (Eth_1) from ED_1
+send_user "Step 10: Verifying Ping to Local Server (Eth_1)...\n"
+
+# Get SLAAC IP of eth1-server
+# Poll until SLAAC IP is configured on eth1-server
+set eth1_slaac ""
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $eth1_server ip -6 addr show dev eth0 scope global} addrs]} {
+        foreach line [split $addrs "\n"] {
+            if {[string match "*dynamic*" $line]} {
+                if {[regexp {inet6 ([0-9a-fA-F:]+)/64} $line match addr]} {
+                    set eth1_slaac $addr
+                    break
+                }
+            }
+        }
+        if {$eth1_slaac ne ""} {
+            break
+        }
+    }
+    sleep 2
+}
+if {$eth1_slaac == ""} {
+    fail "Eth_1 failed to configure GUA via SLAAC"
+}
+send_user "Eth_1 SLAAC GUA: $eth1_slaac\n"
+
+# Configure static route on eth1-server for OMR prefix via OTBR
+exec docker exec -i $eth1_server ip -6 route replace $delegated_prefix via $otbr_ip dev eth0
+
+# Send ping from ED_1 to Eth_1 SLAAC IP
+switch_node 4
+send "ping $eth1_slaac 56 5\r\n"
+set timeout 15
+set ping_success false
+expect {
+    -re "bytes from" {
+        set ping_success true
+        exp_continue
+    }
+    -re "Done" {
+        # Finished
+    }
+    timeout {
+        send_user "Error: Ping to local server timed out\n"
+    }
+}
+if {!$ping_success} {
+    fail "Ping from ED_1 to Local Server failed"
+}
+send_user "Ping to Local Server verified successfully.\n"
+
+# Step 11: HTTP GET to Local Server (Eth_1) from ED_1
+send_user "Step 11: Verifying HTTP GET to Local Server...\n"
+send "tcp init\r\n"
+expect_line "Done"
+send "tcp connect $eth1_slaac 80\r\n"
+expect_line "Done"
+expect "TCP: Connection established"
+# Send GET request (hex representation)
+# "GET /test2.html HTTP/1.1\r\nHost: localtest.org\r\n\r\n"
+send "tcp send -x 474554202F74657374322E68746D6C20485454502F312E310D0A486F73743A206C6F63616C746573742E6F72670D0A0D0A\r\n"
+expect_line "Done"
+set timeout 15
+set http_success false
+expect {
+    -re "test-content-eth1" {
+        set http_success true
+        exp_continue
+    }
+    -re "TCP: Reached end of stream" {
+        # Done
+    }
+}
+send "tcp deinit\r\n"
+expect_line "Done"
+
+if {!$http_success} {
+    fail "HTTP GET to Local Server failed"
+}
+send_user "HTTP GET to Local Server verified successfully.\n"
+
+# Cleanup routing
+catch { exec ip -6 route del 2002:1234::1234 }
+
+# Cleanup containers
+send_user "Tearing down containers...\n"
+dispose_all
+send_user "# IPv6 Connectivity using DHCPv6-PD delegated OMR prefix integration test completed successfully!\n"
