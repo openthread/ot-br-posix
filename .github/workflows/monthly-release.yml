@@ -45,6 +45,8 @@ jobs:
   create-release:
     name: Create Monthly Release
     runs-on: ubuntu-24.04
+    outputs:
+      tag_name: ${{ steps.generate_tag.outputs.TAG_NAME }}
     
     # Required permission to create tags and releases
     permissions:
@@ -76,6 +78,7 @@ jobs:
             CALVER_TAG="v$(date +'%Y.%m').0"
           fi
           echo "TAG_NAME=$CALVER_TAG" >> $GITHUB_ENV
+          echo "TAG_NAME=$CALVER_TAG" >> $GITHUB_OUTPUT
           echo "Generated tag: $CALVER_TAG"
 
       - name: Create GitHub Release
@@ -87,3 +90,10 @@ jobs:
             --target "${{ github.ref_name }}" \
             --title "OpenThread Border Router $TAG_NAME" \
             --generate-notes
+
+  build-docker:
+    needs: create-release
+    uses: ./.github/workflows/docker-border-router.yml
+    with:
+      release_tag: ${{ needs.create-release.outputs.tag_name }}
+    secrets: inherit
