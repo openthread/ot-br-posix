@@ -357,6 +357,14 @@ sleep 5
 # Since ED_1 is already configured, it should automatically detect the new port/SN and send an update.
 send_user "Step 14: Verifying ED_1 automatically re-registers...\n"
 switch_node 4
+if {[info exists port_after]} {
+    if {[scan $port_after %x portDec] != 1} {
+        fail "Failed to parse port_after: $port_after"
+    }
+    send_user "Waiting for ED_1 to update SRP server port to $portDec...\n"
+    wait_for "srp client server" ":$portDec\\s"
+    expect_line "Done"
+}
 wait_for "srp client host state" "Registered"
 expect_line "Done"
 
