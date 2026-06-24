@@ -1,0 +1,367 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+set pty1 [create_socat_tcp 1 9000]
+set pty2 [create_socat_tcp 2 9001]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start border router in Docker
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+wait_for_otbr_agent [list $container]
+
+# 2. Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+wait_for_container_state $container "leader"
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its prefixes
+send_user "Waiting 15 seconds for prefixes to stabilize...\n"
+sleep 15
+
+# Verify SRP Server info is in network data
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+
+# Get active dataset to join Thread nodes
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [lindex [split $active_dataset "\n"] 0]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 3 (Router_1)
+spawn_node 3 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "router"
+expect_line "Done"
+
+set router_omr [get_omr_addr]
+expect_line "Done"
+send_user "Router_1 OMR Address: $router_omr\n"
+
+# Join Thread network from Node 4 (ED_1)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set ed_mleid [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $ed_mleid\n"
+
+# Set up test-client container to simulate adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+
+# Configure routes on test client
+configure_test_client_routes $test_client $container
+sleep 2
+
+# Retrieve Border Router's RLOC address to use as DNS server
+set otbr_dns_addr [get_rloc_dns_addr $container]
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Fetch test-client's global ULA address and link-local address
+set ula_addr ""
+set ll_addr ""
+for {set i 0} {$i < 10} {incr i} {
+    set tc_addrs [exec docker exec -i $test_client ip -6 addr show dev eth0]
+    foreach line [split $tc_addrs "\n"] {
+        set line [string trim $line]
+        if {[regexp {inet6\s+(\S+)/.*scope\s+global} $line -> addr]} {
+            set ula_addr $addr
+        } elseif {[regexp {inet6\s+(\S+)/.*scope\s+link} $line -> addr]} {
+            set ll_addr $addr
+        }
+    }
+    if {$ula_addr ne "" && $ll_addr ne ""} {
+        break
+    }
+    sleep 1
+}
+send_user "Test client ULA: $ula_addr, Link-local: $ll_addr\n"
+if {$ula_addr eq "" || $ll_addr eq ""} {
+    fail "Failed to find global/ULA or Link-local address on test-client"
+}
+
+# Step 2: Advertise a test service using mDNS on test-client (Eth_1)
+send_user "Step 2: Advertising mDNS service service-test-2 on Eth_1...\n"
+exec docker exec -i $test_client bash -c "cat << 'EOF' > /tmp/publish_infra.py
+import socket
+import time
+from zeroconf import IPVersion, ServiceInfo, Zeroconf
+
+ula_addr = '$ula_addr'
+addresses = [socket.inet_pton(socket.AF_INET6, ula_addr)]
+
+desc = {'key2': 'value2'}
+info = ServiceInfo(
+    '_thread-test._udp.local.',
+    'service-test-2._thread-test._udp.local.',
+    addresses=addresses,
+    port=55556,
+    properties=desc,
+    server='host-eth-1.local.'
+)
+
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+zc.register_service(info)
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    pass
+finally:
+    zc.unregister_service(info)
+    zc.close()
+EOF"
+exec docker exec -d $test_client python3 /tmp/publish_infra.py
+
+# Step 3: Register a test service using SRP on Router_1 (Node 3)
+send_user "Step 3: Registering SRP service service-test-1 on Router_1...\n"
+switch_node 3
+send "srp client host name host-router-1\r\n"
+expect_line "Done"
+send "srp client host address $router_omr\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55556\r\n"
+expect_line "Done"
+send "srp client service txt service-test-1 key1=value1\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Wait a bit for MDNS/SRP synchronization on BR
+sleep 5
+
+# Step 4: Perform DNS query with QDCOUNT=2 from ED_1 (Node 4) to BR_1 (DUT)
+send_user "Step 4: Sending multi-question query for service-test-1 from ED_1...\n"
+
+# Construct multi-question query hex payload for service-test-1
+set py_cmd "
+def encode_dns_name(domain):
+    parts = domain.strip('.').split('.')
+    encoded = b''
+    for part in parts:
+        encoded += bytes(\[len(part)\]) + part.encode('ascii')
+    encoded += b'\\x00'
+    return encoded
+
+import struct
+header = struct.pack('!HHHHHH', 0x1234, 0x0100, 2, 0, 0, 0)
+q1_name = encode_dns_name('service-test-1._thread-test._udp.default.service.arpa')
+q1 = q1_name + struct.pack('!HH', 33, 1)
+q2 = struct.pack('!H', 0xc00c) + struct.pack('!HH', 16, 1)
+print((header + q1 + q2).hex())
+"
+set query_hex_1 [exec python3 -c $py_cmd]
+set query_hex_1 [string trim $query_hex_1]
+
+switch_node 4
+send "udp open\r\n"
+expect_line "Done"
+send "udp bind :: 12345\r\n"
+expect_line "Done"
+send "udp connect $otbr_dns_addr 53\r\n"
+expect_line "Done"
+send "udp send -x $query_hex_1\r\n"
+expect_line "Done"
+
+set timeout 10
+set response_received 0
+expect {
+    -re "bytes from $otbr_dns_addr 53" {
+        set response_received 1
+    }
+    timeout {
+        fail "ED_1 did not receive UDP response from DNS resolver"
+    }
+}
+send "udp close\r\n"
+expect_line "Done"
+
+# Verify via python script on test-client
+send_user "Step 4 (Verification): Querying service-test-1 from test-client (Eth_1)...\n"
+exec docker cp tests/scripts/expect/dns_multi_question_query.py $test_client:/tmp/dns_multi_question_query.py
+set verify_res [exec docker exec -i $test_client python3 /tmp/dns_multi_question_query.py $otbr_dns_addr service-test-1._thread-test._udp.default.service.arpa.]
+set verify_res [string trim $verify_res]
+send_user "Verification result (service-test-1):\n$verify_res\n"
+if {![string match "*SUCCESS*" $verify_res]} {
+    fail "Verification of multi-question query for service-test-1 failed"
+}
+
+# Step 5: Perform DNS query with QDCOUNT=2 for service-test-2 from test-client
+send_user "Step 5: Verifying multi-question query for service-test-2 from test-client...\n"
+set verify_res2 [exec docker exec -i $test_client python3 /tmp/dns_multi_question_query.py $otbr_dns_addr service-test-2._thread-test._udp.default.service.arpa.]
+set verify_res2 [string trim $verify_res2]
+send_user "Verification result (service-test-2):\n$verify_res2\n"
+if {![string match "*SUCCESS*" $verify_res2]} {
+    fail "Verification of multi-question query for service-test-2 failed"
+}
+
+# Step 6: Single-question DNS query QTYPE=SRV for service-test-1 from ED_1
+send_user "Step 6: Verifying SRV query for service-test-1 from ED_1...\n"
+switch_node 4
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+send "dns browse _thread-test._udp.default.service.arpa.\r\n"
+set timeout 10
+set found_srv 0
+expect {
+    -re "service-test-1" {
+        set found_srv 1
+        exp_continue
+    }
+    -re "Done" {
+        # resolved
+    }
+    timeout {
+        fail "DNS browse query timed out"
+    }
+}
+if {!$found_srv} {
+    fail "DNS browse response missing service-test-1"
+}
+
+# Step 7: Single-question DNS query QTYPE=TXT for service-test-2 from ED_1
+# (Note: 'dns browse' or standard client tools browse both SRV/TXT/AAAA, but let's resolve TXT explicitly)
+send_user "Step 7: Verifying TXT query for service-test-2 from ED_1...\n"
+# Since OT CLI doesn't have a direct 'dns txt' command, we browse and make sure we can find service-test-2
+send "dns browse _thread-test._udp.default.service.arpa.\r\n"
+set timeout 10
+set found_srv_2 0
+expect {
+    -re "service-test-2" {
+        set found_srv_2 1
+        exp_continue
+    }
+    -re "Done" {
+        # resolved
+    }
+    timeout {
+        fail "DNS browse query for service-test-2 timed out"
+    }
+}
+if {!$found_srv_2} {
+    fail "DNS browse response missing service-test-2"
+}
+
+# Step 8: DNS resolve AAAA for host-eth-1 from ED_1
+send_user "Step 8: Resolving host-eth-1 AAAA from ED_1...\n"
+send "dns resolve host-eth-1.default.service.arpa.\r\n"
+set found_ula 0
+set found_ll 0
+set ula_reg [get_ipv6_regex $ula_addr]
+expect {
+    -re $ula_reg {
+        set found_ula 1
+        exp_continue
+    }
+    -re "fe80:\[0-9a-fA-F:\]+" {
+        set found_ll 1
+        exp_continue
+    }
+    -re "Done" {
+        # resolved
+    }
+    timeout {
+        fail "DNS resolve host-eth-1 query timed out"
+    }
+}
+if {!$found_ula} {
+    fail "DNS resolve host-eth-1 response did not contain ULA address ($ula_addr)"
+}
+if {$found_ll} {
+    fail "DNS resolve host-eth-1 response incorrectly contained link-local address"
+}
+
+# Step 9: DNS resolve AAAA for host-router-1 from ED_1
+send_user "Step 9: Resolving host-router-1 AAAA from ED_1...\n"
+send "dns resolve host-router-1.default.service.arpa.\r\n"
+set found_omr 0
+set found_ll 0
+set omr_reg [get_ipv6_regex $router_omr]
+expect {
+    -re $omr_reg {
+        set found_omr 1
+        exp_continue
+    }
+    -re "fe80:\[0-9a-fA-F:\]+" {
+        set found_ll 1
+        exp_continue
+    }
+    -re "Done" {
+        # resolved
+    }
+    timeout {
+        fail "DNS resolve host-router-1 query timed out"
+    }
+}
+if {!$found_omr} {
+    fail "DNS resolve host-router-1 response did not contain OMR address ($router_omr)"
+}
+if {$found_ll} {
+    fail "DNS resolve host-router-1 response incorrectly contained link-local address"
+}
+
+# Cleanup
+dispose_all
+send_user "# Handling of multi-question DNS queries (1_4_DNS_TC_1) integration test completed successfully!\n"
+exit 0

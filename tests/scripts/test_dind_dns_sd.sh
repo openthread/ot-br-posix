@@ -273,6 +273,9 @@ test_run()
 
     echo "--- Running IPv4 Connectivity using BR built-in NAT64 (1_4_PIC_TC_4) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_4.exp"
+
+    echo "--- Running Handling of multi-question DNS queries (1_4_DNS_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_1_4_dns_tc_1.exp"
 }
 
 main()
