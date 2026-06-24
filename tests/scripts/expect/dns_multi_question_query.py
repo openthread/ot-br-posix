@@ -50,7 +50,7 @@ def build_query(domain):
 
 def parse_response(data):
     if len(data) < 12:
-        return 'INVALID_LENGTH', 0
+        raise ValueError("Response data too short")
     id_val, flags, qdcount, ancount, nscount, arcount = struct.unpack('!HHHHHH', data[:12])
     rcode = flags & 0x000f
     return rcode, ancount
@@ -66,16 +66,20 @@ def main():
     query = build_query(domain)
     
     # Send via UDP to port 53
-    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    s.settimeout(5)
-    try:
-        s.sendto(query, (server_ip, 53))
-        resp, addr = s.recvfrom(512)
-    except Exception as e:
-        print(f"ERROR: {e}")
-        sys.exit(1)
+    with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as s:
+        s.settimeout(5)
+        try:
+            s.sendto(query, (server_ip, 53))
+            resp, addr = s.recvfrom(512)
+        except Exception as e:
+            print(f"ERROR: {e}")
+            sys.exit(1)
         
-    rcode, ancount = parse_response(resp)
+    try:
+        rcode, ancount = parse_response(resp)
+    except ValueError as e:
+        print(f"FAILURE ({e})")
+        sys.exit(1)
     print(f"RCODE:{rcode}")
     print(f"ANCOUNT:{ancount}")
     
