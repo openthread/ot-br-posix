@@ -146,7 +146,7 @@ import time
 from zeroconf import IPVersion, ServiceInfo, Zeroconf
 
 ula_addr = '$ula_addr'
-addresses = [socket.inet_pton(socket.AF_INET6, ula_addr)]
+addresses = \[socket.inet_pton(socket.AF_INET6, ula_addr)\]
 
 desc = {'key2': 'value2'}
 info = ServiceInfo(
