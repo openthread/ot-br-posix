@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020-2021, The OpenThread Authors.
+#  Copyright (c) 2025, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,52 +26,39 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_subdirectory(agent)
-if(OTBR_BORDER_AGENT)
-    add_subdirectory(border_agent)
-endif()
-add_subdirectory(common)
-if(OTBR_DBUS OR OTBR_FEATURE_FLAGS OR OTBR_TELEMETRY_DATA_API)
-    add_subdirectory(proto)
-endif()
-add_subdirectory(host)
-
-if(OTBR_DBUS)
-    add_subdirectory(dbus)
+if (NOT OTBR_IPFIX)
+  return()
 endif()
 
-if(OTBR_MDNS)
-    add_subdirectory(mdns)
-    if(NOT OTBR_MDNS STREQUAL "openthread")
-        add_subdirectory(sdp_proxy)
-    endif()
-    if(OTBR_TREL_DNSSD)
-        add_subdirectory(trel_dnssd)
-    endif()
-endif()
+add_library(otbr-ipfix
+    ipfix_exporter.cpp
+    ipfix_exporter.hpp
+)
 
-add_subdirectory(utils)
+target_include_directories(otbr-ipfix PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-if(OTBR_OPENWRT)
-    add_subdirectory(openwrt)
-endif()
+# Configuration of the dependencies
 
-if(OTBR_WEB)
-    add_subdirectory(web)
-endif()
+find_package(PkgConfig REQUIRED)
 
-if(OTBR_REST)
-    add_subdirectory(rest)
-endif()
+# libfixbuf
+pkg_check_modules(FIXBUF REQUIRED libfixbuf)
 
-if (OTBR_BACKBONE_ROUTER)
-    add_subdirectory(backbone_router)
-endif()
+# GLib-2.0
+pkg_check_modules(GLIB REQUIRED glib-2.0)
 
-# ==================================================================//
+target_include_directories(otbr-ipfix PUBLIC 
+        ${FIXBUF_INCLUDE_DIRS}
+        ${GLIB_INCLUDE_DIRS}
+)
 
-if (OTBR_IPFIX)
-    add_subdirectory(ipfix)
-endif()
+target_link_libraries(otbr-ipfix PUBLIC 
+        otbr-common
+        otbr-utils
+        ${FIXBUF_LIBRARIES}
+        ${GLIB_LIBRARIES}
+)
 
-# ==================================================================//
+
