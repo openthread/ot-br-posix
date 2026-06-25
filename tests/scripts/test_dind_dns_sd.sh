@@ -141,7 +141,7 @@ test_setup()
     echo "Building test client image with mdns-scan and ping/ndisc6 tools..."
     docker build -t "${TEST_CLIENT_IMAGE}" - <<EOF
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server dnsmasq python3-scapy radvd tcpdump --no-install-recommends && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["mdns-scan"]
 EOF
 
@@ -253,6 +253,9 @@ test_run()
 
     echo "--- Running Web UI integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_web.exp"
+
+    echo "--- Running IPv6 Connectivity using DHCPv6-PD (1_4_PIC_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_1.exp"
 }
 
 main()
