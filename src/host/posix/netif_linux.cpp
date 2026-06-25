@@ -41,8 +41,11 @@
 #include <linux/rtnetlink.h>
 #include <net/if.h>
 #include <net/if_arp.h>
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <chrono>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -196,52 +199,220 @@ void Netif::SetAddrGenModeToNone(void)
     }
 }
 
-void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
+std::vector<Netif::UnicastAddressChangeResult> Netif::ProcessUnicastAddressChanges(
+    const std::vector<UnicastAddressChange> &aChanges)
 {
-    struct
+    constexpr int kNetlinkAckTimeoutMs = 100;
+
+    struct PendingAck
     {
-        nlmsghdr  nh;
-        ifaddrmsg ifa;
-        char      buf[512];
-    } req;
+        uint32_t mSequence;
+        size_t   mChangeIndex;
+        bool     mIsDone;
+    };
+
+    std::vector<UnicastAddressChangeResult> results(aChanges.size(), {OTBR_ERROR_NONE, 0});
+    std::vector<PendingAck>                 pendingAcks;
+    size_t                                  pendingAckCount = 0;
 
     assert(mIpFd >= 0);
-    memset(&req, 0, sizeof(req));
+    assert(mNetlinkFd >= 0);
 
-    req.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(ifaddrmsg));
-    req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | (aIsAdded ? (NLM_F_CREATE | NLM_F_EXCL) : 0);
-    req.nh.nlmsg_type  = aIsAdded ? RTM_NEWADDR : RTM_DELADDR;
-    req.nh.nlmsg_pid   = 0;
-    req.nh.nlmsg_seq   = ++mNetlinkSequence;
+    pendingAcks.reserve(aChanges.size());
 
-    req.ifa.ifa_family    = AF_INET6;
-    req.ifa.ifa_prefixlen = aAddressInfo.mPrefixLength;
-    req.ifa.ifa_flags     = IFA_F_NODAD;
-    req.ifa.ifa_scope     = aAddressInfo.mScope;
-    req.ifa.ifa_index     = mNetifIndex;
-
-    AddRtAttr(&req.nh, sizeof(req), IFA_LOCAL, &aAddressInfo.mAddress, sizeof(aAddressInfo.mAddress));
-
-    if (!aAddressInfo.mPreferred || aAddressInfo.mMeshLocal)
+    for (size_t i = 0; i < aChanges.size(); ++i)
     {
-        ifa_cacheinfo cacheinfo;
+        const UnicastAddressChange &change = aChanges[i];
+        const Ip6AddressInfo       &addrInfo = change.mAddressInfo;
+        struct
+        {
+            nlmsghdr  nh;
+            ifaddrmsg ifa;
+            char      buf[512];
+        } req;
 
-        memset(&cacheinfo, 0, sizeof(cacheinfo));
-        cacheinfo.ifa_valid = UINT32_MAX;
+        memset(&req, 0, sizeof(req));
 
-        AddRtAttr(&req.nh, sizeof(req), IFA_CACHEINFO, &cacheinfo, sizeof(cacheinfo));
+        req.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(ifaddrmsg));
+        req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | (change.mIsAdded ? (NLM_F_CREATE | NLM_F_EXCL) : 0);
+        req.nh.nlmsg_type  = change.mIsAdded ? RTM_NEWADDR : RTM_DELADDR;
+        req.nh.nlmsg_pid   = 0;
+        req.nh.nlmsg_seq   = ++mNetlinkSequence;
+
+        req.ifa.ifa_family    = AF_INET6;
+        req.ifa.ifa_prefixlen = addrInfo.mPrefixLength;
+        req.ifa.ifa_flags     = IFA_F_NODAD;
+        req.ifa.ifa_scope     = addrInfo.mScope;
+        req.ifa.ifa_index     = mNetifIndex;
+
+        AddRtAttr(&req.nh, sizeof(req), IFA_LOCAL, &addrInfo.mAddress, sizeof(addrInfo.mAddress));
+
+        if (!addrInfo.mPreferred || addrInfo.mMeshLocal)
+        {
+            ifa_cacheinfo cacheinfo;
+
+            memset(&cacheinfo, 0, sizeof(cacheinfo));
+            cacheinfo.ifa_valid = UINT32_MAX;
+
+            AddRtAttr(&req.nh, sizeof(req), IFA_CACHEINFO, &cacheinfo, sizeof(cacheinfo));
+        }
+
+        if (send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) == -1)
+        {
+            results[i] = {OTBR_ERROR_ERRNO, errno};
+            continue;
+        }
+
+        otbrLogInfo("Sent request#%u to %s %s/%u", req.nh.nlmsg_seq, (change.mIsAdded ? "add" : "remove"),
+                    Ip6Address(addrInfo.mAddress).ToString().c_str(), addrInfo.mPrefixLength);
+
+        pendingAcks.push_back({req.nh.nlmsg_seq, i, false});
+        ++pendingAckCount;
     }
 
-    if (send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) != -1)
+    if (pendingAckCount > 0)
     {
-        otbrLogInfo("Sent request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
-                    Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+        auto          deadline =
+            std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<int>(kNetlinkAckTimeoutMs));
+        struct pollfd pfd;
+        int           pollResult;
+
+        do
+        {
+            auto now = std::chrono::steady_clock::now();
+            int  pollTimeoutMs;
+
+            if (now >= deadline)
+            {
+                break;
+            }
+
+            pollTimeoutMs =
+                static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count());
+
+            pfd.fd      = mNetlinkFd;
+            pfd.events  = POLLIN;
+            pfd.revents = 0;
+
+            pollResult = poll(&pfd, 1, pollTimeoutMs);
+            if (pollResult == 0)
+            {
+                break;
+            }
+
+            if (pollResult < 0 && errno == EINTR)
+            {
+                continue;
+            }
+
+            if (pollResult < 0)
+            {
+                for (PendingAck &pendingAck : pendingAcks)
+                {
+                    if (!pendingAck.mIsDone)
+                    {
+                        results[pendingAck.mChangeIndex] = {OTBR_ERROR_ERRNO, errno};
+                        pendingAck.mIsDone               = true;
+                        --pendingAckCount;
+                    }
+                }
+                break;
+            }
+
+            if ((pfd.revents & POLLIN) == 0)
+            {
+                for (PendingAck &pendingAck : pendingAcks)
+                {
+                    if (!pendingAck.mIsDone)
+                    {
+                        results[pendingAck.mChangeIndex] = {OTBR_ERROR_ERRNO, EIO};
+                        pendingAck.mIsDone               = true;
+                        --pendingAckCount;
+                    }
+                }
+                break;
+            }
+
+            union
+            {
+                nlmsghdr mHeader;
+                uint8_t  mBuffer[2048];
+            } response;
+            ssize_t length;
+
+            length = recv(mNetlinkFd, response.mBuffer, sizeof(response.mBuffer), /* flags */ 0);
+            if (length < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
+            {
+                continue;
+            }
+            if (length < 0)
+            {
+                for (PendingAck &pendingAck : pendingAcks)
+                {
+                    if (!pendingAck.mIsDone)
+                    {
+                        results[pendingAck.mChangeIndex] = {OTBR_ERROR_ERRNO, errno};
+                        pendingAck.mIsDone               = true;
+                        --pendingAckCount;
+                    }
+                }
+                break;
+            }
+
+            for (nlmsghdr *header = &response.mHeader; NLMSG_OK(header, static_cast<size_t>(length));
+                 header           = NLMSG_NEXT(header, length))
+            {
+                for (PendingAck &pendingAck : pendingAcks)
+                {
+                    if (pendingAck.mIsDone || header->nlmsg_seq != pendingAck.mSequence)
+                    {
+                        continue;
+                    }
+
+                    const UnicastAddressChange &change = aChanges[pendingAck.mChangeIndex];
+
+                    if (header->nlmsg_type != NLMSG_ERROR)
+                    {
+                        results[pendingAck.mChangeIndex] = {OTBR_ERROR_ERRNO, EPROTO};
+                    }
+                    else if (header->nlmsg_len < NLMSG_LENGTH(sizeof(nlmsgerr)))
+                    {
+                        results[pendingAck.mChangeIndex] = {OTBR_ERROR_ERRNO, EBADMSG};
+                    }
+                    else
+                    {
+                        nlmsgerr *errMsg    = reinterpret_cast<nlmsgerr *>(NLMSG_DATA(header));
+                        int       kernelErr = (errMsg->error < 0) ? -errMsg->error : errMsg->error;
+
+                        if (kernelErr == 0 || (change.mIsAdded && change.mAllowAlreadyExists && kernelErr == EEXIST) ||
+                            (!change.mIsAdded && (kernelErr == ENOENT || kernelErr == EADDRNOTAVAIL)))
+                        {
+                            results[pendingAck.mChangeIndex] = {OTBR_ERROR_NONE, 0};
+                        }
+                        else
+                        {
+                            results[pendingAck.mChangeIndex] = {OTBR_ERROR_ERRNO, kernelErr};
+                        }
+                    }
+
+                    pendingAck.mIsDone = true;
+                    --pendingAckCount;
+                    break;
+                }
+            }
+        }
+        while (pendingAckCount > 0);
     }
-    else
+
+    for (PendingAck &pendingAck : pendingAcks)
     {
-        otbrLogWarning("Failed to send request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
-                       Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+        if (!pendingAck.mIsDone)
+        {
+            results[pendingAck.mChangeIndex] = {OTBR_ERROR_ERRNO, ETIMEDOUT};
+        }
     }
+
+    return results;
 }
 
 } // namespace otbr
