@@ -684,6 +684,40 @@ struct TrelInfo
     TrelPacketCounters mTrelCounters; ///< The TREL counters.
 };
 
+struct MeshDiagChildInfo
+{
+    uint16_t mRloc16;         ///< RLOC16.
+    uint8_t  mLinkQuality;    ///< Incoming link quality to child from parent.
+    bool     mIsThisDevice;   ///< Whether child is this device itself.
+    bool     mIsBorderRouter; ///< Whether child acts as a border router providing ext connectivity.
+};
+
+struct MeshDiagRouterInfo
+{
+    uint64_t
+        mExtAddress;    ///< Extended address (uint64 for compact D-Bus representation; matches type 't' in signature).
+    uint16_t mRloc16;   ///< RLOC16.
+    uint8_t  mRouterId; ///< Router ID.
+    uint16_t mVersion;  ///< Thread Version. `OT_MESH_DIAG_VERSION_UNKNOWN` if unknown.
+    bool     mIsThisDevice;       ///< Whether router is this device itself.
+    bool     mIsThisDeviceParent; ///< Whether router is parent of this device (when device is a child).
+    bool     mIsLeader;           ///< Whether router is leader.
+    bool     mIsBorderRouter;     ///< Whether router acts as a border router providing ext connectivity.
+
+    /**
+     * Provides the link quality from this router to other routers, also indicating whether a link is established
+     * between the routers.
+     *
+     * The array is indexed based on Router ID. `mLinkQualities[routerId]` indicates the incoming link quality, the
+     * router sees to the router with `routerId`. Link quality is a value in [0, 3]. Value zero indicates no link.
+     * Larger value indicate better link quality (as defined by Thread specification).
+     *
+     */
+    std::vector<uint8_t>           mLinkQualities;
+    std::vector<MeshDiagChildInfo> mMeshDiagChildInfos; /// Provides list of children of the router.
+    std::vector<Ip6Address>        mIp6Address;         /// list of IPv6 addresses of the router.
+};
+
 } // namespace DBus
 } // namespace otbr
 
