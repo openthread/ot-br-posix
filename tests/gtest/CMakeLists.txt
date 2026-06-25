@@ -45,6 +45,7 @@ add_executable(otbr-gtest-unit
     test_once_callback.cpp
     test_pskc.cpp
     test_task_runner.cpp
+    test_trel_extpanid.cpp
 )
 target_link_libraries(otbr-gtest-unit
     mbedtls

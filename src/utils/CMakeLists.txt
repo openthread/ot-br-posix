@@ -36,6 +36,7 @@ add_library(otbr-utils
     sha256.cpp
     socket_utils.cpp
     steering_data.cpp
+    trel_extpanid.cpp
     string_utils.cpp
     system_utils.cpp
 )
