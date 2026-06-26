@@ -97,7 +97,7 @@ if(OTBR_REST)
 endif()
 
 set(OTBR_OT_SRP_ADV_PROXY_DEFAULT OFF)
-if (OTBR_MDNS STREQUAL "openthread")
+if (OTBR_MDNS)
     set(OTBR_OT_SRP_ADV_PROXY_DEFAULT ON)
 endif()
 

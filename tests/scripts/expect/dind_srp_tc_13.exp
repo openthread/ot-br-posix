@@ -1,0 +1,419 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# Step 1: BR_1 (DUT) Enable: switch on.
+send_user "Starting OTBR Docker container (BR_1 / DUT)...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# Step 2: Eth_1, ED_1 Enable
+# Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its dynamic OMR prefix
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Step 3: BR_1 (DUT) Automatically adds SRP Server information and registers OMR prefix
+send_user "Step 3: Verifying SRP Server information in Network Data...\n"
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+check_string_contains $netdata "fd"
+
+# Get the running Border Router's active dataset dynamically to configure client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ED_1)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set address_1 [get_omr_addr]
+expect_line "Done"
+set address_2 [get_ipaddr mleid]
+send_user "ED_1 ML-EID (address_2): $address_2\n"
+send_user "ED_1 OMR (address_1): $address_1\n"
+sleep 1
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+
+# Configure routes on test client
+configure_test_client_routes $test_client $container
+sleep 2
+
+# Retrieve Border Router's RLOC address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr eq ""} {
+    set otbr_dns_addr [string trim [lindex [split $otbr_addrs "\n"] 0]]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Step 4-5: Configure and Register host & service on SRP Client (ED_1)
+switch_node 4
+send "srp client leaseinterval 300\r\n"
+expect_line "Done"
+send "srp client keyleaseinterval 2419200\r\n"
+expect_line "Done"
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $address_1\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify registration is successful (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+send_user "Step 5: Initial SRP registration successful (address_1).\n"
+
+# Step 6–7: Unicast DNS Verification from Thread (ED_1)
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+send "dns resolve host-test-1.default.service.arpa.\r\n"
+set timeout 15
+set found_addr1 0
+expect {
+    -re "$address_1" {
+        set found_addr1 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Step 7: Unicast DNS AAAA query timed out"
+    }
+}
+if {!$found_addr1} {
+    fail "Step 7: DNS AAAA response missing address_1"
+}
+send_user "Step 7: Unicast DNS query returned address_1.\n"
+
+# Step 8: Compute new address_3 and re-register host with address_2 (ML-EID) and address_3 (new OMR)
+set address_3 [exec python3 -c {import sys, ipaddress; net = ipaddress.IPv6Network(sys.argv[1] + "/64", strict=False); addr = ipaddress.IPv6Address(int(net.network_address) + 99); print(':'.join(f'{int(x, 16):x}' for x in addr.exploded.split(':')))} $address_1]
+set address_3 [string trim $address_3]
+send_user "Generated address_3 (OMR): $address_3\n"
+
+send "srp client host address $address_2 $address_3\r\n"
+expect_line "Done"
+
+# Step 9: Verify SRP registration updates successfully
+# Wait for registration to refresh
+sleep 5
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+send_user "Step 9: SRP registration updated successfully (address_2 and address_3).\n"
+
+# Step 10-11: Unicast DNS query after update
+send "dns resolve host-test-1.default.service.arpa.\r\n"
+set timeout 15
+set found_addr1 0
+set found_addr2 0
+set found_addr3 0
+expect {
+    -re "$address_1" {
+        set found_addr1 1
+        exp_continue
+    }
+    -re "$address_2" {
+        set found_addr2 1
+        exp_continue
+    }
+    -re "$address_3" {
+        set found_addr3 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Step 11: Unicast DNS AAAA query timed out after update"
+    }
+}
+if {!$found_addr2 || !$found_addr3} {
+    fail "Step 11: Updated DNS AAAA response missing address_2 ($address_2) or address_3 ($address_3)"
+}
+if {$found_addr1} {
+    fail "Step 11: Updated DNS AAAA response still contains address_1 ($address_1)"
+}
+send_user "Step 11: Unicast DNS verification successful (address_2 and address_3 present, address_1 absent).\n"
+
+# Step 12-13: Multicast mDNS AAAA Verification from Infrastructure Link (Eth_1)
+set py_mdns_check_aaaa {import time
+import socket
+import os
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+for _ in range(10):
+    info.request(zc, 2000)
+    if info.server is not None and info.addresses_by_version(IPVersion.V6Only):
+        break
+    time.sleep(1)
+
+if info.server is None:
+    print("FAIL: Service resolution timed out (info.server is None)")
+    exit(1)
+
+addrs = info.addresses_by_version(IPVersion.V6Only)
+resolved = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs]
+zc.close()
+
+addr_1 = ipaddress.IPv6Address(os.environ['ADDR_1'])
+addr_2 = ipaddress.IPv6Address(os.environ['ADDR_2'])
+addr_3 = ipaddress.IPv6Address(os.environ['ADDR_3'])
+
+if addr_3 not in resolved:
+    print(f"FAIL: Address_3 {addr_3} not found in resolved IPs: {resolved}")
+    exit(1)
+if addr_1 in resolved:
+    print(f"FAIL: Address_1 {addr_1} still present in resolved IPs: {resolved}")
+    exit(1)
+
+for ip in resolved:
+    if ip != addr_3 and ip != addr_2:
+        print(f"FAIL: Unexpected address {ip} (expected only Address_3 {addr_3} or Address_2 {addr_2})")
+        exit(1)
+
+print(f"OK: Verified address_3 is present, address_1 is absent, and no other unexpected addresses in {resolved}")
+}
+
+set status [catch {exec docker exec -e ADDR_1=$address_1 -e ADDR_2=$address_2 -e ADDR_3=$address_3 -i $test_client python3 -c $py_mdns_check_aaaa} output]
+send_user "Step 13: mDNS AAAA Check Result: $output\n"
+if {$status != 0} {
+    fail "Step 13: mDNS AAAA verification failed: $output"
+}
+
+# Step 14-15: Multicast mDNS KEY Verification from Infrastructure Link (Eth_1)
+set py_mdns_check_key {import socket
+import struct
+import time
+import sys
+
+def parse_name(data, offset):
+    parts = []
+    start_offset = offset
+    is_compressed = False
+    visited = set()
+    while True:
+        if offset >= len(data) or offset in visited:
+            break
+        visited.add(offset)
+        length = data[offset]
+        if (length & 0xc0) == 0xc0:
+            if offset + 2 > len(data):
+                break
+            if not is_compressed:
+                start_offset = offset + 2
+                is_compressed = True
+            pointer = struct.unpack('!H', data[offset:offset+2])[0] & 0x3fff
+            offset = pointer
+        elif length == 0:
+            if not is_compressed:
+                start_offset = offset + 1
+            break
+        else:
+            if offset + 1 + length > len(data):
+                break
+            parts.append(data[offset+1:offset+1+length].decode('utf-8', errors='ignore'))
+            offset += 1 + length
+    return '.'.join(parts), start_offset
+
+def skip_name(data, offset):
+    while True:
+        if offset >= len(data):
+            return offset
+        length = data[offset]
+        if (length & 0xc0) == 0xc0:
+            return offset + 2
+        elif length == 0:
+            return offset + 1
+        else:
+            offset += 1 + length
+
+def parse_dns_packet(data):
+    if len(data) < 12:
+        return None
+    tid, flags, qdcount, ancount, nscount, arcount = struct.unpack('!HHHHHH', data[:12])
+    if not (flags & 0x8000):
+        return None
+    rcode = flags & 0x000f
+    offset = 12
+    for _ in range(qdcount):
+        offset = skip_name(data, offset)
+        offset += 4
+    answers = []
+    for _ in range(ancount):
+        name, offset = parse_name(data, offset)
+        if offset + 10 > len(data):
+            break
+        rtype, rclass, ttl, rdlen = struct.unpack('!HHIH', data[offset:offset+10])
+        offset += 10
+        rdata = data[offset:offset+rdlen]
+        offset += rdlen
+        answers.append({
+            'name': name,
+            'type': rtype,
+            'class': rclass,
+            'ttl': ttl,
+            'rdata': rdata
+        })
+    return rcode, answers
+
+def query_mdns_key(name):
+    MCAST_GRP = 'ff02::fb'
+    MCAST_PORT = 5353
+    header = struct.pack('!HHHHHH', 0, 0, 1, 0, 0, 0)
+    parts = name.strip('.').split('.')
+    query_name = b''
+    for part in parts:
+        query_name += struct.pack('B', len(part)) + part.encode('utf-8')
+    query_name += b'\x00'
+    question = query_name + struct.pack('!HH', 25, 1)
+    packet = header + question
+
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    except AttributeError:
+        pass
+    sock.bind(('::', 5353))
+    if_index = socket.if_nametoindex('eth0')
+    mreq = socket.inet_pton(socket.AF_INET6, MCAST_GRP) + struct.pack('@I', if_index)
+    sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+
+    sock.sendto(packet, (MCAST_GRP, MCAST_PORT, 0, if_index))
+    sock.settimeout(2.0)
+    start_time = time.time()
+    while time.time() - start_time < 3.0:
+        try:
+            data, addr = sock.recvfrom(2048)
+            res = parse_dns_packet(data)
+            if res is None:
+                continue
+            rcode, answers = res
+            if rcode != 0:
+                continue
+            # If answers are returned, make sure they are valid
+            has_relevant_answer = False
+            for ans in answers:
+                if ans['name'].lower() == name.lower():
+                    if ans['type'] == 25:
+                        print("OK: Found valid KEY record answer")
+                        sys.exit(0)
+                    elif ans['type'] == 47:
+                        has_relevant_answer = True
+            if has_relevant_answer:
+                print("OK: Received valid mDNS response (RCODE=0, 0 answers)")
+                sys.exit(0)
+        except socket.timeout:
+            break
+    print("FAIL: No valid response received")
+    sys.exit(1)
+
+query_mdns_key('host-test-1.local')
+}
+
+set status [catch {exec docker exec -i $test_client python3 -c $py_mdns_check_key} output]
+send_user "Step 15: mDNS KEY Check Result: $output\n"
+if {$status != 0} {
+    fail "Step 15: mDNS KEY verification failed: $output"
+}
+
+# Cleanup
+dispose_all
+send_user "# Thread Device address update (1_3_SRP_TC_13) integration test completed successfully!\n"
+exit 0

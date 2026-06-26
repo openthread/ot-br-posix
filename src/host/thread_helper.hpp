@@ -303,7 +303,7 @@ private:
 
     ResultHandler mDetachGracefullyHandler = nullptr;
 
-    otOperationalDatasetTlvs mAttachPendingDatasetTlvs = {};
+    otOperationalDatasetTlvs mAttachDatasetTlvs = {};
 
     std::random_device mRandomDevice;
 

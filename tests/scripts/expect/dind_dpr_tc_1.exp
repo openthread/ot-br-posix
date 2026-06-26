@@ -1,0 +1,355 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+
+
+
+
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start border router in Docker
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# 2. Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its prefixes
+send_user "Waiting 15 seconds for prefixes to stabilize...\n"
+sleep 15
+
+# Step 3: Verify SRP Server info is in network data
+send_user "Verifying SRP Server information in Thread Network Data...\n"
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+
+# Get active dataset to join ED_1
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [lindex [split $active_dataset "\n"] 0]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ED_1)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr [get_omr_addr]
+expect_line "Done"
+set mleid [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $mleid\n"
+send_user "ED_1 OMR Address: $omr_addr\n"
+sleep 1
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+
+# Configure routes on test client
+configure_test_client_routes $test_client $container
+sleep 2
+
+# Retrieve Border Router's RLOC address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr eq ""} {
+    set otbr_dns_addr [string trim [lindex [split $otbr_addrs "\n"] 0]]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Fetch test-client's global ULA address and link-local address
+set ula_addr ""
+set ll_addr ""
+for {set i 0} {$i < 10} {incr i} {
+    set tc_addrs [exec docker exec -i $test_client ip -6 addr show dev eth0]
+    foreach line [split $tc_addrs "\n"] {
+        set line [string trim $line]
+        if {[regexp {inet6\s+(\S+)/.*scope\s+global} $line -> addr]} {
+            set ula_addr $addr
+        } elseif {[regexp {inet6\s+(\S+)/.*scope\s+link} $line -> addr]} {
+            set ll_addr $addr
+        }
+    }
+    if {$ula_addr ne "" && $ll_addr ne ""} {
+        break
+    }
+    sleep 1
+}
+send_user "Test client ULA: $ula_addr, Link-local: $ll_addr\n"
+if {$ula_addr eq "" || $ll_addr eq ""} {
+    fail "Failed to find global/ULA or Link-local address on test-client"
+}
+
+# Step 4: Publish 5 services on infrastructure link using Python Zeroconf in background
+# We write the python script to a file and execute it in background.
+exec docker exec -i $test_client bash -c "cat << 'EOF' > /tmp/publish_infra.py
+import socket
+import time
+from zeroconf import IPVersion, ServiceInfo, Zeroconf
+
+ula_addr = '$ula_addr'
+ll_addr = '$ll_addr'
+
+addresses = \[\]
+if ula_addr:
+    addresses.append(socket.inet_pton(socket.AF_INET6, ula_addr))
+if ll_addr:
+    addresses.append(socket.inet_pton(socket.AF_INET6, ll_addr))
+
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+infos = \[\]
+
+for i in range(1, 6):
+    port = 55550 + i
+    if i == 1:
+        txt = {'dummy': 'abcd', 'thread-test': 'a49'}
+    elif i == 2:
+        txt = {'a': '2', 'thread-test': 'b50_test'}
+    elif i == 3:
+        txt = {'a_dummy': '42', 'thread-test': ''}
+    elif i == 4:
+        txt = {'thread-test': '1', 'ignorethis': 'thread-test='}
+    elif i == 5:
+        txt = {'a88': 'thread-', 'THREAD-TEST': 'C51', 'ignorethis': 'thread-test'}
+    
+    info = ServiceInfo(
+        '_infra-test._udp.local.',
+        f'service-test-{i}._infra-test._udp.local.',
+        addresses=addresses,
+        port=port,
+        properties=txt,
+        server='host-test-eth.local.'
+    )
+    zc.register_service(info)
+    infos.append(info)
+
+print('Registered 5 services. Running...')
+time.sleep(120)
+for info in infos:
+    zc.unregister_service(info)
+zc.close()
+EOF"
+
+# Run it in background and output to log inside container
+exec docker exec -d $test_client sh -c "python3 -u /tmp/publish_infra.py > /tmp/publish_infra.log 2>&1"
+
+# Wait for services to be registered
+set registered false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $test_client cat /tmp/publish_infra.log} log] && [string match "*Registered 5 services*" $log]} {
+        set registered true
+        break
+    }
+    sleep 1
+}
+if {!$registered} {
+    catch {send_user "Publish infra logs:\n[exec docker exec -i $test_client cat /tmp/publish_infra.log]\n"}
+    fail "Failed to register infrastructure services"
+}
+
+# Step 5: ED_1 registers service-test-6._thread-test._udp (on Thread)
+switch_node 4
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $omr_addr $mleid\r\n"
+expect_line "Done"
+send "srp client service add service-test-6 _thread-test._udp 55551 0 0 157468726561642d74653d747269636b3d76616c7565\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 6: Verify registration status is Registered (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Step 7: Unicast DNS PTR query to DUT for services of type _infra-test._udp.default.service.arpa.
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+send "dns browse _infra-test._udp.default.service.arpa.\r\n"
+
+set found_service ""
+set timeout 15
+expect {
+    -re "service-test-(\[1-5\])" {
+        set found_service $expect_out(1,string)
+        exp_continue
+    }
+    -re "service-test-6" {
+        fail "Found service-test-6 in _infra-test._udp browse response (should only be on Thread)"
+    }
+    -re "Done" {
+        # Browse completed
+    }
+    timeout {
+        fail "DNS browse query timed out"
+    }
+}
+if {$found_service eq ""} {
+    # If not found, output logs from publish script to help debugging
+    catch {send_user "Publish infra logs:\n[exec docker exec -i $test_client cat /tmp/publish_infra.log]\n"}
+    fail "No service-test-1..5 found in browse response"
+}
+send_user "Discovered service-test-$found_service\n"
+
+# Verify SRV / TXT resolution
+send "dns service service-test-$found_service _infra-test._udp.default.service.arpa.\r\n"
+set port_expected [expr {55550 + $found_service}]
+set txt_expected_list {"" "dummy=61626364" "thread-test=6235305f74657374" "a_dummy=3432" "thread-test=31" "THREAD-TEST=433531"}
+set txt_expected [lindex $txt_expected_list $found_service]
+set host_resolved ""
+set port_resolved ""
+set txt_resolved 0
+expect {
+    -re "Port:\\s*(\\d+)" {
+        set port_resolved $expect_out(1,string)
+        exp_continue
+    }
+    -re "Host:\\s*host-test-eth\\.default\\.service\\.arpa\\." {
+        set host_resolved "host-test-eth.default.service.arpa."
+        exp_continue
+    }
+    -re "TXT:\\s*\\\[.*$txt_expected.*\\\]" {
+        set txt_resolved 1
+        exp_continue
+    }
+    -re "Done" {
+        # completed
+    }
+    timeout {
+        fail "DNS service query timed out"
+    }
+}
+if {$port_resolved ne $port_expected || $host_resolved eq "" || !$txt_resolved} {
+    fail "Failed to resolve correct Port ($port_expected), Host, or TXT for service-test-$found_service (got Host: $host_resolved, Port: $port_resolved, TXT: $txt_resolved)"
+}
+
+# Verify AAAA resolution
+send "dns resolve host-test-eth.default.service.arpa.\r\n"
+set found_ula 0
+set found_ll 0
+set found_host_1_addr 0
+set ula_reg [get_ipv6_regex $ula_addr]
+set mleid_reg [get_ipv6_regex $mleid]
+set omr_reg [get_ipv6_regex $omr_addr]
+
+expect {
+    -re $ula_reg {
+        set found_ula 1
+        exp_continue
+    }
+    -re "fe80:\[0-9a-fA-F:\]+" {
+        set found_ll 1
+        exp_continue
+    }
+    -re $mleid_reg {
+        set found_host_1_addr 1
+        exp_continue
+    }
+    -re $omr_reg {
+        set found_host_1_addr 1
+        exp_continue
+    }
+    -re "Done" {
+        # resolved
+    }
+    timeout {
+        fail "DNS resolve host-test-eth query timed out"
+    }
+}
+if {!$found_ula} {
+    fail "DNS resolve host-test-eth response did not contain ULA address ($ula_addr)"
+}
+if {$found_ll} {
+    fail "DNS resolve host-test-eth response incorrectly contained link-local address"
+}
+if {$found_host_1_addr} {
+    fail "DNS resolve host-test-eth response incorrectly contained address of host-test-1 ($mleid or $omr_addr)"
+}
+
+# Cleanup
+dispose_all
+send_user "# Service discovery of services on Thread and Infrastructure - Single BR (1_3_DPR_TC_1) integration test completed successfully!\n"
+exit 0

@@ -292,7 +292,138 @@ proc get_omr_addr {} {
 
 proc check_string_contains {haystack needle} {
     if {![regexp $needle $haystack]} {
-        puts "Error: '$needle' not found."
-        exit 1
+        fail "'$needle' not found."
+    }
+}
+
+proc start_otbr_docker_dind {name sim_app sim_id pty {rcp_port 9000}} {
+    global rcp_pids
+    track_container $name
+    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --add-host=host.docker.internal:host-gateway \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
+        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        -e EXP_RCP_PORT=$rcp_port \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
+    sleep 2
+
+    # Now start the simulated RCP binary on the host
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
+    sleep 5
+}
+
+proc start_test_client {name image} {
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --entrypoint /bin/bash \
+        $image \
+        -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+}
+
+proc configure_test_client_routes {test_client container} {
+    set has_rio [expr {[catch {exec docker exec -i $test_client test -e /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+    if {$has_rio} {
+        exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+        exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+        exec docker exec -i $test_client rdisc6 eth0
+    } else {
+        set format {{{(index .NetworkSettings.Networks "infrastructure-link").GlobalIPv6Address}}}
+        set otbr_ip [string trim [exec docker inspect $container -f $format]]
+        exec docker exec -i $test_client ip -6 route replace fc00::/7 via $otbr_ip dev eth0
+    }
+}
+
+proc get_ipv6_regex {addr} {
+    regsub -all {:(?:0+:)+0*} $addr {::} addr
+    regsub -all {::} $addr {:(?:0+:)*0*:} regex
+    return "${regex}(?!\[0-9a-fA-F:\])"
+}
+
+proc get_rloc_dns_addr {container} {
+    set addrs [exec docker exec -i $container ot-ctl ipaddr]
+    foreach addr [split $addrs "\n"] {
+        set addr [string trim $addr]
+        if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+            return $addr
+        }
+    }
+    return [string trim [lindex [split $addrs "\n"] 0]]
+}
+
+proc wait_for_otbr_agent {containers} {
+    foreach c $containers {
+        set socket_ready false
+        for {set i 0} {$i < 10} {incr i} {
+            if {![catch {exec docker exec -i $c ot-ctl state}]} {
+                set socket_ready true
+                break
+            }
+            sleep 2
+        }
+        if {!$socket_ready} {
+            fail "ot-ctl failed to communicate with otbr-agent on $c"
+        }
+    }
+}
+
+proc wait_for_container_state {container expected_state} {
+    set state_reached false
+    for {set i 0} {$i < 20} {incr i} {
+        if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*$expected_state*" $state]} {
+            set state_reached true
+            break
+        }
+        sleep 2
+    }
+    if {!$state_reached} {
+        fail "$container did not become $expected_state"
+    }
+}
+proc verify_trel_traffic {c1 expected_dir1 c2 expected_dir2} {
+    foreach {c expected_dir} [list $c1 $expected_dir1 $c2 $expected_dir2] {
+        if {$expected_dir eq "none"} { continue }
+        set cnts [exec docker exec -i $c ot-ctl trel counters]
+        if {$expected_dir eq "out"} {
+            if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $cnts match val]} {
+                fail "TREL Outbound packet verification failed on $c."
+            }
+        } elseif {$expected_dir eq "in"} {
+            if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $cnts match val]} {
+                fail "TREL Inbound packet verification failed on $c."
+            }
+        }
+    }
+}
+
+proc verify_no_trel_traffic {c} {
+    set cnts [exec docker exec -i $c ot-ctl trel counters]
+    send_user "TREL counters on $c:\n$cnts\n"
+    set inbound_bytes 0
+    set outbound_bytes 0
+    if {[regexp {Inbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match ibytes]} {
+        set inbound_bytes $ibytes
+    }
+    if {[regexp {Outbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match obytes]} {
+        set outbound_bytes $obytes
+    }
+    if {$inbound_bytes > 1000 || $outbound_bytes > 1000} {
+        fail "TREL traffic occurred on $c (Inbound: $inbound_bytes bytes, Outbound: $outbound_bytes bytes) exceeding probe threshold!"
     }
 }

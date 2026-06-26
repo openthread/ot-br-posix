@@ -1,0 +1,418 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+proc get_srp_server_data {netdata} {
+    if {[regexp -nocase -line {^\s*44970 5d ([0-9a-f]+)} $netdata -> server_data]} {
+        return $server_data
+    }
+    return ""
+}
+
+proc reboot_otbr_dind {name sim_app sim_id port} {
+    global rcp_pids
+    global socat_pids
+    global socat_spawn_ids
+    global spawn_id
+
+    set old_spawn_id $spawn_id
+
+    send_user "Rebooting OTBR container ($name)...\n"
+
+    # Stop the container
+    catch { exec docker stop $name 2>/dev/null }
+
+    # Kill the old RCP process on the host
+    if { [info exists rcp_pids] && [llength $rcp_pids] > 0 } {
+        set rcp_pid [lindex $rcp_pids end]
+        if { $rcp_pid ne "" } {
+            catch { exec kill $rcp_pid }
+        }
+        set rcp_pids [lreplace $rcp_pids end end]
+    }
+
+    # Kill the old socat process on the host
+    if { [info exists socat_pids] && [llength $socat_pids] > 0 } {
+        set socat_pid [lindex $socat_pids end]
+        if { $socat_pid ne "" } {
+            catch { exec kill $socat_pid }
+        }
+        set socat_pids [lreplace $socat_pids end end]
+    }
+    if { [info exists socat_spawn_ids] && [llength $socat_spawn_ids] > 0 } {
+        set sid [lindex $socat_spawn_ids end]
+        if { $sid ne "" } {
+            catch { close -i $sid }
+            catch { wait -i $sid }
+        }
+        set socat_spawn_ids [lreplace $socat_spawn_ids end end]
+    }
+
+    # Re-create socat and restart OTBR container
+    set pty [create_socat_tcp $sim_id $port]
+
+    if {[catch {exec docker start $name 2>/dev/null} err]} {
+        fail "Failed to start container $name: $err"
+    }
+    sleep 2
+
+    # Run the simulated RCP binary on the host again
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
+    sleep 5
+
+    set spawn_id $old_spawn_id
+}
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# Step 1: BR_1 (DUT) Enable: switch on.
+send_user "Starting OTBR Docker container (BR_1 / DUT)...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# Step 2: Eth_1, ED_1 Enable
+# Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the dynamic OMR prefix to fully stabilize
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Step 3: BR_1 (DUT) Automatically adds SRP Server info in Network Data
+send_user "Step 3: Verifying SRP Server information in Network Data...\n"
+set netdata_before [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata_before "44970 5d"
+
+# Get the running Border Router's active dataset dynamically to configure clients
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Enable ED_1 (Node 4)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr_1 [get_omr_addr]
+expect_line "Done"
+set mleid_1 [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $mleid_1\n"
+send_user "ED_1 OMR Address: $omr_addr_1\n"
+sleep 1
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+
+# Configure routes on test client
+configure_test_client_routes $test_client $container
+sleep 2
+
+# Step 4: ED_1 sends SRP Update registering service-test-1
+send_user "Step 4: ED_1 sending SRP Update for service-test-1...\n"
+switch_node 4
+send "srp client leaseinterval 300\r\n"
+expect_line "Done"
+send "srp client keyleaseinterval 600\r\n"
+expect_line "Done"
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $omr_addr_1\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 1500\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 5: BR_1 (DUT) sends success SRP Update Response
+send_user "Step 5: Verifying SRP registration success for service 1...\n"
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+send_user "SRP registration for service 1 successful.\n"
+
+# Step 6-7: Eth_1 sends mDNS query SRV for service-test-1
+send_user "Step 6-7: Verifying mDNS resolution from Eth_1 (test-client) for service 1...\n"
+set py_mdns_check_srv1 {import time
+from zeroconf import Zeroconf, IPVersion
+
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+found_srv = False
+for _ in range(10):
+    info = zc.get_service_info('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.', 2000)
+    if info and info.port == 1500 and info.server == 'host-test-1.local.':
+        found_srv = True
+        break
+    time.sleep(1)
+
+print('SRV1:FOUND' if found_srv else 'SRV1:MISSING')
+zc.close()
+}
+
+set mdns_res [exec docker exec -i $test_client python3 -c $py_mdns_check_srv1 2>/dev/null]
+set mdns_res [string trim $mdns_res]
+send_user "mDNS Check 1 Result: $mdns_res\n"
+if {$mdns_res ne "SRV1:FOUND"} {
+    fail "mDNS SRV resolution for service 1 failed"
+}
+
+# Step 8: ED_1 reboot/reset
+send_user "Step 8: Rebooting ED_1 (software reset)...\n"
+switch_node 4
+send "reset\r\n"
+sleep 2
+wait_for "state" "disabled"
+expect_line "Done"
+
+# Step 9: ED_1 sends SRP Update, as in step 4
+send_user "Step 9: ED_1 starting Thread and re-configuring SRP...\n"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $omr_addr_1\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 1500\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Step 10: BR_1 (DUT) sends success SRP Update Response
+send_user "Step 10: Verifying SRP registration success for service 1 after ED_1 reset...\n"
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+send_user "SRP registration for service 1 successful after ED_1 reset.\n"
+
+# Step 11-12: Eth_1 sends mDNS query SRV for service-test-1
+send_user "Step 11-12: Verifying mDNS resolution from Eth_1 after ED_1 reset...\n"
+set mdns_res [exec docker exec -i $test_client python3 -c $py_mdns_check_srv1 2>/dev/null]
+set mdns_res [string trim $mdns_res]
+send_user "mDNS Check 2 Result: $mdns_res\n"
+if {$mdns_res ne "SRV1:FOUND"} {
+    fail "mDNS SRV resolution for service 1 failed after ED_1 reset"
+}
+
+# Step 13: Reboot the border router (DUT)
+send_user "Step 13: Rebooting Border Router (DUT)...\n"
+reboot_otbr_dind $container $::env(EXP_OT_RCP_PATH) 2 9000
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 15} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent after reboot"
+}
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 30} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader after reboot"
+}
+
+# Verify DUT's SRP Server information appears in the Thread Network Data
+send_user "Verifying SRP Server information in Network Data after DUT reboot...\n"
+set has_srp_service false
+for {set i 0} {$i < 20} {incr i} {
+    set netdata_after [exec docker exec -i $container ot-ctl netdata show]
+    if {[regexp "44970 5d" $netdata_after]} {
+        set has_srp_service true
+        break
+    }
+    sleep 2
+}
+if {!$has_srp_service} {
+    fail "SRP Server information did not appear in Network Data after reboot"
+}
+set netdata_after [exec docker exec -i $container ot-ctl netdata show]
+
+# Verify Unicast port / Anycast sequence number change logic
+set sdata_before [get_srp_server_data $netdata_before]
+set sdata_after [get_srp_server_data $netdata_after]
+
+if {$sdata_before eq ""} {
+    fail "SRP Server data not found before reboot"
+}
+if {$sdata_after eq ""} {
+    fail "SRP Server data not found after reboot"
+}
+
+send_user "Server Data Before: $sdata_before\n"
+send_user "Server Data After:  $sdata_after\n"
+
+if {[string length $sdata_before] > 2} {
+    # Unicast Dataset - verify port (last 4 characters) differs
+    set port_before [string range $sdata_before end-3 end]
+    set port_after [string range $sdata_after end-3 end]
+    send_user "Port Before: $port_before\n"
+    send_user "Port After:  $port_after\n"
+    if {$port_before eq $port_after} {
+        fail "Unicast port number did not change after reboot (before: $port_before, after: $port_after)"
+    }
+} else {
+    # Anycast Dataset
+    if {$sdata_before eq $sdata_after} {
+        send_user "Warning: Anycast SRP-SN is equal after reboot (allowed if persistently stored)\n"
+    } else {
+        send_user "Anycast SRP-SN changed from $sdata_before to $sdata_after\n"
+    }
+}
+
+# Re-configure routing on test client after DUT reboot (just in case)
+configure_test_client_routes $test_client $container
+sleep 5
+
+
+# Step 14: ED_1 automatically re-registers using SRP Update
+# Since ED_1 is already configured, it should automatically detect the new port/SN and send an update.
+send_user "Step 14: Verifying ED_1 automatically re-registers...\n"
+switch_node 4
+if {[info exists port_after]} {
+    if {[scan $port_after %x portDec] != 1} {
+        fail "Failed to parse port_after: $port_after"
+    }
+    send_user "Waiting for ED_1 to update SRP server port to $portDec...\n"
+    wait_for "srp client server" ":$portDec\\s"
+    expect_line "Done"
+}
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Step 15: BR_1 (DUT) automatically sends SRP Update Response (implies ED_1 got Registered)
+send_user "Step 15: ED_1 successfully registered after DUT reboot.\n"
+
+# Step 16-17: Eth_1 sends mDNS query SRV for service-test-1
+send_user "Step 16-17: Verifying mDNS resolution from Eth_1 after DUT reboot...\n"
+set mdns_res [exec docker exec -i $test_client python3 -c $py_mdns_check_srv1 2>/dev/null]
+set mdns_res [string trim $mdns_res]
+send_user "mDNS Check 3 Result: $mdns_res\n"
+if {$mdns_res ne "SRV1:FOUND"} {
+    fail "mDNS SRV resolution for service 1 failed after DUT reboot"
+}
+
+# Step 18: Reset Eth_1 (test-client container)
+send_user "Step 18: Resetting Eth_1 (test-client container)...\n"
+catch { exec docker rm -f $test_client 2>/dev/null }
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+
+# Re-configure routes on new test client
+configure_test_client_routes $test_client $container
+sleep 2
+
+# Step 19: ED_1 sends SRP Update, as in step 4
+# Since the server configuration hasn't changed, we can force an update by triggering a service update or re-registration
+# E.g. disabling and enabling autostart or setting keylease
+send_user "Step 19: ED_1 sending SRP Update again...\n"
+switch_node 4
+send "srp client keyleaseinterval 601\r\n"
+expect_line "Done"
+# Wait for it to become registered again
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Step 20: BR_1 (DUT) sends success SRP Update Response
+send_user "Step 20: Verified successful SRP update response after Eth_1 reset.\n"
+
+# Step 21-22: Eth_1 sends mDNS query SRV for service-test-1
+send_user "Step 21-22: Verifying mDNS resolution from reset Eth_1 for service 1...\n"
+set mdns_res [exec docker exec -i $test_client python3 -c $py_mdns_check_srv1 2>/dev/null]
+set mdns_res [string trim $mdns_res]
+send_user "mDNS Check 4 Result: $mdns_res\n"
+if {$mdns_res ne "SRV1:FOUND"} {
+    fail "mDNS SRV resolution for service 1 failed after Eth_1 reset"
+}
+
+# Cleanup
+dispose_all
+send_user "# Recovery after reboot (1_3_SRP_TC_11) integration test completed successfully!\n"
+exit 0

@@ -1,0 +1,244 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+# Start relays and containers
+set pty1 [create_socat_tcp 1 9000]
+
+set container1 "otbr-test-container-1"
+
+send_user -- "--- Starting container 1 (BR Leader/DUT) ---\n"
+start_otbr_docker_dind $container1 $::env(EXP_OT_RCP_PATH) 2 $pty1 9000
+
+# Ensure container has initialized correctly and otbr-agent socket is ready
+wait_for_otbr_agent [list $container1]
+
+# Stop Thread, down interface
+exec docker exec -i $container1 ot-ctl thread stop
+exec docker exec -i $container1 ot-ctl ifconfig down
+
+# Configure Active Dataset
+send_user -- "--- Configuring Active Dataset on Node 1 (DUT) ---\n"
+exec docker exec -i $container1 ot-ctl dataset init new
+exec docker exec -i $container1 ot-ctl dataset panid 0x1111
+exec docker exec -i $container1 ot-ctl dataset extpanid 1111111111111111
+exec docker exec -i $container1 ot-ctl dataset networkname otbr-net1
+exec docker exec -i $container1 ot-ctl dataset channel 11
+exec docker exec -i $container1 ot-ctl dataset commit active
+
+# Start Thread on DUT
+send_user -- "--- Starting Thread on DUT ---\n"
+exec docker exec -i $container1 ot-ctl ifconfig up
+exec docker exec -i $container1 ot-ctl thread start
+
+# Wait for DUT to become leader
+wait_for_container_state $container1 "leader"
+
+# Wait 10 seconds for the network to stabilize
+send_user -- "--- Waiting 10 seconds for network to stabilize ---\n"
+sleep 10
+
+# Retrieve Extended MAC Address and ExtPANID of DUT
+set br_extaddr [exec docker exec -i $container1 ot-ctl extaddr]
+set br_extaddr [string trim [lindex [split $br_extaddr "\n"] 0]]
+send_user "BR Leader ExtAddr: $br_extaddr\n"
+
+set br_extpanid [exec docker exec -i $container1 ot-ctl extpanid]
+set br_extpanid [string trim [lindex [split $br_extpanid "\n"] 0]]
+send_user "BR Leader ExtPanId: $br_extpanid\n"
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+configure_test_client_routes $test_client $container1
+sleep 2
+
+# Fetch test-client's global ULA address to extract prefix
+set ula_addr ""
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $test_client ip -6 addr show dev eth0} tc_addrs]} {
+        foreach line [split $tc_addrs "\n"] {
+            set line [string trim $line]
+            if {[regexp {inet6\s+(\S+)\s+scope\s+global} $line -> addr]} {
+                set ula_addr $addr
+                break
+            }
+        }
+    }
+    if {$ula_addr ne ""} {
+        break
+    }
+    sleep 1
+}
+send_user "Test client ULA: $ula_addr\n"
+if {$ula_addr eq ""} {
+    fail "Failed to find global/ULA address on test-client"
+}
+
+# Write the python verification script to the host
+set py_content {import socket
+import sys
+import time
+import binascii
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceBrowser, ServiceInfo
+
+class MyListener:
+    def __init__(self):
+        self.services = []
+    def add_service(self, zc, type_, name):
+        self.services.append(name)
+    def update_service(self, zc, type_, name):
+        pass
+    def remove_service(self, zc, type_, name):
+        pass
+
+if len(sys.argv) < 4:
+    print("Usage: check_trel.py <extaddr> <extpanid> <client_ula_cidr>")
+    sys.exit(1)
+
+dut_extaddr = sys.argv[1].lower()
+dut_xpanid = sys.argv[2].lower()
+client_ula_cidr = sys.argv[3].lower()
+
+print(f"DUT ExtAddr: {dut_extaddr}")
+print(f"DUT ExtPANID: {dut_xpanid}")
+print(f"Client ULA CIDR: {client_ula_cidr}")
+
+expected_xa = binascii.unhexlify(dut_extaddr)
+expected_xp = binascii.unhexlify(dut_xpanid)
+
+with Zeroconf(ip_version=IPVersion.V6Only) as zc:
+    listener = MyListener()
+    browser = ServiceBrowser(zc, "_trel._udp.local.", listener=listener)
+
+    # Wait to discover service instance with a timeout
+    limit = 20
+    start_time = time.time()
+    while not listener.services and time.time() - start_time < limit:
+        time.sleep(0.1)
+    if not listener.services:
+        browser.cancel()
+        print("ERROR: No TREL service instances found")
+        sys.exit(1)
+
+    service_name = listener.services[0]
+    print(f"Found TREL Service instance: {service_name}")
+
+    info = None
+    for _ in range(3):
+        info = zc.get_service_info("_trel._udp.local.", service_name, 3000)
+        if info:
+            break
+        time.sleep(1)
+
+    browser.cancel()
+
+    if not info:
+        print("ERROR: Failed to retrieve ServiceInfo")
+        sys.exit(1)
+
+    print(f"Port: {info.port}")
+    print(f"Server: {info.server}")
+    if info.port is None or info.port <= 0:
+        print("ERROR: Invalid port")
+        sys.exit(1)
+    if not info.server:
+        print("ERROR: Invalid hostname")
+        sys.exit(1)
+
+    properties = info.properties
+    xa = properties.get(b'xa')
+    xp = properties.get(b'xp')
+
+    if not xa or not xp:
+        print("ERROR: Missing 'xa' or 'xp' properties in TXT record")
+        sys.exit(1)
+
+    if xa != expected_xa:
+        print(f"ERROR: 'xa' record {binascii.hexlify(xa).decode()} does not match expected {dut_extaddr}")
+        sys.exit(1)
+
+    if xp != expected_xp:
+        print(f"ERROR: 'xp' record {binascii.hexlify(xp).decode()} does not match expected {dut_xpanid}")
+        sys.exit(1)
+
+    print("TXT properties 'xa' and 'xp' match perfectly!")
+
+    addresses = info.addresses_by_version(IPVersion.V6Only)
+    if not addresses:
+        print("ERROR: No IPv6 addresses resolved for host")
+        sys.exit(1)
+
+    has_ll = False
+    has_global = False
+    expected_network = ipaddress.IPv6Interface(client_ula_cidr).network
+
+    for addr_entry in addresses:
+        addr_obj = ipaddress.IPv6Address(addr_entry)
+        print(f"Resolved Address: {addr_obj}")
+        if addr_obj.is_link_local:
+            has_ll = True
+        elif addr_obj in expected_network:
+            has_global = True
+
+    if not has_ll:
+        print("ERROR: Missing link-local IPv6 address (starting with fe80:)")
+        sys.exit(1)
+
+    if not has_global:
+        print(f"ERROR: Missing global/ULA IPv6 address (starting with {client_ula_cidr})")
+        sys.exit(1)
+
+    print("Address validation successful!")
+    print("SUCCESS")
+}
+
+set py_file "/tmp/check_trel_[pid].py"
+set py_fd [open $py_file w]
+puts -nonewline $py_fd $py_content
+close $py_fd
+
+# Copy the script to the test-client container
+exec docker cp $py_file $test_client:/tmp/check_trel.py
+file delete $py_file
+
+# Run the verification script in the test-client
+send_user -- "--- Verifying mDNS parameters from Eth_1 (test-client) ---\n"
+if {[catch {exec docker exec -i $test_client python3 /tmp/check_trel.py $br_extaddr $br_extpanid $ula_addr} check_output]} {
+    send_user "$check_output\n"
+    fail "mDNS validation failed!"
+}
+send_user "$check_output\n"
+
+dispose_all
+send_user -- "--- TREL mDNS Discovery of TREL Service (1_4_TREL_TC_6) Integration Test PASSED successfully! ---\n"
+exit 0

@@ -1,0 +1,458 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start border router in Docker
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# 2. Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its dynamic OMR prefix
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Step 3: Verify the SRP Server information (specifically DNS-SD Unicast Dataset) is in Network Data on DUT
+send_user "Verifying DNS-SD Unicast Dataset in Network Data...\n"
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+
+# Get the running Border Router's active dataset dynamically to configure the client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ED_1)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr [get_omr_addr]
+set mleid [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $mleid\n"
+send_user "ED_1 OMR Address: $omr_addr\n"
+sleep 1
+
+# Step 4-5: Configure and Register host & service on SRP Client (ED_1)
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $mleid $omr_addr\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify registration is successful (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+exec docker run -d \
+    --name $test_client \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+
+# Configure routes on test client
+set has_rio [expr {[catch {exec docker exec -i $test_client test -f /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+if {$has_rio} {
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client rdisc6 eth0
+} else {
+    set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+    set otbr_ip [exec docker inspect $container -f $format]
+    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
+}
+sleep 2
+
+# Retrieve Border Router's RLOC address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr == ""} {
+    set otbr_dns_addr [lindex [split $otbr_addrs "\n"] 0]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Phase 3: Unicast DNS Verification from Thread (ED_1)
+switch_node 4
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+
+# Step 6–7: DNS PTR query
+send "dns browse _thread-test._udp.default.service.arpa.\r\n"
+set timeout 10
+set found_service 0
+expect {
+    -re "service-test-1" {
+        set found_service 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS PTR query failed"
+    }
+}
+if {!$found_service} {
+    fail "Unicast DNS PTR query response missing service-test-1"
+}
+
+# Step 7b: DNS SRV query
+send "dns servicehost service-test-1 _thread-test._udp.default.service.arpa.\r\n"
+set timeout 10
+set found_port 0
+set found_host 0
+expect {
+    -re "Port:55555" {
+        set found_port 1
+        exp_continue
+    }
+    -re "Host:host-test-1.default.service.arpa." {
+        set found_host 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS SRV query failed"
+    }
+}
+if {!$found_port || !$found_host} {
+    fail "Unicast DNS SRV query response missing Port or Host"
+}
+
+# Step 7c: DNS AAAA query
+send "dns resolve host-test-1.default.service.arpa.\r\n"
+set timeout 10
+set found_mleid 0
+set found_omr 0
+expect {
+    -re "$mleid" {
+        set found_mleid 1
+        exp_continue
+    }
+    -re "$omr_addr" {
+        set found_omr 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS AAAA query failed"
+    }
+}
+if {!$found_mleid || !$found_omr} {
+    fail "DNS AAAA response missing ML-EID or OMR address"
+}
+
+# Phase 4: mDNS Verification from Adjacent Infrastructure (Eth_1)
+# Step 8-9: Verify service type '_thread-test._udp.local.' via mdns-scan
+spawn docker exec -i $test_client mdns-scan
+set timeout 10
+expect {
+    "service-test-1._thread-test._udp.local" {
+        # Succeeded
+    }
+    timeout {
+        fail "mDNS scan failed to discover the service"
+    }
+}
+catch {close}
+catch {wait}
+
+# Step 9b: Resolve SRV info using Python Zeroconf on Eth_1
+set py_srv {import time
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+for _ in range(10):
+    info.request(zc, 2000)
+    if info.port is not None and info.server is not None:
+        break
+    time.sleep(1)
+print(f'{info.port},{info.server}') if (info.port is not None and info.server is not None) else print('None')
+zc.close()}
+set srv_res [exec docker exec -i $test_client python3 -c $py_srv]
+set srv_res [string trim $srv_res]
+send_user "mDNS SRV Result: $srv_res\n"
+if {![string equal $srv_res "55555,host-test-1.local."]} {
+    fail "mDNS SRV resolution incorrect (expected 55555,host-test-1.local.)"
+}
+
+# Step 9c: Resolve AAAA info using Python Zeroconf on Eth_1 and verify OMR address is present
+set py_aaaa_check_omr {import time
+import socket
+import os
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+for _ in range(10):
+    info.request(zc, 2000)
+    if info.server is not None and info.addresses_by_version(IPVersion.V6Only):
+        break
+    time.sleep(1)
+if info.server is None:
+    print("FAIL: Service resolution timed out (info.server is None)")
+    exit(1)
+addrs = info.addresses_by_version(IPVersion.V6Only)
+resolved = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs]
+zc.close()
+expected_omr = ipaddress.IPv6Address(os.environ['EXPECTED_OMR'])
+if expected_omr not in resolved:
+    print(f"FAIL: OMR address {expected_omr} not found in resolved IPs: {resolved}")
+    exit(1)
+print(f"OK: Found {expected_omr} in {resolved}")
+}
+set status [catch {exec docker exec -e EXPECTED_OMR=$omr_addr -i $test_client python3 -c $py_aaaa_check_omr} output]
+send_user "mDNS AAAA Result: $output\n"
+if {$status != 0} {
+    fail "mDNS AAAA resolution missing OMR address: $output"
+}
+
+# Phase 5: SRP Update & Verification (Steps 10–13c)
+# Step 10: Clear OMR and update port to 55556, keeping only ML-EID on ED_1
+switch_node 4
+send "srp client service clear service-test-1 _thread-test._udp\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55556\r\n"
+expect_line "Done"
+send "srp client host address $mleid\r\n"
+expect_line "Done"
+
+# Wait for registration to refresh
+sleep 5
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Step 12–13: DNS PTR query after update
+send "dns browse _thread-test._udp.default.service.arpa.\r\n"
+set timeout 10
+set found_service 0
+expect {
+    -re "service-test-1" {
+        set found_service 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Updated Unicast DNS PTR query failed"
+    }
+}
+if {!$found_service} {
+    fail "Updated Unicast DNS PTR query response missing service-test-1"
+}
+
+# Step 13b: DNS SRV query after update
+send "dns servicehost service-test-1 _thread-test._udp.default.service.arpa.\r\n"
+set timeout 10
+set found_port 0
+set found_host 0
+expect {
+    -re "Port:55556" {
+        set found_port 1
+        exp_continue
+    }
+    -re "Host:host-test-1.default.service.arpa." {
+        set found_host 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Updated Unicast DNS SRV query failed"
+    }
+}
+if {!$found_port || !$found_host} {
+    fail "Updated Unicast DNS SRV query response missing Port or Host"
+}
+
+# Step 13c: DNS AAAA query after update (MUST contain ML-EID, MUST NOT contain OMR)
+send "dns resolve host-test-1.default.service.arpa.\r\n"
+set timeout 10
+set found_mleid 0
+set found_omr 0
+expect {
+    -re "$mleid" {
+        set found_mleid 1
+        exp_continue
+    }
+    -re "$omr_addr" {
+        set found_omr 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Updated Unicast DNS AAAA query failed"
+    }
+}
+if {!$found_mleid} {
+    fail "DNS AAAA response missing ML-EID after update"
+}
+if {$found_omr} {
+    fail "DNS AAAA response still contains OMR address after deletion"
+}
+
+# Phase 6: mDNS Verification after Update (Steps 14–15c)
+# Step 14-15: Verify mDNS scan still discovers the service
+spawn docker exec -i $test_client mdns-scan
+set timeout 10
+expect {
+    "service-test-1._thread-test._udp.local" {
+        # Succeeded
+    }
+    timeout {
+        fail "Updated mDNS scan failed to discover the service"
+    }
+}
+catch {close}
+catch {wait}
+
+# Step 15b: Resolve updated SRV info using Python Zeroconf on Eth_1
+set srv_res [exec docker exec -i $test_client python3 -c $py_srv]
+set srv_res [string trim $srv_res]
+send_user "Updated mDNS SRV Result: $srv_res\n"
+if {![string equal $srv_res "55556,host-test-1.local."]} {
+    fail "Updated mDNS SRV resolution incorrect (expected 55556,host-test-1.local.)"
+}
+
+# Step 15c: Resolve updated AAAA info using Python Zeroconf on Eth_1 (MUST respond RCODE=0, MAY contain ML-EID, MUST NOT contain OMR)
+set py_aaaa_check_update {import time
+import socket
+import os
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+for _ in range(10):
+    info.request(zc, 2000)
+    if info.server is not None and info.addresses_by_version(IPVersion.V6Only):
+        break
+    time.sleep(1)
+if info.server is None:
+    print("FAIL: Service resolution timed out (info.server is None)")
+    exit(1)
+addrs = info.addresses_by_version(IPVersion.V6Only)
+resolved = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs]
+zc.close()
+expected_omr = ipaddress.IPv6Address(os.environ['EXPECTED_OMR'])
+expected_mleid = ipaddress.IPv6Address(os.environ['EXPECTED_MLEID'])
+for ip in resolved:
+    if ip == expected_omr:
+        print(f"FAIL: OMR address {expected_omr} still present after deletion")
+        exit(1)
+    if ip != expected_mleid:
+        print(f"FAIL: Unexpected address {ip} (expected only ML-EID {expected_mleid} or empty)")
+        exit(1)
+print(f"OK: Verified no OMR address and only expected ML-EID {expected_mleid} or empty in {resolved}")
+}
+set status [catch {exec docker exec -e EXPECTED_OMR=$omr_addr -e EXPECTED_MLEID=$mleid -i $test_client python3 -c $py_aaaa_check_update} output]
+send_user "Updated mDNS AAAA Result: $output\n"
+if {$status != 0} {
+    fail "Updated mDNS AAAA resolution invalid: $output"
+}
+
+# Cleanup
+dispose_all
+send_user "# SRP Register Single Service (1_3_SRP_TC_1) integration test completed successfully!\n"
+exit 0

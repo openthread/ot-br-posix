@@ -45,6 +45,8 @@ jobs:
   create-release:
     name: Create Monthly Release
     runs-on: ubuntu-24.04
+    outputs:
+      tag_name: ${{ steps.generate_tag.outputs.TAG_NAME }}
     
     # Required permission to create tags and releases
     permissions:
@@ -52,7 +54,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -60,7 +62,7 @@ jobs:
             github.com:443
 
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
@@ -76,6 +78,7 @@ jobs:
             CALVER_TAG="v$(date +'%Y.%m').0"
           fi
           echo "TAG_NAME=$CALVER_TAG" >> $GITHUB_ENV
+          echo "TAG_NAME=$CALVER_TAG" >> $GITHUB_OUTPUT
           echo "Generated tag: $CALVER_TAG"
 
       - name: Create GitHub Release
@@ -87,3 +90,10 @@ jobs:
             --target "${{ github.ref_name }}" \
             --title "OpenThread Border Router $TAG_NAME" \
             --generate-notes
+
+  build-docker:
+    needs: create-release
+    uses: ./.github/workflows/docker-border-router.yml
+    with:
+      release_tag: ${{ needs.create-release.outputs.tag_name }}
+    secrets: inherit
