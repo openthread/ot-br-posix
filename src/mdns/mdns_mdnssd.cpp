@@ -267,6 +267,39 @@ PublisherMDnsSd::~PublisherMDnsSd(void)
 otbrError PublisherMDnsSd::Start(void)
 {
     mState = State::kReady;
+
+    for (const auto &kv : mServiceRegistrations)
+    {
+        static_cast<DnssdServiceRegistration &>(*kv.second).Register();
+    }
+
+    for (const auto &kv : mHostRegistrations)
+    {
+        static_cast<DnssdHostRegistration &>(*kv.second).Register();
+    }
+
+    for (const auto &kv : mKeyRegistrations)
+    {
+        static_cast<DnssdKeyRegistration &>(*kv.second).Register();
+    }
+
+    for (const auto &service : mSubscribedServices)
+    {
+        if (service->mInstanceName.empty())
+        {
+            service->Browse();
+        }
+        else
+        {
+            service->Resolve(kDNSServiceInterfaceIndexAny, service->mInstanceName, service->mType, kDomain);
+        }
+    }
+
+    for (const auto &host : mSubscribedHosts)
+    {
+        host->Resolve();
+    }
+
     mStateCallback(State::kReady);
     return OTBR_ERROR_NONE;
 }
@@ -280,29 +313,46 @@ void PublisherMDnsSd::Stop(StopMode aStopMode)
 {
     VerifyOrExit(mState == State::kReady);
 
-    // If we get a `kDNSServiceErr_ServiceNotRunning` and need to
-    // restart the `Publisher`, we should immediately de-allocate
-    // all `ServiceRef`. Otherwise, we first clear the `Registrations`
-    // list so that `DnssdHostRegisteration` destructor gets the chance
-    // to update registered records if needed.
-
     switch (aStopMode)
     {
     case kNormalStop:
+        mServiceRegistrations.clear();
+        mHostRegistrations.clear();
+        mKeyRegistrations.clear();
+        mSubscribedServices.clear();
+        mSubscribedHosts.clear();
+        DeallocateHostsRef();
         break;
 
-    case kStopOnServiceNotRunningError:
+    case kStopOnRetryableError:
+        for (const auto &kv : mServiceRegistrations)
+        {
+            static_cast<DnssdServiceRegistration &>(*kv.second).Unregister();
+        }
+
+        for (const auto &kv : mHostRegistrations)
+        {
+            static_cast<DnssdHostRegistration &>(*kv.second).Unregister();
+        }
+
+        for (const auto &kv : mKeyRegistrations)
+        {
+            static_cast<DnssdKeyRegistration &>(*kv.second).Unregister();
+        }
+
+        for (const auto &service : mSubscribedServices)
+        {
+            service->Release();
+        }
+
+        for (const auto &host : mSubscribedHosts)
+        {
+            host->Release();
+        }
+
         DeallocateHostsRef();
         break;
     }
-
-    mServiceRegistrations.clear();
-    mHostRegistrations.clear();
-    mKeyRegistrations.clear();
-    DeallocateHostsRef();
-
-    mSubscribedServices.clear();
-    mSubscribedHosts.clear();
 
     mState = State::kIdle;
 
@@ -340,31 +390,49 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 {
     mTaskRunner.Update(aMainloop);
 
-    for (auto &kv : mServiceRegistrations)
+    for (const auto &kv : mServiceRegistrations)
     {
         auto &serviceReg = static_cast<DnssdServiceRegistration &>(*kv.second);
 
-        serviceReg.Update(aMainloop);
+        SuccessOrExit(serviceReg.Update(aMainloop), {
+            Stop(kStopOnRetryableError);
+            Start();
+        });
     }
 
     if (mHostsRef != nullptr)
     {
         int fd = DNSServiceRefSockFD(mHostsRef);
 
-        assert(fd != -1);
+        if (fd == -1)
+        {
+            otbrLogWarning("mDNS connection socket is invalid, reconnecting...");
+            Stop(kStopOnRetryableError);
+            Start();
+            ExitNow();
+        }
 
         aMainloop.AddFdToReadSet(fd);
     }
 
     for (const auto &service : mSubscribedServices)
     {
-        service->UpdateAll(aMainloop);
+        SuccessOrExit(service->UpdateAll(aMainloop), {
+            Stop(kStopOnRetryableError);
+            Start();
+        });
     }
 
     for (const auto &host : mSubscribedHosts)
     {
-        host->Update(aMainloop);
+        SuccessOrExit(host->Update(aMainloop), {
+            Stop(kStopOnRetryableError);
+            Start();
+        });
     }
+
+exit:
+    return;
 }
 
 void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
@@ -373,16 +441,27 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 
     mTaskRunner.Process(aMainloop);
 
-    for (auto &kv : mServiceRegistrations)
+    for (const auto &kv : mServiceRegistrations)
     {
         auto &serviceReg = static_cast<DnssdServiceRegistration &>(*kv.second);
 
-        serviceReg.Process(aMainloop, mServiceRefsToProcess);
+        SuccessOrExit(serviceReg.Process(aMainloop, mServiceRefsToProcess), {
+            Stop(kStopOnRetryableError);
+            Start();
+        });
     }
 
     if (mHostsRef != nullptr)
     {
         int fd = DNSServiceRefSockFD(mHostsRef);
+
+        if (fd == -1)
+        {
+            otbrLogWarning("mDNS connection socket is invalid, reconnecting...");
+            Stop(kStopOnRetryableError);
+            Start();
+            ExitNow();
+        }
 
         if (FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
@@ -392,12 +471,18 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 
     for (const auto &service : mSubscribedServices)
     {
-        service->ProcessAll(aMainloop, mServiceRefsToProcess);
+        SuccessOrExit(service->ProcessAll(aMainloop, mServiceRefsToProcess), {
+            Stop(kStopOnRetryableError);
+            Start();
+        });
     }
 
     for (const auto &host : mSubscribedHosts)
     {
-        host->Process(aMainloop, mServiceRefsToProcess);
+        SuccessOrExit(host->Process(aMainloop, mServiceRefsToProcess), {
+            Stop(kStopOnRetryableError);
+            Start();
+        });
     }
 
     for (DNSServiceRef serviceRef : mServiceRefsToProcess)
@@ -428,14 +513,15 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
             otbrLog(logLevel, OTBR_LOG_TAG, "DNSServiceProcessResult failed: %s (serviceRef = %p)",
                     DNSErrorToString(error), serviceRef);
         }
-        if (error == kDNSServiceErr_ServiceNotRunning)
+        if (IsRetryableError(error))
         {
-            otbrLogWarning("Need to reconnect to mdnsd");
-            Stop(kStopOnServiceNotRunningError);
+            otbrLogWarning("mDNS error %d, need to reconnect to mdnsd", error);
+            Stop(kStopOnRetryableError);
             Start();
             ExitNow();
         }
     }
+
 exit:
     return;
 }
@@ -451,36 +537,48 @@ void PublisherMDnsSd::HandleServiceRefDeallocating(const DNSServiceRef &aService
     }
 }
 
-void PublisherMDnsSd::DnssdServiceRegistration::Update(MainloopContext &aMainloop) const
+otbrError PublisherMDnsSd::DnssdServiceRegistration::Update(MainloopContext &aMainloop) const
 {
-    int fd;
+    otbrError error = OTBR_ERROR_NONE;
+    int       fd;
 
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    VerifyOrExit(fd != -1);
+    if (fd == -1)
+    {
+        otbrLogWarning("mDNS connection socket is invalid");
+        error = OTBR_ERROR_INVALID_STATE;
+        ExitNow();
+    }
 
     aMainloop.AddFdToReadSet(fd);
 
 exit:
-    return;
+    return error;
 }
 
-void PublisherMDnsSd::DnssdServiceRegistration::Process(const MainloopContext      &aMainloop,
-                                                        std::vector<DNSServiceRef> &aReadyServices) const
+otbrError PublisherMDnsSd::DnssdServiceRegistration::Process(const MainloopContext      &aMainloop,
+                                                             std::vector<DNSServiceRef> &aReadyServices) const
 {
-    int fd;
+    otbrError error = OTBR_ERROR_NONE;
+    int       fd;
 
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    VerifyOrExit(fd != -1);
+    if (fd == -1)
+    {
+        otbrLogWarning("mDNS connection socket is invalid");
+        error = OTBR_ERROR_INVALID_STATE;
+        ExitNow();
+    }
 
     VerifyOrExit(FD_ISSET(fd, &aMainloop.mReadFdSet));
     aReadyServices.push_back(mServiceRef);
 
 exit:
-    return;
+    return error;
 }
 
 otbrError PublisherMDnsSd::DnssdServiceRegistration::Register(void)
@@ -1113,34 +1211,46 @@ void PublisherMDnsSd::ServiceRef::DeallocateServiceRef(void)
     }
 }
 
-void PublisherMDnsSd::ServiceRef::Update(MainloopContext &aMainloop) const
+otbrError PublisherMDnsSd::ServiceRef::Update(MainloopContext &aMainloop) const
 {
-    int fd;
+    otbrError error = OTBR_ERROR_NONE;
+    int       fd;
 
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    assert(fd != -1);
+    if (fd == -1)
+    {
+        otbrLogWarning("mDNS connection socket is invalid");
+        error = OTBR_ERROR_INVALID_STATE;
+        ExitNow();
+    }
     aMainloop.AddFdToReadSet(fd);
 exit:
-    return;
+    return error;
 }
 
-void PublisherMDnsSd::ServiceRef::Process(const MainloopContext      &aMainloop,
-                                          std::vector<DNSServiceRef> &aReadyServices) const
+otbrError PublisherMDnsSd::ServiceRef::Process(const MainloopContext      &aMainloop,
+                                               std::vector<DNSServiceRef> &aReadyServices) const
 {
-    int fd;
+    otbrError error = OTBR_ERROR_NONE;
+    int       fd;
 
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    assert(fd != -1);
+    if (fd == -1)
+    {
+        otbrLogWarning("mDNS connection socket is invalid");
+        error = OTBR_ERROR_INVALID_STATE;
+        ExitNow();
+    }
     if (FD_ISSET(fd, &aMainloop.mReadFdSet))
     {
         aReadyServices.push_back(mServiceRef);
     }
 exit:
-    return;
+    return error;
 }
 
 void PublisherMDnsSd::ServiceSubscription::Release(void)
@@ -1247,25 +1357,35 @@ void PublisherMDnsSd::ServiceSubscription::Remove(uint32_t           aInterfaceI
     }
 }
 
-void PublisherMDnsSd::ServiceSubscription::UpdateAll(MainloopContext &aMainloop) const
+otbrError PublisherMDnsSd::ServiceSubscription::UpdateAll(MainloopContext &aMainloop) const
 {
-    Update(aMainloop);
+    otbrError error = OTBR_ERROR_NONE;
+
+    SuccessOrExit(error = Update(aMainloop));
 
     for (const auto &instance : mResolvingInstances)
     {
-        instance->Update(aMainloop);
+        SuccessOrExit(error = instance->Update(aMainloop));
     }
+
+exit:
+    return error;
 }
 
-void PublisherMDnsSd::ServiceSubscription::ProcessAll(const MainloopContext      &aMainloop,
-                                                      std::vector<DNSServiceRef> &aReadyServices) const
+otbrError PublisherMDnsSd::ServiceSubscription::ProcessAll(const MainloopContext      &aMainloop,
+                                                           std::vector<DNSServiceRef> &aReadyServices) const
 {
-    Process(aMainloop, aReadyServices);
+    otbrError error = OTBR_ERROR_NONE;
+
+    SuccessOrExit(error = Process(aMainloop, aReadyServices));
 
     for (const auto &instance : mResolvingInstances)
     {
-        instance->Process(aMainloop, aReadyServices);
+        SuccessOrExit(error = instance->Process(aMainloop, aReadyServices));
     }
+
+exit:
+    return error;
 }
 
 bool PublisherMDnsSd::ServiceInstanceResolution::Matches(uint32_t           aInterfaceIndex,
