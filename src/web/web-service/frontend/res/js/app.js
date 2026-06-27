@@ -287,11 +287,20 @@
                     console.log(response);
                     $scope.res = response.data.result;
                     if (response.data.result == 'successful') {
-                        var image = "http://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=v%3D1%26%26eui%3D" + response.data.eui64 +"%26%26cc%3D" + $scope.thread.pskd +"&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L";
-                        $scope.showQRCode(event, image);
+                        try {
+                            var qrData = "v=1&&eui=" + response.data.eui64 + "&&cc=" + $scope.thread.pskd;
+                            var qr = qrcode(0, 'L');
+                            qr.addData(qrData);
+                            qr.make();
+                            var image = qr.createDataURL(10, 0);
+                            $scope.showQRCode(event, image);
+                        } catch (err) {
+                            console.error("QR Generation failed:", err);
+                            $scope.showQRAlert(event, "sorry, can not generate the QR code.");
+                        }
                     } else {
-                        $scope.showQRAlert(event, "sorry, can not generate the QR code.");
-                    }   
+                        $scope.showQRAlert(event, "sorry, server returned an error.");
+                    }
                     $scope.isDisplay = true;       
                     
                 });
