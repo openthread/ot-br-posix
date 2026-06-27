@@ -440,11 +440,22 @@
 
         $scope.restServerPort = '8081';
         var formatRestAddr = function(host, port) {
-            // When using HTTPS, omit port (assumes client sees 443 and reverse proxy routes to correct backend port)
+            // Remove existing IPv6 brackets if present
+            var normalizedHost = host.replace(/^\[(.*)\]$/, '$1');
+            
+            var formattedHost = (normalizedHost.indexOf(':') > -1) ? '[' + normalizedHost + ']' : normalizedHost;
+
+            // When using HTTPS, assume reverse proxy places web UI and API on same port
             if (window.location.protocol === 'https:') {
-                return (host.indexOf(':') > -1) ? '[' + host + ']' : host;
+                // If the target API host is the same as the Web UI host
+                if (normalizedHost === window.location.hostname.replace(/^\[(.*)\]$/, '$1')) {
+                    // Use the web UI full host string (including non-standard port if present)
+                    return window.location.host;
+                }
+                // Otherwise, assume the proxy handles the port translation for the external host
+                return formattedHost;
             }
-            return (host.indexOf(':') > -1) ? '[' + host + ']:' + port : host + ':' + port;
+            return formattedHost + ':' + port;
         };
         $scope.ipAddr = formatRestAddr(window.location.hostname, $scope.restServerPort);
 
