@@ -1,0 +1,65 @@
+meta {
+  name: PUT Client Certificate
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs
+  body: text
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode !== "noAuth") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Content-Type: application/x-pem-file; charset=ASCII
+  Accept: application/json
+}
+
+body:text {
+  {{process.env.CLIENT_CERT_PEM}}
+}
+
+assert {
+  res.status: eq {{client_cert_put_expected_status}}
+}
+
+tests {
+  test("Client certificate enrollment", function() {
+    
+    if (res.status === 201) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+      
+      const data = res.getBody();
+      expect(data).to.have.property("id");
+      expect(data.id).to.match(/^[a-f0-9]{32}$/);
+      
+      // Store certificate ID for later use
+      bru.setEnvVar("client_cert_id", data.id);
+      console.log("Client certificate ID:", data.id);
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      const errorMessage = res.body?.error || res.body?.message || "Unknown error";
+      console.log(`✗ ${errorMessage}`);
+    }
+    
+    const expectedStatus = parseInt(bru.getEnvVar('client_cert_put_expected_status'));
+    expect(res.status).to.equal(expectedStatus);
+  });
+}
+
+docs {
+  Enrolls first client certificate for mTLS authentication.
+}

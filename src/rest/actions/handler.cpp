@@ -33,6 +33,7 @@
 #include "add_thread_device.hpp"
 #include "discover_network.hpp"
 #include "energy_scan.hpp"
+#include "generate_ldevid.hpp"
 #include "network_diagnostic.hpp"
 #include "reset_diagnostic_counters.hpp"
 
@@ -46,6 +47,7 @@ static std::unordered_map<std::string, Handler> sHandlers = {
     {NETWORK_DIAG_ACTION_TYPE_NAME, Handler::MakeHandler<NetworkDiagnostic>()},
     {RESET_DIAG_COUNTERS_ACTION_TYPE_NAME, Handler::MakeHandler<ResetDiagnosticCounters>()},
     {DISCOVER_NETWORK_ACTION_TYPE_NAME, Handler::MakeHandler<DiscoverNetwork>()},
+    {GENERATE_LDEVID_ACTION_TYPE_NAME, Handler::MakeHandler<GenerateLDevID>()},
 };
 
 const Handler *FindHandler(const char *aName)

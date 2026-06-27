@@ -1,1 +1,6 @@
 results_*
+results-*.json
+
+# Generated Bruno CLI client certificate configuration files
+client-cert-config.json
+client2-cert-config.json
