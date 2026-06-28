@@ -38,6 +38,7 @@ set(NPM_JS_DEPENDENCIES
     ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular/angular.min.js
     ${CMAKE_CURRENT_BINARY_DIR}/node_modules/d3/d3.min.js
     ${CMAKE_CURRENT_BINARY_DIR}/node_modules/material-design-lite/material.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/qrcode-generator/dist/qrcode.js
 )
 
 add_custom_target(otbr-web-frontend
