@@ -560,9 +560,11 @@ exit:
     return error;
 }
 
-void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, AttachHandler aHandler)
+void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, uint32_t aDelayMs, AttachHandler aHandler)
 {
-    constexpr uint32_t kDelayTimerMilliseconds = 300 * 1000;
+    constexpr uint32_t kDefaultDelayTimerMilliseconds = 300 * 1000;
+    constexpr uint32_t kMaxDelayTimerMilliseconds     = 72 * 60 * 60 * 1000; // 72 hours
+    uint32_t           delayTimerMs                   = (aDelayMs == 0) ? kDefaultDelayTimerMilliseconds : aDelayMs;
 
     otError                  error = OT_ERROR_NONE;
     otOperationalDatasetTlvs datasetTlvs;
@@ -576,6 +578,7 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
         otbrLogWarning("Attach Handler is nullptr");
         ExitNow(error = OT_ERROR_INVALID_ARGS);
     }
+    VerifyOrExit(delayTimerMs <= kMaxDelayTimerMilliseconds, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_BUSY);
 
     VerifyOrExit(aDatasetTlvs.size() <= sizeof(datasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
@@ -593,8 +596,12 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     canImpactNetworkConnectivity = otDatasetAffectsConnectivity(mInstance, &datasetTlvs);
     if (canImpactNetworkConnectivity)
     {
-        attachDelayMs = kDelayTimerMilliseconds;
-        SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, attachDelayMs));
+        attachDelayMs = delayTimerMs;
+        SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, delayTimerMs));
+    }
+    else if (aDelayMs > 0)
+    {
+        otbrLogWarning("Delay timer specified but dataset change does not impact network connectivity, ignoring delay");
     }
 
     assert(datasetTlvs.mLength > 0);
