@@ -130,6 +130,7 @@ private:
     void GetDataRloc(Response &aResponse) const;
     void GetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
     void SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
+    void DeletePendingDataset(Response &aResponse) const;
     void GetCommissionerState(Response &aResponse) const;
     void SetCommissionerState(const Request &aRequest, Response &aResponse) const;
     void GetJoiners(Response &aResponse) const;

@@ -1494,6 +1494,19 @@ paths:
           description: Invalid request body.
         "500":
           $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - node
+      summary: Delete the pending operational dataset
+      description: |-
+        Clears the pending operational dataset, canceling any scheduled network
+        configuration changes (e.g. a pending channel migration) before they
+        take effect.
+      responses:
+        "200":
+          description: Successfully deleted the pending operational dataset.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
   /node/commissioner/state:
     get:
       tags: 
