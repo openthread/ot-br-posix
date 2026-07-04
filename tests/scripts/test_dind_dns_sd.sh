@@ -83,6 +83,7 @@ test_teardown()
     docker exec -i eth2-server cat /var/log/radvd.log || true
     docker exec -i eth2-server cat /var/log/tcpdump.log || true
     ip -6 route del 2002:1234::1234 || true
+    ip route del 38.106.217.165 || true
 
     echo "Agent logs:"
     for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web"; do
@@ -126,6 +127,11 @@ test_setup()
     echo "Adding iptables rule to allow ports 9000 to 9005 traffic..."
     iptables -I INPUT 1 -p tcp --dport 9000:9005 -j ACCEPT || true
 
+    if [[ -f "${REPO_ROOT}/ubuntu-24.04.tar" ]]; then
+        echo "Loading cached ubuntu:24.04 image..."
+        docker load -i "${REPO_ROOT}/ubuntu-24.04.tar"
+    fi
+
     # 1. Build the production Docker image
     local otbr_options="-DOTBR_DHCP6_PD=ON -DOTBR_DHCP6_PD_CLIENT=openthread"
     if [[ "$(uname)" == "Darwin" || "$(uname -r)" == *"linuxkit"* ]]; then
@@ -135,12 +141,12 @@ test_setup()
     docker build --build-arg OTBR_MDNS="${OTBR_MDNS}" --build-arg OTBR_OPTIONS="${otbr_options}" -t "${OTBR_DOCKER_IMAGE}" -f "${OTBR_DOCKER_FILE}" "${REPO_ROOT}"
 
     # 2. Create the IPv6-enabled Docker bridge network for infrastructure-link
-    if ! docker network inspect "${INFRA_NET_NAME}" >/dev/null 2>&1; then
-        echo "Creating ${INFRA_NET_NAME} Docker bridge network..."
-        docker network create --driver bridge --ipv6 --subnet fd00:db8:1::/64 "${INFRA_NET_NAME}"
-    else
-        echo "Network ${INFRA_NET_NAME} already exists."
+    if docker network inspect "${INFRA_NET_NAME}" >/dev/null 2>&1; then
+        echo "Removing existing ${INFRA_NET_NAME} Docker bridge network..."
+        docker network rm "${INFRA_NET_NAME}"
     fi
+    echo "Creating ${INFRA_NET_NAME} Docker bridge network..."
+    docker network create --driver bridge --subnet 192.168.1.0/24 --ipv6 --subnet fd00:db8:1::/64 "${INFRA_NET_NAME}"
 
     # 3. Build the test client image with mdns-scan and ping/ndisc6 tools
     echo "Building test client image with mdns-scan and ping/ndisc6 tools..."
@@ -264,6 +270,9 @@ test_run()
 
     echo "--- Running IPv6 default route advertisement (1_4_PIC_TC_3) integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_3.exp"
+
+    echo "--- Running IPv4 Connectivity using BR built-in NAT64 (1_4_PIC_TC_4) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_4.exp"
 }
 
 main()
