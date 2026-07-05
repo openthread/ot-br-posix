@@ -46,6 +46,7 @@
 #include "common/types.hpp"
 #include "host/rcp_host.hpp"
 #include "mdns/mdns.hpp"
+#include "utils/trel_extpanid.hpp"
 
 namespace otbr {
 
@@ -109,6 +110,13 @@ public:
      */
     void HandleMdnsState(Mdns::Publisher::State aState) override;
 
+    /**
+     * This method sets the Extended PAN IDs to exclude from discovered TREL peers.
+     *
+     * @param[in] aExcludeExtPanIds  The Extended PAN IDs to exclude.
+     */
+    void SetExcludeExtPanIds(const std::vector<Utils::TrelExtPanId> &aExcludeExtPanIds);
+
 private:
     static constexpr size_t   kPeerCacheSize             = 256;
     static constexpr uint16_t kCheckNetifReadyIntervalMs = 5000;
@@ -137,15 +145,19 @@ private:
             , mSockAddr(aSockAddr)
         {
             ReadExtAddrFromTxtData();
+            ReadExtPanIdFromTxtData();
         }
 
         void ReadExtAddrFromTxtData(void);
+        void ReadExtPanIdFromTxtData(void);
 
         Clock::time_point    mDiscoverTime;
         std::vector<uint8_t> mTxtData;
         otSockAddr           mSockAddr;
         otExtAddress         mExtAddr;
-        bool                 mValid = false;
+        Utils::TrelExtPanId  mExtPanId{};
+        bool                 mValid       = false;
+        bool                 mHasExtPanId = false;
     };
 
     using PeerMap = std::map<std::string, Peer>;
@@ -168,16 +180,18 @@ private:
     void     CheckPeersNumLimit(void);
     void     RemoveAllPeers(void);
     uint16_t CountDuplicatePeers(const Peer &aPeer);
+    bool     ShouldExcludePeer(const Peer &aPeer) const;
 
-    Mdns::Publisher &mPublisher;
-    Host::RcpHost   &mHost;
-    TaskRunner       mTaskRunner;
-    std::string      mTrelNetif;
-    uint32_t         mTrelNetifIndex = 0;
-    uint64_t         mSubscriberId   = 0;
-    RegisterInfo     mRegisterInfo;
-    PeerMap          mPeers;
-    bool             mMdnsPublisherReady = false;
+    Mdns::Publisher                 &mPublisher;
+    Host::RcpHost                   &mHost;
+    TaskRunner                       mTaskRunner;
+    std::string                      mTrelNetif;
+    uint32_t                         mTrelNetifIndex = 0;
+    uint64_t                         mSubscriberId   = 0;
+    RegisterInfo                     mRegisterInfo;
+    PeerMap                          mPeers;
+    std::vector<Utils::TrelExtPanId> mExcludeExtPanIds;
+    bool                             mMdnsPublisherReady = false;
 };
 
 /**

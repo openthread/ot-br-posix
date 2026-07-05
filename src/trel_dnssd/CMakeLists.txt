@@ -34,4 +34,5 @@ add_library(otbr-trel-dnssd
 target_link_libraries(otbr-trel-dnssd PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     otbr-common
+    otbr-utils
 )
