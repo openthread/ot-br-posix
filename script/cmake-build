@@ -28,27 +28,33 @@
 #
 
 #
-#  This script calls cmake and ninja to compile otbr-agent.
+#  This script calls cmake and ninja to compile otbr-agent or ot-extcap.
 #
-#  Compile with default build options:
+#  Compile with default build options (otbr):
 #
 #      script/cmake-build
 #
-#  Compile with the specified build option enabled:
+#  Compile extcap project:
+#
+#      script/cmake-build extcap
+#
+#  Compile with specified build option enabled:
 #
 #      script/cmake-build -D${option}=ON
 #
-#  Compile with the specified ninja build target:
+#  Compile with specified ninja build target:
 #
 #      OTBR_TARGET="${target}" script/cmake-build
 #
-#  Compile with the specified build directory:
+#  Compile with specified build directory:
 #
 #      OTBR_BUILD_DIR="./build/temp" script/cmake-build
 #
 #  Examples:
 #
 #      script/cmake-build
+#
+#      script/cmake-build extcap
 #
 #      script/cmake-build -DOTBR_DBUS=ON
 #
@@ -61,26 +67,40 @@
 OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_TOP_SRCDIR
 
-OTBR_TOP_BUILD_DIR="${BUILD_DIR}/otbr"
-readonly OTBR_TOP_BUILD_DIR
-
 OTBR_TARGET=${OTBR_TARGET-}
 
 main()
 {
-    local builddir="${OTBR_BUILD_DIR:-${OTBR_TOP_BUILD_DIR}}"
+    local project="otbr"
+
+    if [[ $# -gt 0 && ($1 == "extcap" || $1 == "otbr") ]]; then
+        project="$1"
+        shift
+    fi
+
+    local srcdir="${OTBR_TOP_SRCDIR}"
+    local default_builddir="${BUILD_DIR}/${project}"
+
+    if [[ ${project} == "extcap" ]]; then
+        srcdir="${OTBR_TOP_SRCDIR}/tools/extcap"
+    fi
+
+    local builddir="${OTBR_BUILD_DIR:-${default_builddir}}"
 
     mkdir -p "${builddir}"
 
     (
         cd "${builddir}" || die "Failed to enter ${builddir}"
 
-        cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${OTBR_TOP_SRCDIR}" "$@"
+        cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${srcdir}" "$@"
 
         if [[ -n ${OTBR_TARGET[*]} ]]; then
             ninja "${OTBR_TARGET[@]}"
         else
             ninja
+            if [[ ${project} == "extcap" ]]; then
+                cpack -G DEB
+            fi
         fi
     )
 }
