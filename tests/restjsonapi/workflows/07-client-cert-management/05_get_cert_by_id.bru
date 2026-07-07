@@ -1,0 +1,50 @@
+meta {
+  name: GET Client Certificate by ID (No Auth)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs/{{client_cert_id}}
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode !== "noAuth") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/x-pem-file
+}
+
+assert {
+  res.status: eq {{client_cert_get_by_id_expected_status}}
+}
+
+tests {
+  test("GET specific client certificate", function() {
+    const expectedStatus = parseInt(bru.getEnvVar('client_cert_get_by_id_expected_status'));
+    expect(res.status).to.equal(expectedStatus);
+
+    if (res.status === 200) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      console.log(`Access failed`);
+    }
+  });
+}
+
+docs {
+  Retrieves specific client certificate by ID.
+}

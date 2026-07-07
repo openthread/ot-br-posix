@@ -1,0 +1,52 @@
+meta {
+  name: PUT Upload CA-Signed LDevID
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread/ldevid
+  body: text
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Content-Type: application/x-pem-file
+}
+
+body:text {
+  {{ldevid_cert_pem}}
+}
+
+assert {
+  res.status: eq {{ldevid_put_expected_status}}
+}
+
+tests {
+  test("CA-signed LDevID uploaded successfully", function() {
+    const expectedStatus = Number(bru.getEnvVar("ldevid_put_expected_status"));
+    
+    expect(res.status).to.equal(expectedStatus);
+    
+    if (res.status === 204) {
+      console.log("✓ CA-signed LDevID certificate uploaded successfully");
+      console.log("  Certificate now available at .well-known/thread/ldevid");
+      console.log("  Use enrollment endpoint to activate it");
+    }
+  });
+}
+
+docs {
+  Uploads CA-signed LDevID certificate and private key.
+}

@@ -1,0 +1,67 @@
+meta {
+  name: GET Client Certificates List (JSON)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode !== "noAuth") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.status: eq {{client_cert_get_list_expected_status}}
+}
+
+tests {
+  test("GET /api/auth/certs returns certificate list", function() {
+    
+    if (res.status === 200) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+
+      const body = res.getBody();
+      
+      // JSON:API format: response has a 'data' wrapper
+      expect(body).to.have.property('data');
+      expect(body.data).to.be.an('array');
+      expect(body.data.length).to.be.at.least(1);
+      console.log(`Found ${body.data.length} client certificate(s)`);
+      
+      // Verify JSON:API structure (type, id, attributes)
+      const cert = body.data[0];
+      expect(cert).to.have.property('type');
+      expect(cert.type).to.equal('client-certificate');
+      expect(cert).to.have.property('id');
+      expect(cert).to.have.property('attributes');
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      const errorMessage = res.body?.error || res.body?.message || "Unknown error";
+      console.log(`✗ ${errorMessage}`);
+    }
+
+    const expectedStatus = parseInt(bru.getEnvVar('client_cert_get_list_expected_status'));
+    expect(res.status).to.equal(expectedStatus);
+  });
+}
+
+docs {
+  Retrieves client certificates in JSON format.
+}

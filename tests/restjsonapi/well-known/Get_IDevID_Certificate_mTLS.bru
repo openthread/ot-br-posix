@@ -1,0 +1,34 @@
+meta {
+  name: GET IDevID with client cert
+  type: http
+  seq: 1007
+  tags: client-certificate-mtls
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread/idevid
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/pkcs7-mime
+}
+
+assert {
+  res.status: eq 200
+  res.headers.content-type: contains pkcs7-mime
+}
+
+tests {
+  test("IDevID certificate retrieved with client cert", function() {
+    expect(res.status).to.equal(200);
+    expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+  });
+}
+
+docs {
+  Test 1.2: Get IDevID certificate with client cert
+  
+  In mTLS mode, accessing the IDevID endpoint requires a valid client certificate.
+}

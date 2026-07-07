@@ -1,0 +1,57 @@
+meta {
+  name: POST /api/auth/enroll (EST Pull Mode)
+  type: http
+  seq: 1005
+  tags: secure-enrollment-server
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/enroll
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: {{admin_user}}
+  password: {{admin_pass}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "est_server": "{{est_server_url}}",
+    "tls_verify": false
+  }
+}
+
+assert {
+  res.status: eq 204
+}
+
+tests {
+  test("EST pull mode enrollment initiated", function() {
+    // May return 204 (success) or 500 (if EST server unavailable)
+    expect([204, 500]).to.include(res.status);
+  });
+}
+
+docs {
+  Test 6.1: Trigger EST pull mode enrollment
+  
+  Initiates automatic enrollment with an EST (RFC 7030) server.
+  The TBR will:
+  1. Fetch CA certificates from EST server
+  2. Generate a CSR
+  3. Submit CSR for signing
+  4. Store the issued LDevID certificate
+  5. Switch to the new certificate
+  
+  Requires:
+  - {{est_server_url}} environment variable pointing to EST server
+  - IDevID certificate for mTLS authentication to EST server
+  
+  Note: May fail with 500 if EST server is not available.
+}

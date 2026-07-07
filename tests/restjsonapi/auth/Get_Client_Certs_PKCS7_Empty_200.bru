@@ -1,0 +1,58 @@
+meta {
+  name: GET /api/auth/certs (PKCS#7, no certs enrolled)
+  type: http
+  seq: 1003
+  tags: client-certificate-mtls
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/pkcs7-mime
+}
+
+assert {
+  res.status: eq {{client_cert_get_pkcs7_expected_status}}
+}
+
+tests {
+  test("GET /api/auth/certs PKCS#7 returns 200 with empty bundle when no certs enrolled", function() {
+    const expectedStatus = parseInt(bru.getEnvVar("client_cert_get_pkcs7_expected_status"));
+    expect(res.status).to.equal(expectedStatus);
+    if (res.status === 200) {
+      expect(res.getHeader('content-type')).to.contain('pkcs7-mime');
+      // Body should be a valid (possibly empty) PKCS#7 DER bundle, not a JSON error
+      const body = res.getBody();
+      expect(body).to.not.have.property('error');
+    }
+  });
+}
+
+docs {
+  Test GET /api/auth/certs with Accept: application/pkcs7-mime when no client
+  certificates have been enrolled yet.
+
+  Per the OpenAPI specification, GET /api/auth/certs defines responses 200/401/403/500.
+  There is NO 404 defined. When no certificates are enrolled the endpoint MUST return
+  200 with an empty PKCS#7 certs-only bundle (EST-compatible behaviour).
+
+  This test MUST run before any client certificate is enrolled (seq 1003 < seq 1006).
+
+  See: docs/specs/openapi.yaml /api/auth/certs GET responses
+  RFC 7030 §4.1.3 - /cacerts endpoint returns PKCS#7 (may be empty)
+}

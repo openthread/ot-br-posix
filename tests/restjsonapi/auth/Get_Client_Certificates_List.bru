@@ -1,0 +1,43 @@
+meta {
+  name: GET Client Certificates List
+  type: http
+  seq: 1007
+  tags: client-certificate-mtls
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: in [200, 401]
+}
+
+tests {
+  test("GET /api/auth/certs returns certificate list or requires auth", function() {
+    if (res.status === 200) {
+      const data = res.getBody();
+      expect(data).to.be.an('array');
+      console.log(`Found ${data.length} client certificate(s)`);
+    } else if (res.status === 401) {
+      console.log("Authentication required (expected in mTLS-only mode)");
+    }
+  });
+}
+
+docs {
+  Test: GET /api/auth/certs (application/json format)
+  
+  Retrieves all client certificates currently stored by the TBR.
+  Returns JSON array of certificate metadata (ID, subject, issuer, expiration).
+  
+  Support content negotiation via Accept header:
+  - application/json - Returns certificate metadata array
+  - application/pkcs7-mime - Returns PKCS#7 certificate bundle
+}

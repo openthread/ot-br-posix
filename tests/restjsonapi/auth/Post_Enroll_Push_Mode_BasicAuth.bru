@@ -1,0 +1,49 @@
+meta {
+  name: POST Enroll (Push Mode)
+  type: http
+  seq: 1004
+  tags: secure-enrollment-server
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/enroll
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: {{admin_user}}
+  password: {{admin_pass}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "est_mode": "push"
+  }
+}
+
+assert {
+  res.status: eq 204
+}
+
+tests {
+  test("Enrollment triggered successfully", function() {
+    expect(res.status).to.equal(204);
+    console.log("Enrollment completed - TBR should now use LDevID certificate");
+  });
+}
+
+docs {
+  Test 3.2: Activate generated LDevID via /api/auth/enroll
+  
+  Triggers enrollment with push mode to switch to the generated LDevID certificate.
+  The TBR will:
+  - Close existing TLS sessions
+  - Switch HTTPS server certificate to the LDevID
+  - May reboot web server to apply changes
+}

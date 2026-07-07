@@ -1,0 +1,47 @@
+meta {
+  name: DELETE Client Certificate
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/auth/certs/{{client2_cert_id}}
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode !== "noAuth") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+assert {
+  res.status: eq {{client_cert_delete_expected_status}}
+}
+
+tests {
+  test("DELETE client certificate", function() {
+    const expectedStatus = parseInt(bru.getEnvVar('client_cert_delete_expected_status'));
+    expect(res.status).to.equal(expectedStatus);
+
+    if (res.status === 204) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      const errorMessage = res.body?.error || res.body?.message || "Unknown error";
+      console.log(`✗ ${errorMessage}`);
+    }
+  });
+}
+
+docs {
+  Deletes client certificate by ID.
+}

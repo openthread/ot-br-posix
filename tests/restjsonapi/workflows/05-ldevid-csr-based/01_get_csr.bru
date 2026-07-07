@@ -1,0 +1,53 @@
+meta {
+  name: GET Certificate Signing Request (CSR)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread/csr
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+  if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+}
+
+headers {
+  Accept: application/pkcs10
+}
+
+assert {
+  res.status: eq {{csr_get_expected_status}}
+}
+
+tests {
+  test("CSR retrieved successfully", function() {
+    const expectedStatus = Number(bru.getEnvVar("csr_get_expected_status"));
+    
+    expect(res.status).to.equal(expectedStatus);
+    
+    if (res.status === 200) {
+      expect(res.getHeader('content-type')).to.contain('pkcs10');
+      // Store CSR for external signing
+      const csrPem = res.body;
+      bru.setEnvVar("device_csr_pem", csrPem);
+      
+      console.log("✓ CSR retrieved successfully");
+      console.log("  Format: application/pkcs10 (PEM)");
+    }
+  });
+}
+
+
+docs {
+  Retrieves CSR for external signing.
+}

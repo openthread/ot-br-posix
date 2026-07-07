@@ -1,0 +1,51 @@
+meta {
+  name: GET /api/node (authenticated endpoint)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/node
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const authMode = bru.getEnvVar("auth_mode");
+  
+ if (authMode === "basic") {
+    const username = bru.getEnvVar("admin_user");
+    const password = bru.getEnvVar("admin_pass");
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    req.setHeader("Authorization", `Basic ${credentials}`);
+  }
+  // If authMode === "mtls", client certificate from environment handles auth
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq {{node_get_expected_status}}
+}
+
+tests {
+  test("api/node authenticated access", function() {
+    const expectedStatus = parseInt(bru.getEnvVar('node_get_expected_status'));
+    expect(res.status).to.equal(expectedStatus);
+    
+    if (res.status === 200) {
+      const authMode = bru.getEnvVar("auth_mode");
+      console.log(`Access allowed (${authMode} mode)`);
+    } else if (res.status === 401 || res.status === 403) {
+      console.log("Access denied (requires auth)");
+    } else {
+      console.log(`Access failed`);
+    }
+  });
+}
+
+docs {
+  Verifies API access with authentication.
+}

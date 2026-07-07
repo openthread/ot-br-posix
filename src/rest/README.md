@@ -358,7 +358,7 @@ Detailed request examples are provided in the test folder as a "Bruno Request Co
 
 1. Validating the openapi.yaml specification against the implementation.
 
-   Make sure a recent Schemathesis version is installed, for example, v4.0.5:
+   Make sure a recent Schemathesis version is installed, for example, v4.10.2:
 
    ```
    pip install --upgrade schemathesis
@@ -377,6 +377,65 @@ Detailed request examples are provided in the test folder as a "Bruno Request Co
    - `phases=examples` pass
    - `phases=coverage` fails with wrong error code for request method TRACE (TRACE is not needed and not supported with cpp-httplib)
    - `phases=fuzzing` causes more failures, in part due to insufficiently strict schema definitions, for example, for `SparseFieldset` queries
+
+   Test examples passing with secured REST API:
+
+   #### noAuth
+
+   ```
+   schemathesis run src/rest/openapi.yaml \
+     --url=https://$HOSTNAME.local \
+     --include-path-regex="/api/.*" \
+     --exclude-path-regex="/api/auth/certs.*|/api/devices/\{.*\}" \
+     --phases=examples \
+     --tls-verify="traefik/test-certs/ca-bundle.pem" \
+     --workers=1 \
+     --rate-limit=5/s
+   ```
+
+   #### basicAuth
+
+   ```
+   schemathesis run src/rest/openapi.yaml \
+     --url=https://$HOSTNAME.local \
+     --include-path-regex="/api/.*" \
+     --exclude-path-regex="/api/auth/certs.*|/api/devices/\{.*\}|/api/auth/password" \
+     --phases=examples \
+     --tls-verify="traefik/test-certs/ca-bundle.pem" \
+     --auth=admin:thread \
+     --workers=1 \
+     --rate-limit=5/s
+   ```
+
+   #### after enrollment to mtls-mode: mtls, unauthorized
+
+   ```
+   schemathesis run src/rest/openapi.yaml \
+     --url=https://$HOSTNAME.local \
+     --include-path-regex="/api/.*" \
+     --exclude-path-regex="/api/auth/certs.*|/api/devices/\{.*\}" \
+     --phases=examples \
+     --tls-verify="traefik/test-certs/ca-bundle.pem" \
+     --request-cert="traefik/test-certs/clients/client2-chain.pem" \
+     --request-cert-key="traefik/test-certs/clients/client2-key.pem" \
+     --workers=1 \
+     --rate-limit=5/s
+   ```
+
+   #### mtls, authorized
+
+   ```
+   schemathesis run src/rest/openapi.yaml \
+     --url=https://$HOSTNAME.local \
+     --include-path-regex="/api/.*" \
+     --exclude-path-regex="/api/auth/certs.*|/api/devices/\{.*\}|/api/auth/password" \
+     --phases=examples \
+     --tls-verify="traefik/test-certs/ca-bundle.pem" \
+     --request-cert="traefik/test-certs/clients/client-chain.pem" \
+     --request-cert-key="traefik/test-certs/clients/client-key.pem" \
+     --exclude-checks=ignored_auth \
+     --workers=1
+   ```
 
 ## Diagnostic core attributes
 

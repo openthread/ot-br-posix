@@ -1,0 +1,36 @@
+meta {
+  name: GET .well-known/thread with client cert
+  type: http
+  seq: 1006
+  tags: client-certificate-mtls
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}/.well-known/thread
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Well-known endpoint accessible with client cert", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('object');
+    expect(res.status).to.equal(200);
+  });
+}
+
+docs {
+  Test 2.3: Verify access well-known endpoint with client cert
+  
+  In mTLS mode, even public endpoints like .well-known/thread require
+  a valid client certificate.
+}

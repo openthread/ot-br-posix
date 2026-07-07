@@ -1,0 +1,36 @@
+vars {
+  host: {{process.env.MDNS_HOSTNAME}}.local
+  base_path: /api
+  port: 443
+  protocol: https
+  
+  auth_mode: noAuth
+  
+  wellknown_expected_status: 200
+  idevid_expected_status: 200
+  ldevid_get_expected_status: 404
+
+  ldevid_put_expected_status: 401
+  password_post_expected_status: 401
+  password_put_expected_status: 401
+  wrong_password_expected_status: 401
+  csr_get_expected_status: 401
+  enroll_post_expected_status: 401
+  generate_ldevid_task_expected_status: 401
+  
+  client_cert_put_expected_status: 401
+  client_cert_get_list_expected_status: 401
+  client_cert_get_pkcs7_expected_status: 401
+  client_cert_get_by_id_expected_status: 401
+  client_cert_delete_expected_status: 401
+  delete_password_expected_status: 401
+
+  node_get_expected_status: 401
+  
+  ldevid_cert_pem: {{process.env.LDEVID_CERT_PEM}}
+  client_cert_pem: {{process.env.CLIENT_CERT_PEM}}
+  
+  est_server_url: https://localhost:8888
+  
+  test_certs_dir: {{process.env.TEST_CERTS_DIR}}
+}

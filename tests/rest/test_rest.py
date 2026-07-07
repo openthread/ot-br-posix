@@ -41,8 +41,10 @@ rest_api_addr = "http://127.0.0.1:8081"
 def assert_is_ipv6_address(string):
     assert (type(ipaddress.ip_address(string)) is ipaddress.IPv6Address)
 
+
 def get_data_from_url(url, result, index):
-    response = urllib.request.urlopen(urllib.request.Request(url, headers={'Accept': 'application/json'}))
+    response = urllib.request.urlopen(
+        urllib.request.Request(url, headers={'Accept': 'application/json'}))
     body = response.read()
     data = json.loads(body)
     result[index] = data
@@ -91,8 +93,8 @@ def diagnostics_check(data):
             "vendorName", "vendorModel", "vendorSwVersion", "threadStackVersion"
         ]
         expected_value_type = [
-            str, str, dict, dict, dict, dict, str, list, dict, list,
-            str, int, int, str, str, str, str
+            str, str, dict, dict, dict, dict, str, list, dict, list, str, int,
+            int, str, str, str, str
         ]
         expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
@@ -195,9 +197,7 @@ def node_check(data):
         "state", "routerCount", "rlocAddress", "networkName", "extAddress",
         "rloc16", "leaderData", "extPanId"
     ]
-    expected_value_type = [
-        str, int, str, str, str, str, dict, str
-    ]
+    expected_value_type = [str, int, str, str, str, str, dict, str]
     expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
     for key, value in expected_check_dict.items():
@@ -256,9 +256,10 @@ def node_state_check(data):
 
     return True
 
+
 def node_state_check_attached(data):
     node_state_check(data)
-        
+
     if (data != "detached") and (data != "disabled"):
         return True
     else:
@@ -397,7 +398,7 @@ def node_network_name_test(thread_num):
     create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_network_name_check(data) for data in response_data
-             ].count(True)
+            ].count(True)
 
     print(" /node/network-name : all {}, valid {} ".format(thread_num, valid))
 
@@ -422,9 +423,10 @@ def node_num_of_router_test(thread_num):
     create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_num_of_router_check(data) for data in response_data
-             ].count(True)
+            ].count(True)
 
-    print(" /v1/node/num-of-router : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/num-of-router : all {}, valid {} ".format(
+        thread_num, valid))
 
 
 def node_ext_panid_test(thread_num):
@@ -446,9 +448,11 @@ def node_coprocessor_version_test(thread_num):
 
     create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
-    valid = [node_coprocessor_version_check(data) for data in response_data].count(True)
+    valid = [node_coprocessor_version_check(data) for data in response_data
+            ].count(True)
 
-    print(" /node/coprocessor/version : all {}, valid {} ".format(thread_num, valid))
+    print(" /node/coprocessor/version : all {}, valid {} ".format(
+        thread_num, valid))
 
 
 def diagnostics_test(thread_num):
