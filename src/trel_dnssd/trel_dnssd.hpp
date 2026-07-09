@@ -39,6 +39,7 @@
 #if OTBR_ENABLE_TREL_DNSSD
 
 #include <assert.h>
+#include <string.h>
 #include <utility>
 
 #include <openthread/instance.h>
@@ -140,6 +141,13 @@ private:
         }
 
         void ReadExtAddrFromTxtData(void);
+
+        bool Matches(const Peer &aOther) const
+        {
+            return (mSockAddr.mPort == aOther.mSockAddr.mPort) &&
+                   (memcmp(&mSockAddr.mAddress, &aOther.mSockAddr.mAddress, sizeof(otIp6Address)) == 0) &&
+                   (mTxtData == aOther.mTxtData);
+        }
 
         Clock::time_point    mDiscoverTime;
         std::vector<uint8_t> mTxtData;
