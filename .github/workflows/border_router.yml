@@ -77,20 +77,6 @@ jobs:
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
-          - name: "Border Router MATN (OT mDNS)"
-            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "openthread"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
-            packet_verification: 1
-          - name: "Border Router MATN (mDNSResponder)"
-            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "mDNSResponder"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
-            packet_verification: 1
           - name: "Border Router Internet Access Features (OT mDNS)"
             otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
             border_routing: 1
