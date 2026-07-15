@@ -36,8 +36,13 @@ if(OTBR_MDNS STREQUAL "mDNSResponder")
             otbr-common
         PRIVATE
             otbr-utils
-            dns_sd
     )
+    if(NOT APPLE)
+        # On Apple platforms the dns_sd API is provided by libSystem; the
+        # standalone library only exists on other platforms (e.g. mDNSResponder
+        # compatibility packages on Linux).
+        target_link_libraries(otbr-mdns PRIVATE dns_sd)
+    endif()
 endif()
 
 if(OTBR_MDNS STREQUAL "openthread")
