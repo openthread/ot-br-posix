@@ -52,6 +52,7 @@
 #define OTBR_DHCP6_PD_STATE_NAME_STOPPED "stopped"
 #define OTBR_DHCP6_PD_STATE_NAME_RUNNING "running"
 #define OTBR_DHCP6_PD_STATE_NAME_IDLE "idle"
+#define OTBR_DHCP6_PD_STATE_NAME_ERROR "error"
 #endif
 
 #define OTBR_COMMISSIONER_STATE_NAME_DISABLED "disabled"
