@@ -486,8 +486,8 @@
             'maxChildTimeout': { 'title': false, 'content': false },
             'lDevIdSubject': { 'title': false, 'content': false },
             'iDevIdCert': { 'title': false, 'content': false },
-            'eui64': { 'title': false, 'content': false },
-            'version': { 'title': false, 'content': false },
+            'eui': { 'title': false, 'content': false },
+            'threadVersion': { 'title': false, 'content': false },
             'vendorName': { 'title': false, 'content': false },
             'vendorModel': { 'title': false, 'content': false },
             'vendorSwVersion': { 'title': false, 'content': false },
@@ -907,8 +907,8 @@
                             'weight': 1,
                             'type': 1,
                             'linkInfo': {
-                                'Timeout': childInfo['timeout'],
-                                'Mode': childInfo['mode']
+                                'timeout': childInfo['timeout'],
+                                'mode': childInfo['mode']
                             }
 
                         });
@@ -1079,7 +1079,7 @@
                 })
                 // Dash line for link between child and parent
                 .style('stroke-dasharray', function(item) {
-                    if ('Timeout' in item.linkInfo) return '4 4';
+                    if ('timeout' in item.linkInfo) return '4 4';
                     else return '0 0'
                 })
                 // Line width representing link quality

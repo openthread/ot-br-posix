@@ -38,13 +38,9 @@ namespace otbr {
 namespace rest {
 namespace actions {
 
-#define RESET_DIAG_COUNTERS_ACTION_TYPE_NAME "resetNetworkDiagCounterTask"
-
 class ResetDiagnosticCounters : public BasicActions
 {
 public:
-    static constexpr const char *kJsonType = "resetNetworkDiagCounterTask";
-
     /**
      * Constructor for a ResetDiagnosticCounters.
      *

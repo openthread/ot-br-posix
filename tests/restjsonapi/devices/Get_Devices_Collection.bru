@@ -51,7 +51,7 @@ tests {
       expect(item.attributes).to.have.property("mlEidIid").that.is.not.oneOf([""]);
       expect(item.attributes).to.have.property("omrIpv6Address").that.is.not.oneOf(["", "::"]);
       expect(item.attributes).to.have.property("mode");
-      expect(item.attributes).to.have.property("hostName");
+      expect(item.attributes).to.have.property("hostname");
       expect(item.attributes).to.have.property("created");
       expect(item.attributes.created).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/);
       if (item.attributes.hasOwnProperty("updated")){
