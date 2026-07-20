@@ -38,7 +38,7 @@ first_define = next(
 )
 endif = next(index for index, line in enumerate(lines) if line.startswith("#endif"))
 
-body = sorted(lines[first_define + 1 : endif])
+body = sorted([l for l in lines[first_define + 1 : endif] if l.strip() != ""])
 new_content = "\n".join(lines[: first_define + 1] + body + lines[endif:]) + "\n"
 with open(filepath, "w") as f:
     f.write(new_content)
