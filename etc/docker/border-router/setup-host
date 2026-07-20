@@ -40,7 +40,7 @@ readonly SYSCTL_IP_FORWARD_FILE
 
 die()
 {
-    echo -e "${*}" 1>&2
+    echo >&2 "ERROR: $*"
     exit 1
 }
 
