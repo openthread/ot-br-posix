@@ -143,10 +143,7 @@ static cJSON *MeshChildrenIp62Json(const std::vector<DeviceIp6Addrs> &aChildrenI
 
 static cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
 {
-    char hex[2 * aLength + 1];
-
-    otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
-    hex[2 * aLength] = '\0';
+    std::string hex = otbr::Utils::Bytes2Hex(aBytes, aLength);
 
     return cJSON_CreateString(StringUtils::ToLowercase(hex).c_str());
 }
