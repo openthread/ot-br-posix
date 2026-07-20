@@ -41,6 +41,7 @@ add_executable(otbr-gtest-unit
     test_async_task.cpp
     test_common_types.cpp
     test_dns_utils.cpp
+    test_hex.cpp
     test_logging.cpp
     test_once_callback.cpp
     test_pskc.cpp
