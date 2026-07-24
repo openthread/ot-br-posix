@@ -52,9 +52,7 @@ endif()
 
 add_subdirectory(utils)
 
-if(OTBR_NFTABLES)
-    add_subdirectory(firewall)
-endif()
+add_subdirectory(firewall)
 
 if(OTBR_OPENWRT)
     add_subdirectory(openwrt)
