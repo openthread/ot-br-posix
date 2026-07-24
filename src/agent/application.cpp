@@ -43,6 +43,14 @@
 #include "host/posix/dnssd.hpp"
 #include "utils/infra_link_selector.hpp"
 
+#if OTBR_ENABLE_NFTABLES
+#include <string.h>
+#include <vector>
+
+#include <openthread/netdata.h>
+#include <openthread/thread.h>
+#endif
+
 namespace otbr {
 
 #ifndef OTBR_MAINLOOP_POLL_TIMEOUT_SEC
@@ -229,6 +237,10 @@ void Application::HandleSignal(int aSignal)
 void Application::CreateRcpMode(void)
 {
     otbr::Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
+#if OTBR_ENABLE_NFTABLES
+    mNftables = MakeUnique<Firewall::Nftables>();
+    mFirewall = MakeUnique<Firewall::FirewallManager>(*mNftables, mInterfaceName);
+#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent = MakeUnique<BackboneRouter::BackboneAgent>(rcpHost);
 #endif
@@ -318,6 +330,29 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     });
 #endif
 #endif // OTBR_ENABLE_BORDER_AGENT
+#if OTBR_ENABLE_NFTABLES
+    // The firewall is a security control: if it was built in (OTBR_NFTABLES) but
+    // cannot be installed, abort rather than silently forward traffic unfiltered.
+    // This mirrors the legacy script path, which `die`d when the otbr-firewall /
+    // otbr-nat44 services failed to start.
+    SuccessOrDie(mNftables->Init(), "Failed to initialize the nftables firewall!");
+    SuccessOrDie(mFirewall->Init(), "Failed to initialize the firewall manager!");
+    SuccessOrDie(mFirewall->EnableIngressFilter(), "Failed to install the Thread ingress filter!");
+    if (!mBackboneInterfaceName.empty())
+    {
+        SuccessOrDie(mFirewall->EnableNat44Masquerade(mBackboneInterfaceName), "Failed to install NAT44 masquerade!");
+    }
+    // Populate the ingress allow/deny sets from Thread network data, and keep
+    // them in sync as it changes. This is the in-process replacement for the
+    // OpenThread posix platform firewall's ipset producer.
+    rcpHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) {
+        if (aFlags & OT_CHANGED_THREAD_NETDATA)
+        {
+            UpdateIngressPrefixes();
+        }
+    });
+    UpdateIngressPrefixes();
+#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent->Init();
 #endif
@@ -341,8 +376,65 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #endif
 }
 
+#if OTBR_ENABLE_NFTABLES
+void Application::UpdateIngressPrefixes(void)
+{
+    otNetworkDataIterator    iterator = OT_NETWORK_DATA_ITERATOR_INIT;
+    otBorderRouterConfig     config;
+    const otMeshLocalPrefix *meshLocal;
+    std::vector<Ip6Prefix>   denySrc;
+    std::vector<Ip6Prefix>   allowDst;
+    otInstance              *instance;
+
+    // The firewall only exists in RCP mode, so check it before downcasting mHost.
+    VerifyOrExit(mFirewall != nullptr && mFirewall->IsIngressFilterEnabled());
+
+    instance = static_cast<otbr::Host::RcpHost &>(mHost).GetInstance();
+    VerifyOrExit(instance != nullptr);
+
+    // Deny-src and allow-dst both cover every on-mesh prefix.
+    while (otNetDataGetNextOnMeshPrefix(instance, &iterator, &config) == OT_ERROR_NONE)
+    {
+        Ip6Prefix prefix;
+        prefix.Set(config.mPrefix);
+        denySrc.push_back(prefix);
+        allowDst.push_back(prefix);
+    }
+
+    // Deny-src additionally covers the mesh-local /64.
+    meshLocal = otThreadGetMeshLocalPrefix(instance);
+    if (meshLocal != nullptr)
+    {
+        Ip6Prefix mlPrefix{};
+        memcpy(mlPrefix.mPrefix.m8, meshLocal->m8, sizeof(meshLocal->m8));
+        mlPrefix.mLength = 64;
+        denySrc.push_back(mlPrefix);
+    }
+
+    if (mFirewall->ReplaceIngressPrefixes(denySrc, allowDst) != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("FirewallManager: failed to update ingress prefixes");
+    }
+
+exit:
+    return;
+}
+#endif
+
 void Application::DeinitRcpMode(void)
 {
+#if OTBR_ENABLE_NFTABLES
+    // Tear down the OTBR nftables table while the netlink socket is still open
+    // (mNftables outlives mFirewall by member declaration order).
+    if (mFirewall != nullptr)
+    {
+        otbrError firewallError = mFirewall->Deinit();
+        if (firewallError != OTBR_ERROR_NONE)
+        {
+            otbrLogWarning("FirewallManager: teardown failed (%d)", firewallError);
+        }
+    }
+#endif
 #if OTBR_ENABLE_DNSSD_PLAT
     mDnssdPlatform.Stop();
 #endif
