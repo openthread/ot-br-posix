@@ -33,6 +33,13 @@ readonly OT_THREAD_IF
 OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
 readonly OT_FORWARD_INGRESS_CHAIN
 
+# Matches the flag in the run script. With OTBR_NFTABLES=1 no teardown is
+# needed here: FirewallManager owns the `inet otbr` table lifecycle, and stale
+# state from a crashed run is cleared by the next FirewallManager::Init()
+# (DelTable is idempotent).
+OTBR_NFTABLES="${OTBR_NFTABLES:-0}"
+readonly OTBR_NFTABLES
+
 if test "$1" -eq 256 ; then
   e=$((128 + $2))
 else
@@ -41,28 +48,30 @@ fi
 
 echo "otbr-agent exited with code ${1} (by signal ${2})."
 
-ipset_destroy_if_exist()
-{
-    while ipset list -n "$1" 2> /dev/null; do
-        ipset destroy "$1" || true
+if [ "${OTBR_NFTABLES}" != "1" ]; then
+    ipset_destroy_if_exist()
+    {
+        while ipset list -n "$1" 2> /dev/null; do
+            ipset destroy "$1" || true
+        done
+    }
+
+    while ip6tables -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; do
+        ip6tables -D FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
     done
-}
 
-while ip6tables -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; do
-    ip6tables -D FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
-done
+    if ip6tables -L "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; then
+        ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
+        ip6tables -w -X "${OT_FORWARD_INGRESS_CHAIN}"
+    fi
 
-if ip6tables -L "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; then
-    ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
-    ip6tables -w -X "${OT_FORWARD_INGRESS_CHAIN}"
+    ipset_destroy_if_exist otbr-ingress-deny-src
+    ipset_destroy_if_exist otbr-ingress-deny-src-swap
+    ipset_destroy_if_exist otbr-ingress-allow-dst
+    ipset_destroy_if_exist otbr-ingress-allow-dst-swap
+
+    echo "OpenThread firewall rules removed."
 fi
-
-ipset_destroy_if_exist otbr-ingress-deny-src
-ipset_destroy_if_exist otbr-ingress-deny-src-swap
-ipset_destroy_if_exist otbr-ingress-allow-dst
-ipset_destroy_if_exist otbr-ingress-allow-dst-swap
-
-echo "OpenThread firewall rules removed."
 
 if test "$e" -ne 0 && test "$e" -ne 5; then
     echo "$e" > /run/s6-linux-init-container-results/exitcode

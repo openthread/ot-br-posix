@@ -53,6 +53,8 @@ RUN set -x \
            curl \
            git \
            libjsoncpp-dev \
+           libmnl-dev \
+           libnftnl-dev \
            ninja-build \
            nodejs \
            npm \
