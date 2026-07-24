@@ -34,8 +34,19 @@ NAT44_SERVICE=/etc/init.d/otbr-nat44
 WLAN_IFNAMES="${INFRA_IF_NAME:-eth0}"
 THREAD_IF="${THREAD_IF:-wpan0}"
 
+# When otbr-agent is built with the opt-in in-process nftables firewall
+# backend (-DOTBR_NFTABLES=ON), it installs the NAT44 masquerade rules
+# itself, so the legacy iptables otbr-nat44 service must not duplicate them.
+# Native installs of such a build should export OTBR_NFTABLES=1.
+OTBR_NFTABLES="${OTBR_NFTABLES:-0}"
+
 nat44_install()
 {
+    if [ "${OTBR_NFTABLES}" = "1" ]; then
+        echo "OTBR_NFTABLES=1: NAT44 masquerade is managed in-process (nftables); skipping legacy otbr-nat44 service."
+        return 0
+    fi
+
     sudo tee $NAT44_SERVICE <<EOF
 #! /bin/sh
 #
@@ -128,6 +139,10 @@ nat44_uninstall()
 
 nat44_start()
 {
+    if [ "${OTBR_NFTABLES}" = "1" ]; then
+        return 0
+    fi
+
     if with DOCKER; then
         service otbr-nat44 start || die 'Failed to start NAT44!'
     elif have systemctl; then
