@@ -37,6 +37,11 @@
 #include <systemd/sd-daemon.h>
 #endif
 
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "agent/application.hpp"
 #include "common/code_utils.hpp"
 #include "common/mainloop_manager.hpp"
@@ -169,6 +174,44 @@ otbrError Application::Run(void)
         if (raise(SIGSTOP))
         {
             otbrLogWarning("Failed to notify Upstart.");
+        }
+    }
+#endif
+
+#if OTBR_ENABLE_NOTIFY_FD
+    // Generic readiness notification for fd-based supervisors (s6, dinit,
+    // ...): write a newline to the file descriptor passed in OTBR_NOTIFY_FD.
+    // See https://skarnet.org/software/s6/notifywhenup.html
+    {
+        const char *notifyFdEnv = getenv("OTBR_NOTIFY_FD");
+
+        if (notifyFdEnv != nullptr)
+        {
+            char *end      = nullptr;
+            long  notifyFd = strtol(notifyFdEnv, &end, 10);
+
+            if (end != notifyFdEnv && *end == '\0' && notifyFd >= 0)
+            {
+                ssize_t rval;
+
+                otbrLogInfo("Notify readiness on file descriptor %ld.", notifyFd);
+
+                do
+                {
+                    rval = write(static_cast<int>(notifyFd), "\n", 1);
+                } while (rval == -1 && errno == EINTR);
+
+                if (rval == -1)
+                {
+                    otbrLogWarning("Failed to notify readiness on file descriptor %ld: %s", notifyFd, strerror(errno));
+                }
+
+                close(static_cast<int>(notifyFd));
+            }
+            else
+            {
+                otbrLogWarning("Ignoring invalid OTBR_NOTIFY_FD value: %s", notifyFdEnv);
+            }
         }
     }
 #endif

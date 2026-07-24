@@ -187,6 +187,11 @@ if(OTBR_NOTIFY_UPSTART)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
 endif()
 
+option(OTBR_NOTIFY_FD "Support readiness notification via file descriptor (s6, dinit, ...)." ON)
+if(OTBR_NOTIFY_FD)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_FD=1)
+endif()
+
 set(OTBR_NAT64_DEFAULT OFF)
 if (OTBR_BORDER_ROUTING)
     set(OTBR_NAT64_DEFAULT ON)
