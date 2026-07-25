@@ -69,8 +69,7 @@ define Package/openthread-br
 		+libblobmsg-json \
 		+libjson-c \
 		+libstdcpp \
-		+libubus \
-		+luci-lua-runtime
+		+libubus
 endef
 
 define Package/openthread-br/description
@@ -87,15 +86,6 @@ define Package/openthread-br/install
 
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) $(PKG_INSTALL_DIR)/etc/config/* $(1)/etc/config
-
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller/admin
-	$(INSTALL_BIN) $(LOCAL_SOURCE_DIR)/src/openwrt/controller/thread.lua $(1)/usr/lib/lua/luci/controller/admin
-
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view
-	$(CP) $(LOCAL_SOURCE_DIR)/src/openwrt/view/admin_thread $(1)/usr/lib/lua/luci/view
-
-	$(INSTALL_DIR) $(1)/www/luci-static/resources
-	$(CP) $(LOCAL_SOURCE_DIR)/src/openwrt/handle_error.js $(1)/www/luci-static/resources
 endef
 
 $(eval $(call BuildPackage,openthread-br))
