@@ -86,6 +86,11 @@
                 icon: 'add_circle_outline',
                 show: false,
             },
+            {
+                title: 'ePSKc',
+                icon: 'vpn_key',
+                show: false,
+            },
 
         ];
 
@@ -108,6 +113,15 @@
         $scope.headerTitle = 'Home';
         $scope.status = [];
 
+        $scope.epskc = {
+            enabled: false,
+            state: 'unknown',
+            active: false,
+            tap: '',
+            port: null,
+            lifetimeMinutes: null,
+        };
+
         $scope.isLoading = false;
 
         $scope.showScanAlert = function(ev) {
@@ -124,7 +138,7 @@
         };
         $scope.showPanels = async function(index) {
             $scope.headerTitle = $scope.menu[index].title;
-            for (var i = 0; i < 7; i++) {
+            for (var i = 0; i < $scope.menu.length; i++) {
                 $scope.menu[i].show = false;
             }
             $scope.menu[index].show = true;
@@ -164,6 +178,9 @@
 
                 await $scope.dataInit();
                 await $scope.showTopology();
+            }
+            if (index == 7) {
+                $scope.refreshEpskcStatus();
             }
         };
 
@@ -436,6 +453,82 @@
                 }
                 ev.target.disabled = false;
             });
+        };
+
+        $scope.refreshEpskcStatus = function() {
+            $http.get('epskc_status').then(function(response) {
+                if (response.data.error == 0) {
+                    $scope.epskc.enabled = response.data.enabled;
+                    $scope.epskc.state = response.data.state;
+                    $scope.epskc.active = response.data.active;
+                    $scope.epskc.port = response.data.port;
+                    if (!response.data.active) {
+                        $scope.epskc.tap = '';
+                    }
+                } else {
+                    $scope.showAlert(null, 'ePSKc Status', 'failed');
+                }
+            });
+        };
+
+        $scope.toggleEpskcEnabled = function() {
+            var data = {
+                enabled: $scope.epskc.enabled,
+            };
+            $http({
+                method: 'POST',
+                url: 'epskc_enabled',
+                data: data,
+            }).then(function(response) {
+                if (response.data.error != 0) {
+                    $scope.epskc.enabled = !$scope.epskc.enabled; // revert the switch on failure
+                    $scope.showAlert(null, 'ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            });
+        };
+
+        $scope.activateEpskc = function(ev) {
+            var data = {};
+            if ($scope.epskc.lifetimeMinutes) {
+                data.lifetime = $scope.epskc.lifetimeMinutes * 60 * 1000;
+            }
+            ev.target.disabled = true;
+            $http({
+                method: 'POST',
+                url: 'epskc_activate',
+                data: data,
+            }).then(function(response) {
+                ev.target.disabled = false;
+                if (response.data.error == 0) {
+                    $scope.epskc.tap = response.data.tap;
+                    $scope.epskc.port = response.data.port;
+                    $scope.showAlert(ev, 'Activate ePSKc', 'success');
+                } else {
+                    $scope.showAlert(ev, 'Activate ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            });
+        };
+
+        $scope.deactivateEpskc = function(ev) {
+            ev.target.disabled = true;
+            $http({
+                method: 'POST',
+                url: 'epskc_deactivate',
+                data: {},
+            }).then(function(response) {
+                ev.target.disabled = false;
+                $scope.epskc.tap = '';
+                if (response.data.error != 0) {
+                    $scope.showAlert(ev, 'Deactivate ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            });
+        };
+
+        $scope.selectEpskcTap = function(ev) {
+            ev.target.select();
         };
 
         $scope.restServerPort = '8081';
