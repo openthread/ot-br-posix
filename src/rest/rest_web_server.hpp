@@ -137,6 +137,16 @@ private:
     void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
     void GetCoprocessorVersion(Response &aResponse) const;
 
+#if OTBR_ENABLE_EPSKC
+    void EpskcState(const Request &aRequest, Response &aResponse);
+    void GetEpskcState(Response &aResponse) const;
+    void SetEpskcState(const Request &aRequest, Response &aResponse);
+    void EpskcKey(const Request &aRequest, Response &aResponse);
+    void GetEpskcKey(Response &aResponse) const;
+    void ActivateEpskcKey(const Request &aRequest, Response &aResponse);
+    void DeactivateEpskcKey(const Request &aRequest, Response &aResponse);
+#endif
+
     void ApiActionsHandler(const Request &aRequest, Response &aResponse);
     void ApiActionsGetHandler(const Request &aRequest, Response &aResponse);
     void ApiActionsItemGetHandler(const Request &aRequest, Response &aResponse);
