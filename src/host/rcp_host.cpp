@@ -808,10 +808,19 @@ void RcpHost::ThreadDetachGracefullyCallback(void)
 
 void RcpHost::ConditionalErasePersistentInfo(bool aErase)
 {
-    if (aErase)
-    {
-        OT_UNUSED_VARIABLE(otInstanceErasePersistentInfo(mInstance));
-    }
+    otError error;
+
+    VerifyOrExit(aErase);
+    SuccessOrExit(error = otInstanceErasePersistentInfo(mInstance),
+                  otbrLogWarning("Failed to erase persistent info: %s", otThreadErrorToString(error)));
+
+    // The erase bypasses OpenThread's state-change mechanism, so
+    // subscribers would go on serving the erased datasets from their
+    // caches; report it as the dataset change it is.
+    HandleStateChanged(OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_PENDING_DATASET);
+
+exit:
+    return;
 }
 
 void RcpHost::DisableThreadAfterDetach(void)
