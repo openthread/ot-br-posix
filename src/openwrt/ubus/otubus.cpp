@@ -1518,7 +1518,7 @@ int UbusServer::UbusSetInformation(struct ubus_context      *aContext,
     }
     else if (!strcmp(aAction, "mode"))
     {
-        otLinkModeConfig  linkMode;
+        otLinkModeConfig  linkMode = {};
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setModePolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
