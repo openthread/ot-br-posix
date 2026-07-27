@@ -625,9 +625,12 @@ exit:
 void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                                 const AsyncResultReceiver       aReceiver)
 {
-    otError              error = OT_ERROR_NONE;
-    std::string          errorMsg;
-    otOperationalDataset emptyDataset;
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+    // Value-initialise: otDatasetSendMgmtPendingSet() serialises whichever
+    // fields mComponents says are present, so leaving this indeterminate puts
+    // garbage TLVs on the wire and the leader answers Reject.
+    otOperationalDataset emptyDataset{};
 
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
 
