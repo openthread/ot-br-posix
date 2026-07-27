@@ -613,6 +613,7 @@ void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
             aReceiver(OT_ERROR_NONE, "");
         }
     });
+    receiveResultHere = false;
 
 exit:
     if (receiveResultHere)
