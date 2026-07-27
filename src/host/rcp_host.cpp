@@ -600,7 +600,13 @@ void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
     VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
                  errorMsg = "Thread is disabling");
 
-    if (mThreadEnabledState == ThreadEnabledState::kStateDisabled)
+    // Branch on the actual device role, not mThreadEnabledState: when the
+    // stack was started outside SetThreadEnabled() (ubus threadstart, ot-ctl)
+    // the state machine still says disabled, and taking the shortcut then
+    // makes otInstanceErasePersistentInfo() fail silently -- the caller is
+    // told the dataset was erased when nothing happened. The role reflects
+    // what the stack is really doing.
+    if (otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
     {
         ConditionalErasePersistentInfo(aEraseDataset);
         ExitNow();
