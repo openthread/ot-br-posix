@@ -40,6 +40,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
 
   docker-check:
@@ -51,6 +54,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       env:
         BUILD_TARGET: "docker-check"
@@ -73,6 +77,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
 
     - name: Prepare
       id: prepare
@@ -94,20 +99,22 @@ jobs:
           ${TAGS} --file etc/docker/test/Dockerfile ." >> $GITHUB_OUTPUT
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4
+      uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
       with:
         image: tonistiigi/binfmt:qemu-v8.1.5
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
     - name: Docker Buildx (build)
       run: |
-        docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
+        docker buildx build --output "type=image,push=false" ${STEPS_PREPARE_OUTPUTS_BUILDX_ARGS}
+      env:
+        STEPS_PREPARE_OUTPUTS_BUILDX_ARGS: ${{ steps.prepare.outputs.buildx_args }}
 
     - name: Login to DockerHub
       if: success() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request' && matrix.push
-      uses: docker/login-action@v4
+      uses: docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
@@ -115,9 +122,14 @@ jobs:
     - name: Docker Buildx (push)
       if: success() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request' && matrix.push
       run: |
-        docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
+        docker buildx build --output "type=image,push=true" ${STEPS_PREPARE_OUTPUTS_BUILDX_ARGS}
+      env:
+        STEPS_PREPARE_OUTPUTS_BUILDX_ARGS: ${{ steps.prepare.outputs.buildx_args }}
 
     - name: Inspect Image
       if: always() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request' && matrix.push
       run: |
-        docker buildx imagetools inspect ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
+        docker buildx imagetools inspect ${STEPS_PREPARE_OUTPUTS_DOCKER_IMAGE}:${STEPS_PREPARE_OUTPUTS_VERSION}
+      env:
+        STEPS_PREPARE_OUTPUTS_DOCKER_IMAGE: ${{ steps.prepare.outputs.docker_image }}
+        STEPS_PREPARE_OUTPUTS_VERSION: ${{ steps.prepare.outputs.version }}

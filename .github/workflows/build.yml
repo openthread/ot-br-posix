@@ -40,12 +40,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
 
   pretty:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: Bootstrap
       run: BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
@@ -68,6 +73,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -91,6 +97,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -107,6 +114,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -124,6 +132,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -137,6 +146,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: |
         tests/scripts/bootstrap.sh
@@ -152,6 +162,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Build
