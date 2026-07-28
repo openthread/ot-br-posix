@@ -452,8 +452,8 @@
                     // Use the web UI full host string (including non-standard port if present)
                     return window.location.host;
                 }
-                // Otherwise, assume the proxy handles the port translation for the external host
-                return formattedHost;
+                // Otherwise, preserve the configured port for external hosts
+                return formattedHost + ':' + port;
             }
             return formattedHost + ':' + port;
         };
