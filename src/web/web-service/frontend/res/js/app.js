@@ -445,15 +445,9 @@
             
             var formattedHost = (normalizedHost.indexOf(':') > -1) ? '[' + normalizedHost + ']' : normalizedHost;
 
-            // When using HTTPS, assume reverse proxy places web UI and API on same port
-            if (window.location.protocol === 'https:') {
-                // If the target API host is the same as the Web UI host
-                if (normalizedHost === window.location.hostname.replace(/^\[(.*)\]$/, '$1')) {
-                    // Use the web UI full host string (including non-standard port if present)
-                    return window.location.host;
-                }
-                // Otherwise, preserve the configured port for external hosts
-                return formattedHost + ':' + port;
+            // When using HTTPS and the target API host matches the Web UI host, use the web UI host (including port if present)
+            if (window.location.protocol === 'https:' && normalizedHost === window.location.hostname.replace(/^\[(.*)\]$/, '$1')) {
+                return window.location.host;
             }
             return formattedHost + ':' + port;
         };
