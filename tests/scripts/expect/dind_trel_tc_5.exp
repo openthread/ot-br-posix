@@ -123,22 +123,10 @@ sleep 10
 
 # Step 2: Node 2 performs MLE Discovery Scan
 send_user -- "--- Step 2: Node 2 performs MLE Discovery Scan ---\n"
-set found_node1 false
-set found_node3 false
-
-# We spawn ot-ctl on container 2 to execute discover scan interactively
 spawn docker exec -i $container2 ot-ctl
 
 send "discover\n"
 expect {
-    -re {otbr-net1} {
-        set found_node1 true
-        exp_continue
-    }
-    -re {otbr-net3} {
-        set found_node3 true
-        exp_continue
-    }
     -re {Done} {
         # Scan completed
     }
@@ -146,13 +134,14 @@ expect {
         fail "discover scan timed out on Node 2"
     }
 }
+set output $expect_out(buffer)
 send "exit\n"
 expect eof
 
-if {!$found_node1} {
+if {![string match "*otbr-net1*" $output]} {
     fail "Node 2 did not discover Node 1 (DUT)!"
 }
-if {!$found_node3} {
+if {![string match "*otbr-net3*" $output]} {
     fail "Node 2 did not discover Node 3!"
 }
 send_user "Node 2 successfully discovered both Node 1 (DUT) and Node 3.\n"
@@ -160,20 +149,9 @@ send_user "Node 2 successfully discovered both Node 1 (DUT) and Node 3.\n"
 
 # Step 3: Node 3 performs MLE Discovery Scan
 send_user -- "--- Step 3: Node 3 performs MLE Discovery Scan ---\n"
-set found_node1 false
-set found_node2 false
-
 switch_node 4
 send "discover\n"
 expect {
-    -re {otbr-net1} {
-        set found_node1 true
-        exp_continue
-    }
-    -re {otbr-net2} {
-        set found_node2 true
-        exp_continue
-    }
     -re {Done} {
         # Scan completed
     }
@@ -181,11 +159,12 @@ expect {
         fail "discover scan timed out on Node 3"
     }
 }
+set output $expect_out(buffer)
 
-if {!$found_node1} {
+if {![string match "*otbr-net1*" $output]} {
     fail "Node 3 did not discover Node 1 (DUT)!"
 }
-if {!$found_node2} {
+if {![string match "*otbr-net2*" $output]} {
     fail "Node 3 did not discover Node 2!"
 }
 send_user "Node 3 successfully discovered both Node 1 (DUT) and Node 2.\n"
