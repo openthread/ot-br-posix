@@ -893,6 +893,11 @@ ClientError ThreadApiDBus::SetBorderAgentEnabled(bool aEnabled)
     return CallDBusMethodSync(OTBR_DBUS_SET_BORDER_AGENT_ENABLED_METHOD, std::tie(aEnabled));
 }
 
+ClientError ThreadApiDBus::SetBorderAgentId(const std::vector<uint8_t> &aBorderAgentId)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_BORDER_AGENT_ID, aBorderAgentId);
+}
+
 ClientError ThreadApiDBus::UpdateVendorMeshCopTxtEntries(std::vector<TxtEntry> &aUpdate)
 {
     auto args = std::tie(aUpdate);
