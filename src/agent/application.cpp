@@ -251,6 +251,14 @@ void Application::CreateRcpMode(void)
     mVendorServer = vendor::VendorServer::newInstance(*this);
 #endif
 
+// =============================================================
+
+#if OTBR_ENABLE_IPFIX
+    mIpfixExporter = MakeUnique<IpfixExporter>(rcpHost);
+#endif
+
+// ========================================================
+
     OTBR_UNUSED_VARIABLE(rcpHost);
 }
 
@@ -339,6 +347,12 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #if OTBR_ENABLE_DNSSD_PLAT
     mDnssdPlatform.Start();
 #endif
+
+#if OTBR_ENABLE_IPFIX
+    mIpfixExporter->Start();      
+#endif
+
+
 }
 
 void Application::DeinitRcpMode(void)
@@ -360,6 +374,11 @@ void Application::DeinitRcpMode(void)
     mMdnsStateSubject.Clear();
     mPublisher->Stop();
 #endif
+/*==================================================*/
+#if OTBR_ENABLE_IPFIX
+    mIpfixExporter->Stop();  
+#endif
+/*=============================================*/
 }
 
 void Application::CreateNcpMode(void)
