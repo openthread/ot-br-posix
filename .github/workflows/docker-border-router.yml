@@ -44,6 +44,11 @@ on:
         required: false
         type: string
         default: ''
+    secrets:
+      DOCKER_USERNAME:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
 
 
 concurrency:
