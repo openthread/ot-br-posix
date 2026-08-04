@@ -152,7 +152,7 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
     {
         mConfig.mCoprocessorUrls.mUrls[mConfig.mCoprocessorUrls.mNum++] = url;
 
-        if (strncmp(url, "trel:", sizeof("trel:") - 1) == 0)
+        if (url != nullptr && strncmp(url, "trel:", sizeof("trel:") - 1) == 0)
         {
             mTrelUrlPresent = true;
         }
