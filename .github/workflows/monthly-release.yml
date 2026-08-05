@@ -41,6 +41,13 @@ on:
         required: false
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   create-release:
     name: Create Monthly Release
@@ -54,7 +61,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -62,7 +69,7 @@ jobs:
             github.com:443
 
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -87,7 +94,7 @@ jobs:
         # Uses the built-in GitHub CLI to create the tag and release simultaneously
         run: |
           gh release create "$TAG_NAME" \
-            --target "${{ github.ref_name }}" \
+            --target "${GITHUB_REF_NAME}" \
             --title "OpenThread Border Router $TAG_NAME" \
             --generate-notes
 
@@ -96,4 +103,6 @@ jobs:
     uses: ./.github/workflows/docker-border-router.yml
     with:
       release_tag: ${{ needs.create-release.outputs.tag_name }}
-    secrets: inherit
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

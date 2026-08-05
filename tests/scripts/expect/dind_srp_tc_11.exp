@@ -148,8 +148,10 @@ set netdata_before [exec docker exec -i $container ot-ctl netdata show]
 check_string_contains $netdata_before "44970 5d"
 
 # Get the running Border Router's active dataset dynamically to configure clients
-set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
-set active_dataset [string trim $active_dataset]
+set active_dataset_raw [exec docker exec -i $container ot-ctl dataset active -x]
+if {![regexp -nocase {[0-9a-f]{32,}} $active_dataset_raw active_dataset]} {
+    fail "Failed to parse active dataset hex from: $active_dataset_raw"
+}
 
 # Enable ED_1 (Node 4)
 spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
@@ -239,6 +241,8 @@ expect_line "Done"
 
 # Step 9: ED_1 sends SRP Update, as in step 4
 send_user "Step 9: ED_1 starting Thread and re-configuring SRP...\n"
+send "routereligible disable\r\n"
+expect_line "Done"
 send "ifconfig up\r\n"
 expect_line "Done"
 send "thread start\r\n"

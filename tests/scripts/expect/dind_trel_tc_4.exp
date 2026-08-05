@@ -228,7 +228,7 @@ if {![string match "*Enabled*" $filter_status]} {
 send_user -- "--- Step 4: Trigger TREL disconnect detection (Router pings ED) ---\n"
 # To guarantee detection of disconnect, we will ping and check preference.
 # Router tries to send over TREL to DUT, but it fails.
-for {set i 0} {$i < 25} {incr i} {
+for {set i 0} {$i < 50} {incr i} {
     catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 500 1 } ping_res
     send_user "Router ping response ($i): $ping_res\n"
     after 100

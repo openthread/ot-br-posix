@@ -2,7 +2,7 @@
 
 ## Summary
 
-An extended `REST` API functionality providing capabilities for commissioning and on-mesh diagnostics to generic off-mesh HTTP/HTTPS clients. The implementation is guided by the [JSON:API specification](https://jsonapi.org/format/). All the resources are described in [openapi.yaml](./openapi.yaml) specification. The intent of this document is to provide basic usage and additional background information.
+An extended `REST` API functionality providing capabilities for commissioning and on-mesh diagnostics to generic off-mesh HTTP/HTTPS clients. The implementation is guided by the [JSON:API specification](https://jsonapi.org/format/). All the resources are described in [openapi.yaml](./openapi.yaml) specification, also see [rendered openapi.yaml](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/openthread/ot-br-posix/refs/heads/main/src/rest/openapi.yaml). The intent of this document is to provide basic usage and additional background information.
 
 ## Use cases
 
@@ -28,7 +28,7 @@ A consumer may extract the data from the API and visualize it elsewhere.
 
 The list of Thread network devices is provided as JSON:API collection on the devices resource `/api/devices`. The collection provides collection items of type `threadDevice`, one per active Thread device found during discovery. The `threadDevice` items shall serve as an inventory of devices and provide primarily static information, in particular a static `deviceId` for each device with some key attributes allowing to identify the device. The collection may contain devices that became inactive. It is discovered, updated, or deleted on-demand.
 
-The Thread Border Router learns the list of network devices from the active network and returns the full collection or individual items in response to GET requests. The collection may be updated or deleted by a client on request, see section `api/actions` below. A DELETE request to `/api/devices` removes the cached collection.
+The Thread Border Router learns the list of network devices on-demand from the active network and returns the full collection or individual items in response to GET requests. The collection may be updated or deleted by a client on request, see `updateDeviceCollectionTask` in section `api/actions` below. A DELETE request to `/api/devices` removes the cached collection.
 
 #### Device identification
 
@@ -57,7 +57,7 @@ An example response to `curl -G http://otbr.local/api/devices -H 'Accept: applic
         "hostname": "<hostname defined by SRP>",
         "role": "router",
         "mode": {
-          "deviceTypeFTD": true,
+          "fullThreadDevice": true,
           "rxOnWhenIdle": true,
           "fullNetworkData": true
         },
@@ -72,11 +72,11 @@ An example response to `curl -G http://otbr.local/api/devices -H 'Accept: applic
         "extAddress": "de62e016db392477",
         "mlEidIid": "2ea45067f32f46",
         "omrIpv6Address": <Ipv6Address>,
-        "eui64": "<eui64>",
+        "eui": "<eui>",
         "hostname": "<hostname defined by SRP>",
         "role": "router",
         "mode": {
-          "deviceTypeFTD": true,
+          "fullThreadDevice": true,
           "rxOnWhenIdle": true,
           "fullNetworkData": true
         },
@@ -158,8 +158,8 @@ An example response to `curl -G http://otbr.local/api/actions -H 'Accept: applic
           "maxChildTimeout",
           "lDevIdSubject",
           "iDevIdCert",
-          "eui64",
-          "version",
+          "eui",
+          "threadVersion",
           "vendorName",
           "vendorModel",
           "vendorSwVersion",
@@ -344,7 +344,7 @@ Detailed request examples are provided in the test folder as a "Bruno Request Co
 
 1. Start your joiner and after a few seconds repeat above last two steps.
 
-1. For further viewing of the diagnostic endpoints, see the Python demo test script `http_action_client_demo.py` or use the Bruno request collection, you can find both in the folder [tests/restjsonapi](./../../tests/restjsonapi).
+1. For further viewing of the diagnostic endpoints use the Bruno request collection, which you can find in the folder [tests/restjsonapi](./../../tests/restjsonapi).
 
 1. For running the included test script install Bruno-Cli and run the bash script on your border router:
 
@@ -403,8 +403,8 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | 20 | LDevID Subject Public Key Info | lDevIdSubject | The identity of the LDevID (operational) certificate of a CCM Thread Device, encoded as Subject Public Key Info. Defined in Section 10.11.4.8, LDevID Subject Public Key Info TLV (20). | N |
 | 21 | IDevID Certificate | lDevIdCert | The IDevID (manufacturer) certificate of a CCM Thread Device, encoded in X.509 format. Defined in Section 10.11.4.9, IDevID Certificate TLV (21). | N |
 | 22 | (reserved) | - | (reserved) | N |
-| 23 | EUI-64 | eui64 | The EUI-64 of a Thread Device, binary encoded with Length = 8. | N |
-| 24 | Version | version | Same format and semantics as the Version TLV (MLE TLV Type 18) in Section 4.4.17, Version TLV in Chapter 4, Mesh Link Establishment. | N |
+| 23 | EUI-64 | eui | The EUI-64 of a Thread Device, binary encoded with Length = 8. | N |
+| 24 | Version | threadVersion | Same format and semantics as the Version TLV (MLE TLV Type 18) in Section 4.4.17, Version TLV in Chapter 4, Mesh Link Establishment. | N |
 | 25 | Vendor Name | vendorName | Same format and semantics as the Vendor Name TLV (TMF Provisioning/Discovery TLV Type 33) in Section 8.10.3.2, Vendor Name TLV in Chapter 8, Mesh Commissioning Protocol. | N |
 | 26 | Vendor Model | vendorModel | Same format and semantics as the Vendor Model TLV (TMF Provisioning/Discovery TLV Type 34) in Section 8.10.3.3, Vendor Model TLV in Chapter 8, Mesh Commissioning Protocol. | N |
 | 27 | Vendor SW Version | vendorSwVersion | Same format and semantics as the Vendor SW Version TLV (TMF Provisioning/Discovery TLV Type 35) in Section 8.10.3.4, Vendor SW Version TLV in Chapter 8, Mesh Commissioning Protocol. | N |
@@ -420,28 +420,32 @@ The table below is derived from the Thread Specification. The column **Short Nam
 
 | Name | Short Name | Minimal supported Thread Version / DeviceType | Related TLV type |
 | --- | --- | --- | --- |
-| Active Routers in Partition | activeRouterCount | v1.1 | 4 |
+| Active Routers in Partition | activeRouters | v1.1 | 4 |
 | Age | age | FTD, v1.3.1 | 29 |
 | Attach Attempts Counter | attachAttemptsCount | v1.3.1 | 34 |
-| Average RSSI | avgRssi | FTD, v1.3.1 | 29, 31 |
+| Average RSSI | averageRssi | FTD, v1.3.1 | 29, 31 |
 | Battery Level | batteryLevel | v1.1 | 14 |
 | Better-Partition Attach Attempts Counter | betterPartIdAttachAttemptsCount | v1.3.1 | 34 |
-| C | isCslSychronized | FTD, v1.3.1 | 29 |
+| C | cslSynchronized | FTD, v1.3.1 | 29 |
 | Child Role Counter | childRoleCount | v1.3.1 | 34 |
 | Child Role Time | childRoleTime | v1.3.1 | 34 |
-| Child Timeout | childTimeout | FTD, v1.1 | 16 |
+| Child Timeout | timeout | Child, v1.1 | 3 |
+| Child Timeout | timeout | FTD, v1.3.1 | 29 |
+| Child Timeout (compressed) | timeout | FTD, v1.1 | 16 |
 | Connection Time | linkAge | FTD, v1.3.1 | 29, 31 |
 | CSL Channel | cslChannel | FTD, v1.3.1 | 29 |
 | CSL Period | cslPeriod | FTD, v1.3.1 | 29 |
 | CSL Timeout | cslTimeout | FTD, v1.3.1 | 29 |
-| D | isFTD | FTD, v1.3.1 | 29 |
+| D | fullThreadDevice | v1.1 | 2 |
+| D | fullThreadDevice | FTD, v1.3.1 | 29 |
 | Detached Role Counter | detachedRoleCount | v1.3.1 | 34 |
 | Detached Role Time | detachedRoleTime | v1.3.1 | 34 |
-| E | errorTracking | FTD, v1.3.1 | 29, 31 |
-| EUI64 | eui64 | v1.3.1 | 23 |
+| E | supportsErrorRate | FTD, v1.3.1 | 29, 31 |
+| EUI-64 | eui | v1.3.1 | 23 |
 | Extended Address | extAddress | FTD, v1.3.1 | 0, 29, 31 |
 | Frame Error Rate | frameErrorRate | FTD, v1.3.1 | 29, 31 |
-| ILQ | inLQ | FTD, v1.3.1 | 16 |
+| Incoming Link Quality (ILQ) | linkQuality | FTD, v1.1 | 16 |
+| Incoming Link Quality | linkQualityIn | FTD, v1.3.1 | 5 |
 | Inbound Broadcast Packet Counter | ifInBroadcastPkts | v1.1 | 9 |
 | Inbound Packet Discarded Counter | ifInDiscards | v1.1 | 9 |
 | Inbound Packet Error Counter | ifInErrors | v1.1 | 9 |
@@ -457,22 +461,25 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | Link Quality 2 Count | linkQuality2 | v1.1 | 4 |
 | Link Quality 3 Count | linkQuality3 | v1.1 | 4 |
 | Message Error Rate | messageErrorRate | FTD, v1.3.1 | 29, 31 |
-| N | hasNetworkData | FTD, v1.3.1 | 29 |
+| N | fullNetworkData | v1.1 | 2 |
+| N | fullNetworkData | FTD, v1.3.1 | 29 |
 | New Parent Counter | newParentCount | v1.3.1 | 34 |
 | Outbound Broadcast Packet Counter | ifOutBroadcastPkts | v1.1 | 9 |
 | Outbound Packet Discarded Counter | ifOutDiscards | v1.1 | 9 |
 | Outbound Packet Error Counter | ifOutErrors | v1.1 | 9 |
 | Outbound Unicast Packet Counter | ifOutUcastPkts | v1.1 | 9 |
+| Outgoing Link Quality | linkQualityOut | FTD, v1.3.1 | 5 |
 | Partition ID Changes Counter | partIdChangesCount | v1.3.1 | 34 |
 | Queued Message Count | queuedMessageCount | FTD, v1.3.1 | 29 |
+| R | rxOnWhenIdle | v1.1 | 2 |
 | R | rxOnWhenIdle | FTD, v1.3.1 | 29 |
 | Radio Disabled Counter | radioDisabledCount | v1.3.1 | 34 |
 | Radio Disabled Time | radioDisabledTime | v1.3.1 | 34 |
 | RLOC16 | rloc16 | FTD, v1.3.1 | 1, 29, 30, 31 |
 | Router Role Counter | routerRoleCount | v1.3.1 | 34 |
 | Router Role Time | routerRoleTime | v1.3.1 | 34 |
-| Rx-off Child Buffer Size | rxOffChildBufferSize | v1.1 | 4 |
-| Rx-off Child Datagram Count | rxOffChildDatagramCount | v1.1 | 4 |
+| Rx-off Child Buffer Size | sedBufferSize | v1.1 | 4 |
+| Rx-off Child Datagram Count | sedDatagramCount | v1.1 | 4 |
 | Supervision Interval | supervisionInterval | FTD, v1.3.1 | 29 |
 | Thread Extended PanId | extPanId | v1.1 | - |
 | Thread Network Name | networkName | v1.1 | - |
@@ -484,7 +491,3 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | Vendor Model | vendorModel | v1.3.1 | 26 |
 | Vendor Name | vendorName | v1.3.1 | 25 |
 | Vendor SW Version | vendorSwVersion | v1.3.1 | 27 |
-
-```
-
-```

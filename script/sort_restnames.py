@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2026, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,42 +27,20 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-name: Raspbian
+filepath = "./src/rest/names.hpp"
+with open(filepath) as f:
+    content = f.read()
 
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
-    branches:
-      - 'main'
+lines = content.splitlines()
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
-  cancel-in-progress: true
+first_define = next(
+    index for index, line in enumerate(lines) if line.startswith("#define ")
+)
+endif = next(index for index, line in enumerate(lines) if line.startswith("#endif"))
 
-permissions:
-  contents: read
+body = sorted([l for l in lines[first_define + 1 : endif] if l.strip() != ""])
+new_content = "\n".join(lines[: first_define + 1] + body + lines[endif:]) + "\n"
+with open(filepath, "w") as f:
+    f.write(new_content)
 
-jobs:
-
-  raspbian-check:
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        image_url: [
-          "https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2025-05-13/2025-05-13-raspios-bookworm-armhf-lite.img.xz"
-        ]
-    env:
-      IMAGE_URL: ${{ matrix.image_url }}
-      BUILD_TARGET: raspbian-gcc
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        submodules: recursive
-        persist-credentials: false
-    - name: Bootstrap
-      run: tests/scripts/bootstrap.sh
-    - name: Build
-      run: tests/scripts/check-raspbian
+print(f"Sorted {len(body)} lines alphabetically by key name.")

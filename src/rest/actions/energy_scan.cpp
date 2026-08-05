@@ -32,6 +32,7 @@
 
 #include "rest/commissioner_manager.hpp"
 #include "rest/json.hpp"
+#include "rest/names.hpp"
 #include "rest/rest_diagnostics_coll.hpp"
 #include "rest/rest_server_common.hpp"
 #include "rest/services.hpp"
@@ -48,10 +49,10 @@ EnergyScan::EnergyScan(const cJSON &aJson, Services &aServices)
 {
     cJSON *item;
 
-    cJSON *mask         = cJSON_GetObjectItemCaseSensitive(mJson, "channelMask");
-    cJSON *count        = cJSON_GetObjectItemCaseSensitive(mJson, "count");
-    cJSON *period       = cJSON_GetObjectItemCaseSensitive(mJson, "period");
-    cJSON *scanDuration = cJSON_GetObjectItemCaseSensitive(mJson, "scanDuration");
+    cJSON *mask         = cJSON_GetObjectItemCaseSensitive(mJson, KEY_CHANNELMASK);
+    cJSON *count        = cJSON_GetObjectItemCaseSensitive(mJson, KEY_COUNT);
+    cJSON *period       = cJSON_GetObjectItemCaseSensitive(mJson, KEY_PERIOD);
+    cJSON *scanDuration = cJSON_GetObjectItemCaseSensitive(mJson, KEY_SCANDURATION);
 
     // Were guaranteed that Validate has run already
     mDestination = ReadDestination(*mJson, mDestinationType);

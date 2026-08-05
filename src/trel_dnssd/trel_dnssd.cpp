@@ -289,8 +289,7 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
     Ip6Address         selectedAddress;
     otPlatTrelPeerInfo peerInfo;
 
-    // Remove any existing TREL service instance before adding
-    OnTrelServiceInstanceRemoved(instanceName);
+    memset(&peerInfo, 0, sizeof(peerInfo));
 
     otbrLogDebug("Peer discovered: %s hostname %s addresses %zu port %d priority %d "
                  "weight %d",
@@ -330,6 +329,25 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
         Peer peer(aInstanceInfo.mTxtData, peerInfo.mSockAddr);
 
         VerifyOrExit(peer.mValid, otbrLogWarning("Peer %s is invalid", aInstanceInfo.mName.c_str()));
+
+        auto it = mPeers.find(instanceName);
+        if (it != mPeers.end())
+        {
+            if (it->second.Matches(peer))
+            {
+                it->second.mDiscoverTime = Clock::now();
+                ExitNow();
+            }
+
+            if (memcmp(&it->second.mExtAddr, &peer.mExtAddr, sizeof(otExtAddress)) != 0)
+            {
+                OnTrelServiceInstanceRemoved(instanceName);
+            }
+            else
+            {
+                mPeers.erase(it);
+            }
+        }
 
         otPlatTrelHandleDiscoveredPeerInfo(mHost.GetInstance(), &peerInfo);
 
@@ -386,6 +404,8 @@ exit:
 void TrelDnssd::NotifyRemovePeer(const Peer &aPeer)
 {
     otPlatTrelPeerInfo peerInfo;
+
+    memset(&peerInfo, 0, sizeof(peerInfo));
 
     peerInfo.mRemoved   = true;
     peerInfo.mTxtData   = aPeer.mTxtData.data();
@@ -466,7 +486,8 @@ uint16_t TrelDnssd::CountDuplicatePeers(const TrelDnssd::Peer &aPeer)
             continue;
         }
 
-        if (!memcmp(&entry.second.mSockAddr, &aPeer.mSockAddr, sizeof(otSockAddr)) &&
+        if ((entry.second.mSockAddr.mPort == aPeer.mSockAddr.mPort) &&
+            !memcmp(&entry.second.mSockAddr.mAddress, &aPeer.mSockAddr.mAddress, sizeof(otIp6Address)) &&
             !memcmp(&entry.second.mExtAddr, &aPeer.mExtAddr, sizeof(otExtAddress)))
         {
             count++;
