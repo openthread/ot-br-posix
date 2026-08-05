@@ -169,8 +169,13 @@ public:
      *
      * If the device has already attached to a network, send a request to migrate the existing network.
      *
-     * @param[in] aDataset  The Operational Dataset that contains parameter values of the Thread network to attach
-     *                      to. It must have a valid Delay Timer and Pending Timestamp.
+     * @param[in] aDataset   The Operational Dataset that contains parameter values of the Thread network to attach
+     *                       to. It must be a full dataset. The Delay Timer and Pending Timestamp will be added
+     *                       automatically.
+     * @param[in] aDelayMs   The delay timer in milliseconds to embed in the pending dataset.
+     *                       Use 0 (default) for 300 seconds (5 minutes). Maximum is 72 hours.
+     *                       When 0, the delay_timer_ms argument is omitted from the DBus call for
+     *                       backward compatibility with older servers.
      *
      * @retval ERROR_NONE              Successfully requested the Thread network migration.
      * @retval ERROR_DBUS              D-Bus encode/decode error.
@@ -180,7 +185,7 @@ public:
      * @retval OT_ERROR_INVALID_ARGS   Arguments are invalid.
      * @retval OT_ERROR_BUSY           There is an ongoing request.
      */
-    ClientError AttachAllNodesTo(const std::vector<uint8_t> &aDataset);
+    ClientError AttachAllNodesTo(const std::vector<uint8_t> &aDataset, uint32_t aDelayMs = 0);
 
     /**
      * This method performs a factory reset.
