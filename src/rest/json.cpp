@@ -1884,6 +1884,94 @@ cJSON *CreateMetaCollection(uint32_t aOffset, uint32_t aLimit, uint32_t aTotal, 
     return meta;
 }
 
+#if OTBR_ENABLE_EPSKC
+static const char *EpskcStateToString(otBorderAgentEphemeralKeyState aState)
+{
+    const char *stateStr;
+
+    switch (aState)
+    {
+    case OT_BORDER_AGENT_STATE_DISABLED:
+        stateStr = "disabled";
+        break;
+    case OT_BORDER_AGENT_STATE_STOPPED:
+        stateStr = "stopped";
+        break;
+    case OT_BORDER_AGENT_STATE_STARTED:
+        stateStr = "started";
+        break;
+    case OT_BORDER_AGENT_STATE_CONNECTED:
+        stateStr = "connected";
+        break;
+    case OT_BORDER_AGENT_STATE_ACCEPTED:
+        stateStr = "accepted";
+        break;
+    default:
+        stateStr = "unknown";
+        break;
+    }
+
+    return stateStr;
+}
+
+std::string EpskcKeyStatus2JsonString(otBorderAgentEphemeralKeyState aState, uint16_t aPort)
+{
+    std::string ret;
+    cJSON      *root = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(root, "state", EpskcStateToString(aState));
+    cJSON_AddNumberToObject(root, "port", aPort);
+
+    ret = Json2String(root);
+    cJSON_Delete(root);
+
+    return ret;
+}
+
+std::string EpskcActivateResult2JsonString(const std::string &aTap, uint16_t aPort)
+{
+    std::string ret;
+    cJSON      *root = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(root, "tap", aTap.c_str());
+    cJSON_AddNumberToObject(root, "port", aPort);
+
+    ret = Json2String(root);
+    cJSON_Delete(root);
+
+    return ret;
+}
+
+bool JsonEpskcActivateParams(const std::string &aJson, uint32_t &aLifetime, uint16_t &aPort)
+{
+    cJSON *root;
+    cJSON *value;
+    bool   ret = true;
+
+    root = cJSON_Parse(aJson.c_str());
+    VerifyOrExit(root != nullptr, ret = false);
+    VerifyOrExit(cJSON_IsObject(root), ret = false);
+
+    value = cJSON_GetObjectItemCaseSensitive(root, "lifetime");
+    if (cJSON_IsNumber(value))
+    {
+        VerifyOrExit(value->valuedouble >= 0.0 && value->valuedouble <= UINT32_MAX, ret = false);
+        aLifetime = static_cast<uint32_t>(value->valuedouble);
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(root, "port");
+    if (cJSON_IsNumber(value))
+    {
+        VerifyOrExit(value->valuedouble >= 0.0 && value->valuedouble <= UINT16_MAX, ret = false);
+        aPort = static_cast<uint16_t>(value->valuedouble);
+    }
+
+exit:
+    cJSON_Delete(root);
+    return ret;
+}
+#endif // OTBR_ENABLE_EPSKC
+
 } // namespace Json
 } // namespace rest
 } // namespace otbr

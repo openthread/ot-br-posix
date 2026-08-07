@@ -1660,6 +1660,114 @@ paths:
                 type: string
                 description: Coprocessor version string
                 example: "OPENTHREAD/thread-reference-20200818-1740-g33cc75ed3; NRF52840; Jun  2 2022 14:25:49"
+  /node/ba-epskc/state:
+    get:
+      tags:
+        - node
+      summary: Get whether the Border Agent ephemeral key (ePSKc) feature is enabled.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Whether the ephemeral key feature is enabled.
+                enum: ["enabled", "disabled"]
+                example: "enabled"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    put:
+      tags:
+        - node
+      summary: Enable or disable the Border Agent ephemeral key (ePSKc) feature.
+      description: |-
+        The feature must be enabled before an ephemeral key can be activated
+        with a POST request to `/node/ba-epskc/key`.
+      responses:
+        "200":
+          description: Successful operation.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+      requestBody:
+        description: New ephemeral key feature state.
+        content:
+          application/json:
+            schema:
+              type: string
+              description: Can be "enable" or "disable".
+              example: "enable"
+  /node/ba-epskc/key:
+    get:
+      tags:
+        - node
+      summary: Get the status of the Border Agent ephemeral key (ePSKc) session.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpskcStatus"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    post:
+      tags:
+        - node
+      summary: Generate and activate an ephemeral key (ePSKc).
+      description: |-
+        Generates a new 9-digit Thread Administration Passcode (TAP) and
+        starts listening for an external commissioner candidate to connect
+        using it. The ephemeral key feature must first be enabled with a PUT
+        request to `/node/ba-epskc/state`.
+      requestBody:
+        description: Optional activation parameters. An empty body uses the device defaults.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lifetime:
+                  type: integer
+                  description: |-
+                    The key lifetime in milliseconds. Defaults to
+                    OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 minutes)
+                    when omitted or zero. Capped at
+                    OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT (10 minutes).
+                  example: 120000
+                port:
+                  type: integer
+                  description: The UDP port to use. Defaults to the device's own default when omitted.
+                  example: 49152
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpskcActivateResult"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - node
+      summary: Deactivate the currently active ephemeral key (ePSKc), if any.
+      description: |-
+        Stops the ephemeral key use and disconnects any commissioner session
+        using it. Has no effect if there is no ephemeral key in use.
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
 ### Components ##############################################################
 #############################################################################
@@ -2447,8 +2555,33 @@ components:
           example: "0xabc/12"
         timeout:
           type: integer
-          description: Joiner expiration time in milliseconds on response and seconds on request 
-          default: 60 
+          description: Joiner expiration time in milliseconds on response and seconds on request
+          default: 60
+
+    EpskcStatus:
+      type: object
+      properties:
+        state:
+          type: string
+          description: The Border Agent ephemeral key session state.
+          enum: ["disabled", "stopped", "started", "connected", "accepted"]
+          example: "started"
+        port:
+          type: integer
+          description: The UDP port used by the ephemeral key session, if active.
+          example: 49152
+
+    EpskcActivateResult:
+      type: object
+      properties:
+        tap:
+          type: string
+          description: The generated 9-digit Thread Administration Passcode (TAP).
+          example: "123456789"
+        port:
+          type: integer
+          description: The UDP port the border agent is listening on for the ePSKc session.
+          example: 49152
 
     WellKnownThread:
       type: object
