@@ -33,6 +33,12 @@ sudo modprobe ip6table_filter || true
 
 FIREWALL="${FIREWALL:-1}"
 
+# When otbr-agent is built with the opt-in in-process nftables firewall
+# backend (-DOTBR_NFTABLES=ON), it owns the OTBR ingress filter, so the
+# legacy ipset/ip6tables service must not be installed alongside it.
+# Native installs of such a build should export OTBR_NFTABLES=1.
+OTBR_NFTABLES="${OTBR_NFTABLES:-0}"
+
 firewall_uninstall()
 {
     with FIREWALL || return 0
@@ -51,6 +57,11 @@ firewall_uninstall()
 firewall_install()
 {
     with FIREWALL || return 0
+
+    if [ "${OTBR_NFTABLES}" = "1" ]; then
+        echo "OTBR_NFTABLES=1: OTBR ingress filter is managed in-process (nftables); skipping legacy firewall service."
+        return 0
+    fi
 
     sudo cp script/otbr-firewall $FIREWALL_SERVICE
     sudo chmod a+x $FIREWALL_SERVICE
