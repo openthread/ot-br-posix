@@ -155,10 +155,21 @@ exit:
 
 void ThreadHelper::ActiveDatasetChangedCallback()
 {
-    otError                  error;
-    otOperationalDatasetTlvs datasetTlvs;
+    otError error;
+    // Value-initialise: on NotFound the struct is passed on as-is, and
+    // serialising indeterminate bytes would leak stack memory.
+    otOperationalDatasetTlvs datasetTlvs = {};
 
-    SuccessOrExit(error = otDatasetGetActiveTlvs(mInstance, &datasetTlvs));
+    // NotFound means the dataset was erased. Report it as empty rather than
+    // staying silent, or subscribers keep serving the erased dataset from
+    // their caches.
+    error = otDatasetGetActiveTlvs(mInstance, &datasetTlvs);
+    if (error == OT_ERROR_NOT_FOUND)
+    {
+        datasetTlvs.mLength = 0;
+        error               = OT_ERROR_NONE;
+    }
+    SuccessOrExit(error);
 
     for (const auto &handler : mActiveDatasetChangeHandlers)
     {

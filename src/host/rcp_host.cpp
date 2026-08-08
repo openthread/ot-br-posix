@@ -600,7 +600,13 @@ void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
     VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
                  errorMsg = "Thread is disabling");
 
-    if (mThreadEnabledState == ThreadEnabledState::kStateDisabled)
+    // Branch on the actual device role, not mThreadEnabledState: when the
+    // stack was started outside SetThreadEnabled() (ubus threadstart, ot-ctl)
+    // the state machine still says disabled, and taking the shortcut then
+    // makes otInstanceErasePersistentInfo() fail silently -- the caller is
+    // told the dataset was erased when nothing happened. The role reflects
+    // what the stack is really doing.
+    if (otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
     {
         ConditionalErasePersistentInfo(aEraseDataset);
         ExitNow();
@@ -613,6 +619,7 @@ void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
             aReceiver(OT_ERROR_NONE, "");
         }
     });
+    receiveResultHere = false;
 
 exit:
     if (receiveResultHere)
@@ -624,9 +631,12 @@ exit:
 void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                                 const AsyncResultReceiver       aReceiver)
 {
-    otError              error = OT_ERROR_NONE;
-    std::string          errorMsg;
-    otOperationalDataset emptyDataset;
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+    // Value-initialise: otDatasetSendMgmtPendingSet() serialises whichever
+    // fields mComponents says are present, so leaving this indeterminate puts
+    // garbage TLVs on the wire and the leader answers Reject.
+    otOperationalDataset emptyDataset{};
 
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
 
@@ -798,10 +808,19 @@ void RcpHost::ThreadDetachGracefullyCallback(void)
 
 void RcpHost::ConditionalErasePersistentInfo(bool aErase)
 {
-    if (aErase)
-    {
-        OT_UNUSED_VARIABLE(otInstanceErasePersistentInfo(mInstance));
-    }
+    otError error;
+
+    VerifyOrExit(aErase);
+    SuccessOrExit(error = otInstanceErasePersistentInfo(mInstance),
+                  otbrLogWarning("Failed to erase persistent info: %s", otThreadErrorToString(error)));
+
+    // The erase bypasses OpenThread's state-change mechanism, so
+    // subscribers would go on serving the erased datasets from their
+    // caches; report it as the dataset change it is.
+    HandleStateChanged(OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_PENDING_DATASET);
+
+exit:
+    return;
 }
 
 void RcpHost::DisableThreadAfterDetach(void)
