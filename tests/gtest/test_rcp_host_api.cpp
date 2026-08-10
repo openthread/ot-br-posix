@@ -29,7 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <sys/time.h>
+#include <chrono>
 
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
@@ -44,15 +44,16 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
                                  uint32_t                  aTimeoutSec,
                                  std::function<bool(void)> aCondition)
 {
-    timeval startTime;
-    timeval now;
-    gettimeofday(&startTime, nullptr);
+    // Use a monotonic clock with sub-second precision. Comparing only whole
+    // seconds (e.g. via `timeval::tv_sec`) truncates the elapsed time, so an
+    // `aTimeoutSec` of 0 could get anywhere between ~0ms and ~999ms of real
+    // budget depending on where `startTime` lands relative to the next
+    // second boundary, making the wait non-deterministic.
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(aTimeoutSec);
 
     while (!aCondition())
     {
-        gettimeofday(&now, nullptr);
-        // Simply compare the second. We don't need high precision here.
-        if (now.tv_sec - startTime.tv_sec > aTimeoutSec)
+        if (std::chrono::steady_clock::now() > deadline)
         {
             break;
         }
@@ -377,7 +378,12 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.Join(datasetTlvs, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Unlike the other `Join`/`Leave` calls above, this one goes through the full
+    // Detach -> re-Join -> Leader-formation sequence, so it needs more than an
+    // instant budget to complete (see the other leader-formation waits in this
+    // file, e.g. `StateChangesCorrectlyAfterLeave` and
+    // `StateChangesCorrectlyAfterScheduleMigration`, which use 1s for the same reason).
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
     EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation"); // The second Join will trigger Leave first.
