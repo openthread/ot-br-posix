@@ -1734,8 +1734,9 @@ paths:
                   description: |-
                     The key lifetime in milliseconds. Defaults to
                     OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 minutes)
-                    when omitted or zero. Capped at
-                    OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT (10 minutes).
+                    when omitted or zero. Maximum value is
+                    OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT (10 minutes);
+                    values above the maximum are rejected with 400.
                   example: 120000
                 port:
                   type: integer

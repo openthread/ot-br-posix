@@ -1169,13 +1169,13 @@ void RestWebServer::ActivateEpskcKey(const Request &aRequest, Response &aRespons
 
     error = BorderAgent::CreateEphemeralKey(tap);
     VerifyOrExit(error == OTBR_ERROR_NONE, error = OTBR_ERROR_REST);
-    otbrLogInfo("Created Ephemeral Key for REST activation");
 
     SuccessOrExit(error = RunInMainLoop([this, &errorOt, &resultPort, &tap, lifetime, port]() {
                       errorOt = otBorderAgentEphemeralKeyStart(GetInstance(), tap.c_str(), lifetime, port);
                       VerifyOrReturn(errorOt == OT_ERROR_NONE, OTBR_ERROR_OPENTHREAD);
 
                       resultPort = otBorderAgentEphemeralKeyGetUdpPort(GetInstance());
+                      otbrLogInfo("Created Ephemeral Key for REST activation");
                       return OTBR_ERROR_NONE;
                   }));
 
