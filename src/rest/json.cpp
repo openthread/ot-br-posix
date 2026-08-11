@@ -1953,15 +1953,17 @@ bool JsonEpskcActivateParams(const std::string &aJson, uint32_t &aLifetime, uint
     VerifyOrExit(cJSON_IsObject(root), ret = false);
 
     value = cJSON_GetObjectItemCaseSensitive(root, "lifetime");
-    if (cJSON_IsNumber(value))
+    if (value != nullptr)
     {
+        VerifyOrExit(cJSON_IsNumber(value), ret = false);
         VerifyOrExit(value->valuedouble >= 0.0 && value->valuedouble <= UINT32_MAX, ret = false);
         aLifetime = static_cast<uint32_t>(value->valuedouble);
     }
 
     value = cJSON_GetObjectItemCaseSensitive(root, "port");
-    if (cJSON_IsNumber(value))
+    if (value != nullptr)
     {
+        VerifyOrExit(cJSON_IsNumber(value), ret = false);
         VerifyOrExit(value->valuedouble >= 0.0 && value->valuedouble <= UINT16_MAX, ret = false);
         aPort = static_cast<uint16_t>(value->valuedouble);
     }

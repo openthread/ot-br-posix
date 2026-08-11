@@ -1098,7 +1098,7 @@ void RestWebServer::GetEpskcState(Response &aResponse) const
     aResponse.status = StatusCode::OK_200;
 }
 
-void RestWebServer::SetEpskcState(const Request &aRequest, Response &aResponse)
+void RestWebServer::SetEpskcState(const Request &aRequest, Response &aResponse) const
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string body;
@@ -1108,7 +1108,6 @@ void RestWebServer::SetEpskcState(const Request &aRequest, Response &aResponse)
 
     RunInMainLoop([this, &body]() {
         otBorderAgentEphemeralKeySetEnabled(GetInstance(), body == "enable");
-        return OTBR_ERROR_NONE;
     });
 
     aResponse.status = StatusCode::OK_200;
@@ -1120,7 +1119,7 @@ exit:
     }
 }
 
-void RestWebServer::EpskcState(const Request &aRequest, Response &aResponse)
+void RestWebServer::EpskcState(const Request &aRequest, Response &aResponse) const
 {
     switch (GetMethod(aRequest))
     {
@@ -1153,7 +1152,7 @@ void RestWebServer::GetEpskcKey(Response &aResponse) const
     aResponse.status = StatusCode::OK_200;
 }
 
-void RestWebServer::ActivateEpskcKey(const Request &aRequest, Response &aResponse)
+void RestWebServer::ActivateEpskcKey(const Request &aRequest, Response &aResponse) const
 {
     otbrError   error    = OTBR_ERROR_NONE;
     otError     errorOt  = OT_ERROR_NONE;
@@ -1168,7 +1167,8 @@ void RestWebServer::ActivateEpskcKey(const Request &aRequest, Response &aRespons
     }
     VerifyOrExit(lifetime <= OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT, error = OTBR_ERROR_INVALID_ARGS);
 
-    SuccessOrExit(error = BorderAgent::CreateEphemeralKey(tap));
+    error = BorderAgent::CreateEphemeralKey(tap);
+    VerifyOrExit(error == OTBR_ERROR_NONE, error = OTBR_ERROR_REST);
     otbrLogInfo("Created Ephemeral Key for REST activation");
 
     SuccessOrExit(error = RunInMainLoop([this, &errorOt, &resultPort, &tap, lifetime, port]() {
@@ -1208,19 +1208,18 @@ exit:
     }
 }
 
-void RestWebServer::DeactivateEpskcKey(const Request &aRequest, Response &aResponse)
+void RestWebServer::DeactivateEpskcKey(const Request &aRequest, Response &aResponse) const
 {
     OT_UNUSED_VARIABLE(aRequest);
 
     RunInMainLoop([this]() {
         otBorderAgentEphemeralKeyStop(GetInstance());
-        return OTBR_ERROR_NONE;
     });
 
     aResponse.status = StatusCode::OK_200;
 }
 
-void RestWebServer::EpskcKey(const Request &aRequest, Response &aResponse)
+void RestWebServer::EpskcKey(const Request &aRequest, Response &aResponse) const
 {
     switch (GetMethod(aRequest))
     {
