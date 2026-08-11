@@ -138,13 +138,13 @@ private:
     void GetCoprocessorVersion(Response &aResponse) const;
 
 #if OTBR_ENABLE_EPSKC
-    void EpskcState(const Request &aRequest, Response &aResponse);
+    void EpskcState(const Request &aRequest, Response &aResponse) const;
     void GetEpskcState(Response &aResponse) const;
-    void SetEpskcState(const Request &aRequest, Response &aResponse);
-    void EpskcKey(const Request &aRequest, Response &aResponse);
+    void SetEpskcState(const Request &aRequest, Response &aResponse) const;
+    void EpskcKey(const Request &aRequest, Response &aResponse) const;
     void GetEpskcKey(Response &aResponse) const;
-    void ActivateEpskcKey(const Request &aRequest, Response &aResponse);
-    void DeactivateEpskcKey(const Request &aRequest, Response &aResponse);
+    void ActivateEpskcKey(const Request &aRequest, Response &aResponse) const;
+    void DeactivateEpskcKey(const Request &aRequest, Response &aResponse) const;
 #endif
 
     void ApiActionsHandler(const Request &aRequest, Response &aResponse);
