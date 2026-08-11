@@ -29,7 +29,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <chrono>
 
 #include <openthread/dataset.h>
@@ -50,23 +49,17 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
     // `aTimeoutSec` of 0 could get anywhere between ~0ms and ~999ms of real
     // budget depending on where `startTime` lands relative to the next
     // second boundary, making the wait non-deterministic.
-    //
-    // Clamp to at least 1s: with aTimeoutSec == 0, `deadline` would be set to
-    // `now()`, and since some time always elapses before the first check
-    // inside the loop, the loop would break before ever calling Update()/
-    // Process() even once. The loop still exits as soon as `aCondition()` is
-    // met, so this doesn't add delay to tests that already pass.
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(std::max(aTimeoutSec, 1u));
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(aTimeoutSec);
 
     while (!aCondition())
     {
+        otbr::MainloopManager::GetInstance().Update(aMainloop);
+        otbr::MainloopManager::GetInstance().Process(aMainloop);
+
         if (std::chrono::steady_clock::now() > deadline)
         {
             break;
         }
-
-        otbr::MainloopManager::GetInstance().Update(aMainloop);
-        otbr::MainloopManager::GetInstance().Process(aMainloop);
     }
 }
 
