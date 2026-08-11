@@ -292,7 +292,7 @@
                             var qr = qrcode(0, 'L');
                             qr.addData(qrData);
                             qr.make();
-                            var image = qr.createDataURL(10, 0);
+                            var image = qr.createDataURL(10, 2);
                             $scope.showQRCode(event, image);
                         } catch (err) {
                             console.error("QR Generation failed:", err);
