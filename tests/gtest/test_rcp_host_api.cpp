@@ -44,15 +44,14 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
                                  uint32_t                  aTimeoutSec,
                                  std::function<bool(void)> aCondition)
 {
-    // Use a monotonic clock with sub-second precision. Comparing only whole
-    // seconds (e.g. via `timeval::tv_sec`) truncates the elapsed time, so an
-    // `aTimeoutSec` of 0 could get anywhere between ~0ms and ~999ms of real
-    // budget depending on where `startTime` lands relative to the next
-    // second boundary, making the wait non-deterministic.
+    // Use a monotonic clock with sub-second precision.
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(aTimeoutSec);
 
     while (!aCondition())
     {
+        // Process pending tasks before checking the deadline, so that an
+        // `aTimeoutSec` of 0 still gets exactly one Update()/Process() pass
+        // instead of exiting the loop without processing anything.
         otbr::MainloopManager::GetInstance().Update(aMainloop);
         otbr::MainloopManager::GetInstance().Process(aMainloop);
 
@@ -383,6 +382,10 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     // instant budget to complete (see the other leader-formation waits in this
     // file, e.g. `StateChangesCorrectlyAfterLeave` and
     // `StateChangesCorrectlyAfterScheduleMigration`, which use 1s for the same reason).
+    // This can't be reverted to 0s even now that MainloopProcessUntil() runs
+    // Update()/Process() before checking the deadline: with aTimeoutSec == 0
+    // the loop still only gets a single processing pass, which isn't enough
+    // for this multi-step async sequence to reach LEADER.
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
