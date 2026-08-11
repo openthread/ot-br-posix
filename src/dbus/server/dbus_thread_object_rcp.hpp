@@ -123,6 +123,9 @@ private:
     otError SetRadioRegionHandler(DBusMessageIter &aIter);
     otError SetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError SetNat64Cidr(DBusMessageIter &aIter);
+#if OTBR_ENABLE_BORDER_AGENT_ID
+    otError SetBorderAgentIdHandler(DBusMessageIter &aIter);
+#endif
 #if OTBR_ENABLE_EPSKC
     otError SetEphemeralKeyEnabled(DBusMessageIter &aIter);
 #endif
@@ -133,7 +136,9 @@ private:
     otError GetPanIdHandler(DBusMessageIter &aIter);
     otError GetExtPanIdHandler(DBusMessageIter &aIter);
     otError GetEui64Handler(DBusMessageIter &aIter);
+#if OTBR_ENABLE_BORDER_AGENT_ID
     otError GetBorderAgentIdHandler(DBusMessageIter &aIter);
+#endif
     otError GetChannelHandler(DBusMessageIter &aIter);
     otError GetNetworkKeyHandler(DBusMessageIter &aIter);
     otError GetCcaFailureRateHandler(DBusMessageIter &aIter);
