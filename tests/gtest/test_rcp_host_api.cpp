@@ -408,7 +408,9 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.SetThreadEnabled(false, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Like the step-3 wait above, this Join races a Disable that triggers
+    // its own Detach sequence, so it needs multiple mainloop iterations.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_BUSY);
     EXPECT_STREQ(errorMsg_.c_str(), "Thread is disabling");
@@ -430,7 +432,9 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.SetThreadEnabled(false, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Same Detach -> re-Join -> Leader-formation sequence as step 3, so it
+    // needs the same 1s budget rather than a single mainloop pass.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
     EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
