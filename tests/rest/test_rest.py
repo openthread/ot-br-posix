@@ -485,6 +485,76 @@ def error_test(thread_num):
     print(" /v1/hello : all {}, valid {} ".format(thread_num, valid))
 
 
+def epskc_test():
+    state_url = rest_api_addr + "/node/ba-epskc/state"
+    key_url = rest_api_addr + "/node/ba-epskc/key"
+
+    def put_state(value):
+        req = urllib.request.Request(state_url, data=json.dumps(value).encode(), method='PUT')
+        req.add_header('Content-Type', 'application/json')
+        urllib.request.urlopen(req)
+
+    def get_state():
+        return json.loads(urllib.request.urlopen(state_url).read())
+
+    def get_key_status():
+        return json.loads(urllib.request.urlopen(key_url).read())
+
+    def post_key(payload):
+        req = urllib.request.Request(key_url, data=json.dumps(payload).encode(), method='POST')
+        req.add_header('Content-Type', 'application/json')
+        return urllib.request.urlopen(req)
+
+    def expect_http_error(code, action):
+        try:
+            action()
+            raise AssertionError("expected HTTP {}".format(code))
+        except urllib.error.HTTPError as err:
+            assert err.code == code
+
+    # Feature disabled: activation must be refused.
+    put_state("disable")
+    assert get_state() == "disabled"
+
+    expect_http_error(409, lambda: urllib.request.urlopen(urllib.request.Request(key_url, data=b'{}', method='POST')))
+
+    # Enable, activate, check, deactivate, disable.
+    put_state("enable")
+    assert get_state() == "enabled"
+
+    status = get_key_status()
+    assert status["state"] == "stopped"
+
+    # Invalid payloads must be rejected.
+    expect_http_error(400, lambda: post_key({"lifetime": "3600"}))
+    expect_http_error(400, lambda: post_key({"port": "49191"}))
+    expect_http_error(400, lambda: post_key({"lifetime": 4294967295}))
+
+    # Custom valid parameters should be accepted.
+    req = urllib.request.Request(
+        key_url,
+        data=json.dumps({"lifetime": 30000, "port": status["port"]}).encode(),
+        method='POST',
+    )
+    req.add_header('Content-Type', 'application/json')
+    data = json.loads(urllib.request.urlopen(req).read())
+    assert len(data["tap"]) == 9 and data["tap"].isdigit() and data["port"] == status["port"]
+
+    status = get_key_status()
+    assert status["state"] == "started" and status["port"] == data["port"]
+
+    # A second activation attempt while one is already active must be refused.
+    expect_http_error(409, lambda: urllib.request.urlopen(urllib.request.Request(key_url, data=b'{}', method='POST')))
+
+    urllib.request.urlopen(urllib.request.Request(key_url, method='DELETE'))
+    assert get_key_status()["state"] == "stopped"
+
+    put_state("disable")
+    assert get_state() == "disabled"
+
+    print(" /node/ba-epskc : OK")
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
@@ -499,6 +569,7 @@ def main():
     node_coprocessor_version_test(200)
     # diagnostics_test(20)  # partly replaced with restjsonapi tests
     error_test(10)
+    epskc_test()
 
     return 0
 
