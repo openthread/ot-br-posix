@@ -533,7 +533,7 @@ def epskc_test():
     # Custom valid parameters should be accepted.
     req = urllib.request.Request(
         key_url,
-        data=json.dumps({"lifetime": 300, "port": status["port"]}).encode(),
+        data=json.dumps({"lifetime": 30000, "port": status["port"]}).encode(),
         method='POST',
     )
     req.add_header('Content-Type', 'application/json')
