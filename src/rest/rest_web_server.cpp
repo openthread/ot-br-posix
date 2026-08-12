@@ -1106,9 +1106,7 @@ void RestWebServer::SetEpskcState(const Request &aRequest, Response &aResponse) 
     VerifyOrExit(Json::JsonString2String(aRequest.body, body), error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(body == "enable" || body == "disable", error = OTBR_ERROR_INVALID_ARGS);
 
-    RunInMainLoop([this, &body]() {
-        otBorderAgentEphemeralKeySetEnabled(GetInstance(), body == "enable");
-    });
+    RunInMainLoop([this, &body]() { otBorderAgentEphemeralKeySetEnabled(GetInstance(), body == "enable"); });
 
     aResponse.status = StatusCode::OK_200;
 
