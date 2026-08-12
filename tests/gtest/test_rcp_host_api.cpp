@@ -377,15 +377,9 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.Join(datasetTlvs, receiver);
 
-    // Unlike the other `Join`/`Leave` calls above, this one goes through the full
-    // Detach -> re-Join -> Leader-formation sequence, so it needs more than an
-    // instant budget to complete (see the other leader-formation waits in this
-    // file, e.g. `StateChangesCorrectlyAfterLeave` and
-    // `StateChangesCorrectlyAfterScheduleMigration`, which use 1s for the same reason).
-    // This can't be reverted to 0s even now that MainloopProcessUntil() runs
-    // Update()/Process() before checking the deadline: with aTimeoutSec == 0
-    // the loop still only gets a single processing pass, which isn't enough
-    // for this multi-step async sequence to reach LEADER.
+    // Unlike the single-pass 0s waits above, this step undergoes a full
+    // Detach -> re-Join -> Leader-formation sequence which requires multiple
+    // mainloop iterations to complete.
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
