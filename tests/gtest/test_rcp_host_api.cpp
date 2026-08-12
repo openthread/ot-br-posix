@@ -29,7 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <sys/time.h>
+#include <chrono>
 
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
@@ -44,21 +44,21 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
                                  uint32_t                  aTimeoutSec,
                                  std::function<bool(void)> aCondition)
 {
-    timeval startTime;
-    timeval now;
-    gettimeofday(&startTime, nullptr);
+    // Use a monotonic clock with sub-second precision.
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(aTimeoutSec);
 
     while (!aCondition())
     {
-        gettimeofday(&now, nullptr);
-        // Simply compare the second. We don't need high precision here.
-        if (now.tv_sec - startTime.tv_sec > aTimeoutSec)
+        // Process pending tasks before checking the deadline, so that an
+        // `aTimeoutSec` of 0 still gets exactly one Update()/Process() pass
+        // instead of exiting the loop without processing anything.
+        otbr::MainloopManager::GetInstance().Update(aMainloop);
+        otbr::MainloopManager::GetInstance().Process(aMainloop);
+
+        if (std::chrono::steady_clock::now() > deadline)
         {
             break;
         }
-
-        otbr::MainloopManager::GetInstance().Update(aMainloop);
-        otbr::MainloopManager::GetInstance().Process(aMainloop);
     }
 }
 
@@ -377,7 +377,10 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.Join(datasetTlvs, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Unlike the single-pass 0s waits above, this step undergoes a full
+    // Detach -> re-Join -> Leader-formation sequence which requires multiple
+    // mainloop iterations to complete.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
     EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation"); // The second Join will trigger Leave first.
@@ -405,7 +408,9 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.SetThreadEnabled(false, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Like the step-3 wait above, this Join races a Disable that triggers
+    // its own Detach sequence, so it needs multiple mainloop iterations.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_BUSY);
     EXPECT_STREQ(errorMsg_.c_str(), "Thread is disabling");
@@ -427,7 +432,9 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.SetThreadEnabled(false, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Same Detach -> re-Join -> Leader-formation sequence as step 3, so it
+    // needs the same 1s budget rather than a single mainloop pass.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
     EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
