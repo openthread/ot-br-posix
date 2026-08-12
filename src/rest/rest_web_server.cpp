@@ -1212,9 +1212,7 @@ void RestWebServer::DeactivateEpskcKey(const Request &aRequest, Response &aRespo
 {
     OT_UNUSED_VARIABLE(aRequest);
 
-    RunInMainLoop([this]() {
-        otBorderAgentEphemeralKeyStop(GetInstance());
-    });
+    RunInMainLoop([this]() { otBorderAgentEphemeralKeyStop(GetInstance()); });
 
     aResponse.status = StatusCode::OK_200;
 }
