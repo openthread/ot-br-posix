@@ -42,6 +42,7 @@
 #include <openthread/dataset_ftd.h>
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
+#include <openthread/mesh_diag.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
@@ -53,6 +54,9 @@
 namespace otbr {
 namespace Host {
 namespace {
+
+constexpr uint32_t kMeshDiagTimeoutMs = 30000; // 30 seconds
+
 const Tlv *FindTlv(uint8_t aTlvType, const uint8_t *aTlvs, int aTlvsSize)
 {
     const Tlv *result = nullptr;
@@ -223,6 +227,54 @@ exit:
     }
 }
 
+void ThreadHelper::GetMeshDiagTopology(bool aDiscoverChildren, bool aDiscoverIp6Addrs, MeshDiagTopologyHandler aHandler)
+{
+    otError                  error  = OT_ERROR_NONE;
+    otMeshDiagDiscoverConfig config = {};
+
+    config.mDiscoverChildTable   = aDiscoverChildren;
+    config.mDiscoverIp6Addresses = aDiscoverIp6Addrs;
+
+    VerifyOrExit(aHandler != nullptr);
+    VerifyOrExit(mMeshDiagTopologyHandler == nullptr, error = OT_ERROR_BUSY);
+    mMeshDiagTopologyHandler = aHandler;
+
+    {
+        MeshDiagQuery *query = new MeshDiagQuery{this, ++mMeshDiagQueryId};
+
+        error = otMeshDiagDiscoverTopology(mInstance, &config, &ThreadHelper::MeshDiagTopologyCallback, query);
+
+        if (error != OT_ERROR_NONE)
+        {
+            delete query;
+            ExitNow();
+        }
+    }
+
+    mMeshDiagTimeoutTask = mHost->GetTaskRunner().Post(Milliseconds(kMeshDiagTimeoutMs), [this]() {
+        mMeshDiagTimeoutTask = 0;
+        if (mMeshDiagTopologyHandler != nullptr)
+        {
+            mMeshDiagTopologyHandler(OT_ERROR_RESPONSE_TIMEOUT, nullptr);
+            mMeshDiagTopologyHandler = nullptr;
+        }
+    });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        if (aHandler)
+        {
+            aHandler(error, nullptr);
+        }
+
+        if (error != OT_ERROR_BUSY)
+        {
+            mMeshDiagTopologyHandler = nullptr;
+        }
+    }
+}
+
 void ThreadHelper::RandomFill(void *aBuf, size_t size)
 {
     std::uniform_int_distribution<> dist(0, UINT8_MAX);
@@ -298,6 +350,41 @@ void ThreadHelper::EnergyScanCallback(otEnergyScanResult *aResult)
     else
     {
         mEnergyScanResults.push_back(*aResult);
+    }
+}
+
+void ThreadHelper::MeshDiagTopologyCallback(otError aError, otMeshDiagRouterInfo *aRouterInfo, void *aContext)
+{
+    MeshDiagQuery *query  = static_cast<MeshDiagQuery *>(aContext);
+    ThreadHelper  *helper = query->mHelper;
+
+    if (query->mQueryId == helper->mMeshDiagQueryId)
+    {
+        helper->MeshDiagTopologyCallback(aError, aRouterInfo);
+    }
+
+    if (aError != OT_ERROR_PENDING)
+    {
+        delete query;
+    }
+}
+
+void ThreadHelper::MeshDiagTopologyCallback(otError aError, otMeshDiagRouterInfo *aRouterInfo)
+{
+    if (mMeshDiagTopologyHandler != nullptr)
+    {
+        mMeshDiagTopologyHandler(aError, aRouterInfo);
+    }
+
+    // Do not remove the handler if there are more results pending
+    if (aError != OT_ERROR_PENDING)
+    {
+        mMeshDiagTopologyHandler = nullptr;
+        if (mMeshDiagTimeoutTask != 0)
+        {
+            mHost->GetTaskRunner().Cancel(mMeshDiagTimeoutTask);
+            mMeshDiagTimeoutTask = 0;
+        }
     }
 }
 
