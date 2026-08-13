@@ -65,6 +65,8 @@
 namespace otbr {
 namespace Web {
 
+class WebServiceTest;
+
 /**
  * This class provides web service to manage WPAN.
  */
@@ -169,6 +171,8 @@ public:
     std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
+    friend class WebServiceTest;
+
     int                formActiveDataset(otbr::Web::OpenThreadClient &aClient,
                                          const std::string           &aNetworkKey,
                                          const std::string           &aNetworkName,

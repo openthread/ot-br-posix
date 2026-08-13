@@ -56,6 +56,32 @@ target_link_libraries(otbr-gtest-unit
 )
 gtest_discover_tests(otbr-gtest-unit)
 
+if(OTBR_WEB)
+    pkg_check_modules(JSONCPP_GTEST jsoncpp REQUIRED)
+
+    add_executable(otbr-gtest-web
+        ${OTBR_PROJECT_DIRECTORY}/src/web/web-service/ot_client.cpp
+        ${OTBR_PROJECT_DIRECTORY}/src/web/web-service/wpan_service.cpp
+        test_web.cpp
+    )
+    target_include_directories(otbr-gtest-web
+        PRIVATE
+            ${JSONCPP_GTEST_INCLUDE_DIRS}
+    )
+    target_link_libraries(otbr-gtest-web
+        $<$<BOOL:${JSONCPP_GTEST_LIBRARY_DIRS}>:-L$<JOIN:${JSONCPP_GTEST_LIBRARY_DIRS}," -L">>
+        ${JSONCPP_GTEST_LIBRARIES}
+        otbr-common
+        otbr-utils
+        openthread-ftd
+        openthread-posix
+        mbedtls
+        pthread
+        GTest::gmock_main
+    )
+    gtest_discover_tests(otbr-gtest-web)
+endif()
+
 add_executable(otbr-gtest-unit-dnssd
     ${OTBR_PROJECT_DIRECTORY}/src/common/types.cpp
     ${OTBR_PROJECT_DIRECTORY}/src/common/logging.cpp
