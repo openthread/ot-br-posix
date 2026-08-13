@@ -561,7 +561,12 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     if (GetDeviceRole() != OT_DEVICE_ROLE_DISABLED)
     {
         ThreadDetachGracefully([aActiveOpDatasetTlvs, aReceiver, this] {
-            ConditionalErasePersistentInfo(true);
+            // Best-effort, as before this helper reported its result: the
+            // device is only detached here, so the erase fails with
+            // INVALID_STATE and logs a warning, and the join that follows
+            // overwrites the dataset anyway. TODO: disable the stack first,
+            // the way LeaveAfterDetach() does, so the erase actually runs.
+            IgnoreError(ConditionalErasePersistentInfo(true));
             Join(aActiveOpDatasetTlvs, aReceiver);
         });
         receiveResultHere = false;
@@ -608,23 +613,27 @@ void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
     // what the stack is really doing.
     if (otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
     {
-        ConditionalErasePersistentInfo(aEraseDataset);
+        // Keep the state machine in step with the stack: SetThreadEnabled(true)
+        // without an active dataset leaves kStateEnabled while the role stays
+        // disabled, and a Leave through this shortcut would preserve the lie.
+        if (mThreadEnabledState != ThreadEnabledState::kStateDisabled)
+        {
+            UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
+        }
+        SuccessOrExit(error    = ConditionalErasePersistentInfo(aEraseDataset),
+                      errorMsg = "Failed to erase persistent info");
         ExitNow();
     }
 
-    ThreadDetachGracefully([aEraseDataset, aReceiver, this] {
-        ConditionalErasePersistentInfo(aEraseDataset);
-        if (aReceiver)
-        {
-            aReceiver(OT_ERROR_NONE, "");
-        }
-    });
+    UpdateThreadEnabledState(ThreadEnabledState::kStateDisabling);
+
+    ThreadDetachGracefully([aEraseDataset, aReceiver, this] { LeaveAfterDetach(aEraseDataset, aReceiver); });
     receiveResultHere = false;
 
 exit:
     if (receiveResultHere)
     {
-        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { SafeInvoke(aReceiver, error, errorMsg); });
     }
 }
 
@@ -806,9 +815,36 @@ void RcpHost::ThreadDetachGracefullyCallback(void)
     }
 }
 
-void RcpHost::ConditionalErasePersistentInfo(bool aErase)
+void RcpHost::LeaveAfterDetach(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
 {
-    otError error;
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+
+    // A graceful detach only takes the device to the detached role, it does not stop the
+    // stack. otInstanceErasePersistentInfo() succeeds only in the disabled role, so erasing
+    // here without disabling first fails with OT_ERROR_INVALID_STATE, and OpenThread would
+    // in any case start re-attaching with the dataset that is about to be erased.
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, false), errorMsg = "Failed to disable Thread stack");
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, false), errorMsg = "Failed to disable Thread interface");
+
+    UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
+
+    SuccessOrExit(error = ConditionalErasePersistentInfo(aEraseDataset), errorMsg = "Failed to erase persistent info");
+
+exit:
+    // Leave() moved the state machine to kStateDisabling; leaving it there would answer every
+    // later call with OT_ERROR_BUSY.
+    if (mThreadEnabledState == ThreadEnabledState::kStateDisabling)
+    {
+        UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
+    }
+
+    SafeInvoke(aReceiver, error, errorMsg);
+}
+
+otError RcpHost::ConditionalErasePersistentInfo(bool aErase)
+{
+    otError error = OT_ERROR_NONE;
 
     VerifyOrExit(aErase);
     SuccessOrExit(error = otInstanceErasePersistentInfo(mInstance),
@@ -820,7 +856,7 @@ void RcpHost::ConditionalErasePersistentInfo(bool aErase)
     HandleStateChanged(OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_PENDING_DATASET);
 
 exit:
-    return;
+    return error;
 }
 
 void RcpHost::DisableThreadAfterDetach(void)
