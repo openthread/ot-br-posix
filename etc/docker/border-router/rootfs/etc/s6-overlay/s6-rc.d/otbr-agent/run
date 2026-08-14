@@ -60,6 +60,24 @@ die()
     exit 1
 }
 
+# Add an iptables rule unless an identical one is already present.
+#
+# With `--network host` these rules are created in the host's netfilter
+# namespace and outlive the container, so a plain `-A` appends another copy on
+# every start of this service. `finish` removes them again, but it does not run
+# when the container is killed rather than stopped.
+#
+# `-w` is required, not cosmetic: without it a busy xtables lock makes `-C`
+# fail, which is indistinguishable from "rule not present" and falls through to
+# `-A` -- the guard would then create the very duplicate it exists to prevent.
+iptables_add_if_missing()
+{
+    local table="$1"
+    shift
+
+    iptables -t "${table}" -w -C "$@" 2> /dev/null || iptables -t "${table}" -w -A "$@"
+}
+
 mkdir -p /data/thread && ln -sft /var/lib /data/thread || die "Could not create directory /var/lib/thread to store Thread data."
 
 echo "Configuring OpenThread firewall..."
@@ -69,21 +87,28 @@ ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6
 ipset create -exist otbr-ingress-allow-dst hash:net family inet6
 ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6
 
-ip6tables -N "${OT_FORWARD_INGRESS_CHAIN}"
-ip6tables -I FORWARD 1 -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
+# Create the chain, or empty it if a previous run left it behind. The rules
+# below are appended unconditionally, so a surviving chain would end up holding
+# two copies of each of them.
+ip6tables -w -N "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null ||
+    ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
 
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -i "${OT_THREAD_IF}" -j DROP
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-deny-src src -j DROP
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -j DROP
-ip6tables -A "${OT_FORWARD_INGRESS_CHAIN}" -j ACCEPT
+# The jump into that chain lives in FORWARD and outlives the container as well.
+ip6tables -w -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null ||
+    ip6tables -w -I FORWARD 1 -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
+
+ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -i "${OT_THREAD_IF}" -j DROP
+ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-deny-src src -j DROP
+ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
+ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -j DROP
+ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -j ACCEPT
 
 echo "Configuring OpenThread NAT64..."
 
-iptables -t mangle -A PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
-iptables -t nat -A POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
-iptables -t filter -A FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
-iptables -t filter -A FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
+iptables_add_if_missing mangle PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
+iptables_add_if_missing nat POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
+iptables_add_if_missing filter FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
+iptables_add_if_missing filter FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
 
 echo "Starting otbr-agent..."
 

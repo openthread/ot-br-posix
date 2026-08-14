@@ -30,6 +30,9 @@
 OT_THREAD_IF="${OT_THREAD_IF:-wpan0}"
 readonly OT_THREAD_IF
 
+OT_INFRA_IF="${OT_INFRA_IF:-wlan0}"
+readonly OT_INFRA_IF
+
 OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
 readonly OT_FORWARD_INGRESS_CHAIN
 
@@ -48,8 +51,25 @@ ipset_destroy_if_exist()
     done
 }
 
-while ip6tables -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; do
-    ip6tables -D FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
+# Remove every copy of an iptables rule. Older images appended these rules
+# without checking for duplicates, so a host may carry several of them.
+#
+# `-w` keeps a busy xtables lock from ending the loop early, and `|| break`
+# catches everything else: without it a failing `-D` leaves the rule in place,
+# `-C` keeps succeeding, and this spins forever -- hanging container shutdown,
+# since finish runs on the way out.
+iptables_delete_all()
+{
+    local table="$1"
+    shift
+
+    while iptables -t "${table}" -w -C "$@" 2> /dev/null; do
+        iptables -t "${table}" -w -D "$@" || break
+    done
+}
+
+while ip6tables -w -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; do
+    ip6tables -w -D FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" || break
 done
 
 if ip6tables -L "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null; then
@@ -61,6 +81,11 @@ ipset_destroy_if_exist otbr-ingress-deny-src
 ipset_destroy_if_exist otbr-ingress-deny-src-swap
 ipset_destroy_if_exist otbr-ingress-allow-dst
 ipset_destroy_if_exist otbr-ingress-allow-dst-swap
+
+iptables_delete_all mangle PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
+iptables_delete_all nat POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
+iptables_delete_all filter FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
+iptables_delete_all filter FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
 
 echo "OpenThread firewall rules removed."
 
