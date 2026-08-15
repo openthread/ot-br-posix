@@ -180,6 +180,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
             type=raw,value=${{ inputs.release_tag || 'none' }},enable=${{ inputs.release_tag != '' && inputs.release_tag != null }}
+            type=raw,value=stable,enable=${{ inputs.release_tag != '' && inputs.release_tag != null }}
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
