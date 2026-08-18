@@ -43,7 +43,28 @@ protected:
     static void SetSocket(OpenThreadClient &aClient, int aSocket) { aClient.mSocket = aSocket; }
 
     static std::string EscapeOtCliEscapable(const std::string &aArg) { return WpanService::escapeOtCliEscapable(aArg); }
+    static std::string ToLower(const std::string &aStr) { return WpanService::toLower(aStr); }
+
+    static int StatusUninitialized(void) { return WpanService::kWpanStatus_Uninitialized; }
+    static int StatusParseRequestFailed(void) { return WpanService::kWpanStatus_ParseRequestFailed; }
 };
+
+namespace {
+
+// Parses a handler's JSON response and hands back the root, so each test can assert on whatever
+// fields matter to it.
+Json::Value ParseJson(const std::string &aJson)
+{
+    Json::Value                       root;
+    Json::CharReaderBuilder           builder;
+    std::string                       errs;
+    std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+
+    EXPECT_TRUE(reader->parse(aJson.c_str(), aJson.c_str() + aJson.size(), &root, &errs)) << errs;
+    return root;
+}
+
+} // namespace
 
 TEST_F(WebServiceTest, ExecuteRejectsLineBreaks)
 {
@@ -68,6 +89,147 @@ TEST_F(WebServiceTest, ExecuteRejectsLineBreaks)
 TEST_F(WebServiceTest, EscapeOtCliEscapable)
 {
     EXPECT_EQ(EscapeOtCliEscapable("alpha beta\tgamma\\delta\r\nepsilon"), "alpha\\ beta\\\tgamma\\\\delta\r\nepsilon");
+}
+
+TEST_F(WebServiceTest, ToLower)
+{
+    EXPECT_EQ(ToLower("STARTED"), "started");
+    EXPECT_EQ(ToLower("Connected"), "connected");
+    EXPECT_EQ(ToLower(""), "");
+    EXPECT_EQ(ToLower("already-lower"), "already-lower");
+    // Guards the `static_cast<unsigned char>` in the std::transform lambda: a signed `char` with the
+    // high bit set is UB for plain `std::tolower()`, so this must not crash under ASan/UBSan.
+    EXPECT_NO_THROW(ToLower("\xff\x80mix3D"));
+}
+
+// HandleGetEpskcStatusRequest / HandleDeactivateEpskcRequest take no body, so with no daemon
+// listening on the (bogus) interface's socket, Connect() deterministically fails and we can assert
+// on the resulting error JSON without touching a real socket.
+
+TEST_F(WebServiceTest, HandleGetEpskcStatusRequestNoDaemon)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleGetEpskcStatusRequest());
+
+    EXPECT_EQ(root["result"].asString(), "failed");
+    EXPECT_EQ(root["error"].asInt(), StatusUninitialized());
+    EXPECT_FALSE(root.isMember("enabled"));
+    EXPECT_FALSE(root.isMember("state"));
+}
+
+TEST_F(WebServiceTest, HandleDeactivateEpskcRequestNoDaemon)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleDeactivateEpskcRequest());
+
+    EXPECT_EQ(root["result"].asString(), "failed");
+    EXPECT_EQ(root["error"].asInt(), StatusUninitialized());
+}
+
+// HandleSetEpskcEnabledRequest validates its body *before* connecting, so these never touch a
+// socket -- StatusParseRequestFailed (rather than just "some failure") proves that.
+
+TEST_F(WebServiceTest, HandleSetEpskcEnabledRequestMalformedJson)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleSetEpskcEnabledRequest("not json"));
+    EXPECT_EQ(root["error"].asInt(), StatusParseRequestFailed());
+}
+
+TEST_F(WebServiceTest, HandleSetEpskcEnabledRequestMissingField)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleSetEpskcEnabledRequest("{}"));
+    EXPECT_EQ(root["error"].asInt(), StatusParseRequestFailed());
+}
+
+TEST_F(WebServiceTest, HandleSetEpskcEnabledRequestWrongType)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    // Regression test for the maintainer-requested fix: a string "true" must be rejected, not
+    // silently truthy-coerced.
+    Json::Value root = ParseJson(service.HandleSetEpskcEnabledRequest(R"({"enabled":"true"})"));
+    EXPECT_EQ(root["error"].asInt(), StatusParseRequestFailed());
+}
+
+TEST_F(WebServiceTest, HandleSetEpskcEnabledRequestValidBodyNoDaemon)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    // Body parses fine; the only failure left is Connect().
+    Json::Value root = ParseJson(service.HandleSetEpskcEnabledRequest(R"({"enabled":true})"));
+    EXPECT_EQ(root["error"].asInt(), StatusUninitialized());
+}
+
+// HandleActivateEpskcRequest: "lifetime"/"port" are optional and validated before connecting.
+
+TEST_F(WebServiceTest, HandleActivateEpskcRequestEmptyBodyNoDaemon)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    // Empty body must be accepted (both fields optional) and fall through to Connect(), not to a
+    // parse error -- this was the specific fix requested in review.
+    Json::Value root = ParseJson(service.HandleActivateEpskcRequest(""));
+    EXPECT_EQ(root["error"].asInt(), StatusUninitialized());
+}
+
+TEST_F(WebServiceTest, HandleActivateEpskcRequestMalformedJson)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleActivateEpskcRequest("{not json"));
+    EXPECT_EQ(root["error"].asInt(), StatusParseRequestFailed());
+}
+
+TEST_F(WebServiceTest, HandleActivateEpskcRequestLifetimeWrongType)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleActivateEpskcRequest(R"({"lifetime":"soon"})"));
+    EXPECT_EQ(root["error"].asInt(), StatusParseRequestFailed());
+}
+
+TEST_F(WebServiceTest, HandleActivateEpskcRequestPortWrongType)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleActivateEpskcRequest(R"({"port":-1})"));
+    EXPECT_EQ(root["error"].asInt(), StatusParseRequestFailed());
+}
+
+TEST_F(WebServiceTest, HandleActivateEpskcRequestValidFieldsNoDaemon)
+{
+    WpanService service;
+
+    service.SetInterfaceName("otbr-test-no-daemon");
+
+    Json::Value root = ParseJson(service.HandleActivateEpskcRequest(R"({"lifetime":30000,"port":49155})"));
+    EXPECT_EQ(root["error"].asInt(), StatusUninitialized());
 }
 
 } // namespace Web

@@ -51,6 +51,10 @@
 #define OT_GET_QRCODE_PATH "^/get_qrcode$"
 #define OT_SET_NETWORK_PATH "^/settings$"
 #define OT_COMMISSIONER_START_PATH "^/commission$"
+#define OT_EPSKC_STATUS_PATH "^/epskc_status$"
+#define OT_EPSKC_ENABLED_PATH "^/epskc_enabled$"
+#define OT_EPSKC_ACTIVATE_PATH "^/epskc_activate$"
+#define OT_EPSKC_DEACTIVATE_PATH "^/epskc_deactivate$"
 #define OT_GET_REST_API_INFO_PATH "^/get_rest_api_info$"
 #define OT_REQUEST_METHOD_GET "GET"
 #define OT_REQUEST_METHOD_POST "POST"
@@ -116,6 +120,10 @@ otbrError WebServer::StartWebServer(const char *aIfName, const char *aListenAddr
     ResponseGetStatus();
     ResponseGetAvailableNetwork();
     ResponseCommission();
+    ResponseGetEpskcStatus();
+    ResponseSetEpskcEnabled();
+    ResponseActivateEpskc();
+    ResponseDeactivateEpskc();
     ResponseGetRestApiInfo();
     mServer.set_mount_point("/", WEB_FILE_PATH);
 
@@ -261,6 +269,38 @@ void WebServer::ResponseCommission(void)
     });
 }
 
+void WebServer::ResponseGetEpskcStatus(void)
+{
+    mServer.Get(OT_EPSKC_STATUS_PATH, [this](const Request &aRequest, Response &aResponse) {
+        auto body = HandleGetEpskcStatusRequest(aRequest.body);
+        aResponse.set_content(body, OT_RESPONSE_HEADER_TYPE);
+    });
+}
+
+void WebServer::ResponseSetEpskcEnabled(void)
+{
+    mServer.Post(OT_EPSKC_ENABLED_PATH, [this](const Request &aRequest, Response &aResponse) {
+        auto body = HandleSetEpskcEnabledRequest(aRequest.body);
+        aResponse.set_content(body, OT_RESPONSE_HEADER_TYPE);
+    });
+}
+
+void WebServer::ResponseActivateEpskc(void)
+{
+    mServer.Post(OT_EPSKC_ACTIVATE_PATH, [this](const Request &aRequest, Response &aResponse) {
+        auto body = HandleActivateEpskcRequest(aRequest.body);
+        aResponse.set_content(body, OT_RESPONSE_HEADER_TYPE);
+    });
+}
+
+void WebServer::ResponseDeactivateEpskc(void)
+{
+    mServer.Post(OT_EPSKC_DEACTIVATE_PATH, [this](const Request &aRequest, Response &aResponse) {
+        auto body = HandleDeactivateEpskcRequest(aRequest.body);
+        aResponse.set_content(body, OT_RESPONSE_HEADER_TYPE);
+    });
+}
+
 std::string WebServer::HandleJoinNetworkRequest(const std::string &aJoinRequest)
 {
     return mWpanService.HandleJoinNetworkRequest(aJoinRequest);
@@ -302,6 +342,28 @@ std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGet
 std::string WebServer::HandleCommission(const std::string &aCommissionRequest)
 {
     return mWpanService.HandleCommission(aCommissionRequest);
+}
+
+std::string WebServer::HandleGetEpskcStatusRequest(const std::string &aGetEpskcStatusRequest)
+{
+    OTBR_UNUSED_VARIABLE(aGetEpskcStatusRequest);
+    return mWpanService.HandleGetEpskcStatusRequest();
+}
+
+std::string WebServer::HandleSetEpskcEnabledRequest(const std::string &aSetEpskcEnabledRequest)
+{
+    return mWpanService.HandleSetEpskcEnabledRequest(aSetEpskcEnabledRequest);
+}
+
+std::string WebServer::HandleActivateEpskcRequest(const std::string &aActivateEpskcRequest)
+{
+    return mWpanService.HandleActivateEpskcRequest(aActivateEpskcRequest);
+}
+
+std::string WebServer::HandleDeactivateEpskcRequest(const std::string &aDeactivateEpskcRequest)
+{
+    OTBR_UNUSED_VARIABLE(aDeactivateEpskcRequest);
+    return mWpanService.HandleDeactivateEpskcRequest();
 }
 
 void WebServer::ResponseGetRestApiInfo(void)
