@@ -86,6 +86,11 @@
                 icon: 'add_circle_outline',
                 show: false,
             },
+            {
+                title: 'ePSKc',
+                icon: 'vpn_key',
+                show: false,
+            },
 
         ];
 
@@ -108,6 +113,36 @@
         $scope.headerTitle = 'Home';
         $scope.status = [];
 
+        $scope.epskc = {
+            enabled: false,
+            state: 'unknown',
+            active: false,
+            tap: '',
+            port: null,
+            lifetimeMinutes: null,
+        };
+        $scope.isEpskcBusy = false;
+
+        // Polls epskc_status while the ePSKc panel is visible, so the UI reflects a session
+        // that times out or gets accepted/stopped on the device without any local user action.
+        var epskcStatusPoll = null;
+        var startEpskcStatusPoll = function() {
+            if (epskcStatusPoll) {
+                return;
+            }
+            epskcStatusPoll = $interval(function() {
+                $scope.refreshEpskcStatus(/* suppressAlert */ true);
+            }, 4000);
+        };
+        var stopEpskcStatusPoll = function() {
+            if (!epskcStatusPoll) {
+                return;
+            }
+            $interval.cancel(epskcStatusPoll);
+            epskcStatusPoll = null;
+        };
+        $scope.$on('$destroy', stopEpskcStatusPoll);
+
         $scope.isLoading = false;
 
         $scope.showScanAlert = function(ev) {
@@ -124,7 +159,7 @@
         };
         $scope.showPanels = async function(index) {
             $scope.headerTitle = $scope.menu[index].title;
-            for (var i = 0; i < 7; i++) {
+            for (var i = 0; i < $scope.menu.length; i++) {
                 $scope.menu[i].show = false;
             }
             $scope.menu[index].show = true;
@@ -164,6 +199,12 @@
 
                 await $scope.dataInit();
                 await $scope.showTopology();
+            }
+            if (index == 7) {
+                $scope.refreshEpskcStatus();
+                startEpskcStatusPoll();
+            } else {
+                stopEpskcStatusPoll();
             }
         };
 
@@ -445,6 +486,97 @@
                 }
                 ev.target.disabled = false;
             });
+        };
+
+        // When called from the background status poll, pass suppressAlert=true so a transient
+        // failure (daemon not running/uninitialized/busy) doesn't pop a modal every 4 seconds.
+        $scope.refreshEpskcStatus = function(suppressAlert) {
+            $http.get('epskc_status').then(function(response) {
+                if (response.data.error == 0) {
+                    $scope.epskc.enabled = response.data.enabled;
+                    $scope.epskc.state = response.data.state;
+                    $scope.epskc.active = response.data.active;
+                    $scope.epskc.port = response.data.port;
+                    if (!response.data.active) {
+                        $scope.epskc.tap = '';
+                    }
+                } else if (!suppressAlert) {
+                    $scope.showAlert(null, 'ePSKc Status', 'failed');
+                }
+            }, function() {
+                if (!suppressAlert) {
+                    $scope.showAlert(null, 'ePSKc Status', 'failed');
+                }
+            });
+        };
+
+        $scope.toggleEpskcEnabled = function() {
+            var data = {
+                enabled: $scope.epskc.enabled,
+            };
+            $http({
+                method: 'POST',
+                url: 'epskc_enabled',
+                data: data,
+            }).then(function(response) {
+                if (response.data.error != 0) {
+                    $scope.epskc.enabled = !$scope.epskc.enabled; // revert the switch on failure
+                    $scope.showAlert(null, 'ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            }, function() {
+                $scope.epskc.enabled = !$scope.epskc.enabled; // revert the switch on failure
+                $scope.showAlert(null, 'ePSKc', 'failed');
+            });
+        };
+
+        $scope.activateEpskc = function(ev) {
+            var data = {};
+            if ($scope.epskc.lifetimeMinutes) {
+                data.lifetime = $scope.epskc.lifetimeMinutes * 60 * 1000;
+            }
+            $scope.isEpskcBusy = true;
+            $http({
+                method: 'POST',
+                url: 'epskc_activate',
+                data: data,
+            }).then(function(response) {
+                if (response.data.error == 0) {
+                    $scope.epskc.tap = response.data.tap;
+                    $scope.epskc.port = response.data.port;
+                    $scope.showAlert(ev, 'Activate ePSKc', 'success');
+                } else {
+                    $scope.showAlert(ev, 'Activate ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            }, function() {
+                $scope.showAlert(ev, 'Activate ePSKc', 'failed');
+            }).finally(function() {
+                $scope.isEpskcBusy = false;
+            });
+        };
+
+        $scope.deactivateEpskc = function(ev) {
+            $scope.isEpskcBusy = true;
+            $http({
+                method: 'POST',
+                url: 'epskc_deactivate',
+                data: {},
+            }).then(function(response) {
+                $scope.epskc.tap = '';
+                if (response.data.error != 0) {
+                    $scope.showAlert(ev, 'Deactivate ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            }, function() {
+                $scope.showAlert(ev, 'Deactivate ePSKc', 'failed');
+            }).finally(function() {
+                $scope.isEpskcBusy = false;
+            });
+        };
+
+        $scope.selectEpskcTap = function(ev) {
+            ev.target.select();
         };
 
         $scope.restServerPort = '8081';
