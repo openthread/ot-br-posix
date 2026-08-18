@@ -144,10 +144,18 @@ set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedt
 
 add_subdirectory(repo EXCLUDE_FROM_ALL)
 
+# OPENTHREAD_POSIX_CONFIG_MAX_POWER_TABLE_ENABLE is set here rather than in
+# openthread-otbr-posix-config.h, because it guards code in two libraries.
+# `src/posix/platform/radio.cpp` parses `max-power-table` from the radio URL and
+# reaches the config header through platform-posix.h, but the loop that restores
+# the table after an RCP reset lives in `src/lib/spinel/radio_spinel.cpp`, whose
+# only project config hook is OPENTHREAD_PROJECT_LIB_CONFIG_FILE. Defining it on
+# `ot-config` puts it on the command line of both.
 target_compile_definitions(ot-config INTERFACE
     "-DOPENTHREAD_CONFIG_LOG_CLI=1"
     "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
     "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
+    "-DOPENTHREAD_POSIX_CONFIG_MAX_POWER_TABLE_ENABLE=1"
     "-DOPENTHREAD_POSIX_CONFIG_FILE=\"${PROJECT_BINARY_DIR}/src/agent/openthread-otbr-posix-config.h\""
 )
 
