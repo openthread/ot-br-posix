@@ -72,7 +72,7 @@
 #endif
 
 #ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS
-#define OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS "DELETE, GET, OPTIONS, POST"
+#define OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS "DELETE, GET, OPTIONS, POST, PUT"
 #endif
 
 #define OT_REST_RESOURCE_PATH_NODE "/node"
@@ -1250,6 +1250,8 @@ void RestWebServer::RoutingErrorHandler(const Request &aRequest, Response &aResp
         // fallthrough
     case HttpMethod::kGet:
         // fallthrough
+    case HttpMethod::kPut:
+        // fallthrough
     case HttpMethod::kDelete:
         // fallthrough
     case HttpMethod::kOptions:
@@ -1257,7 +1259,7 @@ void RestWebServer::RoutingErrorHandler(const Request &aRequest, Response &aResp
     default:
         errorDetails = "method not supported";
         error        = StatusCode::MethodNotAllowed_405;
-        aResponse.set_header("Allow", "GET, POST, DELETE, OPTIONS");
+        aResponse.set_header("Allow", "GET, POST, PUT, DELETE, OPTIONS");
         break;
     }
 
