@@ -389,6 +389,65 @@ def node_state_test_attached():
             time.sleep(1)
 
 
+def node_state_put_invalid_body_test():
+    """Regression test for https://github.com/openthread/ot-br-posix/issues/3522
+
+    A PUT request that fails to process (e.g. an invalid body) must return
+    its real error status (400 Bad Request here) instead of being masked as
+    405 Method Not Allowed by RoutingErrorHandler.
+    """
+    url = rest_api_addr + "/node/state"
+
+    # Not valid JSON (missing quotes around the string value), so the
+    # handler rejects it with 400 before touching any device state.
+    request = urllib.request.Request(url, data=b'enable', method='PUT')
+
+    try:
+        urllib.request.urlopen(request)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert (e.code == 400)
+
+    print(" PUT /node/state (invalid body) : status {}, expected 400".format(400))
+
+
+def node_state_put_unsupported_method_test():
+    """A method that genuinely isn't supported (e.g. PATCH) on a PUT-capable
+    endpoint must still return 405.
+    """
+    url = rest_api_addr + "/node/state"
+
+    request = urllib.request.Request(url, method='PATCH')
+
+    try:
+        urllib.request.urlopen(request)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert (e.code == 405)
+
+    print(" PATCH /node/state : status {}, expected 405".format(405))
+
+
+def node_ext_address_put_no_route_test():
+    """A PUT to an endpoint that never registers a PUT handler (e.g.
+    /node/ext-address, GET-only) returns 404, the same routing-miss status
+    POST and DELETE already return on that path. Full 404/405 semantics
+    (a per-resource Allow header, etc.) are tracked by
+    https://github.com/openthread/ot-br-posix/issues/3529.
+    """
+    url = rest_api_addr + "/node/ext-address"
+
+    request = urllib.request.Request(url, data=b'"0000000000000000"', method='PUT')
+
+    try:
+        urllib.request.urlopen(request)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert (e.code == 404)
+
+    print(" PUT /node/ext-address (no route) : status {}, expected 404".format(404))
+
+
 def node_network_name_test(thread_num):
     url = rest_api_addr + "/node/network-name"
 
@@ -512,6 +571,10 @@ def epskc_test():
         except urllib.error.HTTPError as err:
             assert err.code == code
 
+    # Regression test for https://github.com/openthread/ot-br-posix/issues/3522: an invalid
+    # PUT body must return its real error status (400) rather than being masked as 405.
+    expect_http_error(400, lambda: put_state("toggle"))
+
     # Feature disabled: activation must be refused.
     put_state("disable")
     assert get_state() == "disabled"
@@ -561,6 +624,9 @@ def main():
     node_rloc16_test(200)
     node_ext_address_test(200)
     node_state_test(200)
+    node_state_put_invalid_body_test()
+    node_state_put_unsupported_method_test()
+    node_ext_address_put_no_route_test()
     node_network_name_test(200)
     node_state_test_attached()  # wait for attached state
     node_leader_data_test(200)
