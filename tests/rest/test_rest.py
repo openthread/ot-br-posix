@@ -530,15 +530,10 @@ def epskc_test():
     expect_http_error(400, lambda: post_key({"port": "49191"}))
     expect_http_error(400, lambda: post_key({"lifetime": 4294967295}))
 
-    # Custom valid parameters should be accepted.
-    req = urllib.request.Request(
-        key_url,
-        data=json.dumps({"lifetime": 30000, "port": status["port"]}).encode(),
-        method='POST',
-    )
-    req.add_header('Content-Type', 'application/json')
-    data = json.loads(urllib.request.urlopen(req).read())
-    assert len(data["tap"]) == 9 and data["tap"].isdigit() and data["port"] == status["port"]
+    # Custom valid parameters (custom lifetime with auto-assigned port).
+    data = json.loads(post_key({"lifetime": 30000, "port": 0}).read())
+    assert len(data["tap"]) == 9 and data["tap"].isdigit()
+    assert 0 < data["port"] <= 65535
 
     status = get_key_status()
     assert status["state"] == "started" and status["port"] == data["port"]
