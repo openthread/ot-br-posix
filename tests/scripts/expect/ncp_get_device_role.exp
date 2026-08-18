@@ -32,13 +32,7 @@ spawn_node 1 otbr $::env(EXP_OT_NCP_PATH)
 
 sleep 1
 
-spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply --reply-timeout=1000 /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
-expect -re {disabled} {
-} timeout {
-    puts "timeout!"
-    exit 1
-}
-expect eof
+wait_for_device_role {disabled}
 
 # Shut down otbr-agent
 switch_node 1
