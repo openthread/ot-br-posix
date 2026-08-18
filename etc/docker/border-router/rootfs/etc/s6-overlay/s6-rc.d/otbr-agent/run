@@ -54,6 +54,9 @@ readonly OT_REST_LISTEN_PORT
 OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
 readonly OT_FORWARD_INGRESS_CHAIN
 
+OT_DOCKER_USER_CHAIN="DOCKER-USER"
+readonly OT_DOCKER_USER_CHAIN
+
 die()
 {
     echo >&2 "ERROR: $*"
@@ -102,6 +105,26 @@ ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-de
 ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
 ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -j DROP
 ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -j ACCEPT
+
+# Traffic leaving the Thread network needs an explicit accept. The ingress chain
+# above only filters what the host already forwards; it does nothing for the
+# other direction, which until now relied on the FORWARD policy being ACCEPT.
+# That does not hold under Docker, which manages ip6tables and sets the policy
+# to DROP. The result is a one-directional, silent failure: requests into the
+# mesh work, every reply out of it is dropped, and the border router looks
+# perfectly healthy throughout.
+#
+# DOCKER-USER is the chain Docker reserves for user rules and does not rewrite
+# when it rebuilds its own; fall back to FORWARD where it does not exist.
+if ip6tables -w -L "${OT_DOCKER_USER_CHAIN}" -n > /dev/null 2>&1; then
+    egress_chain="${OT_DOCKER_USER_CHAIN}"
+else
+    egress_chain="FORWARD"
+fi
+readonly egress_chain
+
+ip6tables -w -C "${egress_chain}" -i "${OT_THREAD_IF}" -o "${OT_INFRA_IF}" -j ACCEPT 2> /dev/null ||
+    ip6tables -w -I "${egress_chain}" 1 -i "${OT_THREAD_IF}" -o "${OT_INFRA_IF}" -j ACCEPT
 
 echo "Configuring OpenThread NAT64..."
 
