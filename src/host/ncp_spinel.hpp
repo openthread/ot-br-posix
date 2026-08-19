@@ -87,6 +87,13 @@ public:
     virtual void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs) = 0;
 
     /**
+     * Updates the pending dataset.
+     *
+     * @param[in] aPendingOpDatasetTlvs  The pending dataset tlvs.
+     */
+    virtual void SetDatasetPendingTlvs(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs) = 0;
+
+    /**
      * Updates the mesh local prefix.
      *
      * @param[in] aMeshLocalPrefix  The mesh local prefix.
