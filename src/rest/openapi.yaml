@@ -11,7 +11,7 @@ info:
   license:
     name: BSD 3-Clause
     url: https://github.com/openthread/ot-br-posix/blob/main/LICENSE
-  version: 0.4.0
+  version: 0.5.0
 servers:
   - url: "{protocol}://{host}:{port}"
     description: Configurable Border Router destination.
@@ -2751,7 +2751,7 @@ components:
             $ref: "#/components/schemas/WellKnownThread"
           example:
             api:
-              version: 0.3.0
+              version: 0.5.0
               base: /api/
             links:
               - href: /.well-known/thread/br-rest

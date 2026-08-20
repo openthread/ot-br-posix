@@ -40,6 +40,6 @@
  * - MINOR: New features (backward compatible) or breaking changes during 0.x
  * - PATCH: Bug fixes (backward compatible)
  */
-#define OTBR_REST_API_VERSION "0.4.0"
+#define OTBR_REST_API_VERSION "0.5.0"
 
 #endif // OTBR_REST_VERSION_HPP_
