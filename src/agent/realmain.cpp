@@ -61,7 +61,9 @@
 #ifndef __ANDROID__
 #error "OTBR_ENABLE_PLATFORM_ANDROID can be enabled for only Android devices"
 #endif
+#ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
 #define OTBR_ENABLE_PLATFORM_RESET_EXIT
+#endif
 #endif
 
 #define DEFAULT_INTERFACE_NAME "wpan0"
