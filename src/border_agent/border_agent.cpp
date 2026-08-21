@@ -196,6 +196,11 @@ void BorderAgent::ClearState(void)
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mServiceInstanceName.clear();
+    mIsInitialized  = false;
+    mMeshCoPUdpPort = 0;
+    mBaIsActive     = false;
+    memset(&mExtAddress, 0, sizeof(mExtAddress));
+    mOtTxtData.clear();
 #endif
 }
 

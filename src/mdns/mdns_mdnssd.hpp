@@ -131,7 +131,7 @@ private:
 
     private:
         void             Unregister(void);
-        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+        PublisherMDnsSd &GetPublisher(void) const { return *static_cast<PublisherMDnsSd *>(mPublisher); }
         void             HandleRegisterResult(DNSServiceFlags aFlags, DNSServiceErrorType aError);
         static void      HandleRegisterResult(DNSServiceRef       aServiceRef,
                                               DNSServiceFlags     aFlags,
@@ -156,7 +156,7 @@ private:
 
     private:
         void             Unregister(void);
-        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+        PublisherMDnsSd &GetPublisher(void) const { return *static_cast<PublisherMDnsSd *>(mPublisher); }
         void             HandleRegisterResult(DNSRecordRef aRecordRef, DNSServiceErrorType aError);
         static void      HandleRegisterResult(DNSServiceRef       aServiceRef,
                                               DNSRecordRef        aRecordRef,
@@ -181,7 +181,7 @@ private:
 
     private:
         void             Unregister(void);
-        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+        PublisherMDnsSd &GetPublisher(void) const { return *static_cast<PublisherMDnsSd *>(mPublisher); }
         void             HandleRegisterResult(DNSServiceErrorType aError);
         static void      HandleRegisterResult(DNSServiceRef       aServiceRef,
                                               DNSRecordRef        aRecordRef,
@@ -365,6 +365,7 @@ private:
     DNSServiceErrorType CreateSharedHostsRef(void);
     void                DeallocateHostsRef(void);
     void                HandleServiceRefDeallocating(const DNSServiceRef &aServiceRef);
+    void                TriggerReconnect(const char *aReason);
 
     template <typename DnssdType> void ScheduleRetry(DnssdType *aPtr, std::function<void(DnssdType *)> aAction)
     {
@@ -389,6 +390,7 @@ private:
     std::vector<DNSServiceRef> mServiceRefsToProcess;
 
     TaskRunner mTaskRunner;
+    bool       mReconnecting;
 };
 
 /**
