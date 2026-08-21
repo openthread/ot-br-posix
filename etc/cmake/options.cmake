@@ -187,6 +187,11 @@ if(OTBR_NOTIFY_UPSTART)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
 endif()
 
+option(OTBR_PLATFORM_RESET_EXIT "Exit on platform reset instead of restarting in-place, letting a service supervisor (systemd, s6, ...) restart the daemon. The daemon exits with status 0, make sure the supervisor also restarts it on successful exit (e.g. systemd Restart=always)." OFF)
+if(OTBR_PLATFORM_RESET_EXIT)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PLATFORM_RESET_EXIT=1)
+endif()
+
 set(OTBR_NAT64_DEFAULT OFF)
 if (OTBR_BORDER_ROUTING)
     set(OTBR_NAT64_DEFAULT ON)
