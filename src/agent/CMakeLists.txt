@@ -37,6 +37,7 @@ add_executable(otbr-agent
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_BORDER_AGENT}>:otbr-border-agent>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
+    $<$<BOOL:${OTBR_NFTABLES}>:otbr-firewall>
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>

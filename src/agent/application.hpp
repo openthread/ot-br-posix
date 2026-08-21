@@ -49,6 +49,10 @@
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
 #endif
+#if OTBR_ENABLE_NFTABLES
+#include "firewall/firewall_manager.hpp"
+#include "firewall/nftables_impl.hpp"
+#endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #include "sdp_proxy/advertising_proxy.hpp"
 #endif
@@ -259,6 +263,10 @@ private:
     void InitRcpMode(const std::string &aRestListenAddress, int aRestListenPort);
     void DeinitRcpMode(void);
 
+#if OTBR_ENABLE_NFTABLES
+    void UpdateIngressPrefixes(void);
+#endif
+
     void CreateNcpMode(void);
     void InitNcpMode(void);
     void DeinitNcpMode(void);
@@ -290,6 +298,10 @@ private:
     UdpProxy mEphemeralKeyUdpProxy;
 #endif
 
+#endif
+#if OTBR_ENABLE_NFTABLES
+    std::unique_ptr<Firewall::Nftables>        mNftables;
+    std::unique_ptr<Firewall::FirewallManager> mFirewall;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;

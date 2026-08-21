@@ -39,6 +39,15 @@ readonly OT_FORWARD_INGRESS_CHAIN
 OT_DOCKER_USER_CHAIN="DOCKER-USER"
 readonly OT_DOCKER_USER_CHAIN
 
+# Matches the flag in the run script. With OTBR_NFTABLES=1 most teardown is
+# unnecessary: FirewallManager owns the `inet otbr` table lifecycle, and stale
+# state from a crashed run is cleared by the next FirewallManager::Init()
+# (DelTable is idempotent). The authorization accepts in the host's own tables
+# are the exception -- run installs them in both modes, so both modes remove
+# them here.
+OTBR_NFTABLES="${OTBR_NFTABLES:-0}"
+readonly OTBR_NFTABLES
+
 if test "$1" -eq 256 ; then
   e=$((128 + $2))
 else
@@ -75,27 +84,31 @@ xtables_delete_all()
     done
 }
 
-xtables_delete_all ip6tables filter FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
+if [ "${OTBR_NFTABLES}" != "1" ]; then
+    xtables_delete_all ip6tables filter FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
 
-# The egress rule. Both chains are tried because which one run picked depends on
-# whether DOCKER-USER existed at the time, and that can differ between start and
-# stop.
-for chain in "${OT_DOCKER_USER_CHAIN}" FORWARD; do
-    xtables_delete_all ip6tables filter "${chain}" -i "${OT_THREAD_IF}" -o "${OT_INFRA_IF}" -j ACCEPT
-done
+    if ip6tables -w -L "${OT_FORWARD_INGRESS_CHAIN}" -n > /dev/null 2>&1; then
+        ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
+        ip6tables -w -X "${OT_FORWARD_INGRESS_CHAIN}"
+    fi
 
-if ip6tables -w -L "${OT_FORWARD_INGRESS_CHAIN}" -n > /dev/null 2>&1; then
-    ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
-    ip6tables -w -X "${OT_FORWARD_INGRESS_CHAIN}"
+    ipset_destroy_if_exist otbr-ingress-deny-src
+    ipset_destroy_if_exist otbr-ingress-deny-src-swap
+    ipset_destroy_if_exist otbr-ingress-allow-dst
+    ipset_destroy_if_exist otbr-ingress-allow-dst-swap
+
+    xtables_delete_all iptables mangle PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
+    xtables_delete_all iptables nat POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
 fi
 
-ipset_destroy_if_exist otbr-ingress-deny-src
-ipset_destroy_if_exist otbr-ingress-deny-src-swap
-ipset_destroy_if_exist otbr-ingress-allow-dst
-ipset_destroy_if_exist otbr-ingress-allow-dst-swap
+# The authorization accepts exist in both firewall modes; run may have picked
+# either chain depending on whether DOCKER-USER existed at the time, and that
+# can differ between start and stop, so both are tried.
+for chain in "${OT_DOCKER_USER_CHAIN}" FORWARD; do
+    xtables_delete_all ip6tables filter "${chain}" -i "${OT_THREAD_IF}" -o "${OT_INFRA_IF}" -j ACCEPT
+    xtables_delete_all ip6tables filter "${chain}" -o "${OT_THREAD_IF}" -j ACCEPT
+done
 
-xtables_delete_all iptables mangle PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
-xtables_delete_all iptables nat POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
 xtables_delete_all iptables filter FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
 xtables_delete_all iptables filter FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
 

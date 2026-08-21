@@ -51,6 +51,13 @@ readonly OT_REST_LISTEN_ADDR
 OT_REST_LISTEN_PORT="${OT_REST_LISTEN_PORT:-8081}"
 readonly OT_REST_LISTEN_PORT
 
+# Set OTBR_NFTABLES=1 when the image was built with -DOTBR_NFTABLES=ON: the
+# ingress filter and NAT44 masquerade are then installed in-process by
+# otbr-agent (FirewallManager) and the legacy ipset/ip6tables/iptables setup
+# below is skipped.
+OTBR_NFTABLES="${OTBR_NFTABLES:-0}"
+readonly OTBR_NFTABLES
+
 OT_FORWARD_INGRESS_CHAIN="OT_FORWARD_INGRESS"
 readonly OT_FORWARD_INGRESS_CHAIN
 
@@ -83,36 +90,47 @@ iptables_add_if_missing()
 
 mkdir -p /data/thread && ln -sft /var/lib /data/thread || die "Could not create directory /var/lib/thread to store Thread data."
 
-echo "Configuring OpenThread firewall..."
+if [ "${OTBR_NFTABLES}" != "1" ]; then
+    echo "Configuring OpenThread firewall..."
 
-ipset create -exist otbr-ingress-deny-src hash:net family inet6
-ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6
-ipset create -exist otbr-ingress-allow-dst hash:net family inet6
-ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6
+    ipset create -exist otbr-ingress-deny-src hash:net family inet6
+    ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6
+    ipset create -exist otbr-ingress-allow-dst hash:net family inet6
+    ipset create -exist otbr-ingress-allow-dst-swap hash:net family inet6
 
-# Create the chain, or empty it if a previous run left it behind. The rules
-# below are appended unconditionally, so a surviving chain would end up holding
-# two copies of each of them.
-ip6tables -w -N "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null ||
-    ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
+    # Create the chain, or empty it if a previous run left it behind. The rules
+    # below are appended unconditionally, so a surviving chain would end up
+    # holding two copies of each of them.
+    ip6tables -w -N "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null ||
+        ip6tables -w -F "${OT_FORWARD_INGRESS_CHAIN}"
 
-# The jump into that chain lives in FORWARD and outlives the container as well.
-ip6tables -w -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null ||
-    ip6tables -w -I FORWARD 1 -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
+    # The jump into that chain lives in FORWARD and outlives the container as
+    # well.
+    ip6tables -w -C FORWARD -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}" 2> /dev/null ||
+        ip6tables -w -I FORWARD 1 -o "${OT_THREAD_IF}" -j "${OT_FORWARD_INGRESS_CHAIN}"
 
-ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -i "${OT_THREAD_IF}" -j DROP
-ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-deny-src src -j DROP
-ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
-ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -j DROP
-ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -j ACCEPT
+    ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -i "${OT_THREAD_IF}" -j DROP
+    ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-deny-src src -j DROP
+    ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
+    ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -m pkttype --pkt-type unicast -j DROP
+    ip6tables -w -A "${OT_FORWARD_INGRESS_CHAIN}" -j ACCEPT
+else
+    echo "OTBR_NFTABLES=1: ingress filter and NAT44 are managed in-process by otbr-agent."
+fi
 
-# Traffic leaving the Thread network needs an explicit accept. The ingress chain
-# above only filters what the host already forwards; it does nothing for the
-# other direction, which until now relied on the FORWARD policy being ACCEPT.
-# That does not hold under Docker, which manages ip6tables and sets the policy
-# to DROP. The result is a one-directional, silent failure: requests into the
-# mesh work, every reply out of it is dropped, and the border router looks
-# perfectly healthy throughout.
+# Traffic leaving the Thread network needs an explicit accept. The ingress
+# filter above only filters what the host already forwards; it does nothing for
+# the other direction, which until now relied on the FORWARD policy being
+# ACCEPT. That does not hold under Docker, which manages ip6tables and sets the
+# policy to DROP. The result is a one-directional, silent failure: requests
+# into the mesh work, every reply out of it is dropped, and the border router
+# looks perfectly healthy throughout.
+#
+# This authorization is needed in both firewall modes. The in-process nftables
+# backend cannot provide it: its rules live in an isolated `inet otbr` table,
+# and an accept there is not terminal for the hook -- the host's `filter
+# FORWARD` policy still applies afterwards (see #3515). Only a rule in the
+# host's own table can authorize forwarding against a DROP policy there.
 #
 # DOCKER-USER is the chain Docker reserves for user rules and does not rewrite
 # when it rebuilds its own; fall back to FORWARD where it does not exist.
@@ -126,10 +144,26 @@ readonly egress_chain
 ip6tables -w -C "${egress_chain}" -i "${OT_THREAD_IF}" -o "${OT_INFRA_IF}" -j ACCEPT 2> /dev/null ||
     ip6tables -w -I "${egress_chain}" 1 -i "${OT_THREAD_IF}" -o "${OT_INFRA_IF}" -j ACCEPT
 
+if [ "${OTBR_NFTABLES}" = "1" ]; then
+    # In legacy mode the ingress chain's terminal ACCEPT sits in the host's
+    # filter FORWARD and authorizes traffic into the Thread network on its way.
+    # The in-process ingress filter cannot (same reason as above), so traffic
+    # a DROP policy would eat needs its authorization here; what the in-process
+    # filter drops is gone before this rule matters.
+    ip6tables -w -C "${egress_chain}" -o "${OT_THREAD_IF}" -j ACCEPT 2> /dev/null ||
+        ip6tables -w -I "${egress_chain}" 1 -o "${OT_THREAD_IF}" -j ACCEPT
+fi
+
 echo "Configuring OpenThread NAT64..."
 
-iptables_add_if_missing mangle PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
-iptables_add_if_missing nat POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
+if [ "${OTBR_NFTABLES}" != "1" ]; then
+    iptables_add_if_missing mangle PREROUTING -i "${OT_THREAD_IF}" -j MARK --set-mark 0x1001
+    iptables_add_if_missing nat POSTROUTING -m mark --mark 0x1001 -j MASQUERADE
+fi
+
+# Authorization again, not translation: these accepts let NAT64/NAT44 flows
+# cross a DROP policy in the host's filter FORWARD, which the in-process
+# backend cannot do from its own table. Both firewall modes need them.
 iptables_add_if_missing filter FORWARD -o "${OT_INFRA_IF}" -j ACCEPT
 iptables_add_if_missing filter FORWARD -i "${OT_INFRA_IF}" -j ACCEPT
 

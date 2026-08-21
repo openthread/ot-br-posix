@@ -81,6 +81,29 @@ if(OTBR_WEB)
     )
     gtest_discover_tests(otbr-gtest-web)
 endif()
+add_executable(otbr-gtest-firewall
+    test_firewall_manager.cpp
+)
+target_link_libraries(otbr-gtest-firewall
+    otbr-config
+    otbr-firewall
+    otbr-common
+    GTest::gmock_main
+)
+
+if(OTBR_NFTABLES)
+    target_include_directories(otbr-gtest-firewall PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    # The fake socket parses replies with mnl_cb_run(), and otbr-firewall links
+    # libmnl PRIVATE, so the test binary needs its own link to it.
+    target_link_libraries(otbr-gtest-firewall
+        PkgConfig::LIBNFTNL
+        PkgConfig::LIBMNL
+    )
+endif()
+gtest_discover_tests(otbr-gtest-firewall)
 
 add_executable(otbr-gtest-unit-dnssd
     ${OTBR_PROJECT_DIRECTORY}/src/common/types.cpp
