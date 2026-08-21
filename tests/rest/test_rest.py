@@ -389,6 +389,65 @@ def node_state_test_attached():
             time.sleep(1)
 
 
+def node_state_put_invalid_body_test():
+    """Regression test for https://github.com/openthread/ot-br-posix/issues/3522
+
+    A PUT request that fails to process (e.g. an invalid body) must return
+    its real error status (400 Bad Request here) instead of being masked as
+    405 Method Not Allowed by RoutingErrorHandler.
+    """
+    url = rest_api_addr + "/node/state"
+
+    # Not valid JSON (missing quotes around the string value), so the
+    # handler rejects it with 400 before touching any device state.
+    request = urllib.request.Request(url, data=b'enable', method='PUT')
+
+    try:
+        urllib.request.urlopen(request)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert (e.code == 400)
+
+    print(" PUT /node/state (invalid body) : status {}, expected 400".format(400))
+
+
+def node_state_put_unsupported_method_test():
+    """A method that genuinely isn't supported (e.g. PATCH) on a PUT-capable
+    endpoint must still return 405.
+    """
+    url = rest_api_addr + "/node/state"
+
+    request = urllib.request.Request(url, method='PATCH')
+
+    try:
+        urllib.request.urlopen(request)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert (e.code == 405)
+
+    print(" PATCH /node/state : status {}, expected 405".format(405))
+
+
+def node_ext_address_put_no_route_test():
+    """A PUT to an endpoint that never registers a PUT handler (e.g.
+    /node/ext-address, GET-only) returns 404, the same routing-miss status
+    POST and DELETE already return on that path. Full 404/405 semantics
+    (a per-resource Allow header, etc.) are tracked by
+    https://github.com/openthread/ot-br-posix/issues/3529.
+    """
+    url = rest_api_addr + "/node/ext-address"
+
+    request = urllib.request.Request(url, data=b'"0000000000000000"', method='PUT')
+
+    try:
+        urllib.request.urlopen(request)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert (e.code == 404)
+
+    print(" PUT /node/ext-address (no route) : status {}, expected 404".format(404))
+
+
 def node_network_name_test(thread_num):
     url = rest_api_addr + "/node/network-name"
 
@@ -485,12 +544,84 @@ def error_test(thread_num):
     print(" /v1/hello : all {}, valid {} ".format(thread_num, valid))
 
 
+def epskc_test():
+    state_url = rest_api_addr + "/node/ba-epskc/state"
+    key_url = rest_api_addr + "/node/ba-epskc/key"
+
+    def put_state(value):
+        req = urllib.request.Request(state_url, data=json.dumps(value).encode(), method='PUT')
+        req.add_header('Content-Type', 'application/json')
+        urllib.request.urlopen(req)
+
+    def get_state():
+        return json.loads(urllib.request.urlopen(state_url).read())
+
+    def get_key_status():
+        return json.loads(urllib.request.urlopen(key_url).read())
+
+    def post_key(payload):
+        req = urllib.request.Request(key_url, data=json.dumps(payload).encode(), method='POST')
+        req.add_header('Content-Type', 'application/json')
+        return urllib.request.urlopen(req)
+
+    def expect_http_error(code, action):
+        try:
+            action()
+            raise AssertionError("expected HTTP {}".format(code))
+        except urllib.error.HTTPError as err:
+            assert err.code == code
+
+    # Regression test for https://github.com/openthread/ot-br-posix/issues/3522: an invalid
+    # PUT body must return its real error status (400) rather than being masked as 405.
+    expect_http_error(400, lambda: put_state("toggle"))
+
+    # Feature disabled: activation must be refused.
+    put_state("disable")
+    assert get_state() == "disabled"
+
+    expect_http_error(409, lambda: urllib.request.urlopen(urllib.request.Request(key_url, data=b'{}', method='POST')))
+
+    # Enable, activate, check, deactivate, disable.
+    put_state("enable")
+    assert get_state() == "enabled"
+
+    status = get_key_status()
+    assert status["state"] == "stopped"
+
+    # Invalid payloads must be rejected.
+    expect_http_error(400, lambda: post_key({"lifetime": "3600"}))
+    expect_http_error(400, lambda: post_key({"port": "49191"}))
+    expect_http_error(400, lambda: post_key({"lifetime": 4294967295}))
+
+    # Custom valid parameters (custom lifetime with auto-assigned port).
+    data = json.loads(post_key({"lifetime": 30000, "port": 0}).read())
+    assert len(data["tap"]) == 9 and data["tap"].isdigit()
+    assert 0 < data["port"] <= 65535
+
+    status = get_key_status()
+    assert status["state"] == "started" and status["port"] == data["port"]
+
+    # A second activation attempt while one is already active must be refused.
+    expect_http_error(409, lambda: urllib.request.urlopen(urllib.request.Request(key_url, data=b'{}', method='POST')))
+
+    urllib.request.urlopen(urllib.request.Request(key_url, method='DELETE'))
+    assert get_key_status()["state"] == "stopped"
+
+    put_state("disable")
+    assert get_state() == "disabled"
+
+    print(" /node/ba-epskc : OK")
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
     node_rloc16_test(200)
     node_ext_address_test(200)
     node_state_test(200)
+    node_state_put_invalid_body_test()
+    node_state_put_unsupported_method_test()
+    node_ext_address_put_no_route_test()
     node_network_name_test(200)
     node_state_test_attached()  # wait for attached state
     node_leader_data_test(200)
@@ -499,6 +630,7 @@ def main():
     node_coprocessor_version_test(200)
     # diagnostics_test(20)  # partly replaced with restjsonapi tests
     error_test(10)
+    epskc_test()
 
     return 0
 

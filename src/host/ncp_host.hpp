@@ -70,10 +70,12 @@ private:
     // PropsObserver methods
     void SetDeviceRole(otDeviceRole aRole) override;
     void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs) override;
+    void SetDatasetPendingTlvs(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs) override;
     void SetMeshLocalPrefix(const otMeshLocalPrefix &aMeshLocalPrefix) override;
 
     otDeviceRole             mDeviceRole;
     otOperationalDatasetTlvs mDatasetActiveTlvs;
+    otOperationalDatasetTlvs mDatasetPendingTlvs;
     otMeshLocalPrefix        mMeshLocalPrefix;
 };
 

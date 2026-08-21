@@ -86,6 +86,11 @@
                 icon: 'add_circle_outline',
                 show: false,
             },
+            {
+                title: 'ePSKc',
+                icon: 'vpn_key',
+                show: false,
+            },
 
         ];
 
@@ -108,6 +113,36 @@
         $scope.headerTitle = 'Home';
         $scope.status = [];
 
+        $scope.epskc = {
+            enabled: false,
+            state: 'unknown',
+            active: false,
+            tap: '',
+            port: null,
+            lifetimeMinutes: null,
+        };
+        $scope.isEpskcBusy = false;
+
+        // Polls epskc_status while the ePSKc panel is visible, so the UI reflects a session
+        // that times out or gets accepted/stopped on the device without any local user action.
+        var epskcStatusPoll = null;
+        var startEpskcStatusPoll = function() {
+            if (epskcStatusPoll) {
+                return;
+            }
+            epskcStatusPoll = $interval(function() {
+                $scope.refreshEpskcStatus(/* suppressAlert */ true);
+            }, 4000);
+        };
+        var stopEpskcStatusPoll = function() {
+            if (!epskcStatusPoll) {
+                return;
+            }
+            $interval.cancel(epskcStatusPoll);
+            epskcStatusPoll = null;
+        };
+        $scope.$on('$destroy', stopEpskcStatusPoll);
+
         $scope.isLoading = false;
 
         $scope.showScanAlert = function(ev) {
@@ -124,7 +159,7 @@
         };
         $scope.showPanels = async function(index) {
             $scope.headerTitle = $scope.menu[index].title;
-            for (var i = 0; i < 7; i++) {
+            for (var i = 0; i < $scope.menu.length; i++) {
                 $scope.menu[i].show = false;
             }
             $scope.menu[index].show = true;
@@ -164,6 +199,12 @@
 
                 await $scope.dataInit();
                 await $scope.showTopology();
+            }
+            if (index == 7) {
+                $scope.refreshEpskcStatus();
+                startEpskcStatusPoll();
+            } else {
+                stopEpskcStatusPoll();
             }
         };
 
@@ -287,11 +328,20 @@
                     console.log(response);
                     $scope.res = response.data.result;
                     if (response.data.result == 'successful') {
-                        var image = "http://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=v%3D1%26%26eui%3D" + response.data.eui64 +"%26%26cc%3D" + $scope.thread.pskd +"&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L";
-                        $scope.showQRCode(event, image);
+                        try {
+                            var qrData = "v=1&&eui=" + response.data.eui64 + "&&cc=" + $scope.thread.pskd;
+                            var qr = qrcode(0, 'L');
+                            qr.addData(qrData);
+                            qr.make();
+                            var image = qr.createDataURL(10, 2);
+                            $scope.showQRCode(event, image);
+                        } catch (err) {
+                            console.error("QR Generation failed:", err);
+                            $scope.showQRAlert(event, "sorry, can not generate the QR code.");
+                        }
                     } else {
-                        $scope.showQRAlert(event, "sorry, can not generate the QR code.");
-                    }   
+                        $scope.showQRAlert(event, "sorry, server returned an error.");
+                    }
                     $scope.isDisplay = true;       
                     
                 });
@@ -438,9 +488,109 @@
             });
         };
 
+        // When called from the background status poll, pass suppressAlert=true so a transient
+        // failure (daemon not running/uninitialized/busy) doesn't pop a modal every 4 seconds.
+        $scope.refreshEpskcStatus = function(suppressAlert) {
+            $http.get('epskc_status').then(function(response) {
+                if (response.data.error == 0) {
+                    $scope.epskc.enabled = response.data.enabled;
+                    $scope.epskc.state = response.data.state;
+                    $scope.epskc.active = response.data.active;
+                    $scope.epskc.port = response.data.port;
+                    if (!response.data.active) {
+                        $scope.epskc.tap = '';
+                    }
+                } else if (!suppressAlert) {
+                    $scope.showAlert(null, 'ePSKc Status', 'failed');
+                }
+            }, function() {
+                if (!suppressAlert) {
+                    $scope.showAlert(null, 'ePSKc Status', 'failed');
+                }
+            });
+        };
+
+        $scope.toggleEpskcEnabled = function() {
+            var data = {
+                enabled: $scope.epskc.enabled,
+            };
+            $http({
+                method: 'POST',
+                url: 'epskc_enabled',
+                data: data,
+            }).then(function(response) {
+                if (response.data.error != 0) {
+                    $scope.epskc.enabled = !$scope.epskc.enabled; // revert the switch on failure
+                    $scope.showAlert(null, 'ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            }, function() {
+                $scope.epskc.enabled = !$scope.epskc.enabled; // revert the switch on failure
+                $scope.showAlert(null, 'ePSKc', 'failed');
+            });
+        };
+
+        $scope.activateEpskc = function(ev) {
+            var data = {};
+            if ($scope.epskc.lifetimeMinutes) {
+                data.lifetime = $scope.epskc.lifetimeMinutes * 60 * 1000;
+            }
+            $scope.isEpskcBusy = true;
+            $http({
+                method: 'POST',
+                url: 'epskc_activate',
+                data: data,
+            }).then(function(response) {
+                if (response.data.error == 0) {
+                    $scope.epskc.tap = response.data.tap;
+                    $scope.epskc.port = response.data.port;
+                    $scope.showAlert(ev, 'Activate ePSKc', 'success');
+                } else {
+                    $scope.showAlert(ev, 'Activate ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            }, function() {
+                $scope.showAlert(ev, 'Activate ePSKc', 'failed');
+            }).finally(function() {
+                $scope.isEpskcBusy = false;
+            });
+        };
+
+        $scope.deactivateEpskc = function(ev) {
+            $scope.isEpskcBusy = true;
+            $http({
+                method: 'POST',
+                url: 'epskc_deactivate',
+                data: {},
+            }).then(function(response) {
+                $scope.epskc.tap = '';
+                if (response.data.error != 0) {
+                    $scope.showAlert(ev, 'Deactivate ePSKc', 'failed');
+                }
+                $scope.refreshEpskcStatus();
+            }, function() {
+                $scope.showAlert(ev, 'Deactivate ePSKc', 'failed');
+            }).finally(function() {
+                $scope.isEpskcBusy = false;
+            });
+        };
+
+        $scope.selectEpskcTap = function(ev) {
+            ev.target.select();
+        };
+
         $scope.restServerPort = '8081';
         var formatRestAddr = function(host, port) {
-            return (host.indexOf(':') > -1) ? '[' + host + ']:' + port : host + ':' + port;
+            // Remove existing IPv6 brackets if present
+            var normalizedHost = host.replace(/^\[(.*)\]$/, '$1');
+            
+            var formattedHost = (normalizedHost.indexOf(':') > -1) ? '[' + normalizedHost + ']' : normalizedHost;
+
+            // When using HTTPS and the target API host matches the Web UI host, use the web UI host (including port if present)
+            if (window.location.protocol === 'https:' && normalizedHost === window.location.hostname.replace(/^\[(.*)\]$/, '$1')) {
+                return window.location.host;
+            }
+            return formattedHost + ':' + port;
         };
         $scope.ipAddr = formatRestAddr(window.location.hostname, $scope.restServerPort);
 
@@ -505,7 +655,7 @@
         $scope.dataInit = async function() {
             let response;
         
-            $http.get('http://' + $scope.ipAddr + '/api/node', {
+            $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/node', {
                     headers: {
                         'Accept': 'application/json'
                     }
@@ -609,7 +759,7 @@
         // GET request to check action status
         $scope.getActionStatus = async function(action_id) {
 
-            const response = await $http.get('http://' + $scope.ipAddr + '/api/actions/' + action_id, {
+            const response = await $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/actions/' + action_id, {
                 headers: {
                     'Accept': 'application/vnd.api+json'
                 }
@@ -628,7 +778,7 @@
             console.log("discover network ...");  // Debugging log message
             do {
                 // start discovery task
-                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBodyUpdateDeviceCollection(deviceCount), {
+                const postResponse = await $http.post(window.location.protocol + '//' + $scope.ipAddr + '/api/actions', $scope.createRequestBodyUpdateDeviceCollection(deviceCount), {
                     headers: {
                         'Content-Type': 'application/vnd.api+json',
                         'Accept': 'application/vnd.api+json'
@@ -670,7 +820,7 @@
 
         // GET device collection
         $scope.fetchDevices = async function () {
-            const response = await $http.get('http://' + $scope.ipAddr + '/api/devices', {
+            const response = await $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/devices', {
                 headers: {
                     'Accept': 'application/json'
                 }
@@ -689,7 +839,7 @@
 
             do {
                 // Fetch device diagnostics
-                const postResponse = await $http.post('http://' + $scope.ipAddr + '/api/actions', $scope.createRequestBody(device_id), {
+                const postResponse = await $http.post(window.location.protocol + '//' + $scope.ipAddr + '/api/actions', $scope.createRequestBody(device_id), {
                     headers: {
                         'Content-Type': 'application/vnd.api+json',
                         'Accept': 'application/vnd.api+json'
@@ -785,7 +935,7 @@
             const devices = await $scope.fetchDevices();
 
             // Delete diagnostics entries
-            await $http.delete('http://' + $scope.ipAddr + '/api/diagnostics').then(function(response) {
+            await $http.delete(window.location.protocol + '//' + $scope.ipAddr + '/api/diagnostics').then(function(response) {
                 console.log(`Deleted diagnostics status ${response.status}`);
             });
 
@@ -793,7 +943,7 @@
             await $scope.fetchDiagnosticsForDevices(devices);
 
             // Fetch the list of device diagnostics
-            const getResponse = await $http.get('http://' + $scope.ipAddr + '/api/diagnostics', {
+            const getResponse = await $http.get(window.location.protocol + '//' + $scope.ipAddr + '/api/diagnostics', {
                 headers: {
                     'Accept': 'application/json'
                 }

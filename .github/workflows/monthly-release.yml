@@ -61,7 +61,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -71,6 +71,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          submodules: recursive
           persist-credentials: false
 
       - name: Generate CalVer Tag Name
@@ -88,12 +89,18 @@ jobs:
           echo "TAG_NAME=$CALVER_TAG" >> $GITHUB_OUTPUT
           echo "Generated tag: $CALVER_TAG"
 
+      - name: Package Source Tarball
+        run: |
+          TAR_NAME="ot-br-posix-${TAG_NAME}.tar.gz"
+          tar --exclude-vcs --transform "s|^\.|ot-br-posix-${TAG_NAME}|" -czf "${TAR_NAME}" .
+          echo "TAR_NAME=${TAR_NAME}" >> $GITHUB_ENV
+
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # Uses the built-in GitHub CLI to create the tag and release simultaneously
         run: |
-          gh release create "$TAG_NAME" \
+          gh release create "$TAG_NAME" "$TAR_NAME" \
             --target "${GITHUB_REF_NAME}" \
             --title "OpenThread Border Router $TAG_NAME" \
             --generate-notes

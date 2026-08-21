@@ -52,25 +52,14 @@ sleep 1
 spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
 expect eof
 
-# Step 3. Wait 10 seconds, check if the otbr-agent has attached successfully
-sleep 10
-spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply --reply-timeout=1000 /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
-expect -re {router|child} {
-} timeout {
-    puts "timeout!"
-    exit 1
-}
-expect eof
+# Step 3. Check if the otbr-agent has attached successfully. Poll instead of
+# a fixed sleep plus a single short-timeout read: attach timing varies in CI
+# and the fixed wait intermittently races with it (see #3510).
+wait_for_device_role {router|child}
 
 # Step 4. Use dbus leave method to let otbr-agent leave the network
 spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.LeaveNetwork
 expect eof
 
 # Step 5. Verify the state of otbr-agent is 'disabled'
-spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply --reply-timeout=1000 /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
-expect -re {disabled} {
-} timeout {
-    puts "timeout!"
-    exit 1
-}
-expect eof
+wait_for_device_role {disabled}
