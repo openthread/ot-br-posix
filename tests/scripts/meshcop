@@ -619,7 +619,11 @@ test_restapi()
     cd ../..
 
     # Validate conformance of openapi.yaml specification with the REST API server implementation.
-    python3 -m pip install --user "schemathesis>=4.0.5" || die "Failed to install schemathesis"
+    # schemathesis 4.24.x crashes during the `examples` phase with
+    # `AttributeError: 'builtins.CanonicalSchema' object has no attribute 'is_satisfiable'`
+    # (https://github.com/openthread/ot-br-posix/issues/3539). Require >=4.25.0, which
+    # contains the upstream fix.
+    python3 -m pip install --user "schemathesis>=4.25.0" || die "Failed to install schemathesis"
     schemathesis run src/rest/openapi.yaml --url=http://localhost:8081 --include-path-regex="/api/.*" --phases=examples
 
     exit_message="Successful REST API server test."
