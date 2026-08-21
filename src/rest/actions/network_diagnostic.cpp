@@ -46,17 +46,22 @@ namespace otbr {
 namespace rest {
 namespace actions {
 
+static constexpr const char *kNetworkDiagStreamPath = "/api/diagnostics/stream";
+
 NetworkDiagnostic::NetworkDiagnostic(const cJSON &aJson, Services &aServices)
     : BasicActions(aJson, aServices)
+    , mStream(false)
 {
     cJSON            *item;
     uint8_t           id;
     std::set<uint8_t> tlvs;
 
-    cJSON *types = cJSON_GetObjectItemCaseSensitive(mJson, KEY_TYPES);
+    cJSON *types  = cJSON_GetObjectItemCaseSensitive(mJson, KEY_TYPES);
+    cJSON *stream = cJSON_GetObjectItemCaseSensitive(mJson, KEY_STREAM);
 
     // Were guaranteed that Validate has run already
     mDestination = ReadDestination(*mJson, mDestinationType);
+    mStream      = cJSON_IsTrue(stream);
 
     cJSON_ArrayForEach(item, types)
     {
@@ -93,10 +98,22 @@ void NetworkDiagnostic::Update(void)
         otIp6Address address;
         SuccessOrExit(mServices.LookupAddress(mDestination, mDestinationType, address));
 
+        // The handler serves a single request at a time. While another one is
+        // running this stays pending, and must not touch the shared broadcaster.
         if (mServices.GetNetworkDiagHandler().StartDiagnosticsRequest(address, mTypeList, mTypeCount, mTimeout) ==
             OT_ERROR_NONE)
         {
             mStatus = kActionStatusActive;
+
+            if (mStream)
+            {
+                // Re-open the channel, a previous streaming action may have closed it.
+                mServices.GetNetworkDiagHandler().GetSseBroadcaster().Reset();
+                mServices.GetNetworkDiagHandler().SetStreaming(true);
+
+                // Advertise where the client can consume the stream of this action.
+                SetRelatedLink(KEY_STREAM, std::string(kNetworkDiagStreamPath) + "?actionId=" + mUuid.ToString());
+            }
         }
     }
 
@@ -122,8 +139,23 @@ void NetworkDiagnostic::Update(void)
         if (mStatus != kActionStatusActive)
         {
             mServices.GetNetworkDiagHandler().StopDiagnosticsRequest();
+            StopStreaming();
         }
     }
+
+exit:
+    return;
+}
+
+void NetworkDiagnostic::StopStreaming(void)
+{
+    VerifyOrExit(mStream);
+
+    mServices.GetNetworkDiagHandler().SetStreaming(false);
+    // Wakes all connected SSE clients so they terminate their response.
+    mServices.GetNetworkDiagHandler().GetSseBroadcaster().Close();
+    // The stream endpoint no longer serves this action, stop advertising it.
+    ClearRelation(KEY_STREAM);
 
 exit:
     return;
@@ -139,6 +171,7 @@ void NetworkDiagnostic::Stop(void)
 
     case kActionStatusActive:
         mServices.GetNetworkDiagHandler().StopDiagnosticsRequest();
+        StopStreaming();
         mStatus = kActionStatusStopped;
         break;
 
@@ -171,6 +204,11 @@ cJSON *NetworkDiagnostic::Jsonify(std::set<std::string> aFieldset)
         cJSON_AddItemToObject(attributes, KEY_TYPES, types);
     }
 
+    if (hasKey(aFieldset, KEY_STREAM))
+    {
+        cJSON_AddBoolToObject(attributes, KEY_STREAM, mStream);
+    }
+
     if (IsPendingOrActive())
     {
         if (hasKey(aFieldset, KEY_TIMEOUT))
@@ -196,10 +234,14 @@ bool NetworkDiagnostic::Validate(const cJSON &aJson)
     cJSON      *item;
     uint8_t     id;
 
-    cJSON *types = cJSON_GetObjectItemCaseSensitive(&aJson, KEY_TYPES);
+    cJSON *types  = cJSON_GetObjectItemCaseSensitive(&aJson, KEY_TYPES);
+    cJSON *stream = cJSON_GetObjectItemCaseSensitive(&aJson, KEY_STREAM);
 
     errormsg = KEY_TIMEOUT;
     SuccessOrExit(ReadTimeout(aJson, timeout));
+
+    errormsg = KEY_STREAM;
+    VerifyOrExit(stream == nullptr || cJSON_IsBool(stream));
 
     errormsg = KEY_DESTINATION;
     VerifyOrExit(ReadDestination(aJson, type) != nullptr);

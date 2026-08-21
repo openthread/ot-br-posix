@@ -215,12 +215,48 @@ void BasicActions::SetResult(const std::string &aType, const std::string &aUuid)
 
     cJSON_AddItemToObject(result, "data", data);
 
-    if (mRelationships != nullptr)
+    if (mRelationships == nullptr)
     {
-        cJSON_Delete(mRelationships);
+        mRelationships = cJSON_CreateObject();
     }
-    mRelationships = cJSON_CreateObject();
+
+    cJSON_DeleteItemFromObjectCaseSensitive(mRelationships, "result");
     cJSON_AddItemToObject(mRelationships, "result", result);
+}
+
+void BasicActions::SetRelatedLink(const std::string &aName, const std::string &aHref)
+{
+    /* Example:
+    "relationships": {
+        "stream": {
+          "links": {
+            "related": "/api/diagnostics/stream?actionId=0a97ef16-1997-43dd-91c4-7fbcb1ec6713"
+          }
+        }
+    */
+    cJSON *relation = cJSON_CreateObject();
+    cJSON *links    = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(links, "related", aHref.c_str());
+    cJSON_AddItemToObject(relation, "links", links);
+
+    if (mRelationships == nullptr)
+    {
+        mRelationships = cJSON_CreateObject();
+    }
+
+    cJSON_DeleteItemFromObjectCaseSensitive(mRelationships, aName.c_str());
+    cJSON_AddItemToObject(mRelationships, aName.c_str(), relation);
+}
+
+void BasicActions::ClearRelation(const std::string &aName)
+{
+    VerifyOrExit(mRelationships != nullptr);
+
+    cJSON_DeleteItemFromObjectCaseSensitive(mRelationships, aName.c_str());
+
+exit:
+    return;
 }
 
 const char *BasicActions::StatusToString(ActionStatus aStatus)

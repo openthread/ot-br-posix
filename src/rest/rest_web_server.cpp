@@ -32,6 +32,7 @@
 #include "rest/rest_web_server.hpp"
 
 #include <chrono>
+#include <map>
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -49,8 +50,11 @@
 
 #include "common/api_strings.hpp"
 #include "rest/json.hpp"
+#include "rest/network_diag_sse.hpp"
+#include "rest/sse_handler.hpp"
 
-#include "rest/actions_list.hpp" // Actions Collection
+#include "rest/actions/network_diagnostic.hpp" // NetworkDiagnostic, NETWORK_DIAG_ACTION_TYPE_NAME
+#include "rest/actions_list.hpp"               // Actions Collection
 #include "rest/commissioner_manager.hpp"
 #include "rest/network_diag_handler.hpp"
 #include "rest/rest_devices_coll.hpp"     // Devices Collection
@@ -118,6 +122,7 @@
 
 #define OT_REST_ROUTE_DIAGNOSTICS "/api/diagnostics"
 #define OT_REST_ROUTE_DIAGNOSTICS_ID "/api/diagnostics/:id"
+#define OT_REST_ROUTE_DIAGNOSTICS_STREAM "/api/diagnostics/stream"
 
 #define OT_REST_ROUTE_WELLKNOWN_THREAD "/.well-known/thread/br-rest"
 
@@ -203,6 +208,7 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     mServer.Options(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
 
     mServer.Get(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
+    mServer.Get(OT_REST_ROUTE_DIAGNOSTICS_STREAM, MakeHandler(&RestWebServer::ApiDiagnosticsStreamHandler));
     mServer.Get(OT_REST_ROUTE_DIAGNOSTICS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemGetHandler));
     mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
     mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS_ID,
@@ -1344,7 +1350,6 @@ void RestWebServer::ApiActionsPostHandler(const Request &aRequest, Response &aRe
 {
     ActionsList &actions = mServices.GetActionsList();
     std::string  responseMessage;
-    uint32_t     taskQueueMax;
     std::string  errorCode;
     StatusCode   statusCode = StatusCode::OK_200;
     cJSON       *root       = nullptr;
@@ -1382,13 +1387,40 @@ void RestWebServer::ApiActionsPostHandler(const Request &aRequest, Response &aRe
                      statusCode = StatusCode::UnprocessableContent_422);
     }
 
-    // Check queueing all tasks does not exceed the max number of tasks we can have queued
-    // older completed tasks can be omitted from the queue
-    actions.GetPendingOrActive(taskQueueMax);
-    taskQueueMax -= actions.GetMaxCollectionSize();
+    // Check queueing all tasks does not exceed the max number of tasks we can have queued.
+    // Older inactive tasks can be evicted from the queue, pending or active ones can not.
     VerifyOrExit(cJSON_GetArraySize(dataArray) >= 0 &&
-                     taskQueueMax >= static_cast<uint32_t>(cJSON_GetArraySize(dataArray)),
+                     actions.FreeCapacity() >= static_cast<size_t>(cJSON_GetArraySize(dataArray)),
                  statusCode = StatusCode::ServiceUnavailable_503);
+
+    // Each streaming domain owns a single shared SSE broadcaster, so only one
+    // stream per action type may be in flight. Streams of different types may
+    // run concurrently. Reject the whole request rather than silently taking
+    // the channel away from an action a client is consuming.
+    {
+        std::map<std::string, int> streamsPerType;
+
+        for (int idx = 0; idx < cJSON_GetArraySize(dataArray); idx++)
+        {
+            datum = cJSON_GetArrayItem(dataArray, idx);
+
+            cJSON *attributes = cJSON_GetObjectItemCaseSensitive(datum, "attributes");
+
+            if (cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(attributes, KEY_STREAM)))
+            {
+                std::string typeName = cJSON_GetObjectItemCaseSensitive(datum, "type")->valuestring;
+                int        &streams  = streamsPerType[typeName];
+
+                if (streams == 0 && actions.HasStreamingAction(typeName))
+                {
+                    streams++;
+                }
+
+                streams++;
+                VerifyOrExit(streams <= 1, statusCode = StatusCode::Conflict_409);
+            }
+        }
+    }
 
     // Queue the tasks and prepare response data
     resp_data = cJSON_CreateArray();
@@ -1709,6 +1741,153 @@ exit:
         otbrLogWarning("%s:%d Error (%d)", __FILE__, __LINE__, statusCode);
         ErrorHandler(aResponse, statusCode, errorDetails);
     }
+}
+
+void RestWebServer::ApiDiagnosticsStreamHandler(const Request &aRequest, Response &aResponse)
+{
+    // Single SSE entry point for every diagnostics streaming domain.
+    //
+    // The 'actionId' query parameter selects the domain: the type of the
+    // referenced action determines which producer the client is attached to.
+    // Domain specific query parameters are handled by the domain handler.
+    std::string actionId;
+    std::string typeName;
+
+    if (!aRequest.has_param("actionId"))
+    {
+        ErrorHandler(aResponse, StatusCode::BadRequest_400, "Missing required 'actionId' query parameter");
+        return;
+    }
+
+    actionId = aRequest.get_param_value("actionId");
+
+    RunInMainLoop([this, &actionId, &typeName]() {
+        actions::BasicActions *action = mServices.GetActionsList().GetItem(actionId);
+
+        if (action != nullptr)
+        {
+            typeName = action->GetTypeName();
+        }
+    });
+
+    if (typeName == NETWORK_DIAG_ACTION_TYPE_NAME)
+    {
+        ApiNetworkDiagStreamHandler(aResponse, actionId);
+    }
+    else
+    {
+        otbrLogWarning("SSE: rejecting stream actionId=%s (unknown or non-streamable action)", actionId.c_str());
+        ErrorHandler(aResponse, StatusCode::NotFound_404, "Action not found, not streaming, or not active");
+    }
+}
+
+void RestWebServer::ApiNetworkDiagStreamHandler(Response &aResponse, const std::string &aActionId)
+{
+    // SSE stream for network diagnostics. Each diagnostic response is published
+    // as soon as it arrives, instead of only being readable once the action
+    // completed.
+    //
+    // Requires the actionId of a 'getNetworkDiagnosticTask' started with
+    // "stream": true.
+    std::string actionId    = aActionId;
+    bool        actionValid = false;
+    std::string rejectDetails;
+    int         slot = SseBroadcaster::kInvalidSlot;
+
+    RunInMainLoop([this, &actionId, &actionValid, &rejectDetails]() {
+        actions::BasicActions *item = mServices.GetActionsList().GetItem(actionId);
+
+        // The dispatcher already resolved the type, but the action may have
+        // been evicted in the meantime.
+        if (item == nullptr || item->GetTypeName() != NETWORK_DIAG_ACTION_TYPE_NAME)
+        {
+            rejectDetails = "Action not found";
+            ExitNow();
+        }
+
+        if (!static_cast<actions::NetworkDiagnostic *>(item)->IsStreaming())
+        {
+            rejectDetails = "Action was not started with \"stream\": true";
+            ExitNow();
+        }
+
+        if (!item->IsPendingOrActive())
+        {
+            // A network diagnostic action is short lived: it ends as soon as
+            // all responses arrived or its timeout expired. Connecting after
+            // that is too late.
+            rejectDetails = "Action already finished, no stream to attach to";
+            ExitNow();
+        }
+
+        actionValid = true;
+
+    exit:
+        return;
+    });
+
+    if (!actionValid)
+    {
+        otbrLogWarning("SSE: rejecting netdiag stream actionId=%s (%s)", actionId.c_str(), rejectDetails.c_str());
+        ErrorHandler(aResponse, StatusCode::NotFound_404, rejectDetails);
+        return;
+    }
+
+    if (!mServices.GetNetworkDiagHandler().GetSseBroadcaster().AddClient(slot))
+    {
+        otbrLogWarning("SSE: failed to add netdiag client for actionId=%s (max clients reached)", actionId.c_str());
+        ErrorHandler(aResponse, StatusCode::ServiceUnavailable_503, "Max SSE clients reached");
+        return;
+    }
+
+    aResponse.set_header("Cache-Control", "no-cache");
+    aResponse.set_header("Connection", "keep-alive");
+    aResponse.set_header("X-Accel-Buffering", "no");
+    aResponse.set_header("Access-Control-Allow-Origin", OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN);
+
+    // State for the chunked provider lambda, one instance per connected client.
+    struct SseClientState
+    {
+        int         mEventId;
+        uint64_t    mNextSseId;
+        std::string mActionId;
+    };
+    auto state        = std::make_shared<SseClientState>();
+    state->mEventId   = -1;
+    state->mNextSseId = 0;
+    state->mActionId  = actionId;
+
+    aResponse.set_chunked_content_provider(
+        "text/event-stream",
+        [this, state](size_t /*offset*/, httplib::DataSink &sink) -> bool {
+            std::shared_ptr<const void> payloadPtr;
+
+            if (!mServices.GetNetworkDiagHandler().GetSseBroadcaster().WaitEvent(state->mEventId, payloadPtr))
+            {
+                // Broadcaster closed: end the chunked response properly, so the
+                // client sees a completed transfer instead of an aborted one.
+                sink.done();
+                return true;
+            }
+
+            if (!payloadPtr)
+            {
+                const char *heartbeat = ": heartbeat\n\n";
+                sink.write(heartbeat, strlen(heartbeat));
+                return true;
+            }
+
+            const auto &tlvs = *std::static_pointer_cast<const std::vector<otNetworkDiagTlv>>(payloadPtr);
+
+            std::string payload = FormatNetworkDiagSsePayload(tlvs, state->mActionId, state->mNextSseId);
+            if (!payload.empty())
+            {
+                sink.write(payload.data(), payload.size());
+            }
+
+            return true;
+        },
+        [this, slot](bool /*success*/) { mServices.GetNetworkDiagHandler().GetSseBroadcaster().RemoveClient(slot); });
 }
 
 void RestWebServer::ApiDevicesHandler(const Request &aRequest, Response &aResponse)
