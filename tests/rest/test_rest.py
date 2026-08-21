@@ -31,6 +31,7 @@ import urllib.request
 import urllib.error
 import ipaddress
 import json
+import os
 import re
 import time
 from threading import Thread
@@ -544,6 +545,105 @@ def error_test(thread_num):
     print(" /v1/hello : all {}, valid {} ".format(thread_num, valid))
 
 
+def get_expected_rest_api_version():
+    # Regression test for https://github.com/openthread/ot-br-posix/issues/3535:
+    # verify that the /.well-known/thread/br-rest discovery endpoint correctly
+    # advertises the compile-time OTBR_REST_API_VERSION constant from version.hpp.
+    # Parsing the constant directly from the header avoids hardcoding a version string
+    # in this test that would require maintenance on future version bumps.
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    version_header = os.path.normpath(os.path.join(cur_dir, "..", "..", "src", "rest", "version.hpp"))
+
+    with open(version_header, encoding="utf-8") as f:
+        contents = f.read()
+
+    match = re.search(r'#define\s+OTBR_REST_API_VERSION\s+"([^"]+)"', contents)
+    assert match is not None, "OTBR_REST_API_VERSION not found in {}".format(version_header)
+
+    return match.group(1)
+
+
+def well_known_thread_check(data, expected_version):
+    assert data is not None
+
+    assert "api" in data and isinstance(data["api"], dict)
+    assert data["api"].get("version") == expected_version
+    assert data["api"].get("base") == "/api/"
+
+    assert "links" in data and isinstance(data["links"], list)
+    links = {link.get("rel"): link for link in data["links"] if isinstance(link, dict)}
+
+    # Per src/rest/openapi.yaml, the endpoint must advertise itself plus every
+    # JSON:API entry point, each typed with the content type it actually serves.
+    expected_links = {
+        "self": ("/.well-known/thread/br-rest", "application/json"),
+        "node": ("/api/node", "application/vnd.api+json"),
+        "task": ("/api/actions", "application/vnd.api+json"),
+        "device": ("/api/devices", "application/vnd.api+json"),
+        "diagnostic": ("/api/diagnostics", "application/vnd.api+json"),
+    }
+    # Compare against the raw list length (not len(links), which the dict comprehension
+    # above would have already deduplicated) to catch duplicate rel entries as well as
+    # unexpected extra links.
+    assert len(data["links"]) == len(expected_links), "unexpected or duplicate links: {}".format(
+        [link.get("rel") for link in data["links"]])
+
+    for rel, (href, content_type) in expected_links.items():
+        link = links.get(rel)
+        assert link is not None, "missing link with rel={}".format(rel)
+        assert link.get("href") == href
+        assert link.get("type") == [content_type]
+
+    return True
+
+
+def well_known_thread_get(url, result, index):
+    req = urllib.request.Request(url, headers={'Accept': 'application/json'})
+    with urllib.request.urlopen(req) as response:
+        assert response.status == 200
+        assert response.headers.get_content_type() == "application/json"
+        result[index] = json.loads(response.read())
+
+
+def well_known_thread_options_test():
+    req = urllib.request.Request(rest_api_addr + "/.well-known/thread/br-rest", method='OPTIONS')
+    with urllib.request.urlopen(req) as response:
+        assert response.status == 204
+        assert response.headers.get("Allow") == "GET, OPTIONS"
+
+
+def well_known_thread_method_not_allowed_test():
+    """The discovery endpoint only supports GET and OPTIONS; any other method
+    (e.g. DELETE, POST, PUT) must be rejected with 405.
+    """
+    url = rest_api_addr + "/.well-known/thread/br-rest"
+
+    for method in ("DELETE", "POST", "PUT"):
+        request = urllib.request.Request(url, method=method)
+        try:
+            urllib.request.urlopen(request)
+            assert False, "expected HTTP 405 for {}, but request succeeded".format(method)
+        except urllib.error.HTTPError as e:
+            assert e.code == 405, "expected HTTP 405 for {}, got {}".format(method, e.code)
+
+        print(" {} /.well-known/thread/br-rest : status {}, expected 405".format(method, 405))
+
+
+def well_known_thread_test(thread_num=1):
+    url = rest_api_addr + "/.well-known/thread/br-rest"
+    expected_version = get_expected_rest_api_version()
+
+    response_data = [None] * thread_num
+    create_multi_thread(well_known_thread_get, url, thread_num, response_data)
+
+    valid = [well_known_thread_check(data, expected_version) for data in response_data].count(True)
+
+    well_known_thread_options_test()
+    well_known_thread_method_not_allowed_test()
+
+    print(" /.well-known/thread/br-rest : all {}, valid {} (version {})".format(thread_num, valid, expected_version))
+
+
 def epskc_test():
     state_url = rest_api_addr + "/node/ba-epskc/state"
     key_url = rest_api_addr + "/node/ba-epskc/key"
@@ -630,6 +730,7 @@ def main():
     node_coprocessor_version_test(200)
     # diagnostics_test(20)  # partly replaced with restjsonapi tests
     error_test(10)
+    well_known_thread_test(20)
     epskc_test()
 
     return 0
