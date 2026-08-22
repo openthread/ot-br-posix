@@ -32,6 +32,7 @@
 #include "rest/rest_web_server.hpp"
 
 #include <chrono>
+#include <regex>
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -146,6 +147,15 @@ HttpMethod GetMethod(const Request &aRequest)
     return HttpMethod::kInvalidMethod;
 }
 
+// httplib compiles route paths registered via Server::Get/Post/... as regexes, so any regex
+// metacharacter in a path (e.g. the '.' in ".well-known") needs to be escaped here - otherwise
+// it would be interpreted as regex syntax instead of matching itself literally.
+std::string EscapeRegexMeta(const std::string &aPath)
+{
+    static const std::regex kSpecialChars(R"([.^$|()\[\]{}*+?\\])");
+    return std::regex_replace(aPath, kSpecialChars, R"(\$&)");
+}
+
 RestWebServer::RestWebServer(Host::RcpHost &aHost)
     : mHost(aHost)
 {
@@ -209,8 +219,9 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
                    MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemDeleteHandler));
     mServer.Options(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
 
-    mServer.Get(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
-    mServer.Options(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
+    mServer.Get(EscapeRegexMeta(OT_REST_ROUTE_WELLKNOWN_THREAD), MakeHandler(&RestWebServer::WellKnownThreadHandler));
+    mServer.Options(EscapeRegexMeta(OT_REST_ROUTE_WELLKNOWN_THREAD),
+                    MakeHandler(&RestWebServer::WellKnownThreadHandler));
 }
 
 RestWebServer::~RestWebServer(void)

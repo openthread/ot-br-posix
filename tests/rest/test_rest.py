@@ -612,6 +612,27 @@ def well_known_thread_options_test():
         assert response.headers.get("Allow") == "GET, OPTIONS"
 
 
+def well_known_thread_route_not_regex_leaky_test():
+    """Regression test for https://github.com/openthread/ot-br-posix/issues/3547.
+
+    cpp-httplib compiles registered route paths as regexes, so the literal '.' in
+    '/.well-known/thread/br-rest' must be escaped - otherwise it matches ANY single
+    character there (regex '.' semantics), leaking the discovery endpoint's content
+    under unintended paths such as '/Awell-known/thread/br-rest'. That must 404.
+    """
+    url = rest_api_addr + "/Awell-known/thread/br-rest"
+
+    request = urllib.request.Request(url)
+
+    try:
+        urllib.request.urlopen(request)
+        assert False, "expected HTTP 404, but request succeeded"
+    except urllib.error.HTTPError as e:
+        assert e.code == 404, "expected HTTP 404, got {}".format(e.code)
+
+    print(" GET /Awell-known/thread/br-rest : status 404, expected 404 (route must not be regex-leaky)")
+
+
 def well_known_thread_method_not_allowed_test():
     """The discovery endpoint only supports GET and OPTIONS; any other method
     (e.g. DELETE, POST, PUT) must be rejected with 405.
@@ -639,6 +660,7 @@ def well_known_thread_test(thread_num=1):
     valid = [well_known_thread_check(data, expected_version) for data in response_data].count(True)
 
     well_known_thread_options_test()
+    well_known_thread_route_not_regex_leaky_test()
     well_known_thread_method_not_allowed_test()
 
     print(" /.well-known/thread/br-rest : all {}, valid {} (version {})".format(thread_num, valid, expected_version))
