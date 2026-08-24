@@ -42,16 +42,16 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
     $<$<BOOL:${OTBR_TREL_DNSSD}>:otbr-trel-dnssd>
+    $<$<AND:$<BOOL:${OTBR_MDNS}>,$<NOT:$<STREQUAL:${OTBR_MDNS},openthread>>>:otbr-sdp-proxy>
+    otbr-host
+    otbr-common
+    otbr-utils
     openthread-cli-ftd
     openthread-ftd
     openthread-spinel-rcp
     openthread-radio-spinel
     openthread-hdlc
     openthread-posix
-    $<$<AND:$<BOOL:${OTBR_MDNS}>,$<NOT:$<STREQUAL:${OTBR_MDNS},openthread>>>:otbr-sdp-proxy>
-    otbr-host
-    otbr-common
-    otbr-utils
 )
 
 add_dependencies(otbr-agent ot-ctl print-ot-config otbr-utils otbr-host)

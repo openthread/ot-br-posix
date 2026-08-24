@@ -79,6 +79,19 @@ void NcpSpinel::Init(ot::Spinel::SpinelDriver &aSpinelDriver, PropsObserver &aOb
     mPropsObserver = &aObserver;
     mIid           = mSpinelDriver->GetIid();
     mSpinelDriver->SetFrameHandler(&HandleReceivedFrame, &HandleSavedFrame, this);
+
+    // Get both datasets to have initial values: on startup against an
+    // already-provisioned NCP the caches would otherwise stay empty until the
+    // NCP next reports a change.
+    for (spinel_prop_key_t key : {SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, SPINEL_PROP_THREAD_PENDING_DATASET_TLVS})
+    {
+        otError error = GetProperty(key);
+
+        if (error != OT_ERROR_NONE)
+        {
+            otbrLogWarning("Failed to get dataset property %u, %s", key, otThreadErrorToString(error));
+        }
+    }
 }
 
 void NcpSpinel::Deinit(void)
@@ -481,6 +494,28 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
+    {
+        otOperationalDatasetTlvs datasetTlvs = {};
+
+        // The active dataset also changes without otbr asking for it, most
+        // notably when a pending dataset is applied at the end of a migration.
+        VerifyOrExit(ParseOperationalDatasetTlvs(aBuffer, aLength, datasetTlvs) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+        break;
+    }
+
+    case SPINEL_PROP_THREAD_PENDING_DATASET_TLVS:
+    {
+        otOperationalDatasetTlvs datasetTlvs = {};
+
+        VerifyOrExit(ParseOperationalDatasetTlvs(aBuffer, aLength, datasetTlvs) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        mPropsObserver->SetDatasetPendingTlvs(datasetTlvs);
+        break;
+    }
+
     case SPINEL_PROP_IPV6_ADDRESS_TABLE:
     {
         std::vector<Ip6AddressInfo> addressInfoTable;
@@ -863,6 +898,37 @@ otbrError NcpSpinel::HandleResponseForPropGet(spinel_tid_t      aTid,
         SuccessOrExit(decoder.ReadData(data, dataLen), error = OTBR_ERROR_PARSE);
 
         SafeInvoke(mBorderAgentMeshCoPServiceChangedCallback, isActive, port, data, dataLen);
+        break;
+    }
+
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
+    case SPINEL_PROP_THREAD_PENDING_DATASET_TLVS:
+    {
+        otOperationalDatasetTlvs datasetTlvs = {};
+
+        // A failed get comes back as LAST_STATUS with the error status as
+        // payload, which must not reach the TLV parser.
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            spinel_status_t status = SPINEL_STATUS_OK;
+
+            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+            otbrLogWarning("Failed to get dataset property %u: %s", mWaitingKeyTable[aTid],
+                           otThreadErrorToString(ot::Spinel::SpinelStatusToOtError(status)));
+            ExitNow();
+        }
+        VerifyOrExit(aKey == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
+
+        VerifyOrExit(ParseOperationalDatasetTlvs(aData, aLength, datasetTlvs) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        if (mWaitingKeyTable[aTid] == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS)
+        {
+            mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+        }
+        else
+        {
+            mPropsObserver->SetDatasetPendingTlvs(datasetTlvs);
+        }
         break;
     }
 

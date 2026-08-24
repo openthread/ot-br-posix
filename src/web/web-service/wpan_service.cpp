@@ -35,6 +35,8 @@
 
 #include "web/web-service/wpan_service.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <sstream>
 
 #include <inttypes.h>
@@ -129,7 +131,8 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     else if (credentialType == CREDENTIAL_TYPE_PSKD)
     {
         VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
-        VerifyOrExit(client.Execute("joiner start %s", pskd.c_str()) != nullptr, ret = kWpanStatus_JoinFailed);
+        VerifyOrExit(client.Execute("joiner start %s", escapeOtCliEscapable(pskd).c_str()) != nullptr,
+                     ret = kWpanStatus_JoinFailed);
         VerifyOrExit((rval = client.Read("Join ", 5000)) != nullptr, ret = kWpanStatus_JoinFailed);
         if (strstr(rval, "Join success"))
         {
@@ -154,7 +157,8 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     }
 
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_JoinFailed);
-    VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
+    VerifyOrExit(client.Execute("prefix add %s paso%s", escapeOtCliEscapable(prefix).c_str(),
+                                (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetFailed);
 
 exit:
@@ -233,7 +237,8 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
                  kWpanStatus_Ok);
     VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_FormFailed);
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_FormFailed);
-    VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
+    VerifyOrExit(client.Execute("prefix add %s paso%s", escapeOtCliEscapable(prefix).c_str(),
+                                (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetFailed);
 exit:
 
@@ -275,7 +280,8 @@ std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixReq
         prefix += "/64";
     }
 
-    VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
+    VerifyOrExit(client.Execute("prefix add %s paso%s", escapeOtCliEscapable(prefix).c_str(),
+                                (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetGatewayFailed);
     VerifyOrExit(client.Execute("netdata register") != nullptr, ret = kWpanStatus_SetGatewayFailed);
 exit:
@@ -315,7 +321,8 @@ std::string WpanService::HandleDeletePrefixRequest(const std::string &aDeleteReq
         prefix += "/64";
     }
 
-    VerifyOrExit(client.Execute("prefix remove %s", prefix.c_str()) != nullptr, ret = kWpanStatus_SetGatewayFailed);
+    VerifyOrExit(client.Execute("prefix remove %s", escapeOtCliEscapable(prefix).c_str()) != nullptr,
+                 ret = kWpanStatus_SetGatewayFailed);
     VerifyOrExit(client.Execute("netdata register") != nullptr, ret = kWpanStatus_SetGatewayFailed);
 exit:
 
@@ -574,7 +581,8 @@ std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
             }
             else if (strcmp(rval, "active") == 0)
             {
-                VerifyOrExit(client.Execute("commissioner joiner add * %s", pskd.c_str()) != nullptr,
+                VerifyOrExit(client.Execute("commissioner joiner add * %s", escapeOtCliEscapable(pskd).c_str()) !=
+                                 nullptr,
                              ret = kWpanStatus_Down);
                 root["error"] = ret;
                 ExitNow();
@@ -604,6 +612,185 @@ exit:
     return response;
 }
 
+std::string WpanService::toLower(const std::string &aStr)
+{
+    std::string result = aStr;
+
+    std::transform(result.begin(), result.end(), result.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    return result;
+}
+
+std::string WpanService::HandleGetEpskcStatusRequest(void)
+{
+    Json::Value                 root;
+    Json::StreamWriterBuilder   writerBuilder;
+    std::string                 response;
+    std::string                 state;
+    int                         ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient client(mIfName);
+    char                       *rval;
+
+    VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
+
+    VerifyOrExit((rval = client.Execute("ba ephemeralkey")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    state = toLower(rval);
+
+    VerifyOrExit((rval = client.Execute("ba ephemeralkey port")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+
+exit:
+    root.clear();
+    root["result"] = WPAN_RESPONSE_SUCCESS;
+    root["error"]  = ret;
+
+    if (ret == kWpanStatus_Ok)
+    {
+        root["enabled"] = (state != "disabled");
+        root["active"]  = (state == "started" || state == "connected" || state == "accepted");
+        root["state"]   = state;
+        root["port"]    = atoi(rval);
+    }
+    else
+    {
+        root["result"] = WPAN_RESPONSE_FAILURE;
+        otbrLogErr("Wpan service error: %d", ret);
+    }
+
+    response = Json::writeString(writerBuilder, root);
+    return response;
+}
+
+std::string WpanService::HandleSetEpskcEnabledRequest(const std::string &aSetEpskcEnabledRequest)
+{
+    Json::Value                       root;
+    Json::CharReaderBuilder           readerBuilder;
+    std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
+    Json::StreamWriterBuilder         writerBuilder;
+    std::string                       response;
+    bool                              enabled;
+    int                               ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient       client(mIfName);
+
+    VerifyOrExit(reader->parse(aSetEpskcEnabledRequest.c_str(),
+                               aSetEpskcEnabledRequest.c_str() + aSetEpskcEnabledRequest.size(), &root, nullptr),
+                 ret = kWpanStatus_ParseRequestFailed);
+    VerifyOrExit(root.isMember("enabled") && root["enabled"].isBool(), ret = kWpanStatus_ParseRequestFailed);
+    enabled = root["enabled"].asBool();
+
+    VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
+    VerifyOrExit(client.Execute("ba ephemeralkey %s", enabled ? "enable" : "disable") != nullptr,
+                 ret = kWpanStatus_SetFailed);
+
+exit:
+    root.clear();
+    root["result"] = WPAN_RESPONSE_SUCCESS;
+    root["error"]  = ret;
+
+    if (ret != kWpanStatus_Ok)
+    {
+        root["result"] = WPAN_RESPONSE_FAILURE;
+        otbrLogErr("Wpan service error: %d", ret);
+    }
+
+    response = Json::writeString(writerBuilder, root);
+    return response;
+}
+
+std::string WpanService::HandleActivateEpskcRequest(const std::string &aActivateEpskcRequest)
+{
+    Json::Value                       root;
+    Json::CharReaderBuilder           readerBuilder;
+    std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
+    Json::StreamWriterBuilder         writerBuilder;
+    std::string                       response;
+    std::string                       tap;
+    uint32_t                          lifetime = 0; // 0 == let the router use its own default lifetime
+    uint16_t                          port     = 0; // 0 == let the router use its own default UDP port
+    int                               ret      = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient       client(mIfName);
+    char                             *rval;
+
+    // Both "lifetime" and "port" are optional, so an empty body (e.g. `curl -X POST` with no data) is valid and
+    // simply falls back to the router's defaults.
+    if (!aActivateEpskcRequest.empty())
+    {
+        VerifyOrExit(reader->parse(aActivateEpskcRequest.c_str(),
+                                   aActivateEpskcRequest.c_str() + aActivateEpskcRequest.size(), &root, nullptr),
+                     ret = kWpanStatus_ParseRequestFailed);
+        if (root.isMember("lifetime"))
+        {
+            VerifyOrExit(root["lifetime"].isUInt(), ret = kWpanStatus_ParseRequestFailed);
+            lifetime = root["lifetime"].asUInt();
+        }
+        if (root.isMember("port"))
+        {
+            VerifyOrExit(root["port"].isUInt(), ret = kWpanStatus_ParseRequestFailed);
+            port = static_cast<uint16_t>(root["port"].asUInt());
+        }
+    }
+
+    VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
+
+    VerifyOrExit((rval = client.Execute("ba ephemeralkey generate-tap")) != nullptr, ret = kWpanStatus_SetFailed);
+    tap = rval;
+
+    VerifyOrExit(client.Execute("ba ephemeralkey start %s %" PRIu32 " %u", tap.c_str(), lifetime, port) != nullptr,
+                 ret = kWpanStatus_SetFailed);
+
+    // Report back the effective port, in particular when the caller left "port" at its 0/default value.
+    if ((rval = client.Execute("ba ephemeralkey port")) != nullptr)
+    {
+        port = static_cast<uint16_t>(atoi(rval));
+    }
+
+exit:
+    root.clear();
+    root["result"] = WPAN_RESPONSE_SUCCESS;
+    root["error"]  = ret;
+
+    if (ret == kWpanStatus_Ok)
+    {
+        root["tap"]      = tap;
+        root["lifetime"] = lifetime;
+        root["port"]     = port;
+    }
+    else
+    {
+        root["result"] = WPAN_RESPONSE_FAILURE;
+        otbrLogErr("Wpan service error: %d", ret);
+    }
+
+    response = Json::writeString(writerBuilder, root);
+    return response;
+}
+
+std::string WpanService::HandleDeactivateEpskcRequest(void)
+{
+    Json::Value                 root;
+    Json::StreamWriterBuilder   writerBuilder;
+    std::string                 response;
+    int                         ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient client(mIfName);
+
+    VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
+    VerifyOrExit(client.Execute("ba ephemeralkey stop") != nullptr, ret = kWpanStatus_SetFailed);
+
+exit:
+    root.clear();
+    root["result"] = WPAN_RESPONSE_SUCCESS;
+    root["error"]  = ret;
+
+    if (ret != kWpanStatus_Ok)
+    {
+        root["result"] = WPAN_RESPONSE_FAILURE;
+        otbrLogErr("Wpan service error: %d", ret);
+    }
+
+    response = Json::writeString(writerBuilder, root);
+    return response;
+}
+
 int WpanService::joinActiveDataset(otbr::Web::OpenThreadClient &aClient,
                                    const std::string           &aNetworkKey,
                                    uint16_t                     aChannel,
@@ -612,7 +799,8 @@ int WpanService::joinActiveDataset(otbr::Web::OpenThreadClient &aClient,
     int ret = kWpanStatus_Ok;
 
     VerifyOrExit(aClient.Execute("dataset clear") != nullptr, ret = kWpanStatus_SetFailed);
-    VerifyOrExit(aClient.Execute("dataset networkkey %s", aNetworkKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(aClient.Execute("dataset networkkey %s", escapeOtCliEscapable(aNetworkKey).c_str()) != nullptr,
+                 ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset channel %u", aChannel) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset panid %u", aPanId) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset commit active") != nullptr, ret = kWpanStatus_SetFailed);
@@ -632,7 +820,8 @@ int WpanService::formActiveDataset(otbr::Web::OpenThreadClient &aClient,
     int ret = kWpanStatus_Ok;
 
     VerifyOrExit(aClient.Execute("dataset init new") != nullptr, ret = kWpanStatus_SetFailed);
-    VerifyOrExit(aClient.Execute("dataset networkkey %s", aNetworkKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(aClient.Execute("dataset networkkey %s", escapeOtCliEscapable(aNetworkKey).c_str()) != nullptr,
+                 ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset networkname %s", escapeOtCliEscapable(aNetworkName).c_str()) != nullptr,
                  ret = kWpanStatus_SetFailed);
     VerifyOrExit(aClient.Execute("dataset pskc %s", aPskc.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
@@ -655,8 +844,6 @@ std::string WpanService::escapeOtCliEscapable(const std::string &aArg)
         {
         case ' ':
         case '\t':
-        case '\r':
-        case '\n':
         case '\\':
             strbuf.sputc('\\');
             // Fallthrough

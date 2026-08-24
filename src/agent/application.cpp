@@ -33,6 +33,12 @@
 
 #define OTBR_LOG_TAG "APP"
 
+#include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #ifdef HAVE_LIBSYSTEMD
 #include <systemd/sd-daemon.h>
 #endif
@@ -178,6 +184,53 @@ otbrError Application::Run(void)
 
     // avoid exiting on SIGPIPE
     signal(SIGPIPE, SIG_IGN);
+
+    // Generic readiness notification for fd-based supervisors (s6, dinit,
+    // ...): write a newline to the file descriptor passed in OTBR_NOTIFY_FD.
+    // See https://skarnet.org/software/s6/notifywhenup.html
+    {
+        const char *notifyFdEnv = getenv("OTBR_NOTIFY_FD");
+
+        if (notifyFdEnv != nullptr)
+        {
+            char *end = nullptr;
+            long  notifyFdLong;
+
+            errno        = 0;
+            notifyFdLong = strtol(notifyFdEnv, &end, 10);
+
+            // Reject the standard I/O stream descriptors (0-2)
+            if (end != notifyFdEnv && *end == '\0' && errno == 0 && notifyFdLong >= 3 && notifyFdLong <= INT_MAX)
+            {
+                int     notifyFd = static_cast<int>(notifyFdLong);
+                ssize_t rval;
+
+                otbrLogInfo("Notify readiness on file descriptor %d.", notifyFd);
+
+                do
+                {
+                    rval = write(notifyFd, "\n", 1);
+                } while (rval == -1 && errno == EINTR);
+
+                if (rval == -1)
+                {
+                    otbrLogWarning("Failed to notify readiness on file descriptor %d: %s", notifyFd, strerror(errno));
+                }
+
+                close(notifyFd);
+            }
+            else
+            {
+                otbrLogWarning("Ignoring invalid OTBR_NOTIFY_FD value: %s", notifyFdEnv);
+            }
+
+            // Run() may execute again within the same process lifecycle
+            // (pseudo reset) or after an in-place re-exec (otPlatReset),
+            // when the descriptor number may have been reused for an
+            // unrelated resource. Only notify once.
+            unsetenv("OTBR_NOTIFY_FD");
+        }
+    }
 
     while (!sShouldTerminate)
     {

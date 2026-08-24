@@ -7,11 +7,11 @@ info:
 
     Some useful links:
     - [OpenThread Border Router repository](https://github.com/openthread/ot-br-posix/)
-    - [Readme REST JSON:API for Commissioner and Diagnostics](https://github.com/openthread/ot-br-posix/blob/main/docs/rest/README.md)
+    - [Readme REST JSON:API for Commissioner and Diagnostics](https://github.com/openthread/ot-br-posix/blob/main/src/rest/README.md)
   license:
     name: BSD 3-Clause
     url: https://github.com/openthread/ot-br-posix/blob/main/LICENSE
-  version: 0.4.0
+  version: 0.5.0
 servers:
   - url: "{protocol}://{host}:{port}"
     description: Configurable Border Router destination.
@@ -27,15 +27,16 @@ servers:
       port:
         default: "8081"
         description: The target port.
+security: []
 tags:
   - name: Actions
     description: Task queue.
   - name: node
     description: Thread parameters of this node.
   - name: Devices
-    description: Collection of discovered Thread devices.
+    description: Collection of discovered Thread devices, updated via `updateDeviceCollectionTask` in `/api/actions`.
   - name: Diagnostics
-    description: Collection of Thread network diagnostic responses.
+    description: Collection of Thread network diagnostic responses triggered via tasks in `/api/actions`.
 paths:
 
   ### Well-Known ##############################################################
@@ -90,7 +91,6 @@ paths:
 
         Failing to populate any of the dynamic attributes may lead to a 500 Internal Server Error.
       parameters:
-        - $ref: "#/components/parameters/AcceptJsonApi"
         - $ref: "#/components/parameters/SparseFieldset"
       responses:
         "200":
@@ -105,37 +105,6 @@ paths:
                   - application/json
                   - application/vnd.api+json
           content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                TBR:
-                  summary: Thread Border Router
-                  value:
-                    rloc16: '0xf000'
-                    extAddress: '96518e5497d5b9f3'
-                    mlEidIid: '731f529f1266a17d'
-                    omrIpv6Address:
-                      - 'fd11:22:0:0:92de:b397:5758:368'
-                    hostname: 'knx-00fd5f0123a5.local'
-                    eui: '9035eafffef3e09c'
-                    role: 'leader'
-                    mode:
-                      fullThreadDevice: false
-                      rxOnWhenIdle: false
-                      fullNetworkData: false
-                    baId: 'e11e23c164311ce642f93297b095b2f8'
-                    routerCount: 0
-                    rlocAddress: "fd7a:9882:1777:a344:0:ff:fe00:f000"
-                    networkName: "OpenThread-1234"
-                    routerId: 0
-                    leaderData:
-                      partitionId: 0
-                      weighting: 193
-                      dataVersion: 97
-                      stableDataVersion: 176
-                      leaderRouterId: 78
-                    extPanId: 'a7b7d5d07d9ec2fa'
             application/vnd.api+json:
               examples:
                 TBR:
@@ -170,6 +139,37 @@ paths:
                           leaderRouterId: 78
                         extPanId: 'a7b7d5d07d9ec2fa'
                         created: '2025-02-25T17:31:54+02:00'
+            application/json:
+              schema:
+                type: object
+              examples:
+                TBR:
+                  summary: Thread Border Router
+                  value:
+                    rloc16: '0xf000'
+                    extAddress: '96518e5497d5b9f3'
+                    mlEidIid: '731f529f1266a17d'
+                    omrIpv6Address:
+                      - 'fd11:22:0:0:92de:b397:5758:368'
+                    hostname: 'knx-00fd5f0123a5.local'
+                    eui: '9035eafffef3e09c'
+                    role: 'leader'
+                    mode:
+                      fullThreadDevice: false
+                      rxOnWhenIdle: false
+                      fullNetworkData: false
+                    baId: 'e11e23c164311ce642f93297b095b2f8'
+                    routerCount: 0
+                    rlocAddress: "fd7a:9882:1777:a344:0:ff:fe00:f000"
+                    networkName: "OpenThread-1234"
+                    routerId: 0
+                    leaderData:
+                      partitionId: 0
+                      weighting: 193
+                      dataVersion: 97
+                      stableDataVersion: 176
+                      leaderRouterId: 78
+                    extPanId: 'a7b7d5d07d9ec2fa'
         "400":
           $ref: "#/components/responses/BadRequestError"
         "404":
@@ -189,7 +189,7 @@ paths:
       description: |
         *Actions* collection with items of the following *Task* types:
         - `discoverThreadNetworksTask` **TODO**
-        - `addThreadDeviceTask` 
+        - `addThreadDeviceTask`
         - `getNetworkDiagnosticTask`
         - `resetNetworkDiagCounterTask`
         - `getEnergyScanTask`
@@ -200,8 +200,6 @@ paths:
 
         Failing to parse the query parameter(s) leads to a 400 Bad Request Error.
 
-      parameters:
-        - $ref: "#/components/parameters/AcceptJsonApi"
       responses:
         "200":
           description: List of actions.
@@ -214,13 +212,6 @@ paths:
                   - application/json
                   - application/vnd.api+json
           content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items: 
-                      type: object
-                  - type: object
             application/vnd.api+json:
               schema:
                 $ref: "#/components/schemas/ActionsCollection"
@@ -245,7 +236,7 @@ paths:
                   - id: 99f61f7f-8862-4c36-b565-1cb7ce5f89ee
                     type: getNetworkDiagnosticTask
                     attributes:
-                      destination: f2f307043724e8d0,
+                      destination: f2f307043724e8d0
                       types:
                         - extAddress
                         - rloc16
@@ -276,7 +267,14 @@ paths:
                     offset: 0
                     limit: 3
                     total: 3
-                    pending: 2  
+                    pending: 2
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: object
+                  - type: object
         "400":
           $ref: "#/components/responses/BadRequestError"
         "406":
@@ -317,15 +315,13 @@ paths:
         - when a *Task* item completes unsuccessfully, its `status` attribute changes to `stopped`
         - when a *Task* item fails, its `status` attribute changes to `failed`
 
-      parameters:
-        - $ref: "#/components/parameters/AcceptJsonApi"
       requestBody:
         description: Creates a new task.
         required: true
         content:
           application/vnd.api+json:
             schema:
-              $ref:  "#/components/schemas/ActionsClient"
+              $ref: "#/components/schemas/ActionsClient"
             examples:
               addThreadDeviceTask:
                 summary: Add new Thread Device to the Network
@@ -589,7 +585,6 @@ paths:
         otherwise returns 404 Not Found.
       parameters:
         - $ref: "#/components/parameters/actionId"
-        - $ref: "#/components/parameters/AcceptJsonApi"
       responses:
         "200":
           description: |
@@ -603,16 +598,9 @@ paths:
                   - application/json
                   - application/vnd.api+json
           content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items: 
-                      type: object
-                  - type: object
             application/vnd.api+json:
               schema:
-                $ref: "#/components/schemas/ActionItem"
+                $ref: "#/components/schemas/ActionDocument"
               examples:
                 addThreadDeviceTask:
                   summary: 1211547c-6207-4833-a629-8992ead4068c (Add New Thread Device to Network)
@@ -662,6 +650,13 @@ paths:
                           data:
                             type: diagnostics
                             id: 688f881a-b3d5-4261-949c-9c18dfdd7fca
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: object
+                  - type: object
         "400":
           $ref: "#/components/responses/BadRequestError"
         "404":
@@ -681,8 +676,8 @@ paths:
         *Devices* collection with at least the `threadBorderRouter` item representing the Thread Border Router.
 
         ## Background Logic
-        A `updateDeviceCollectionTask` posted on api/actions triggers an update of this resource.
-        For updateing the resource, it performs a procedure similar to the `ot-ctl meshdiag topology` CLI command:
+        A `updateDeviceCollectionTask` posted on `/api/actions` triggers an update of this resource.
+        For updating the resource, it performs a procedure similar to the `ot-ctl meshdiag topology` CLI command:
         - for each router, query the following Diagnostic TLVs using multicast and unicast retries:
             - TLV 0: MAC Extended Address (64-bit)
             - TLV 1: MAC Address (16-bit)
@@ -696,11 +691,11 @@ paths:
 
         On GET request, the collection is returned, with following attributes for each device:
         - extAddress
-        - mlEidIid 
+        - mlEidIid
         - mode
         - omrIpv6Address
         - eui (optional)
-        - hostname 
+        - hostname
         - role
         - created
         - updated (optional)
@@ -718,7 +713,6 @@ paths:
         - Devices
       parameters:
         - $ref: "#/components/parameters/SparseFieldset"
-        - $ref: "#/components/parameters/AcceptJsonApi"
       responses:
         "200":
           description: |
@@ -732,13 +726,6 @@ paths:
                   - application/json
                   - application/vnd.api+json
           content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items: 
-                      type: object
-                  - type: object
             application/vnd.api+json:
               examples:
                 initial:
@@ -778,6 +765,13 @@ paths:
                             leaderRouterId: 78
                           extPanId: 'a7b7d5d07d9ec2fa'
                           created: '2025-02-25T17:31:54+02:00'
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: object
+                  - type: object
         "400":
           $ref: "#/components/responses/BadRequestError"
         "404":
@@ -828,7 +822,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/deviceId"
         - $ref: "#/components/parameters/SparseFieldset"
-        - $ref: "#/components/parameters/AcceptJsonApi"
       responses:
         "200":
           description: |
@@ -842,11 +835,32 @@ paths:
                   - application/json
                   - application/vnd.api+json
           content:
+            application/vnd.api+json:
+              examples:
+                threadDevice:
+                  summary: 96518e5497d5b9f3
+                  value:
+                    data:
+                      id: '96518e5497d5b9f3'
+                      type: threadDevice
+                      attributes:
+                        extAddress: '96518e5497d5b9f3'
+                        mlEidIid: '731f529f1266a17d'
+                        omrIpv6Address:
+                          - 'fd11:22:0:0:92de:b397:5758:368'
+                        hostname: 'knx-00fd5f0123a5.local'
+                        eui: '9035eafffef3e09c'
+                        role: 'leader'
+                        mode:
+                          fullThreadDevice: false
+                          rxOnWhenIdle: false
+                          fullNetworkData: false
+                        created: '2025-02-25T17:31:54+02:00'
             application/json:
               schema:
                 oneOf:
                   - type: array
-                    items: 
+                    items:
                       type: object
                   - type: object
               examples:
@@ -864,27 +878,6 @@ paths:
                       fullThreadDevice: false
                       rxOnWhenIdle: false
                       fullNetworkData: false
-            application/vnd.api+json:
-              examples:
-                threadDevice:
-                  summary: 96518e5497d5b9f3
-                  value:
-                    data:
-                      id: '96518e5497d5b9f3'
-                      type: threadDevice
-                      attributes:
-                        extAddress: '96518e5497d5b9f3'
-                        mlEidIid: '731f529f1266a17d'
-                        omrIpv6Address:
-                          - 'fd11:22:0:0:92de:b397:5758:368'
-                        hostname: 'knx-00fd5f0123a5.local'
-                        eui: '9035eafffef3e09c'
-                        role: 'child'
-                        mode:
-                          fullThreadDevice: false
-                          rxOnWhenIdle: false
-                          fullNetworkData: false
-                        created: '2025-02-25T17:31:54+02:00'
         "400":
           $ref: "#/components/responses/BadRequestError"
         "404":
@@ -930,7 +923,6 @@ paths:
         - Diagnostics
       parameters:
         - $ref: "#/components/parameters/SparseFieldset"
-        - $ref: "#/components/parameters/AcceptJsonApi"
       responses:
         "200":
           description: |
@@ -947,13 +939,6 @@ paths:
                   - application/json
                   - application/vnd.api+json
           content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items: 
-                      type: object
-                  - type: object
             application/vnd.api+json:
               examples:
                 empty:
@@ -1131,6 +1116,13 @@ paths:
                             - channel: 12
                               maxRssi: [-45, -55, -50]
                           created: '2023-10-31T15:32:29Z'
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: object
+                  - type: object
         "400":
           $ref: "#/components/responses/BadRequestError"
         "406":
@@ -1180,7 +1172,6 @@ paths:
         - Diagnostics
       parameters:
         - $ref: "#/components/parameters/diagnosticsId"
-        - $ref: "#/components/parameters/AcceptJsonApi"
       responses:
         "200":
           description: |
@@ -1194,23 +1185,6 @@ paths:
                   - application/json
                   - application/vnd.api+json
           content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items: 
-                      type: object
-                  - type: object
-              examples:
-                energyScanReport:
-                  summary: 688f881a-b3d5-4261-949c-9c18dfdd7fca
-                  value:
-                    origin: 'f2f307043724e8d0'
-                    report:
-                      - channel: 11
-                        maxRssi: [-45, -55, -50]
-                      - channel: 12
-                        maxRssi: [-45, -55, -50]
             application/vnd.api+json:
               examples:
                 energyScanReport:
@@ -1227,30 +1201,47 @@ paths:
                           - channel: 12
                             maxRssi: [-45, -55, -50]
                         created: '2023-10-31T15:32:29Z'
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: object
+                  - type: object
+              examples:
+                energyScanReport:
+                  summary: 688f881a-b3d5-4261-949c-9c18dfdd7fca
+                  value:
+                    origin: 'f2f307043724e8d0'
+                    report:
+                      - channel: 11
+                        maxRssi: [-45, -55, -50]
+                      - channel: 12
+                        maxRssi: [-45, -55, -50]
         "400":
           $ref: "#/components/responses/BadRequestError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "406":
           $ref: "#/components/responses/NotAcceptableError"
-      delete:
-        operationId: deleteDiagnostic
-        summary: Delete Diagnostic item.
-        description: |
-          Removes a *Diagnostic* item from the *Diagnostics* collection.
-          Requires a *Diagnostic* item with the given `id` to exist;
-          otherwise returns 404 Not Found.
-        tags:
-          - Diagnostics
-        parameters:
-          - $ref: "#/components/parameters/diagnosticsId"
-        responses:
-          "204":
-            description: Diagnostic item deleted.
-          "400":
-            $ref: "#/components/responses/BadRequestError"
-          "404":
-            $ref: "#/components/responses/NotFoundError"
+    delete:
+      operationId: deleteDiagnostic
+      summary: Delete Diagnostic item.
+      description: |
+        Removes a *Diagnostic* item from the *Diagnostics* collection.
+        Requires a *Diagnostic* item with the given `id` to exist;
+        otherwise returns 404 Not Found.
+      tags:
+        - Diagnostics
+      parameters:
+        - $ref: "#/components/parameters/diagnosticsId"
+      responses:
+        "204":
+          description: Diagnostic item deleted.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
   /node:
     get:
@@ -1269,18 +1260,14 @@ paths:
                 type: string
                 enum:
                   - application/json
-                  - application/vnd.api+json
           content:
             application/json:
               schema:
                 oneOf:
                   - type: array
-                    items: 
+                    items:
                       type: object
                   - type: object
-            application/vnd.api+json:
-              schema:
-                type: object
         "415":
           $ref: "#/components/responses/UnsupportedMediaTypeError"
     delete:
@@ -1547,7 +1534,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
   /node/commissioner/state:
     get:
-      tags: 
+      tags:
         - node
         - commissioner
       summary: Get current Commissioner state.
@@ -1622,7 +1609,7 @@ paths:
         "507":
           description: Number of joiners the commissioner supports is full and the new one cannot be added.
     delete:
-      tags: 
+      tags:
         - node
       summary: Removes a joiner from the node
       requestBody:
@@ -1633,7 +1620,7 @@ paths:
                 description: |-
                   Joiner ID to remove, can be either:
                    - An EUI64 in the form of a 16 character hex string
-                   - A discerner in the form of the discerner hex value 
+                   - A discerner in the form of the discerner hex value
                      (optionally with leading 0x) and bit length separated by a '/'
                 example: "0xabc/12"
       responses:
@@ -1660,6 +1647,115 @@ paths:
                 type: string
                 description: Coprocessor version string
                 example: "OPENTHREAD/thread-reference-20200818-1740-g33cc75ed3; NRF52840; Jun  2 2022 14:25:49"
+  /node/ba-epskc/state:
+    get:
+      tags:
+        - node
+      summary: Get whether the Border Agent ephemeral key (ePSKc) feature is enabled.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Whether the ephemeral key feature is enabled.
+                enum: ["enabled", "disabled"]
+                example: "enabled"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    put:
+      tags:
+        - node
+      summary: Enable or disable the Border Agent ephemeral key (ePSKc) feature.
+      description: |-
+        The feature must be enabled before an ephemeral key can be activated
+        with a POST request to `/node/ba-epskc/key`.
+      responses:
+        "200":
+          description: Successful operation.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+      requestBody:
+        description: New ephemeral key feature state.
+        content:
+          application/json:
+            schema:
+              type: string
+              description: Can be "enable" or "disable".
+              example: "enable"
+  /node/ba-epskc/key:
+    get:
+      tags:
+        - node
+      summary: Get the status of the Border Agent ephemeral key (ePSKc) session.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpskcStatus"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    post:
+      tags:
+        - node
+      summary: Generate and activate an ephemeral key (ePSKc).
+      description: |-
+        Generates a new 9-digit Thread Administration Passcode (TAP) and
+        starts listening for an external commissioner candidate to connect
+        using it. The ephemeral key feature must first be enabled with a PUT
+        request to `/node/ba-epskc/state`.
+      requestBody:
+        description: Optional activation parameters. An empty body uses the device defaults.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lifetime:
+                  type: integer
+                  description: |-
+                    The key lifetime in milliseconds. Defaults to
+                    OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 minutes)
+                    when omitted or zero. Maximum value is
+                    OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT (10 minutes);
+                    values above the maximum are rejected with 400.
+                  example: 120000
+                port:
+                  type: integer
+                  description: The UDP port to use. Defaults to the device's own default when omitted.
+                  example: 49152
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpskcActivateResult"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - node
+      summary: Deactivate the currently active ephemeral key (ePSKc), if any.
+      description: |-
+        Stops the ephemeral key use and disconnects any commissioner session
+        using it. Has no effect if there is no ephemeral key in use.
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          $ref: "#/components/responses/NotFoundError"
 
 ### Components ##############################################################
 #############################################################################
@@ -1705,8 +1801,8 @@ components:
           $ref: "#/components/schemas/pskd"
         discerner:
           type: string
-          description: |- 
-            A discerner in the form of the discerner hex value (optionally with leading 0x) 
+          description: |-
+            A discerner in the form of the discerner hex value (optionally with leading 0x)
             and bit length separated by a '/'.
             Field is mutually exclusive with `joinerId` and `eui`.
           pattern: ^0x[0-9a-fA-F]{1,16}/[0-9]{1,2}$
@@ -1722,7 +1818,7 @@ components:
     Actions_JoinerDataJoinerId:
       type: object
       properties:
-        pskd: 
+        pskd:
           $ref: "#/components/schemas/pskd"
         joinerId:
           type: string
@@ -1737,12 +1833,12 @@ components:
         - joinerId
 
     Actions_destination:
-      description: | 
-        Accepts the value of a `deviceId` (equal to 'ExtendedAddress'), `rloc16` or `mlEidIid`. The TBR expands the given destination to 
+      description: |
+        Accepts the value of a `deviceId` (equal to 'extAddress'), `rloc16` or `mlEidIid`. The TBR expands the given destination to
         the Mesh-Local IPv6 address or Rloc16 address. `deviceId` must be a member of *Devices* collection where it is looked-up
         to find the ML-EID IID, which is then expanded to the Mesh-Local IPv6 address.
         A ML-EID IID needs additional attribute `destinationType`:'mleid'.
-      oneOf:
+      anyOf:
         - $ref: "#/components/schemas/LongAddr"
         - $ref: "#/components/schemas/ShortAddr"
         - $ref: "#/components/schemas/MlEidIid"
@@ -1754,6 +1850,9 @@ components:
           enum: [getNetworkDiagnosticTask]
         attributes:
           type: object
+          required:
+            - destination
+            - types
           properties:
             destination:
               $ref: "#/components/schemas/Actions_destination"
@@ -1796,7 +1895,7 @@ components:
               minItems: 1
             timeout:
               type: integer
-              unit: seconds
+              description: Timeout in seconds
               minimum: 0
 
     Actions_resetNetworkDiagCounterTask:
@@ -1806,6 +1905,8 @@ components:
           enum: [resetNetworkDiagCounterTask]
         attributes:
           type: object
+          required:
+            - types
           properties:
             destination:
               $ref: "#/components/schemas/Actions_destination"
@@ -1825,7 +1926,7 @@ components:
                 - mleCounters
             timeout:
               type: integer
-              unit: seconds
+              description: Timeout in seconds
               minimum: 0
               default: 93
 
@@ -1836,6 +1937,13 @@ components:
           enum: [getEnergyScanTask]
         attributes:
           type: object
+          required:
+            - destination
+            - channelMask
+            - count
+            - period
+            - scanDuration
+            - timeout
           properties:
             destination:
               $ref: "#/components/schemas/Actions_destination"
@@ -1871,23 +1979,20 @@ components:
               description: Number of *IEEE 802.15.4 ED Scans* per channel.
             period:
               type: integer
-              unit: milliseconds
               minimum: 0
               maximum: 65535
               default: 32
               description: Period between successive IEEE 802.15.4 ED Scans* (milliseconds).
             scanDuration:
               type: integer
-              unit: milliseconds
               minimum: 0
               maximum: 100
               default: 0
               description: IEEE 802.15.4 ScanDuration to use when performing an *IEEE 802.15.4 ED Scan* (milliseconds).
             timeout:
               type: integer
-              unit: seconds
               minimum: 0
-              description: "calculated default: (len(channelMask) * count * (scanDuration + period) + 500 + 1000) / 1000 + 93" # +1000 to round up; + 93 for CoAP MAX_TRANSMIT_WAIT
+              description: "Timeout in seconds, calculated default: (len(channelMask) * count * (scanDuration + period) + 500 + 1000) / 1000 + 93" # +1000 to round up; + 93 for CoAP MAX_TRANSMIT_WAIT
 
     Actions_updateDeviceCollectionTask:
       type: object
@@ -1896,10 +2001,14 @@ components:
           enum: [updateDeviceCollectionTask]
         attributes:
           type: object
+          required:
+            - maxAge
+            - maxRetries
+            - deviceCount
+            - timeout
           properties:
             maxAge:
               type: integer
-              unit: seconds
               minimum: 0
               default: 30
               description: Maximum age in seconds for device information to be considered valid.
@@ -1915,12 +2024,29 @@ components:
               description: Number of devices to discover or update in the collection. Usually equal to the number of devices in the Thread network.
             timeout:
               type: integer
-              unit: seconds
               minimum: 0
               default: 93
-              description: Timeout in seconds for the update device collection task.  
+              description: Timeout in seconds for the update device collection task.
 
     ### Actions Requests ########################################################
+    ActionsClientItem:
+      type: object
+      required:
+        - type
+        - attributes
+      properties:
+        type:
+          type: string
+          enum:
+            - addThreadDeviceTask
+            - getNetworkDiagnosticTask
+            - resetNetworkDiagCounterTask
+            - getEnergyScanTask
+            - updateDeviceCollectionTask
+        attributes:
+          type: object
+      additionalProperties: false
+
     ActionsClient:
       type: object
       required:
@@ -1930,91 +2056,15 @@ components:
           type: array
           minItems: 1
           items:
-            anyOf:
-              - $ref: "#/components/schemas/ActionsClient_addThreadDeviceTask"
-              - $ref: "#/components/schemas/ActionsClient_getNetworkDiagnosticTask"
-              - $ref: "#/components/schemas/ActionsClient_resetNetworkDiagCounterTask"
-              - $ref: "#/components/schemas/ActionsClient_getEnergyScanTask"
-              - $ref: "#/components/schemas/ActionsClient_updateDeviceCollectionTask"
-        additionalProperties: false
-
-    ActionsClient_addThreadDeviceTask:
-      allOf:
-        - $ref: "#/components/schemas/Actions_addThreadDeviceTask"
-        - type: object
-          required:
-            - type
-            - attributes
-          additionalProperties: false
-
-    ActionsClient_getNetworkDiagnosticTask:
-      allOf:
-        - $ref: "#/components/schemas/Actions_getNetworkDiagnosticTask"
-        - type: object
-          required:
-            - type
-            - attributes
-          properties:
-            attributes:
-              type: object
-              required:
-                - destination
-                - types
-            additionalProperties: false
-          additionalProperties: false
-
-    ActionsClient_resetNetworkDiagCounterTask:
-      allOf:
-        - $ref: "#/components/schemas/Actions_resetNetworkDiagCounterTask"
-        - type: object
-          required:
-            - type
-            - attributes
-          properties:
-            attributes:
-              type: object
-              required:
-                - types
-              additionalProperties: false
-            additionalProperties: false
-
-    ActionsClient_getEnergyScanTask:
-      allOf:
-        - $ref: "#/components/schemas/Actions_getEnergyScanTask"
-        - type: object
-          required:
-            - type
-            - attributes
-          properties:
-            attributes:
-              type: object
-              required:
-                - destination
-                - channelMask
-                - count
-                - period
-                - scanDuration
-                - timeout
-              additionalProperties: false
-            additionalProperties: false
-
-    ActionsClient_updateDeviceCollectionTask:
-      allOf:
-        - $ref: "#/components/schemas/Actions_updateDeviceCollectionTask"
-        - type: object
-          required:
-            - type
-            - attributes
-          properties:
-            attributes:
-              type: object
-              required:
-                - maxAge
-                - maxRetries
-                - deviceCount
-                - timeout
-              additionalProperties: false
-            additionalProperties: false
+            allOf:
+              - $ref: "#/components/schemas/ActionsClientItem"
+              - anyOf:
+                - $ref: "#/components/schemas/Actions_addThreadDeviceTask"
+                - $ref: "#/components/schemas/Actions_getNetworkDiagnosticTask"
+                - $ref: "#/components/schemas/Actions_resetNetworkDiagCounterTask"
+                - $ref: "#/components/schemas/Actions_getEnergyScanTask"
+                - $ref: "#/components/schemas/Actions_updateDeviceCollectionTask"
+      additionalProperties: false
 
     ### Actions Responses #######################################################
     Meta:
@@ -2059,27 +2109,18 @@ components:
         data:
           type: array
           items:
-            anyOf:
-              - $ref: "#/components/schemas/ActionsServer_addThreadDeviceTask"
-              - $ref: "#/components/schemas/ActionsServer_getNetworkDiagnosticTask"
-              - $ref: "#/components/schemas/ActionsServer_resetNetworkDiagCounterTask"
-              - $ref: "#/components/schemas/ActionsServer_getEnergyScanTask"
-              - $ref: "#/components/schemas/ActionsServer_updateDeviceCollectionTask"
+            $ref: "#/components/schemas/ActionItem"
 
-    ActionItem:
+    ActionDocument:
       type: object
       required:
         - data
       properties:
         data:
-          anyOf:
-            - $ref: "#/components/schemas/ActionsServer_addThreadDeviceTask"
-            - $ref: "#/components/schemas/ActionsServer_getNetworkDiagnosticTask"
-            - $ref: "#/components/schemas/ActionsServer_resetNetworkDiagCounterTask"
-            - $ref: "#/components/schemas/ActionsServer_getEnergyScanTask"
-            - $ref: "#/components/schemas/ActionsServer_updateDeviceCollectionTask"
+          $ref: "#/components/schemas/ActionItem"
+      additionalProperties: false
 
-    ActionsServer:
+    ActionItem:
       type: object
       required:
         - id
@@ -2106,85 +2147,14 @@ components:
                 - failed
                 - undiscovered
                 - attempted
-
-    ActionsServer_addThreadDeviceTask:
-      allOf:
-        - $ref: "#/components/schemas/ActionsServer"
-        - $ref: "#/components/schemas/Actions_addThreadDeviceTask"
-        - type: object
-          properties:
-            attributes:
-              type: object
-              status: 
-                type: string
-                enum:
-                  - pending
-                  - active
-                  - completed
-                  - stopped
-                  - failed
-                  - undiscovered
-                  - attempted
-              required:
-                - pskd
-                - timeout
-                - status
-
-    ActionsServer_getNetworkDiagnosticTask:
-      allOf:
-        - $ref: "#/components/schemas/ActionsServer"
-        - $ref: "#/components/schemas/Actions_getNetworkDiagnosticTask"
-        - type: object
-          properties:
-            attributes:
-              type: object
-              required:
-                - destination
-                - types
-                - timeout
-
-    ActionsServer_resetNetworkDiagCounterTask:
-      allOf:
-        - $ref: "#/components/schemas/ActionsServer"
-        - $ref: "#/components/schemas/Actions_resetNetworkDiagCounterTask"
-        - type: object
-          properties:
-            attributes:
-              type: object
-              required:
-                - destination
-                - types
-                - timeout
-
-    ActionsServer_getEnergyScanTask:
-      allOf:
-        - $ref: "#/components/schemas/ActionsServer"
-        - $ref: "#/components/schemas/Actions_getEnergyScanTask"
-        - type: object
-          properties:
-            attributes:
-              type: object
-              required:
-                - destination
-                - channelMask
-                - count
-                - period
-                - scanDuration
-                - timeout
-
-    ActionsServer_updateDeviceCollectionTask:
-      allOf:
-        - $ref: "#/components/schemas/ActionsServer"
-        - $ref: "#/components/schemas/Actions_updateDeviceCollectionTask"
-        - type: object
-          properties:
-            attributes:
-              type: object
-              required:
-                - maxAge
-                - maxRetries
-                - deviceCount
-                - timeout
+            created:
+              type: string
+              format: date-time
+          additionalProperties: true
+        relationships:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
 
     ##########################################################
     Errors:
@@ -2440,15 +2410,40 @@ components:
           example: "0123456789abcdef"
         discerner:
           type: string
-          description: |- 
-            A discerner in the form of the discerner hex value (optionally with leading 0x) 
+          description: |-
+            A discerner in the form of the discerner hex value (optionally with leading 0x)
             and bit length separated by a '/'.
             Field is mutually exclusive with `joinerId` and `eui`.
           example: "0xabc/12"
         timeout:
           type: integer
-          description: Joiner expiration time in milliseconds on response and seconds on request 
-          default: 60 
+          description: Joiner expiration time in milliseconds on response and seconds on request
+          default: 60
+
+    EpskcStatus:
+      type: object
+      properties:
+        state:
+          type: string
+          description: The Border Agent ephemeral key session state.
+          enum: ["disabled", "stopped", "started", "connected", "accepted"]
+          example: "started"
+        port:
+          type: integer
+          description: The UDP port used by the ephemeral key session, if active.
+          example: 49152
+
+    EpskcActivateResult:
+      type: object
+      properties:
+        tap:
+          type: string
+          description: The generated 9-digit Thread Administration Passcode (TAP).
+          example: "123456789"
+        port:
+          type: integer
+          description: The UDP port the border agent is listening on for the ePSKc session.
+          example: 49152
 
     WellKnownThread:
       type: object
@@ -2493,17 +2488,6 @@ components:
   ### Parameters ##############################################################
   #############################################################################
   parameters:
-
-    AcceptJsonApi:
-      name: Accept
-      description: Must be set to `application/vnd.api+json` or `application/json`
-      in: header
-      required: false
-      schema:
-        type: string
-        enum:
-          - application/json
-          - application/vnd.api+json
 
     actionId:
       name: actionId
@@ -2555,54 +2539,34 @@ components:
 
       in: query
       style: deepObject
+      explode: true
       required: false
       schema:
         type: object
-        #patternProperties: '^\w+$'
-        #items:
-        #  type: string
-        #  pattern: '^\w+$'
-        properties:
-           type:
-            type: array
-            items:
-              type: string
-              enum:
-              - threadDevice
-              - threadBorderRouter
-              - networkDiagnostics
-              - energyReport
-              - addThreadDeviceTask
-              - getNetworkDiagnosticTask
-              - resetNetworkDiagCounterTask
-              - getEnergyScanTask
-              - updateDeviceCollectionTask
-            minItems: 1
-            maxItems: 1
-            attributes:
-              type: string
-              pattern: '^[A-Za-z0-9_.\-]+(,[A-Za-z0-9_.\-]+)*$'
-              description: |
-                A comma-separated list of attribute keys to include in the response.
-                If omitted, all attributes of the type are included.
+        additionalProperties:
+          type: string
+          pattern: '^([A-Za-z0-9_.\-]+(,[A-Za-z0-9_.\-]+)*)?$'
+          description: |
+            Query value for a type-specific sparse fieldset.
+            Empty string selects all attributes for that type; otherwise use a comma-separated list.
       examples:
         allAttributes:
           summary: All attributes for a type
           value:
-            fields[threadDevice]: ""
+            threadDevice: ""
         selectedAttributes:
           summary: Selected attributes for a type
           value:
-            fields[threadDevice]: "hostname,role"
+            threadDevice: "hostname,role"
         multipleTypes:
           summary: Selected attributes for multiple types
           value:
-            fields[threadDevice]: "hostname,role"
-            fields[addThreadDeviceTask]: "eui,pskd"
+            threadDevice: "hostname,role"
+            addThreadDeviceTask: "eui,pskd"
         nestedAttributes:
           summary: Nested attributes for a type
           value:
-            fields[threadDevice]: "mode.fullThreadDevice,mode.rxOnWhenIdle"
+            threadDevice: "mode.fullThreadDevice,mode.rxOnWhenIdle"
 
   ### Responses ###############################################################
   #############################################################################
@@ -2617,7 +2581,7 @@ components:
             $ref: "#/components/schemas/WellKnownThread"
           example:
             api:
-              version: 0.3.0
+              version: 0.5.0
               base: /api/
             links:
               - href: /.well-known/thread/br-rest
@@ -2646,12 +2610,6 @@ components:
         The client sent an invalid request.
         The client SHOULD perform action(s) to provide valid syntax before retrying the request.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: "Bad Request"
-            status: 400
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2660,18 +2618,18 @@ components:
               - title: Bad Request
                 status: 400
                 detail: The client sent an invalid request.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: "Bad Request"
+            status: 400
 
     NotFoundError:
       description: |
         The client requested a target resource that does not exist.
         The client SHOULD perform action(s) to re-align with the API or re-synchronize application state before retrying the request.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Not Found
-            status: 404
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2680,18 +2638,18 @@ components:
               - title: Not Found
                 status: 404
                 detail: The client requested a target resource that does not exist.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Not Found
+            status: 404
 
     MethodNotAllowedError:
       description: |
         The client used a method that is not supported by the target resource.
         The client SHOULD perform action(s) to re-align with the API before retrying the request.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Method Not Allowed
-            status: 405
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2700,19 +2658,18 @@ components:
               - title: Method Not Allowed
                 status: 405
                 detail: The client used a method that is not supported by the target resource.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Method Not Allowed
+            status: 405
 
     NotAcceptableError:
       description: |
         The client requests a content-type that is not supported by the target resource.
         The client SHOULD perform action(s) to re-align with the API before retrying the request.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Not Acceptable
-            status: 406
-            detail: "Supported media types: application/json, application/vnd.api+json"
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2721,18 +2678,19 @@ components:
               - title: Not Acceptable
                 status: 406
                 detail: "Supported media types: application/json, application/vnd.api+json"
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Not Acceptable
+            status: 406
+            detail: "Supported media types: application/json, application/vnd.api+json"
 
     RequestTimeout:
       description: |
         The client request took too long to process.
         The client SHOULD perform action(s) validate correctness of the request and retry the validated request after a longer period of time.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Request Timeout
-            status: 408
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2741,6 +2699,12 @@ components:
               - title: Request Timeout
                 status: 408
                 detail: The client request took too long to process.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Request Timeout
+            status: 408
 
     ConflictError:
       description: |
@@ -2748,12 +2712,6 @@ components:
         either the request body cannot be applied to the resource state or the resource state cannot satisfy the request.
         The client SHOULD perform action(s) to re-synchronize application state before retrying the request.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Conflict
-            status: 409
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2762,6 +2720,12 @@ components:
               - title: Conflict
                 status: 409
                 detail: The request conflicts with the current state of the target resource.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Conflict
+            status: 409
 
 
     UnsupportedMediaTypeError:
@@ -2769,12 +2733,6 @@ components:
         The client sent a request body in an unsupported format.
         The client SHOULD change the request body format before retrying the request.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Unsupported Media Type
-            status: 415
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2783,18 +2741,18 @@ components:
               - title: Unsupported Media Type
                 status: 415
                 detail: The client sent a request body in an unsupported format.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Unsupported Media Type
+            status: 415
 
     UnprocessableError:
       description: |
         The server understands the content type of the request body correct, but was unable to process the contained information.
         The client SHOULD perform action(s) to correct the request body before retrying the request.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Unprocessable Content
-            status: 422
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2803,18 +2761,18 @@ components:
               - title: Unprocessable Content
                 status: 422
                 detail: The request body could not be processed.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Unprocessable Content
+            status: 422
 
     InternalServerError:
       description: |
         The server encountered an unexpected error.
         The client SHOULD retry after a longer period of time.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Internal Server Error
-            status: 500
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2823,18 +2781,18 @@ components:
               - title: Internal Server Error
                 status: 500
                 detail: Unexpected error.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Internal Server Error
+            status: 500
 
     ServiceUnavailableError:
       description: |
         The server is not ready to handle the request.
         The client SHOULD retry after a short period of time.
       content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/SimpleError"
-          example:
-            title: Service Unavailable
-            status: 503
         application/vnd.api+json:
           schema:
             $ref: "#/components/schemas/Errors"
@@ -2843,3 +2801,9 @@ components:
               - title: Service Unavailable
                 status: 503
                 detail: The server is not ready to handle the request.
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Service Unavailable
+            status: 503

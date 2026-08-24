@@ -259,8 +259,9 @@ private:
     void        ThreadDetachGracefully(const DetachGracefullyCallback &aCallback);
     static void ThreadDetachGracefullyCallback(void *aContext);
     void        ThreadDetachGracefullyCallback(void);
-    void        ConditionalErasePersistentInfo(bool aErase);
+    otError     ConditionalErasePersistentInfo(bool aErase);
     void        DisableThreadAfterDetach(void);
+    void        LeaveAfterDetach(bool aEraseDataset, const AsyncResultReceiver &aReceiver);
     static void SendMgmtPendingSetCallback(otError aError, void *aContext);
     void        SendMgmtPendingSetCallback(otError aError);
 

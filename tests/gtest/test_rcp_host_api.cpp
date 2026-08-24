@@ -29,7 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <sys/time.h>
+#include <chrono>
 
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
@@ -44,21 +44,21 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
                                  uint32_t                  aTimeoutSec,
                                  std::function<bool(void)> aCondition)
 {
-    timeval startTime;
-    timeval now;
-    gettimeofday(&startTime, nullptr);
+    // Use a monotonic clock with sub-second precision.
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(aTimeoutSec);
 
     while (!aCondition())
     {
-        gettimeofday(&now, nullptr);
-        // Simply compare the second. We don't need high precision here.
-        if (now.tv_sec - startTime.tv_sec > aTimeoutSec)
+        // Process pending tasks before checking the deadline, so that an
+        // `aTimeoutSec` of 0 still gets exactly one Update()/Process() pass
+        // instead of exiting the loop without processing anything.
+        otbr::MainloopManager::GetInstance().Update(aMainloop);
+        otbr::MainloopManager::GetInstance().Process(aMainloop);
+
+        if (std::chrono::steady_clock::now() > deadline)
         {
             break;
         }
-
-        otbr::MainloopManager::GetInstance().Update(aMainloop);
-        otbr::MainloopManager::GetInstance().Process(aMainloop);
     }
 }
 
@@ -254,11 +254,76 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterLeave)
                          [&host]() { return host.GetDeviceRole() != OT_DEVICE_ROLE_DETACHED; });
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
     host.Leave(/* aEraseDataset */ false, receiver);
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_TRUE(resultReceived); // A 0-second wait here passes vacuously: the detach needs mainloop time.
     EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED); // Leave disables the stack, not just detaches.
 
     error = otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &dataset); // Dataset should still be there.
     EXPECT_EQ(error, OT_ERROR_NONE);
+
+    // 5. Call Leave with erase while attached: the stack must end up disabled, the dataset
+    // gone, and subscribers must hear about the erase as an empty dataset.
+    error                                          = OT_ERROR_NONE;
+    resultReceived                                 = false;
+    bool                     datasetChangeReceived = false;
+    otOperationalDatasetTlvs lastDatasetTlvs;
+    lastDatasetTlvs.mLength = 0xff;
+    host.GetThreadHelper()->AddActiveDatasetChangeHandler(
+        [&datasetChangeReceived, &lastDatasetTlvs](const otOperationalDatasetTlvs &aDatasetTlvs) {
+            datasetChangeReceived = true;
+            lastDatasetTlvs       = aDatasetTlvs;
+        });
+    host.SetThreadEnabled(true, nullptr);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&host]() { return host.GetDeviceRole() != OT_DEVICE_ROLE_DETACHED; });
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    host.Leave(/* aEraseDataset */ true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_TRUE(resultReceived);
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+    error = otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &dataset);
+    EXPECT_EQ(error, OT_ERROR_NOT_FOUND);
+    EXPECT_TRUE(datasetChangeReceived);
+    EXPECT_EQ(lastDatasetTlvs.mLength, 0);
+
+    // 6. Call Leave with erase when the stack was started out-of-band (ot-ctl, ubus): the
+    // state machine never saw SetThreadEnabled(), so only the device role knows Thread is
+    // running. Leave must still detach, disable and erase rather than taking the
+    // disabled-role shortcut and failing the erase.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(ot::FakePlatform::CurrentInstance(), &datasetTlvs));
+    OT_UNUSED_VARIABLE(otIp6SetEnabled(ot::FakePlatform::CurrentInstance(), true));
+    OT_UNUSED_VARIABLE(otThreadSetEnabled(ot::FakePlatform::CurrentInstance(), true));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&host]() { return host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    host.Leave(/* aEraseDataset */ true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_TRUE(resultReceived);
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+    error = otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &dataset);
+    EXPECT_EQ(error, OT_ERROR_NOT_FOUND);
+
+    // 7. Enable Thread without an active dataset: the role stays disabled while the state
+    // machine says enabled. Leave through the disabled-role shortcut must bring the state
+    // machine back to disabled rather than preserving the stale enabled state -- and a
+    // null receiver must be tolerated, not crash the shortcut's result post.
+    otbr::Host::ThreadEnabledState enabledState = otbr::Host::ThreadEnabledState::kStateDisabled;
+    host.AddThreadEnabledStateChangedCallback(
+        [&enabledState](otbr::Host::ThreadEnabledState aState) { enabledState = aState; });
+    host.SetThreadEnabled(true, nullptr);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+                         [&enabledState]() { return enabledState == otbr::Host::ThreadEnabledState::kStateEnabled; });
+    EXPECT_EQ(enabledState, otbr::Host::ThreadEnabledState::kStateEnabled);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+    host.Leave(/* aEraseDataset */ true, /* aReceiver */ nullptr);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+                         [&enabledState]() { return enabledState == otbr::Host::ThreadEnabledState::kStateDisabled; });
+    EXPECT_EQ(enabledState, otbr::Host::ThreadEnabledState::kStateDisabled);
 
     host.Deinit();
 }
@@ -377,7 +442,10 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.Join(datasetTlvs, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Unlike the single-pass 0s waits above, this step undergoes a full
+    // Detach -> re-Join -> Leader-formation sequence which requires multiple
+    // mainloop iterations to complete.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
     EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation"); // The second Join will trigger Leave first.
@@ -405,7 +473,9 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.SetThreadEnabled(false, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Like the step-3 wait above, this Join races a Disable that triggers
+    // its own Detach sequence, so it needs multiple mainloop iterations.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_BUSY);
     EXPECT_STREQ(errorMsg_.c_str(), "Thread is disabling");
@@ -427,12 +497,49 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     host.Join(datasetTlvs, receiver_);
     host.SetThreadEnabled(false, receiver);
 
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+    // Same Detach -> re-Join -> Leader-formation sequence as step 3, so it
+    // needs the same 1s budget rather than a single mainloop pass.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
     EXPECT_EQ(error_, OT_ERROR_ABORT);
     EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    // 7. Call Join with a different dataset while attached as leader. The device must detach,
+    // take the new dataset and attach to the new network, not stay on the old one or loop
+    // in the detach branch.
+    resultReceived = false;
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(datasetTlvs, receiver);
+    // Wait for the join's own result, not just the role: the result is posted
+    // to the task runner and would otherwise land in the next step's wait.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_STREQ(errorMsg.c_str(), "Join succeeded");
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    otOperationalDataset     newDataset;
+    otOperationalDatasetTlvs newDatasetTlvs;
+    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &newDataset));
+    otDatasetConvertToTlvs(&newDataset, &newDatasetTlvs);
+    ASSERT_NE(memcmp(newDataset.mExtendedPanId.m8, dataset.mExtendedPanId.m8, sizeof(dataset.mExtendedPanId)), 0);
+
+    error_          = OT_ERROR_NONE;
+    resultReceived_ = false;
+    host.Join(newDatasetTlvs, receiver_);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived_]() { return resultReceived_; });
+    EXPECT_TRUE(resultReceived_);
+    EXPECT_EQ(error_, OT_ERROR_NONE);
+    EXPECT_STREQ(errorMsg_.c_str(), "Join succeeded");
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    otOperationalDataset activeDataset;
+    ASSERT_EQ(otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &activeDataset), OT_ERROR_NONE);
+    EXPECT_EQ(memcmp(activeDataset.mExtendedPanId.m8, newDataset.mExtendedPanId.m8, sizeof(newDataset.mExtendedPanId)),
+              0);
 
     host.Deinit();
 }
