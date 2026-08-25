@@ -256,6 +256,7 @@ PublisherMDnsSd::PublisherMDnsSd(StateCallback aCallback)
     : mHostsRef(nullptr)
     , mState(State::kIdle)
     , mStateCallback(std::move(aCallback))
+    , mReconnectTaskId(0)
 {
 }
 
@@ -267,7 +268,10 @@ PublisherMDnsSd::~PublisherMDnsSd(void)
 otbrError PublisherMDnsSd::Start(void)
 {
     mState = State::kReady;
-    mStateCallback(State::kReady);
+    if (mStateCallback != nullptr)
+    {
+        mStateCallback(State::kReady);
+    }
     return OTBR_ERROR_NONE;
 }
 
@@ -278,6 +282,12 @@ bool PublisherMDnsSd::IsStarted(void) const
 
 void PublisherMDnsSd::Stop(StopMode aStopMode)
 {
+    if (mReconnectTaskId != 0)
+    {
+        mTaskRunner.Cancel(mReconnectTaskId);
+        mReconnectTaskId = 0;
+    }
+
     VerifyOrExit(mState == State::kReady);
 
     // If we get a `kDNSServiceErr_ServiceNotRunning` and need to
@@ -305,6 +315,10 @@ void PublisherMDnsSd::Stop(StopMode aStopMode)
     mSubscribedHosts.clear();
 
     mState = State::kIdle;
+    if (mStateCallback != nullptr)
+    {
+        mStateCallback(State::kIdle);
+    }
 
 exit:
     return;
@@ -336,6 +350,26 @@ exit:
     return;
 }
 
+void PublisherMDnsSd::TriggerReconnect(const char *aReason)
+{
+    VerifyOrExit(mState == State::kReady);
+    VerifyOrExit(mReconnectTaskId == 0);
+
+    otbrLogWarning("mDNS reconnect triggered (%s)...", aReason);
+
+    mReconnectTaskId = mTaskRunner.Post(Milliseconds(0), [this]() {
+        mReconnectTaskId = 0;
+        if (mState == State::kReady)
+        {
+            Stop(kStopOnServiceNotRunningError);
+            Start();
+        }
+    });
+
+exit:
+    return;
+}
+
 void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 {
     mTaskRunner.Update(aMainloop);
@@ -351,7 +385,11 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
     {
         int fd = DNSServiceRefSockFD(mHostsRef);
 
-        assert(fd != -1);
+        if (fd == -1)
+        {
+            TriggerReconnect("hosts socket invalid");
+            ExitNow();
+        }
 
         aMainloop.AddFdToReadSet(fd);
     }
@@ -365,6 +403,9 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
     {
         host->Update(aMainloop);
     }
+
+exit:
+    return;
 }
 
 void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
@@ -383,6 +424,12 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
     if (mHostsRef != nullptr)
     {
         int fd = DNSServiceRefSockFD(mHostsRef);
+
+        if (fd == -1)
+        {
+            TriggerReconnect("hosts socket invalid");
+            ExitNow();
+        }
 
         if (FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
@@ -428,11 +475,9 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
             otbrLog(logLevel, OTBR_LOG_TAG, "DNSServiceProcessResult failed: %s (serviceRef = %p)",
                     DNSErrorToString(error), serviceRef);
         }
-        if (error == kDNSServiceErr_ServiceNotRunning)
+        if (IsRetryableError(error))
         {
-            otbrLogWarning("Need to reconnect to mdnsd");
-            Stop(kStopOnServiceNotRunningError);
-            Start();
+            TriggerReconnect(DNSErrorToString(error));
             ExitNow();
         }
     }
@@ -458,7 +503,11 @@ void PublisherMDnsSd::DnssdServiceRegistration::Update(MainloopContext &aMainloo
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    VerifyOrExit(fd != -1);
+    if (fd == -1)
+    {
+        GetPublisher().TriggerReconnect("service socket invalid");
+        ExitNow();
+    }
 
     aMainloop.AddFdToReadSet(fd);
 
@@ -474,7 +523,11 @@ void PublisherMDnsSd::DnssdServiceRegistration::Process(const MainloopContext   
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    VerifyOrExit(fd != -1);
+    if (fd == -1)
+    {
+        GetPublisher().TriggerReconnect("service socket invalid");
+        ExitNow();
+    }
 
     VerifyOrExit(FD_ISSET(fd, &aMainloop.mReadFdSet));
     aReadyServices.push_back(mServiceRef);
@@ -1120,7 +1173,11 @@ void PublisherMDnsSd::ServiceRef::Update(MainloopContext &aMainloop) const
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    assert(fd != -1);
+    if (fd == -1)
+    {
+        mPublisher.TriggerReconnect("subscription socket invalid");
+        ExitNow();
+    }
     aMainloop.AddFdToReadSet(fd);
 exit:
     return;
@@ -1134,7 +1191,11 @@ void PublisherMDnsSd::ServiceRef::Process(const MainloopContext      &aMainloop,
     VerifyOrExit(mServiceRef != nullptr);
 
     fd = DNSServiceRefSockFD(mServiceRef);
-    assert(fd != -1);
+    if (fd == -1)
+    {
+        mPublisher.TriggerReconnect("subscription socket invalid");
+        ExitNow();
+    }
     if (FD_ISSET(fd, &aMainloop.mReadFdSet))
     {
         aReadyServices.push_back(mServiceRef);
