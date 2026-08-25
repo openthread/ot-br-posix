@@ -48,6 +48,7 @@
 #define OT_REST_ACCEPT_HEADER "Accept"
 #define OT_REST_ALLOW_HEADER "Allow"
 #define OT_REST_CONTENT_TYPE_HEADER "Content-Type"
+#define OT_REST_IF_NONE_MATCH_HEADER "If-None-Match"
 
 #define OT_REST_CONTENT_TYPE_JSON "application/json"
 #define OT_REST_CONTENT_TYPE_PLAIN "text/plain"
