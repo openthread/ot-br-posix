@@ -870,6 +870,63 @@ def node_dataset_if_none_match_test():
     print(" /node/dataset If-None-Match : OK")
 
 
+def node_dataset_if_match_test():
+    url = rest_api_addr + "/node/dataset/pending"
+
+    def put(body, headers):
+        req = urllib.request.Request(url, data=body.encode(), method='PUT', headers=headers)
+        return urllib.request.urlopen(req)
+
+    def dataset_body(seconds):
+        return json.dumps({"activeDataset": {"activeTimestamp": {"seconds": seconds}}, "delay": 3600000})
+
+    # Make sure a pending dataset is in place, and learn its entity tag.
+    with put(dataset_body(40), {'Content-Type': 'application/json'}) as response:
+        etag = response.headers["ETag"]
+    assert etag
+
+    # The tag is weak: a pending dataset's delay timer is left out of it, and
+    # the countdown is visible in the body, so it cannot honestly be strong.
+    assert etag.startswith('W/"')
+
+    # The GET of the resource hands out the same tag, and forbids caching it:
+    # the body carries the network key and a delay timer that is already stale.
+    with urllib.request.urlopen(url) as response:
+        assert response.status == 200
+        assert response.headers["ETag"] == etag
+        assert response.headers["Cache-Control"] == "no-store"
+
+    # A conditional replace against the current tag goes through, and the
+    # response carries the tag of what is now stored.
+    with put(dataset_body(50), {'Content-Type': 'application/json', 'If-Match': etag}) as response:
+        assert response.status == 200
+        new_etag = response.headers["ETag"]
+    assert new_etag and new_etag != etag
+
+    # Against the stale tag it is refused, nothing written.
+    expect_http_error(412, lambda: put(dataset_body(60), {'Content-Type': 'application/json', 'If-Match': etag}))
+
+    # The same tag in its strong form still matches: entity tags are compared
+    # with the weak function (RFC 9110 section 8.8.3.2), which ignores whether
+    # either side is marked weak.
+    with put(dataset_body(60), {'Content-Type': 'application/json',
+                                'If-Match': new_etag[2:]}) as response:
+        assert response.status == 200
+
+    # A syntactically invalid value is rejected, not run unconditionally.
+    expect_http_error(400, lambda: put(dataset_body(60), {'Content-Type': 'application/json', 'If-Match': 'abc'}))
+
+    # A list of only empty elements carries no entity tag to evaluate.
+    expect_http_error(400, lambda: put(dataset_body(60), {'Content-Type': 'application/json', 'If-Match': ','}))
+
+    # `*` only requires that some dataset exists.
+    with put(dataset_body(60), {'Content-Type': 'application/json', 'If-Match': '*'}) as response:
+        assert response.status == 200
+
+    print(" /node/dataset If-Match : OK")
+
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
@@ -896,6 +953,7 @@ def main():
     well_known_thread_test(20)
     epskc_test()
     node_dataset_if_none_match_test()
+    node_dataset_if_match_test()
 
     return 0
 
