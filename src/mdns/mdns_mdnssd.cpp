@@ -355,7 +355,7 @@ void PublisherMDnsSd::TriggerReconnect(const char *aReason)
     VerifyOrExit(mState == State::kReady);
     VerifyOrExit(mReconnectTaskId == 0);
 
-    otbrLogWarning("mDNS connection socket is invalid (%s), reconnecting...", aReason);
+    otbrLogWarning("mDNS reconnect triggered (%s)...", aReason);
 
     mReconnectTaskId = mTaskRunner.Post(Milliseconds(0), [this]() {
         mReconnectTaskId = 0;
