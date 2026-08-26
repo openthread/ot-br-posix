@@ -56,7 +56,7 @@
 #include "common/types.hpp"
 #include "host/thread_host.hpp"
 
-#ifdef OTBR_ENABLE_PLATFORM_ANDROID
+#if OTBR_ENABLE_PLATFORM_ANDROID
 #include <log/log.h>
 #ifndef __ANDROID__
 #error "OTBR_ENABLE_PLATFORM_ANDROID can be enabled for only Android devices"
