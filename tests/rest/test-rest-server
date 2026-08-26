@@ -78,10 +78,20 @@ if {\$error != 0} {
     error "failed to run the test"
 }
 
-# Test that server can restart after abrupt shutdown (SO_REUSEADDR)
+# Stop the agent that ran the functional tests gracefully (SIGTERM) so that
+# coverage data is flushed on normal exit, instead of being discarded by the
+# SIGKILL used below to test abrupt shutdown.
+send_user "Stopping first agent gracefully to flush coverage data...\r\n"
+exec kill -TERM [exp_pid -i \$otbr_agent]
+expect -i \$otbr_agent eof
+
+# Test that server can restart after abrupt shutdown (SO_REUSEADDR), using a
+# disposable instance so the functional test coverage collected above isn't lost.
 send_user "Testing server restart after abrupt shutdown...\r\n"
-set agent_pid [exp_pid -i \$otbr_agent]
-exec kill -9 \$agent_pid
+spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 -B lo "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
+set otbr_agent \$spawn_id
+expect "RestWebServer listening on"
+exec kill -9 [exp_pid -i \$otbr_agent]
 expect -i \$otbr_agent eof
 
 spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 -B lo "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"

@@ -88,4 +88,22 @@ service otbr-agent start
 
 ### Test
 
-Enter the OpenWRT web GUI. There will be a new item _Thread_ under _Network_. Scan or create network here.
+Form a network and check the state from the command line:
+
+```bash
+ot-ctl dataset init new
+ot-ctl dataset commit active
+ot-ctl ifconfig up
+ot-ctl thread start
+ot-ctl state
+```
+
+The agent also exposes a ubus object with equivalent controls:
+
+```bash
+ubus call otbr threadstart
+ubus call otbr state
+ubus call otbr scan
+```
+
+A LuCI web interface is maintained in the [openwrt/luci](https://github.com/openwrt/luci) repository as `luci-app-openthread`. With it installed, a _Thread_ item appears under _Network_ in the OpenWrt web GUI.

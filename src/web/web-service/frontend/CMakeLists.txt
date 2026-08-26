@@ -38,6 +38,7 @@ set(NPM_JS_DEPENDENCIES
     ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular/angular.min.js
     ${CMAKE_CURRENT_BINARY_DIR}/node_modules/d3/d3.min.js
     ${CMAKE_CURRENT_BINARY_DIR}/node_modules/material-design-lite/material.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/qrcode-generator/dist/qrcode.js
 )
 
 add_custom_target(otbr-web-frontend
@@ -45,8 +46,11 @@ add_custom_target(otbr-web-frontend
 
 add_custom_command(OUTPUT ${NPM_CSS_DEPENDENCIES} ${NPM_JS_DEPENDENCIES}
     COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/package.json .
+    COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json .
     COMMAND npm install
-    DEPENDS package.json)
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/package.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json)
 
 install(FILES index.html join.dialog.html
     DESTINATION ${OTBR_WEB_DATADIR}/frontend)

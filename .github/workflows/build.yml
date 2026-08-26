@@ -40,12 +40,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
 
   pretty:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: Bootstrap
       run: BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
@@ -65,9 +70,10 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_DHCP6_PD=ON -DOTBR_SRP_SERVER_ON_INIT=ON"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -88,9 +94,10 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_SRP_SERVER_ON_INIT=ON"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -104,9 +111,10 @@ jobs:
       BUILD_TARGET: script-check
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -121,9 +129,10 @@ jobs:
       CC: clang
       CXX: clang++
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Run
@@ -134,9 +143,10 @@ jobs:
     env:
       BUILD_TARGET: package
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: |
         tests/scripts/bootstrap.sh
@@ -149,9 +159,10 @@ jobs:
     env:
       BUILD_TARGET: check
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Build

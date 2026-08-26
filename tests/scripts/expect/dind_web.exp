@@ -187,6 +187,67 @@ if {[string first "networkName" $rest_node] == -1} {
 }
 send_user "Scenario 2 custom REST API responsiveness verified successfully!\n"
 
+# ==========================================
+# SCENARIO 3: ePSKc (Ephemeral Key) Web UI Endpoints
+# ==========================================
+send_user -- "--- SCENARIO 3: Testing Web UI ePSKc endpoints (status -> enable -> activate -> status -> deactivate -> status) ---\n"
+
+# The web service's JSON responses are written with jsoncpp's default (pretty-printed) formatting,
+# e.g. {\n\t"error" : 0,\n\t...\n}, so matches below tolerate whitespace around the ':' and span lines.
+proc check_json_field {json field value} {
+    if {![regexp "\"$field\"\\s*:\\s*$value" $json]} {
+        fail "Expected \"$field\" : $value in response: $json"
+    }
+}
+
+send_user "Testing Web UI epskc_status (initial)...\n"
+set epskc_status [exec curl -s http://127.0.0.1:8080/epskc_status]
+send_user "epskc_status response: $epskc_status\n"
+check_json_field $epskc_status "error" 0
+send_user "Web UI epskc_status (initial) validated successfully!\n"
+
+send_user "Testing Web UI epskc_enabled...\n"
+set epskc_enabled [exec curl -s --header "Content-Type: application/json" --request POST --data "\{\"enabled\":true\}" http://127.0.0.1:8080/epskc_enabled]
+send_user "epskc_enabled response: $epskc_enabled\n"
+check_json_field $epskc_enabled "error" 0
+send_user "Web UI epskc_enabled validated successfully!\n"
+
+send_user "Testing Web UI epskc_status (after enable)...\n"
+set epskc_status [exec curl -s http://127.0.0.1:8080/epskc_status]
+send_user "epskc_status response: $epskc_status\n"
+check_json_field $epskc_status "enabled" "true"
+send_user "Web UI epskc_status (after enable) validated successfully!\n"
+
+# Activate with an empty body (Content-Length: 0), exercising the router's default lifetime/port.
+send_user "Testing Web UI epskc_activate...\n"
+set epskc_activate [exec curl -s --header "Content-Type: application/json" --request POST --data "" http://127.0.0.1:8080/epskc_activate]
+send_user "epskc_activate response: $epskc_activate\n"
+check_json_field $epskc_activate "error" 0
+if {[string first "\"tap\"" $epskc_activate] == -1} {
+    fail "Web UI epskc_activate response missing \"tap\": $epskc_activate"
+}
+send_user "Web UI epskc_activate validated successfully!\n"
+
+send_user "Testing Web UI epskc_status (after activate)...\n"
+set epskc_status [exec curl -s http://127.0.0.1:8080/epskc_status]
+send_user "epskc_status response: $epskc_status\n"
+check_json_field $epskc_status "active" "true"
+send_user "Web UI epskc_status (after activate) validated successfully!\n"
+
+send_user "Testing Web UI epskc_deactivate...\n"
+set epskc_deactivate [exec curl -s --header "Content-Type: application/json" --request POST --data "" http://127.0.0.1:8080/epskc_deactivate]
+send_user "epskc_deactivate response: $epskc_deactivate\n"
+check_json_field $epskc_deactivate "error" 0
+send_user "Web UI epskc_deactivate validated successfully!\n"
+
+send_user "Testing Web UI epskc_status (after deactivate)...\n"
+set epskc_status [exec curl -s http://127.0.0.1:8080/epskc_status]
+send_user "epskc_status response: $epskc_status\n"
+check_json_field $epskc_status "active" "false"
+send_user "Web UI epskc_status (after deactivate) validated successfully!\n"
+
+send_user "Scenario 3 ePSKc Web UI endpoints verified successfully!\n"
+
 dispose_all
 
 send_user -- "--- DinD Web UI Integration Test PASSED successfully! ---\n"

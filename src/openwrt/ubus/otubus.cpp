@@ -895,7 +895,7 @@ int UbusServer::UbusMgmtset(struct ubus_context      *aContext,
     {
         dataset.mComponents.mIsExtendedPanIdPresent = true;
         VerifyOrExit(Hex2Bin(blobmsg_get_string(tb[EXTPANID]), dataset.mExtendedPanId.m8,
-                             sizeof(dataset.mExtendedPanId.m8)) >= 0,
+                             sizeof(dataset.mExtendedPanId.m8)) == OT_EXT_PAN_ID_SIZE,
                      error = OT_ERROR_PARSE);
     }
     if (tb[PANID] != nullptr)
@@ -1512,13 +1512,14 @@ int UbusServer::UbusSetInformation(struct ubus_context      *aContext,
         {
             otExtendedPanId extPanId;
             char           *input = blobmsg_get_string(tb[SETNETWORK]);
-            VerifyOrExit(Hex2Bin(input, extPanId.m8, sizeof(extPanId)) >= 0, error = OT_ERROR_PARSE);
+            VerifyOrExit(Hex2Bin(input, extPanId.m8, sizeof(extPanId.m8)) == OT_EXT_PAN_ID_SIZE,
+                         error = OT_ERROR_PARSE);
             error = otThreadSetExtendedPanId(mHost->GetInstance(), &extPanId);
         }
     }
     else if (!strcmp(aAction, "mode"))
     {
-        otLinkModeConfig  linkMode;
+        otLinkModeConfig  linkMode = {};
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setModePolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
