@@ -429,11 +429,12 @@ def node_state_put_unsupported_method_test():
     print(" PATCH /node/state : status {}, expected 405".format(405))
 
 
-def node_ext_address_put_no_route_test():
+def node_ext_address_put_method_not_allowed_test():
     """A PUT to an endpoint that never registers a PUT handler (e.g.
-    /node/ext-address, GET-only) returns 404, the same routing-miss status
-    POST and DELETE already return on that path. Full 404/405 semantics
-    (a per-resource Allow header, etc.) are tracked by
+    /node/ext-address, GET-only) is a genuinely unsupported method on a
+    route that does exist, so RouteRegistry must report it as 405 with an
+    Allow header listing the methods that are actually registered - not a
+    plain 404. Regression test for
     https://github.com/openthread/ot-br-posix/issues/3529.
     """
     url = rest_api_addr + "/node/ext-address"
@@ -444,9 +445,121 @@ def node_ext_address_put_no_route_test():
         urllib.request.urlopen(request)
         assert False
     except urllib.error.HTTPError as e:
-        assert (e.code == 404)
+        assert (e.code == 405)
+        assert (e.headers.get("Allow") == "GET, OPTIONS")
+        assert e.headers.get("Content-Type") == "application/json"
+        body = json.loads(e.read().decode('utf-8'))
+        assert body["status"] == 405
+        assert body["title"] == "Method Not Allowed"
+        assert body.get("detail") == "method not supported"
 
-    print(" PUT /node/ext-address (no route) : status {}, expected 404".format(404))
+    print(" PUT /node/ext-address (registered route, wrong method) : status {}, expected 405".format(405))
+
+
+def node_state_delete_method_not_allowed_test():
+    """DELETE on /node/state (which only registers GET and PUT) must be
+    rejected with 405, and the Allow header must list every method actually
+    registered on that route, not just the one that was tried.
+    """
+    request = urllib.request.Request(rest_api_addr + "/node/state", method='DELETE')
+
+    try:
+        urllib.request.urlopen(request)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert (e.code == 405)
+        assert (e.headers.get("Allow") == "GET, PUT, OPTIONS")
+        assert e.headers.get("Content-Type") == "application/json"
+        body = json.loads(e.read().decode('utf-8'))
+        assert body["status"] == 405
+        assert body["title"] == "Method Not Allowed"
+        assert body.get("detail") == "method not supported"
+
+    print(" DELETE /node/state : status {}, expected 405, Allow 'GET, PUT, OPTIONS'".format(405))
+
+
+def node_state_options_test():
+    """OPTIONS on a route with more than one registered method must report
+    all of them via the Allow header (in GET/POST/PUT/DELETE order), plus
+    OPTIONS itself.
+    """
+    req = urllib.request.Request(rest_api_addr + "/node/state", method='OPTIONS')
+    with urllib.request.urlopen(req) as response:
+        assert response.status == 204
+        assert response.headers.get("Allow") == "GET, PUT, OPTIONS"
+
+    print(" OPTIONS /node/state : status 204, Allow 'GET, PUT, OPTIONS'")
+
+
+def node_ext_address_options_test():
+    """OPTIONS on a GET-only route must report only GET plus OPTIONS."""
+    req = urllib.request.Request(rest_api_addr + "/node/ext-address", method='OPTIONS')
+    with urllib.request.urlopen(req) as response:
+        assert response.status == 204
+        assert response.headers.get("Allow") == "GET, OPTIONS"
+
+    print(" OPTIONS /node/ext-address : status 204, Allow 'GET, OPTIONS'")
+
+
+def node_options_test():
+    """OPTIONS on /node (GET+DELETE) exercises the DELETE branch of
+    RouteRegistry::BuildMethodsString directly, so coverage of that branch
+    doesn't depend on some other, unrelated test suite (e.g. schemathesis
+    against /api/*) happening to touch a DELETE-bearing route.
+    """
+    req = urllib.request.Request(rest_api_addr + "/node", method='OPTIONS')
+    with urllib.request.urlopen(req) as response:
+        assert response.status == 204
+        assert response.headers.get("Allow") == "GET, DELETE, OPTIONS"
+
+    print(" OPTIONS /node : status 204, Allow 'GET, DELETE, OPTIONS'")
+
+
+def api_actions_item_not_found_test():
+    """GET /api/actions/unknown UUID: the route AND the method
+    match a registered handler (ApiActionsItemGetHandler), but the item itself
+    doesn't exist, so the handler legitimately returns 404 on its own - this must
+    NOT be rewritten or otherwise touched by RoutingErrorHandler's routing-miss
+    logic, which only applies to routes/methods that were never registered.
+    """
+    url = rest_api_addr + "/api/actions/unknown-uuid"
+    request = urllib.request.Request(url, headers={'Accept': 'application/vnd.api+json'})
+
+    try:
+        urllib.request.urlopen(request)
+        assert False, "expected HTTP 404, but request succeeded"
+    except urllib.error.HTTPError as e:
+        assert e.code == 404, "expected HTTP 404, got {}".format(e.code)
+        assert e.headers.get("Content-Type") == "application/json"
+        body = json.loads(e.read().decode('utf-8'))
+        assert body["status"] == 404
+        assert body["title"] == "Not Found"
+
+    print(" GET /api/actions/unknown-uuid : status 404, expected 404 (matched route/method, app-level miss)")
+
+
+def unknown_route_test():
+    """A path with no registered route at all is a real 404, regardless of
+    method (including OPTIONS, which must not be handled generically since
+    RouteRegistry has no route to report methods for), and must not carry
+    an Allow header.
+    """
+    url = rest_api_addr + "/node/this-path-does-not-exist"
+
+    for method in ("GET", "OPTIONS", "POST", "PUT", "DELETE"):
+        request = urllib.request.Request(url, method=method)
+        try:
+            urllib.request.urlopen(request)
+            assert False, "expected HTTP 404 for {}, but request succeeded".format(method)
+        except urllib.error.HTTPError as e:
+            assert e.code == 404, "expected HTTP 404 for {}, got {}".format(method, e.code)
+            assert e.headers.get("Content-Type") == "application/json"
+            body = json.loads(e.read().decode('utf-8'))
+            assert body["status"] == 404
+            assert body["title"] == "Not Found"
+            assert e.headers.get("Allow") is None, "unexpected Allow header on a real 404 for {}".format(method)
+
+        print(" {} /node/this-path-does-not-exist : status 404, no Allow header".format(method))
 
 
 def node_network_name_test(thread_num):
@@ -721,7 +834,13 @@ def main():
     node_state_test(200)
     node_state_put_invalid_body_test()
     node_state_put_unsupported_method_test()
-    node_ext_address_put_no_route_test()
+    node_ext_address_put_method_not_allowed_test()
+    node_state_delete_method_not_allowed_test()
+    node_state_options_test()
+    node_ext_address_options_test()
+    node_options_test()
+    api_actions_item_not_found_test()
+    unknown_route_test()
     node_network_name_test(200)
     node_state_test_attached()  # wait for attached state
     node_leader_data_test(200)

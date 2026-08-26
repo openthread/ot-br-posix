@@ -31,7 +31,9 @@
 
 #include "rest/rest_web_server.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <utility>
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -149,68 +151,60 @@ HttpMethod GetMethod(const Request &aRequest)
 RestWebServer::RestWebServer(Host::RcpHost &aHost)
     : mHost(aHost)
 {
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&RestWebServer::NodeInfo));
-    mServer.Delete(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&RestWebServer::NodeInfo));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_BAID, MakeHandler(&RestWebServer::BaId));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&RestWebServer::State));
-    mServer.Put(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&RestWebServer::State));
-    mServer.Options(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&RestWebServer::State));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, MakeHandler(&RestWebServer::ExtendedAddr));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_NETWORKNAME, MakeHandler(&RestWebServer::NetworkName));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_RLOC16, MakeHandler(&RestWebServer::Rloc16));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_LEADERDATA, MakeHandler(&RestWebServer::LeaderData));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER, MakeHandler(&RestWebServer::NumOfRoute));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_EXTPANID, MakeHandler(&RestWebServer::ExtendedPanId));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_RLOC, MakeHandler(&RestWebServer::Rloc));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&RestWebServer::DatasetActive));
-    mServer.Put(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&RestWebServer::DatasetActive));
-    mServer.Options(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&RestWebServer::DatasetActive));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
-    mServer.Put(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
-    mServer.Options(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&RestWebServer::CommissionerState));
-    mServer.Put(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&RestWebServer::CommissionerState));
-    mServer.Options(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&RestWebServer::CommissionerState));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
-    mServer.Post(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
-    mServer.Delete(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
-    mServer.Options(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, MakeHandler(&RestWebServer::CoprocessorVersion));
+    // OPTIONS are handled generically for all routes.
+    mServer.set_pre_routing_handler(MakePreRoutingHandler(&RestWebServer::OptionsHandler));
+    mServer.set_error_handler(MakeHandler(&RestWebServer::RoutingErrorHandler));
+
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&RestWebServer::NodeInfo));
+    RegisterDelete(OT_REST_RESOURCE_PATH_NODE, MakeHandler(&RestWebServer::NodeInfo));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_BAID, MakeHandler(&RestWebServer::BaId));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&RestWebServer::State));
+    RegisterPut(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&RestWebServer::State));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, MakeHandler(&RestWebServer::ExtendedAddr));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_NETWORKNAME, MakeHandler(&RestWebServer::NetworkName));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_RLOC16, MakeHandler(&RestWebServer::Rloc16));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_LEADERDATA, MakeHandler(&RestWebServer::LeaderData));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER, MakeHandler(&RestWebServer::NumOfRoute));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_EXTPANID, MakeHandler(&RestWebServer::ExtendedPanId));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_RLOC, MakeHandler(&RestWebServer::Rloc));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&RestWebServer::DatasetActive));
+    RegisterPut(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, MakeHandler(&RestWebServer::DatasetActive));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
+    RegisterPut(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, MakeHandler(&RestWebServer::DatasetPending));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&RestWebServer::CommissionerState));
+    RegisterPut(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, MakeHandler(&RestWebServer::CommissionerState));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
+    RegisterPost(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
+    RegisterDelete(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, MakeHandler(&RestWebServer::CommissionerJoiner));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, MakeHandler(&RestWebServer::CoprocessorVersion));
 
 #if OTBR_ENABLE_EPSKC
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_STATE, MakeHandler(&RestWebServer::EpskcState));
-    mServer.Put(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_STATE, MakeHandler(&RestWebServer::EpskcState));
-    mServer.Options(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_STATE, MakeHandler(&RestWebServer::EpskcState));
-    mServer.Get(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_KEY, MakeHandler(&RestWebServer::EpskcKey));
-    mServer.Post(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_KEY, MakeHandler(&RestWebServer::EpskcKey));
-    mServer.Delete(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_KEY, MakeHandler(&RestWebServer::EpskcKey));
-    mServer.Options(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_KEY, MakeHandler(&RestWebServer::EpskcKey));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_STATE, MakeHandler(&RestWebServer::EpskcState));
+    RegisterPut(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_STATE, MakeHandler(&RestWebServer::EpskcState));
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_KEY, MakeHandler(&RestWebServer::EpskcKey));
+    RegisterPost(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_KEY, MakeHandler(&RestWebServer::EpskcKey));
+    RegisterDelete(OT_REST_RESOURCE_PATH_NODE_BA_EPSKC_KEY, MakeHandler(&RestWebServer::EpskcKey));
 #endif
 
-    mServer.set_error_handler(MakeHandler(&RestWebServer::RoutingErrorHandler));
-    mServer.Get(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
-    mServer.Get(OT_REST_ROUTE_ACTIONS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiActionsItemGetHandler));
-    mServer.Post(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
-    mServer.Delete(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
-    mServer.Delete(OT_REST_ROUTE_ACTIONS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiActionsItemDeleteHandler));
-    mServer.Options(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+    RegisterGet(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+    RegisterGet(OT_REST_ROUTE_ACTIONS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiActionsItemGetHandler));
+    RegisterPost(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+    RegisterDelete(OT_REST_ROUTE_ACTIONS, MakeHandlerInMainLoop(&RestWebServer::ApiActionsHandler));
+    RegisterDelete(OT_REST_ROUTE_ACTIONS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiActionsItemDeleteHandler));
 
-    mServer.Get(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
-    mServer.Get(OT_REST_ROUTE_DEVICES_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesItemGetHandler));
-    mServer.Get(OT_REST_ROUTE_NODE, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesSelfGetHandler));
-    mServer.Delete(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
-    mServer.Delete(OT_REST_ROUTE_DEVICES_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesItemDeleteHandler));
-    mServer.Options(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
+    RegisterGet(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
+    RegisterGet(OT_REST_ROUTE_DEVICES_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesItemGetHandler));
+    RegisterGet(OT_REST_ROUTE_NODE, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesSelfGetHandler));
+    RegisterDelete(OT_REST_ROUTE_DEVICES, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesHandler));
+    RegisterDelete(OT_REST_ROUTE_DEVICES_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDevicesItemDeleteHandler));
 
-    mServer.Get(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
-    mServer.Get(OT_REST_ROUTE_DIAGNOSTICS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemGetHandler));
-    mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
-    mServer.Delete(OT_REST_ROUTE_DIAGNOSTICS_ID,
+    RegisterGet(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
+    RegisterGet(OT_REST_ROUTE_DIAGNOSTICS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemGetHandler));
+    RegisterDelete(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
+    RegisterDelete(OT_REST_ROUTE_DIAGNOSTICS_ID,
                    MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemDeleteHandler));
-    mServer.Options(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
 
-    mServer.Get(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
-    mServer.Options(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
+    RegisterGet(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
 }
 
 RestWebServer::~RestWebServer(void)
@@ -223,6 +217,151 @@ RestWebServer::~RestWebServer(void)
     {
         mServerThread.join();
     }
+}
+
+void RestWebServer::RegisterGet(const std::string &aPattern, httplib::Server::Handler aHandler)
+{
+    mServer.Get(aPattern, aHandler);
+    mRouteRegistry.Add(aPattern, HttpMethod::kGet);
+}
+
+void RestWebServer::RegisterPost(const std::string &aPattern, httplib::Server::Handler aHandler)
+{
+    mServer.Post(aPattern, aHandler);
+    mRouteRegistry.Add(aPattern, HttpMethod::kPost);
+}
+
+void RestWebServer::RegisterPut(const std::string &aPattern, httplib::Server::Handler aHandler)
+{
+    mServer.Put(aPattern, aHandler);
+    mRouteRegistry.Add(aPattern, HttpMethod::kPut);
+}
+
+void RestWebServer::RegisterDelete(const std::string &aPattern, httplib::Server::Handler aHandler)
+{
+    mServer.Delete(aPattern, aHandler);
+    mRouteRegistry.Add(aPattern, HttpMethod::kDelete);
+}
+
+bool RestWebServer::RouteRegistry::MatchPath(const std::string &aPattern, const std::string &aPath)
+{
+    bool   matched    = false;
+    size_t patternPos = 0;
+    size_t pathPos    = 0;
+    while (patternPos < aPattern.size() && pathPos < aPath.size())
+    {
+        size_t      nextPatternSlash = aPattern.find('/', patternPos);
+        size_t      nextPathSlash    = aPath.find('/', pathPos);
+        std::string patternSeg       = aPattern.substr(patternPos, nextPatternSlash - patternPos);
+        std::string pathSeg          = aPath.substr(pathPos, nextPathSlash - pathPos);
+        if (!patternSeg.empty() && patternSeg[0] == ':')
+        {
+            VerifyOrExit(!pathSeg.empty());
+        }
+        else
+        {
+            VerifyOrExit(patternSeg == pathSeg);
+        }
+        VerifyOrExit((nextPatternSlash == std::string::npos) == (nextPathSlash == std::string::npos));
+        if (nextPatternSlash == std::string::npos)
+        {
+            patternPos = aPattern.size();
+            pathPos    = aPath.size();
+            break;
+        }
+        patternPos = nextPatternSlash + 1;
+        pathPos    = nextPathSlash + 1;
+    }
+    matched = (patternPos == aPattern.size() && pathPos == aPath.size());
+exit:
+    return matched;
+}
+
+RestWebServer::RouteRegistry::RouteMethods RestWebServer::RouteRegistry::MethodBit(HttpMethod aMethod)
+{
+    return static_cast<RouteMethods>(1u << static_cast<uint8_t>(aMethod));
+}
+
+void RestWebServer::RouteRegistry::Add(const std::string &aPattern, HttpMethod aMethod)
+{
+    auto it = std::find_if(mRoutes.begin(), mRoutes.end(),
+                           [&aPattern](const Route &aRoute) { return aRoute.mPattern == aPattern; });
+
+    if (it == mRoutes.end())
+    {
+        Route route;
+
+        route.mPattern    = aPattern;
+        route.mMethodMask = MethodBit(aMethod);
+        mRoutes.push_back(std::move(route));
+    }
+    else
+    {
+        it->mMethodMask |= MethodBit(aMethod);
+    }
+}
+
+RestWebServer::RouteRegistry::RouteMethods RestWebServer::RouteRegistry::GetMethods(const std::string &aPath) const
+{
+    const Route *route = nullptr;
+
+    for (const auto &r : mRoutes)
+    {
+        if (MatchPath(r.mPattern, aPath))
+        {
+            route = &r;
+            break;
+        }
+    }
+
+    return (route != nullptr) ? route->mMethodMask : 0;
+}
+
+bool RestWebServer::RouteRegistry::MatchMethod(RouteMethods aMethods, HttpMethod aMethod)
+{
+    return (aMethods & MethodBit(aMethod)) != 0;
+}
+
+bool RestWebServer::RouteRegistry::AnyMethod(RouteMethods aMethods)
+{
+    return aMethods != 0;
+}
+
+std::string RestWebServer::RouteRegistry::BuildMethodsString(RouteMethods aMethods)
+{
+    std::string methodsString = "";
+
+    if (aMethods == 0)
+    {
+        return methodsString;
+    }
+
+    if (aMethods & MethodBit(HttpMethod::kGet))
+        methodsString += "GET, ";
+    if (aMethods & MethodBit(HttpMethod::kPost))
+        methodsString += "POST, ";
+    if (aMethods & MethodBit(HttpMethod::kPut))
+        methodsString += "PUT, ";
+    if (aMethods & MethodBit(HttpMethod::kDelete))
+        methodsString += "DELETE, ";
+
+    return methodsString + "OPTIONS";
+}
+
+httplib::Server::HandlerResponse RestWebServer::OptionsHandler(const Request &aRequest, Response &aResponse)
+{
+    if (GetMethod(aRequest) == HttpMethod::kOptions)
+    {
+        RouteRegistry::RouteMethods methods = mRouteRegistry.GetMethods(aRequest.path);
+        if (RouteRegistry::AnyMethod(methods))
+        {
+            aResponse.status = StatusCode::NoContent_204;
+            aResponse.set_header(OT_REST_ALLOW_HEADER, RouteRegistry::BuildMethodsString(methods));
+            return httplib::Server::HandlerResponse::Handled;
+        }
+    }
+
+    return httplib::Server::HandlerResponse::Unhandled;
 }
 
 void RestWebServer::ErrorHandler(Response &aResponse, StatusCode aErrorCode) const
@@ -457,9 +596,6 @@ void RestWebServer::State(const Request &aRequest, Response &aResponse) const
         break;
     case HttpMethod::kPut:
         SetDataState(aRequest, aResponse);
-        break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::OK_200;
         break;
     default:
         ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
@@ -792,9 +928,6 @@ void RestWebServer::Dataset(DatasetType aDatasetType, const Request &aRequest, R
     case HttpMethod::kPut:
         SetDataset(aDatasetType, aRequest, aResponse);
         break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::OK_200;
-        break;
     default:
         ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
@@ -876,9 +1009,6 @@ void RestWebServer::CommissionerState(const Request &aRequest, Response &aRespon
         break;
     case HttpMethod::kPut:
         SetCommissionerState(aRequest, aResponse);
-        break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::OK_200;
         break;
     default:
         ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
@@ -1051,10 +1181,6 @@ void RestWebServer::CommissionerJoiner(const Request &aRequest, Response &aRespo
     case HttpMethod::kDelete:
         RemoveJoiner(aRequest, aResponse);
         break;
-
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::OK_200;
-        break;
     default:
         ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
@@ -1126,9 +1252,6 @@ void RestWebServer::EpskcState(const Request &aRequest, Response &aResponse) con
         break;
     case HttpMethod::kPut:
         SetEpskcState(aRequest, aResponse);
-        break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::OK_200;
         break;
     default:
         ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
@@ -1228,9 +1351,6 @@ void RestWebServer::EpskcKey(const Request &aRequest, Response &aResponse) const
     case HttpMethod::kDelete:
         DeactivateEpskcKey(aRequest, aResponse);
         break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::OK_200;
-        break;
     default:
         ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
         break;
@@ -1240,37 +1360,28 @@ void RestWebServer::EpskcKey(const Request &aRequest, Response &aResponse) const
 
 void RestWebServer::RoutingErrorHandler(const Request &aRequest, Response &aResponse)
 {
-    httplib::StatusCode error = StatusCode::OK_200;
-    std::string         errorDetails;
+    httplib::StatusCode status = StatusCode(aResponse.status);
 
-    // handle methods not used or not supported by cpp-httplib
-    switch (GetMethod(aRequest))
+    if (status == StatusCode::NotFound_404 || status == StatusCode::MethodNotAllowed_405)
     {
-    case HttpMethod::kPost:
-        // fallthrough
-    case HttpMethod::kGet:
-        // fallthrough
-    case HttpMethod::kPut:
-        // fallthrough
-    case HttpMethod::kDelete:
-        // fallthrough
-    case HttpMethod::kOptions:
-        break;
-    default:
-        errorDetails = "method not supported";
-        error        = StatusCode::MethodNotAllowed_405;
-        aResponse.set_header("Allow", "GET, POST, PUT, DELETE, OPTIONS");
-        break;
+        RouteRegistry::RouteMethods methods = mRouteRegistry.GetMethods(aRequest.path);
+
+        if (RouteRegistry::AnyMethod(methods) && !RouteRegistry::MatchMethod(methods, GetMethod(aRequest)))
+        {
+            status = StatusCode::MethodNotAllowed_405;
+        }
+
+        if (status == StatusCode::MethodNotAllowed_405)
+        {
+            aResponse.set_header(OT_REST_ALLOW_HEADER, RouteRegistry::BuildMethodsString(methods));
+            ErrorHandler(aResponse, status, "method not supported");
+            return;
+        }
     }
 
-    if (error != StatusCode::OK_200 || aResponse.status >= StatusCode::MultipleChoices_300)
+    if (aResponse.body.empty())
     {
-        if (error < aResponse.status)
-        {
-            error = StatusCode(aResponse.status);
-        }
-        otbrLogWarning("%s:%d Error (%d) - %s", __FILE__, __LINE__, error, errorDetails.c_str());
-        ErrorHandler(aResponse, error, errorDetails);
+        ErrorHandler(aResponse, status);
     }
 }
 
@@ -1322,10 +1433,6 @@ void RestWebServer::ApiActionsHandler(const Request &aRequest, Response &aRespon
         break;
     case HttpMethod::kDelete:
         ApiActionsDeleteHandler(aRequest, aResponse);
-        break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::NoContent_204;
-        aResponse.set_header("Allow", "GET, POST, DELETE, OPTIONS");
         break;
     default:
         errorDetails = "not supported";
@@ -1693,10 +1800,6 @@ void RestWebServer::ApiDiagnosticsHandler(const Request &aRequest, Response &aRe
     case HttpMethod::kDelete:
         ApiDiagnosticsDeleteHandler(aRequest, aResponse);
         break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::NoContent_204;
-        aResponse.set_header("Allow", "GET, DELETE, OPTIONS");
-        break;
     case HttpMethod::kPost:
     default:
         errorDetails = "not supported";
@@ -1724,10 +1827,6 @@ void RestWebServer::ApiDevicesHandler(const Request &aRequest, Response &aRespon
         break;
     case HttpMethod::kGet:
         ApiDevicesGetHandler(aRequest, aResponse);
-        break;
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::NoContent_204;
-        aResponse.set_header("Allow", "GET, DELETE, OPTIONS");
         break;
     default:
         errorDetails = "not supported";
@@ -2000,11 +2099,6 @@ void RestWebServer::WellKnownThreadHandler(const Request &aRequest, Response &aR
     {
     case HttpMethod::kGet:
         WellKnownThreadGetHandler(aRequest, aResponse);
-        break;
-
-    case HttpMethod::kOptions:
-        aResponse.status = StatusCode::NoContent_204;
-        aResponse.set_header("Allow", "GET, OPTIONS");
         break;
 
     default:
