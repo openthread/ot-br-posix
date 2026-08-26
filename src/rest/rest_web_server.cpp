@@ -70,7 +70,7 @@
 #ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS
 #define OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS                                        \
     "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
-    "Access-Control-Request-Headers"
+    "Access-Control-Request-Headers, If-None-Match"
 #endif
 
 #ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS
@@ -826,6 +826,14 @@ exit:
     }
 }
 
+static std::string TrimOws(const std::string &aValue)
+{
+    size_t begin = aValue.find_first_not_of(" \t");
+    size_t end   = aValue.find_last_not_of(" \t");
+
+    return begin == std::string::npos ? "" : aValue.substr(begin, end - begin + 1);
+}
+
 void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
     otbrError       error = OTBR_ERROR_NONE;
@@ -833,8 +841,21 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
     std::string     body;
     StatusCode      errorCode = StatusCode::OK_200;
 
+    // RFC 9110 section 13.1.2: If-None-Match with "*" makes the write
+    // conditional on no dataset being in place. A pending dataset that is
+    // not newer than the one already held is silently ignored by the mesh
+    // while this handler accepts the write, so a client that does not intend
+    // to supersede an in-flight dataset can turn that collision into an
+    // error it sees. Other forms of the header (entity tags) have nothing to
+    // match against here and are rejected rather than mistaken for an
+    // unconditional write.
+    const std::string ifNoneMatch  = TrimOws(aRequest.get_header_value(OT_REST_IF_NONE_MATCH_HEADER));
+    const bool        onlyIfAbsent = ifNoneMatch == "*";
+
+    VerifyOrExit(ifNoneMatch.empty() || onlyIfAbsent, error = OTBR_ERROR_INVALID_ARGS);
+
     SuccessOrExit(
-        error = RunInMainLoop([this, aDatasetType, &errorCode, &aRequest]() {
+        error = RunInMainLoop([this, aDatasetType, onlyIfAbsent, &errorCode, &aRequest]() {
             bool                     isTlv;
             otOperationalDataset     dataset = {};
             otOperationalDatasetTlvs datasetTlvs;
@@ -850,6 +871,13 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
             {
                 errorOt = otDatasetGetPendingTlvs(GetInstance(), &datasetTlvs);
             }
+
+            // RFC 9110 section 13.2.1: the precondition is evaluated after the
+            // request checks (the role check above still answers 409 first, the
+            // header cannot downgrade that to a 412) and before the content is
+            // processed; evaluated in this main-loop task, it is atomic with
+            // the write below.
+            VerifyOrReturn(!onlyIfAbsent || errorOt != OT_ERROR_NONE, OTBR_ERROR_DUPLICATED);
 
             // Create a new operational dataset if it doesn't exist.
             if (errorOt == OT_ERROR_NOT_FOUND)
@@ -911,6 +939,10 @@ exit:
     else if (error == OTBR_ERROR_INVALID_STATE)
     {
         ErrorHandler(aResponse, StatusCode::Conflict_409);
+    }
+    else if (error == OTBR_ERROR_DUPLICATED)
+    {
+        ErrorHandler(aResponse, StatusCode::PreconditionFailed_412);
     }
     else if (error != OTBR_ERROR_NONE)
     {

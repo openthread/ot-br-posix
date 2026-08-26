@@ -1464,6 +1464,8 @@ paths:
         Creates or updates the the active operational dataset on the current node. Only allowed if the Thread node
         is inactive. If the Thread node is active, a pending dataset should be used to update the current active
         operational dataset.
+      parameters:
+        - $ref: "#/components/parameters/IfNoneMatchStar"
       requestBody:
         description: |-
           Operational dataset that will be stored as active operational dataset. Supports request body Content-Type
@@ -1481,8 +1483,12 @@ paths:
           description: Successfully updated the active operational dataset.
         "201":
           description: Successfully created the active operational dataset.
+        "412":
+          $ref: "#/components/responses/PreconditionFailedError"
         "400":
-          description: Invalid request body.
+          description: |-
+            Invalid request body, or an `If-None-Match` header value other
+            than `*`.
         "409":
           description: Writing active operational dataset rejected because Thread network is active.
         "500":
@@ -1511,6 +1517,8 @@ paths:
       description: |-
         Creates or updates the the pending operational dataset on the current node. Delay needs to be set to let
         the pending dataset apply as active dataset in the near future.
+      parameters:
+        - $ref: "#/components/parameters/IfNoneMatchStar"
       requestBody:
         description: |-
           Operational dataset that will be stored as pending operational dataset. Supports request body Content-Type
@@ -1528,8 +1536,12 @@ paths:
           description: Successfully updated the pending operational dataset.
         "201":
           description: Successfully created the pending operational dataset.
+        "412":
+          $ref: "#/components/responses/PreconditionFailedError"
         "400":
-          description: Invalid request body.
+          description: |-
+            Invalid request body, or an `If-None-Match` header value other
+            than `*`.
         "500":
           $ref: "#/components/responses/InternalServerError"
   /node/commissioner/state:
@@ -2488,6 +2500,21 @@ components:
   ### Parameters ##############################################################
   #############################################################################
   parameters:
+    IfNoneMatchStar:
+      name: If-None-Match
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: ["*"]
+      description: |-
+        With the value `*`, the dataset is only written when none is in place
+        yet; if one exists the request fails with 412 and nothing is written.
+        Any other value is rejected with 400: the dataset resources carry no
+        entity tags to match against. Without the header an existing dataset
+        is replaced. The active dataset is only writable while Thread is
+        stopped, and that check runs first: on a running node the response
+        is 409 whether or not this header is present.
 
     actionId:
       name: actionId
@@ -2706,6 +2733,18 @@ components:
             title: Request Timeout
             status: 408
 
+    PreconditionFailedError:
+      description: |
+        A dataset is already in place and the request carried
+        `If-None-Match: *`. Nothing was written; retry without the header to
+        replace the dataset deliberately, or wait until none is in place.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SimpleError"
+          example:
+            title: Precondition Failed
+            status: 412
     ConflictError:
       description: |
         The request conflicts with the current state of the target resource;

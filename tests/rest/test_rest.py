@@ -49,6 +49,14 @@ def get_data_from_url(url, result, index):
     result[index] = data
 
 
+def expect_http_error(code, action):
+    try:
+        action()
+        raise AssertionError("expected HTTP {}".format(code))
+    except urllib.error.HTTPError as err:
+        assert err.code == code, f"expected HTTP {code}, got {err.code}"
+
+
 def get_error_from_url(url, result, index):
     try:
         urllib.request.urlopen(urllib.request.Request(url))
@@ -777,13 +785,6 @@ def epskc_test():
         req.add_header('Content-Type', 'application/json')
         return urllib.request.urlopen(req)
 
-    def expect_http_error(code, action):
-        try:
-            action()
-            raise AssertionError("expected HTTP {}".format(code))
-        except urllib.error.HTTPError as err:
-            assert err.code == code
-
     # Regression test for https://github.com/openthread/ot-br-posix/issues/3522: an invalid
     # PUT body must return its real error status (400) rather than being masked as 405.
     expect_http_error(400, lambda: put_state("toggle"))
@@ -826,6 +827,49 @@ def epskc_test():
     print(" /node/ba-epskc : OK")
 
 
+def node_dataset_if_none_match_test():
+    url = rest_api_addr + "/node/dataset/pending"
+
+    def put(body, headers, target=None):
+        req = urllib.request.Request(target or url, data=body.encode(), method='PUT', headers=headers)
+        return urllib.request.urlopen(req)
+
+    body = json.dumps({"activeDataset": {"activeTimestamp": {"seconds": 20}}, "delay": 3600000})
+
+    # A rerun against the same node may find the pending dataset a previous
+    # run left behind (there is no DELETE to clean it up with); the
+    # conditional create is only expected on a node that has none.
+    try:
+        with urllib.request.urlopen(url) as response:
+            has_pending = response.status == 200
+    except urllib.error.HTTPError:
+        has_pending = False
+    if not has_pending:
+        with put(body, {'Content-Type': 'application/json', 'If-None-Match': '*'}) as response:
+            assert response.status == 201
+
+    # One is in place now: the conditional write is refused, nothing written.
+    expect_http_error(412, lambda: put(body, {'Content-Type': 'application/json', 'If-None-Match': '*'}))
+
+    # Header values other than "*" are rejected, not run unconditionally.
+    expect_http_error(400, lambda: put(body, {'Content-Type': 'application/json', 'If-None-Match': '"abc"'}))
+
+    # A failing precondition answers before the body is processed (RFC 9110
+    # section 13.2.1), so the malformed body does not turn this into a 400.
+    expect_http_error(412, lambda: put("{not json", {'Content-Type': 'application/json', 'If-None-Match': '*'}))
+
+    # On the active dataset of an attached node the role check answers first.
+    expect_http_error(409, lambda: put(body, {'Content-Type': 'application/json', 'If-None-Match': '*'},
+                                       rest_api_addr + "/node/dataset/active"))
+
+    # Without the header the replace semantics are unchanged.
+    body = json.dumps({"activeDataset": {"activeTimestamp": {"seconds": 30}}, "delay": 3600000})
+    with put(body, {'Content-Type': 'application/json'}) as response:
+        assert response.status == 200
+
+    print(" /node/dataset If-None-Match : OK")
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
@@ -851,6 +895,7 @@ def main():
     error_test(10)
     well_known_thread_test(20)
     epskc_test()
+    node_dataset_if_none_match_test()
 
     return 0
 
