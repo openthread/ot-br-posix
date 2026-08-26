@@ -141,6 +141,33 @@ proc wait_for_device_role {pattern {retries 30} {bus "--system"}} {
     return 0
 }
 
+# Join the network via the D-Bus Join method, given a hex-encoded active
+# operational dataset TLV string as used with the "array:byte:" dbus-send
+# type.
+#
+# NcpHost::Join chains three sequential spinel round-trips to the NCP
+# (DatasetSetActiveTlvs, Ip6SetEnabled, ThreadSetEnabled) before dbus-send
+# gets its reply, which can exceed the default 10s expect timeout under CI
+# load well before dbus-send's own ~25s reply-timeout would trigger (see
+# #3512). Use a generous, explicit timeout just for this call.
+proc dbus_join {dataset_dbus {bus "--system"}} {
+    global spawn_id
+    set has_spawn_id [info exists spawn_id]
+    if {$has_spawn_id} {
+        set backup_spawn_id $spawn_id
+    }
+
+    spawn dbus-send $bus --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply \
+        /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
+    expect -timeout 30 eof
+
+    if {$has_spawn_id} {
+        set spawn_id $backup_spawn_id
+    } else {
+        unset -nocomplain spawn_id
+    }
+}
+
 # type: The type of the node.
 #   Possible values:
 #   1. cli: The cli app. ot-cli-ftd or ot-cli-mtd

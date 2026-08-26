@@ -35,9 +35,7 @@ set dataset_dbus "0x0e,0x08,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x03,0x
 # Step 1. Start otbr-agent with a NCP and join the network by dbus join method.
 spawn_node 2 otbr $::env(EXP_OT_NCP_PATH)
 sleep 1
-
-spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
-expect eof
+dbus_join $dataset_dbus
 
 # Step 2. Wait for it to become a leader. Poll instead of a fixed sleep plus
 # a single short-timeout read: leader formation timing varies in CI and the
