@@ -1472,17 +1472,25 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
     OTBR_UNUSED_VARIABLE(aInterfaceIndex);
 
     Ip6Address address;
-    bool       isAdd      = (aFlags & kDNSServiceFlagsAdd) != 0;
-    bool       moreComing = (aFlags & kDNSServiceFlagsMoreComing) != 0;
+    bool       isAdd;
+    bool       moreComing = false;
 
-    otbrLog(aErrorCode == kDNSServiceErr_NoError ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
-            "DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u, error=%" PRId32, aFlags, aHostName,
-            static_cast<unsigned int>(aAddress->sa_family), aErrorCode);
+    if (aErrorCode != kDNSServiceErr_NoError)
+    {
+        otbrLogWarning("DNSServiceGetAddrInfo failed: host=%s, error=%" PRId32, aHostName, aErrorCode);
+        ExitNow();
+    }
 
-    VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
-    VerifyOrExit(aAddress->sa_family == AF_INET6);
+    isAdd      = (aFlags & kDNSServiceFlagsAdd) != 0;
+    moreComing = (aFlags & kDNSServiceFlagsMoreComing) != 0;
 
-    address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
+    VerifyOrExit(aAddress != nullptr, otbrLogWarning("DNSServiceGetAddrInfo reply has null address"));
+
+    otbrLogInfo("DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u", aFlags, aHostName,
+                static_cast<unsigned int>(aAddress->sa_family));
+
+    SuccessOrExit(address.CopyFrom(*aAddress), otbrLogWarning("DNSServiceGetAddrInfo unsupported sa_family %u",
+                                                              static_cast<unsigned int>(aAddress->sa_family)));
     VerifyOrExit(!address.IsUnspecified() && !address.IsMulticast() && !address.IsLoopback(),
                  otbrLogDebug("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
 
@@ -1572,17 +1580,27 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
     OTBR_UNUSED_VARIABLE(aServiceRef);
 
     Ip6Address address;
-    bool       isAdd      = (aFlags & kDNSServiceFlagsAdd) != 0;
-    bool       moreComing = (aFlags & kDNSServiceFlagsMoreComing) != 0;
+    bool       isAdd;
+    bool       moreComing = false;
 
-    otbrLog(aErrorCode == kDNSServiceErr_NoError ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
-            "DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u, error=%" PRId32, aFlags, aHostName,
-            static_cast<unsigned int>(aAddress->sa_family), aErrorCode);
+    if (aErrorCode != kDNSServiceErr_NoError)
+    {
+        otbrLogWarning("DNSServiceGetAddrInfo failed: host=%s, error=%" PRId32, aHostName, aErrorCode);
+        ExitNow();
+    }
 
-    VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
-    VerifyOrExit(aAddress->sa_family == AF_INET6);
+    isAdd      = (aFlags & kDNSServiceFlagsAdd) != 0;
+    moreComing = (aFlags & kDNSServiceFlagsMoreComing) != 0;
 
-    address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
+    VerifyOrExit(aAddress != nullptr, otbrLogWarning("DNSServiceGetAddrInfo reply has null address"));
+
+    otbrLogInfo("DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u", aFlags, aHostName,
+                static_cast<unsigned int>(aAddress->sa_family));
+
+    SuccessOrExit(address.CopyFrom(*aAddress), otbrLogWarning("DNSServiceGetAddrInfo unsupported sa_family %u",
+                                                              static_cast<unsigned int>(aAddress->sa_family)));
+    VerifyOrExit(!address.IsUnspecified() && !address.IsMulticast() && !address.IsLoopback(),
+                 otbrLogDebug("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
 
     otbrLogInfo("DNSServiceGetAddrInfo reply: %s address=%s, ttl=%" PRIu32, isAdd ? "add" : "remove",
                 address.ToString().c_str(), aTtl);

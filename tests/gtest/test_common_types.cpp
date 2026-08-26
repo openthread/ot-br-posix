@@ -26,13 +26,83 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <arpa/inet.h>
+
 #include <gtest/gtest.h>
 
 #include "common/types.hpp"
 
 //-------------------------------------------------------------
 // Test for Ip6Address
-// TODO: Add Ip6Address tests
+
+TEST(Ip6Address, Ipv4MappedAddress)
+{
+    using otbr::Ip6Address;
+
+    struct sockaddr_in sockAddr;
+    memset(&sockAddr, 0, sizeof(sockAddr));
+    sockAddr.sin_family = AF_INET;
+    ASSERT_EQ(inet_pton(AF_INET, "192.168.1.100", &sockAddr.sin_addr), 1);
+
+    Ip6Address address;
+    EXPECT_EQ(address.CopyFrom(reinterpret_cast<const struct sockaddr &>(sockAddr)), OTBR_ERROR_NONE);
+    EXPECT_TRUE(address.IsIp4Mapped());
+    EXPECT_STREQ(address.ToString().c_str(), "::ffff:192.168.1.100");
+
+    Ip6Address addressFromSockAddrIn;
+    addressFromSockAddrIn.CopyFrom(sockAddr);
+    EXPECT_TRUE(addressFromSockAddrIn.IsIp4Mapped());
+    EXPECT_STREQ(addressFromSockAddrIn.ToString().c_str(), "::ffff:192.168.1.100");
+
+    struct in_addr inAddr;
+    ASSERT_EQ(inet_pton(AF_INET, "10.0.0.1", &inAddr), 1);
+
+    Ip6Address addressFromInAddr;
+    addressFromInAddr.CopyFrom(inAddr);
+    EXPECT_TRUE(addressFromInAddr.IsIp4Mapped());
+    EXPECT_STREQ(addressFromInAddr.ToString().c_str(), "::ffff:10.0.0.1");
+
+    struct sockaddr_in6 sockAddr6;
+    memset(&sockAddr6, 0, sizeof(sockAddr6));
+    sockAddr6.sin6_family = AF_INET6;
+    ASSERT_EQ(inet_pton(AF_INET6, "fd00::1", &sockAddr6.sin6_addr), 1);
+
+    Ip6Address address6;
+    EXPECT_EQ(address6.CopyFrom(reinterpret_cast<const struct sockaddr &>(sockAddr6)), OTBR_ERROR_NONE);
+    EXPECT_FALSE(address6.IsIp4Mapped());
+    EXPECT_STREQ(address6.ToString().c_str(), "fd00::1");
+
+    struct sockaddr invalidSockAddr;
+    memset(&invalidSockAddr, 0, sizeof(invalidSockAddr));
+    invalidSockAddr.sa_family = AF_UNSPEC;
+    EXPECT_EQ(address.CopyFrom(invalidSockAddr), OTBR_ERROR_INVALID_ARGS);
+
+    // Negative matches
+    EXPECT_FALSE(Ip6Address("::").IsIp4Mapped());
+    EXPECT_FALSE(Ip6Address("::1").IsIp4Mapped());
+    EXPECT_FALSE(Ip6Address("::ffff:0:0:0").IsIp4Mapped());
+    EXPECT_FALSE(Ip6Address("::1.2.3.4").IsIp4Mapped());
+    EXPECT_FALSE(Ip6Address("ffff::").IsIp4Mapped());
+    EXPECT_FALSE(Ip6Address("::fffe:0:0").IsIp4Mapped());
+
+    // Boundary positive matches
+    EXPECT_TRUE(Ip6Address("::ffff:0:0").IsIp4Mapped());
+    EXPECT_TRUE(Ip6Address("::ffff:0.0.0.0").IsIp4Mapped());
+    EXPECT_STREQ(Ip6Address("::ffff:0:0").ToString().c_str(), "::ffff:0.0.0.0");
+    EXPECT_TRUE(Ip6Address("::ffff:255.255.255.255").IsIp4Mapped());
+    EXPECT_TRUE(Ip6Address("::ffff:ffff:ffff").IsIp4Mapped());
+    EXPECT_STREQ(Ip6Address("::ffff:ffff:ffff").ToString().c_str(), "::ffff:255.255.255.255");
+
+    inAddr.s_addr = INADDR_ANY;
+    addressFromInAddr.CopyFrom(inAddr);
+    EXPECT_TRUE(addressFromInAddr.IsIp4Mapped());
+    EXPECT_STREQ(addressFromInAddr.ToString().c_str(), "::ffff:0.0.0.0");
+
+    inAddr.s_addr = INADDR_NONE;
+    addressFromInAddr.CopyFrom(inAddr);
+    EXPECT_TRUE(addressFromInAddr.IsIp4Mapped());
+    EXPECT_STREQ(addressFromInAddr.ToString().c_str(), "::ffff:255.255.255.255");
+}
 
 //-------------------------------------------------------------
 // Test for Ip6Prefix
