@@ -42,9 +42,6 @@
 #include <netinet/ip.h>
 #include <sys/socket.h>
 
-#include <functional>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include <openthread/border_agent.h>
