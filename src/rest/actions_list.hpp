@@ -98,7 +98,35 @@ public:
     void GetPendingOrActive(uint32_t &aPending) const;
 
     /**
+     * Is a streaming action of a given type currently pending or active?
+     *
+     * Each streaming domain owns its own SSE broadcaster, so streams of
+     * different types may run concurrently. A second stream of the same type
+     * however would take the channel away from the first one.
+     *
+     * @param[in] aTypeName  The action type name to check.
+     *
+     * @retval true   A pending or active action of that type is streaming.
+     * @retval false  No action of that type is currently streaming.
+     */
+    bool HasStreamingAction(const std::string &aTypeName) const;
+
+    /**
+     * Evict the oldest action that is neither pending nor active.
+     *
+     * Pending or active actions are never evicted, evicting them can cause
+     * undesired side effects.
+     *
+     * @retval true   An inactive action was evicted.
+     * @retval false  All actions are pending or active, nothing was evicted.
+     */
+    bool EvictOldestInactiveItem(void);
+
+    /**
      * Add a item to the collection.
+     *
+     * The item is not added if the collection is full and holds
+     * pending or active actions only.
      *
      * @param[in] aItem  The item to add.
      */
@@ -134,6 +162,9 @@ public:
 
     /**
      * The remaining capacity of the collection.
+     *
+     * Only pending or active actions occupy capacity permanently, all other
+     * actions can be evicted to make room for a new action.
      */
     size_t FreeCapacity(void) const;
 
@@ -148,6 +179,8 @@ public:
      * Create an action from a json object.
      *
      * Returns OT_ERROR_NONE on success, or an error code on failure.
+     * Returns OT_ERROR_NO_BUFS if the collection is full of pending or
+     * active actions.
      * aUuid is the Uuid of the action that was created.
      */
     otError CreateAction(const cJSON *aJson, std::string &aUuid);

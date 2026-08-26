@@ -90,9 +90,18 @@ public:
      */
     static bool Validate(const cJSON &aJson);
 
+    /**
+     * Whether responses of this action are published on the network
+     * diagnostics SSE channel while they arrive.
+     */
+    bool IsStreaming(void) const override { return mStream; }
+
 private:
+    void StopStreaming(void);
+
     const char *mDestination; ///< Pointer to string in mJson
     AddressType mDestinationType;
+    bool        mStream; ///< If true, responses are broadcast as they arrive
 
     uint8_t  mTypeList[DiagnosticTypes::kMaxTotalCount];
     uint32_t mTypeCount;
