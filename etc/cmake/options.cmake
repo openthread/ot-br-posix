@@ -187,6 +187,16 @@ if(OTBR_NOTIFY_UPSTART)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
 endif()
 
+# When OTBR_PLATFORM_RESET_EXIT is enabled, the daemon exits with status 0 on
+# platform reset. Ensure the service supervisor is configured to restart on clean
+# exits as well (e.g. systemd Restart=always).
+option(OTBR_PLATFORM_RESET_EXIT "Exit on platform reset instead of restarting in-place" OFF)
+if(OTBR_PLATFORM_RESET_EXIT)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PLATFORM_RESET_EXIT=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PLATFORM_RESET_EXIT=0)
+endif()
+
 set(OTBR_NAT64_DEFAULT OFF)
 if (OTBR_BORDER_ROUTING)
     set(OTBR_NAT64_DEFAULT ON)

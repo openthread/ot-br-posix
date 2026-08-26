@@ -61,7 +61,13 @@
 #ifndef __ANDROID__
 #error "OTBR_ENABLE_PLATFORM_ANDROID can be enabled for only Android devices"
 #endif
-#define OTBR_ENABLE_PLATFORM_RESET_EXIT
+#ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
+#define OTBR_ENABLE_PLATFORM_RESET_EXIT 1
+#endif
+#endif
+
+#ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
+#define OTBR_ENABLE_PLATFORM_RESET_EXIT 0
 #endif
 
 #define DEFAULT_INTERFACE_NAME "wpan0"
@@ -94,7 +100,7 @@ enum
 #endif
 };
 
-#ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
+#if !OTBR_ENABLE_PLATFORM_RESET_EXIT
 static jmp_buf sResetJump;
 #endif
 static otbr::Application *gApp = nullptr;
@@ -139,7 +145,7 @@ exit:
     return successful;
 }
 
-#ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
+#if !OTBR_ENABLE_PLATFORM_RESET_EXIT
 static constexpr char kAutoAttachDisableArg[] = "--auto-attach=0";
 static char           sAutoAttachDisableArgStorage[sizeof(kAutoAttachDisableArg)];
 
@@ -466,14 +472,14 @@ void otPlatReset(otInstance *aInstance)
     gApp->Deinit();
     gApp = nullptr;
 
-#ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
+#if !OTBR_ENABLE_PLATFORM_RESET_EXIT
     longjmp(sResetJump, 1);
     assert(false);
 #else
     otbrLogNotice("Exit for platform reset!");
 
-    // Exits immediately. The system server will receive the
-    // signal and decide whether (and how) to restart the ot-daemon
+    // Exits immediately. The service supervisor (or Android system server) will
+    // decide whether (and how) to restart the daemon.
     exit(0);
 #endif
 }
@@ -482,7 +488,7 @@ int otbr::RealMain(int argc, char *argv[])
 {
     int ret;
 
-#ifndef OTBR_ENABLE_PLATFORM_RESET_EXIT
+#if !OTBR_ENABLE_PLATFORM_RESET_EXIT
     if (setjmp(sResetJump))
     {
         std::vector<char *> args = AppendAutoAttachDisableArg(argc, argv);
