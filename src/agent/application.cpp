@@ -35,6 +35,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -155,7 +156,26 @@ void Application::Deinit(void)
 
 otbrError Application::Run(void)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    struct sigaction sa{};
+    otbrError        error = OTBR_ERROR_NONE;
+
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESETHAND;
+
+    // allow quitting elegantly
+    sa.sa_handler = HandleSignal;
+    if (sigaction(SIGTERM, &sa, nullptr) < 0)
+    {
+        otbrLogWarning("Failed to install SIGTERM handler: %s", strerror(errno));
+    }
+
+    // avoid exiting on SIGPIPE
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags   = 0;
+    if (sigaction(SIGPIPE, &sa, nullptr) < 0)
+    {
+        otbrLogWarning("Failed to ignore SIGPIPE: %s", strerror(errno));
+    }
 
 #ifdef HAVE_LIBSYSTEMD
     if (getenv("SYSTEMD_EXEC_PID") != nullptr)
@@ -178,12 +198,6 @@ otbrError Application::Run(void)
         }
     }
 #endif
-
-    // allow quitting elegantly
-    signal(SIGTERM, HandleSignal);
-
-    // avoid exiting on SIGPIPE
-    signal(SIGPIPE, SIG_IGN);
 
     // Generic readiness notification for fd-based supervisors (s6, dinit,
     // ...): write a newline to the file descriptor passed in OTBR_NOTIFY_FD.
@@ -275,8 +289,9 @@ otbrError Application::Run(void)
 
 void Application::HandleSignal(int aSignal)
 {
+    OTBR_UNUSED_VARIABLE(aSignal);
+
     sShouldTerminate = true;
-    signal(aSignal, SIG_DFL);
 }
 
 void Application::CreateRcpMode(void)
