@@ -358,8 +358,7 @@ Detailed request examples are provided in the test folder as a "Bruno Request Co
 
 1. Validating the openapi.yaml specification against the implementation.
 
-   Make sure Schemathesis v4.25.0 or later (4.25.x series) is installed; earlier 4.24.x releases
-   crash during the `examples` phase:
+   Make sure Schemathesis v4.25.0 or later (4.25.x series) is installed; earlier 4.24.x releases crash during the `examples` phase:
 
    ```
    pip install --upgrade "schemathesis~=4.25.0"
