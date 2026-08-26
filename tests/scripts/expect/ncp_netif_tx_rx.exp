@@ -47,9 +47,7 @@ set dest_addr [get_ipaddr mleid]
 # Step 2. Start otbr-agent with a NCP and join the network by dbus join method
 spawn_node 2 otbr $::env(EXP_OT_NCP_PATH)
 sleep 1
-
-spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
-expect eof
+dbus_join $dataset_dbus
 
 # Step 3. Check if the otbr-agent has attached successfully. Poll instead of
 # a fixed sleep plus a single short-timeout read: attach timing varies in CI
