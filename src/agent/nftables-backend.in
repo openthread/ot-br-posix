@@ -1,0 +1,14 @@
+# Written by the build, and read by the scripts that set up the legacy
+# ipset/ip6tables/iptables rules.
+#
+# 1 means otbr-agent was built with -DOTBR_NFTABLES=ON: it installs the Thread
+# ingress filter and the NAT44 masquerade in-process, and the legacy scripts
+# skip theirs. 0 means the legacy scripts own them.
+#
+# The value is written either way rather than the file standing for "on" by
+# existing, because installing does not uninstall first: a marker that could
+# only say "on" would outlive a rebuild with the option turned back off, and
+# the scripts would then skip a filter that nothing installs at all.
+#
+# Setting OTBR_NFTABLES in the environment overrides this.
+@OTBR_NFTABLES_MARKER_VALUE@

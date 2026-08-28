@@ -116,6 +116,12 @@ otbr_install()
         "-DOTBR_MDNS=${OTBR_MDNS}"
         "-DOTBR_VENDOR_NAME=${OTBR_VENDOR_NAME}"
         "-DOTBR_PRODUCT_NAME=${OTBR_PRODUCT_NAME}"
+        # Same variable the firewall and nat44 scripts resolve, so one setup run
+        # cannot build an agent that owns the firewall while installing the
+        # legacy services that also do, or the reverse. They run before this
+        # does and the marker this build writes is not there yet at that point,
+        # so the shell variable, not the file, is what keeps them agreeing.
+        "-DOTBR_NFTABLES=$([ "${OTBR_NFTABLES:-0}" = "1" ] && echo ON || echo OFF)"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="

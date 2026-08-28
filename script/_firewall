@@ -33,6 +33,24 @@ sudo modprobe ip6table_filter || true
 
 FIREWALL="${FIREWALL:-1}"
 
+# When otbr-agent is built with the opt-in in-process nftables firewall
+# backend (-DOTBR_NFTABLES=ON), it owns the OTBR ingress filter, so the
+# legacy ipset/ip6tables service must not be installed alongside it. The
+# build records which backend it chose in a marker file; an explicit
+# OTBR_NFTABLES in the environment overrides it.
+OTBR_NFTABLES_MARKER="/usr/share/otbr/nftables-backend"
+if [ -z "${OTBR_NFTABLES:-}" ]; then
+    # The marker carries the value the build decided, not just its presence:
+    # installing does not uninstall, so a file that could only say "on" would
+    # outlive a rebuild with the option turned back off. Anything missing or
+    # unrecognised means the legacy path, which over-filters rather than
+    # leaving the router with no ingress filter at all.
+    OTBR_NFTABLES=0
+    if [ -r "${OTBR_NFTABLES_MARKER}" ] && grep -qx '1' "${OTBR_NFTABLES_MARKER}"; then
+        OTBR_NFTABLES=1
+    fi
+fi
+
 firewall_uninstall()
 {
     with FIREWALL || return 0
@@ -52,6 +70,11 @@ firewall_install()
 {
     with FIREWALL || return 0
 
+    if [ "${OTBR_NFTABLES}" = "1" ]; then
+        echo "OTBR_NFTABLES=1: OTBR ingress filter is managed in-process (nftables); skipping legacy firewall service."
+        return 0
+    fi
+
     sudo cp script/otbr-firewall $FIREWALL_SERVICE
     sudo chmod a+x $FIREWALL_SERVICE
     if have systemctl; then
@@ -62,6 +85,13 @@ firewall_install()
 
 firewall_start()
 {
+    # Same gate as the install: with the in-process backend there is no
+    # otbr-firewall service to start, and starting the legacy one would put
+    # its chain alongside the agent's.
+    if [ "${OTBR_NFTABLES}" = "1" ]; then
+        return 0
+    fi
+
     with FIREWALL || return 0
 
     if with DOCKER; then
