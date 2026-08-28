@@ -1475,7 +1475,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ActiveDataset"
-          plain/text:
+          text/plain:
             schema:
               $ref: "#/components/schemas/DatasetTlv"
       responses:
