@@ -1461,7 +1461,7 @@ paths:
         - node
       summary: Creates or updates the active operational dataset
       description: |-
-        Creates or updates the the active operational dataset on the current node. Only allowed if the Thread node
+        Creates or updates the active operational dataset on the current node. Only allowed if the Thread node
         is inactive. If the Thread node is active, a pending dataset should be used to update the current active
         operational dataset.
       parameters:
@@ -1515,7 +1515,7 @@ paths:
         - node
       summary: Creates or updates the pending operational dataset
       description: |-
-        Creates or updates the the pending operational dataset on the current node. Delay needs to be set to let
+        Creates or updates the pending operational dataset on the current node. Delay needs to be set to let
         the pending dataset apply as active dataset in the near future.
       parameters:
         - $ref: "#/components/parameters/IfNoneMatchStar"

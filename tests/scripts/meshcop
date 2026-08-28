@@ -584,7 +584,7 @@ test_meshcop_service()
     service="$(scan_meshcop_service)"
     grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
 
-    # Test if the the meshcop service is unpublished when otbr-agent stops.
+    # Test if the meshcop service is unpublished when otbr-agent stops.
     sudo "${OT_CTL}" ba disable
     sleep 2
     sudo killall "${OTBR_AGENT}"
