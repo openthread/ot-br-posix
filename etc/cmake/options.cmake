@@ -86,6 +86,22 @@ if (OTBR_TELEMETRY_DATA_API)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TELEMETRY_DATA_API=1)
 endif()
 
+# Opt-in, Linux-only: build the in-process nftables firewall backend instead of
+# relying on the legacy ipset/ip6tables shell firewall (which remains the
+# default). Requires libnftnl + libmnl at build time and nf_tables kernel
+# support at runtime.
+option(OTBR_NFTABLES "Enable in-process nftables firewall backend (libnftnl/libmnl)" OFF)
+if (OTBR_NFTABLES)
+    if (NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        message(FATAL_ERROR "OTBR_NFTABLES is only supported on Linux")
+    endif()
+    pkg_check_modules(LIBNFTNL REQUIRED IMPORTED_TARGET libnftnl)
+    pkg_check_modules(LIBMNL REQUIRED IMPORTED_TARGET libmnl)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NFTABLES=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NFTABLES=0)
+endif()
+
 option(OTBR_OPENWRT "Enable OpenWrt support" OFF)
 if(OTBR_OPENWRT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_OPENWRT=1)

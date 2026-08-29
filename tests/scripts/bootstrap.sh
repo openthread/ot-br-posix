@@ -63,7 +63,9 @@ install_common_dependencies()
         coreutils \
         git \
         libprotobuf-dev \
-        protobuf-compiler
+        protobuf-compiler \
+        libnftnl-dev \
+        libmnl-dev
 }
 
 install_openthread_binraries()

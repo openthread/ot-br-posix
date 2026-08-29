@@ -37,6 +37,7 @@ add_executable(otbr-agent
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_BORDER_AGENT}>:otbr-border-agent>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
+    $<$<BOOL:${OTBR_NFTABLES}>:otbr-firewall>
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
@@ -107,6 +108,24 @@ configure_file(otbr-agent.default.in otbr-agent.default)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.default
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/default
     RENAME otbr-agent
+)
+
+# Record what the build decided about the firewall backend where the legacy
+# firewall scripts can see it, so they need not be told separately. The value
+# is written and installed in both cases: installing does not uninstall first,
+# so a marker that could only say "on" would outlive a rebuild with the option
+# turned back off, leaving the scripts skipping a filter the agent no longer
+# installs either. The path pairs with the /usr prefix both install paths pin;
+# under another prefix the scripts do not find it and take the legacy path,
+# which over-filters rather than leaving the router unfiltered.
+if(OTBR_NFTABLES)
+    set(OTBR_NFTABLES_MARKER_VALUE 1)
+else()
+    set(OTBR_NFTABLES_MARKER_VALUE 0)
+endif()
+configure_file(nftables-backend.in nftables-backend @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nftables-backend
+    DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/otbr
 )
 
 pkg_check_modules(LIBSYSTEMD libsystemd)

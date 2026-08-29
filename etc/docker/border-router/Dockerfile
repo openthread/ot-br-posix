@@ -53,6 +53,8 @@ RUN set -x \
            curl \
            git \
            libjsoncpp-dev \
+           libmnl-dev \
+           libnftnl-dev \
            ninja-build \
            nodejs \
            npm \
@@ -136,6 +138,8 @@ RUN set -x \
            iptables \
            iproute2 \
            libjsoncpp25 \
+           libmnl0 \
+           libnftnl11 \
            xz-utils \
     && PLATFORM_SPEC="${TARGETARCH}${TARGETVARIANT:+/$TARGETVARIANT}" \
     && case "${PLATFORM_SPEC}" in \
