@@ -182,6 +182,7 @@ otbr_install()
             "-DOT_REFERENCE_DEVICE=ON"
             "-DOT_DHCP6_CLIENT=ON"
             "-DOT_DHCP6_SERVER=ON"
+            "-DOT_POSIX_INSTALL_EXTERNAL_ROUTES=ON"
         )
     fi
 
