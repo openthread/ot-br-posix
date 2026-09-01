@@ -40,8 +40,8 @@ start_otbr_docker $container $::env(EXP_OT_NCP_PATH) 2 $pty1 $pty2
 spawn_node 3 otbr-docker $container
 sleep 5
 
-send "dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join \"array:byte:${dataset_dbus}\"\n"
-expect "app#"
+dbus_join $dataset_dbus "--system" $container
+wait_for_device_role {leader} 30 "--system" $container
 sleep 20
 
 spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
