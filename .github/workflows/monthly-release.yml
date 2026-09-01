@@ -92,7 +92,8 @@ jobs:
       - name: Package Source Tarball
         run: |
           TAR_NAME="ot-br-posix-${TAG_NAME}.tar.gz"
-          tar --exclude-vcs --transform "s|^\.|ot-br-posix-${TAG_NAME}|" -czf "${TAR_NAME}" .
+          tar --exclude-vcs --transform "s|^\.|ot-br-posix-${TAG_NAME}|" -czf "../${TAR_NAME}" .
+          mv "../${TAR_NAME}" .
           echo "TAR_NAME=${TAR_NAME}" >> $GITHUB_ENV
 
       - name: Create GitHub Release
