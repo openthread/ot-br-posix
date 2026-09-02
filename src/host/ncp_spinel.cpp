@@ -69,7 +69,7 @@ NcpSpinel::NcpSpinel(void)
     , mDiscoveryProxyId(0)
 #endif
 {
-    std::fill_n(mWaitingKeyTable, SPINEL_PROP_LAST_STATUS, sizeof(mWaitingKeyTable));
+    std::fill_n(mWaitingKeyTable, kMaxTids, SPINEL_PROP_LAST_STATUS);
     memset(mCmdTable, 0, sizeof(mCmdTable));
 }
 
@@ -1297,6 +1297,7 @@ otError NcpSpinel::RemoveProperty(spinel_prop_key_t aKey, const EncodingFunc &aE
 otError NcpSpinel::SendEncodedFrame(void)
 {
     otError  error = OT_ERROR_NONE;
+    otError  removeError;
     uint8_t  frame[kTxBufferSize];
     uint16_t frameLength;
 
@@ -1306,7 +1307,13 @@ otError NcpSpinel::SendEncodedFrame(void)
     SuccessOrExit(error = mSpinelDriver->GetSpinelInterface()->SendFrame(frame, frameLength));
 
 exit:
-    error = mNcpBuffer.OutFrameRemove();
+    removeError = mNcpBuffer.OutFrameRemove();
+
+    if (error == OT_ERROR_NONE)
+    {
+        error = removeError;
+    }
+
     return error;
 }
 
