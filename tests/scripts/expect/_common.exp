@@ -57,8 +57,8 @@ proc fail {message} {
 }
 
 proc wait_for {command success {failure {[\r\n]FAILURE_NOT_EXPECTED[\r\n]}}} {
-    set timeout 1
-    for {set i 0} {$i < 40} {incr i} {
+    set timeout 2
+    for {set i 0} {$i < 30} {incr i} {
         if {$command != ""} {
             send "$command\n"
         }
@@ -104,19 +104,23 @@ proc wait_for_device_role {pattern {retries 30} {bus "--system"}} {
     # Localize the timeout so a hung dbus-send can't inherit whatever
     # timeout was active in the calling script, and so a genuine timeout
     # (as opposed to a clean eof) still closes the spawned process below.
-    set timeout 2
+    set timeout 3
 
     set success 0
     for {set i 0} {$i < $retries} {incr i} {
-        spawn dbus-send $bus --print-reply --reply-timeout=1000 --dest=io.openthread.BorderRouter.wpan0 \
+        spawn dbus-send $bus --print-reply --reply-timeout=2000 --dest=io.openthread.BorderRouter.wpan0 \
             /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
         expect {
             -re $pattern {
                 expect eof
+                catch {close}
+                catch {wait}
                 set success 1
                 break
             }
             eof {
+                catch {close}
+                catch {wait}
                 # NoReply, wrong role, or another transient D-Bus error: retry.
             }
             timeout {
@@ -147,9 +151,9 @@ proc wait_for_device_role {pattern {retries 30} {bus "--system"}} {
 #
 # NcpHost::Join chains three sequential spinel round-trips to the NCP
 # (DatasetSetActiveTlvs, Ip6SetEnabled, ThreadSetEnabled) before dbus-send
-# gets its reply, which can exceed the default 10s expect timeout under CI
-# load well before dbus-send's own ~25s reply-timeout would trigger (see
-# #3512). Use a generous, explicit timeout just for this call.
+# gets its reply. Under CI runner load, this can take longer than dbus-send's
+# default 25s reply-timeout (especially when forming a network as leader).
+# Pass an explicit generous reply-timeout and expect timeout.
 proc dbus_join {dataset_dbus {bus "--system"}} {
     global spawn_id
     set has_spawn_id [info exists spawn_id]
@@ -157,9 +161,11 @@ proc dbus_join {dataset_dbus {bus "--system"}} {
         set backup_spawn_id $spawn_id
     }
 
-    spawn dbus-send $bus --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply \
-        /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
-    expect -timeout 30 eof
+    spawn dbus-send $bus --print-reply --reply-timeout=60000 --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
+    expect -timeout 65 eof
+    catch {close}
+    catch {wait}
 
     if {$has_spawn_id} {
         set spawn_id $backup_spawn_id
