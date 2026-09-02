@@ -90,7 +90,7 @@ proc expect_line {line} {
 # the CI timing variance in leader/router formation instead of relying on a
 # single read after a fixed sleep, which races with attach and intermittently
 # fails with "Error org.freedesktop.DBus.Error.NoReply".
-proc wait_for_device_role {pattern {retries 30} {bus "--system"}} {
+proc wait_for_device_role {pattern {retries 30} {bus "--system"} {container ""}} {
     # spawn sets the global spawn_id, so the dbus-send calls below would
     # otherwise silently redirect any send/expect the caller does afterwards
     # on its own node. Save and restore it so this utility is transparent to
@@ -108,8 +108,12 @@ proc wait_for_device_role {pattern {retries 30} {bus "--system"}} {
 
     set success 0
     for {set i 0} {$i < $retries} {incr i} {
-        spawn dbus-send $bus --print-reply --reply-timeout=2000 --dest=io.openthread.BorderRouter.wpan0 \
-            /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
+        set cmd [list dbus-send $bus --print-reply --reply-timeout=2000 --dest=io.openthread.BorderRouter.wpan0 \
+            /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole]
+        if {$container ne ""} {
+            set cmd [linsert $cmd 0 docker exec -i $container]
+        }
+        spawn {*}$cmd
         expect {
             -re $pattern {
                 expect eof
@@ -154,15 +158,19 @@ proc wait_for_device_role {pattern {retries 30} {bus "--system"}} {
 # gets its reply. Under CI runner load, this can take longer than dbus-send's
 # default 25s reply-timeout (especially when forming a network as leader).
 # Pass an explicit generous reply-timeout and expect timeout.
-proc dbus_join {dataset_dbus {bus "--system"}} {
+proc dbus_join {dataset_dbus {bus "--system"} {container ""}} {
     global spawn_id
     set has_spawn_id [info exists spawn_id]
     if {$has_spawn_id} {
         set backup_spawn_id $spawn_id
     }
 
-    spawn dbus-send $bus --print-reply --reply-timeout=60000 --dest=io.openthread.BorderRouter.wpan0 \
-        --type=method_call /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
+    set cmd [list dbus-send $bus --print-reply --reply-timeout=60000 --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"]
+    if {$container ne ""} {
+        set cmd [linsert $cmd 0 docker exec -i $container]
+    }
+    spawn {*}$cmd
     expect -timeout 65 eof
     catch {close}
     catch {wait}

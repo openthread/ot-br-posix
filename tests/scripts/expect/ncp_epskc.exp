@@ -52,12 +52,11 @@ try {
     sleep 5
     
     # Join a Thread network.
-    switch_node 3
-    send "dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join \"array:byte:${dataset_dbus}\"\n"
-    expect "dbus-send"
-    expect "app#"
+    dbus_join $dataset_dbus "--system" $container
+    wait_for_device_role {leader} 30 "--system" $container
     sleep 20
 
+    switch_node 3
     # Activate Epskc and get the Ephemeral Key
     send "dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.ActivateEphemeralKeyMode \"uint32:${epskc_lifetime}\"\n"
     expect -re {string \"([0-9]{9})\"}
