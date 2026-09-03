@@ -801,6 +801,17 @@ public:
     ClientError SetBorderAgentEnabled(bool aEnabled);
 
     /**
+     * This method sets the 16 byte Border Agent Id.
+     *
+     * @param[in] aBorderAgentId  The Border Agent Id.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     */
+    ClientError SetBorderAgentId(const std::vector<uint8_t> &aBorderAgentId);
+
+    /**
      * This method sets multiple vendor-specific entries for the TXT record of the MeshCoP service.
      *
      * @note
