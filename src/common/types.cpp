@@ -131,6 +131,39 @@ void Ip6Address::CopyTo(otIp6Address &aAddress) const
     memcpy(aAddress.mFields.m8, m8, sizeof(aAddress.mFields.m8));
 }
 
+otbrError Ip6Address::CopyFrom(const struct sockaddr &aSockAddr)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    if (aSockAddr.sa_family == AF_INET6)
+    {
+        CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(&aSockAddr));
+    }
+    else if (aSockAddr.sa_family == AF_INET)
+    {
+        CopyFrom(*reinterpret_cast<const struct sockaddr_in *>(&aSockAddr));
+    }
+    else
+    {
+        error = OTBR_ERROR_INVALID_ARGS;
+    }
+
+    return error;
+}
+
+void Ip6Address::CopyFrom(const struct sockaddr_in &aSockAddr)
+{
+    CopyFrom(aSockAddr.sin_addr);
+}
+
+void Ip6Address::CopyFrom(const struct in_addr &aInAddr)
+{
+    memset(m8, 0, 10);
+    m8[10] = 0xff;
+    m8[11] = 0xff;
+    memcpy(&m8[12], &aInAddr.s_addr, sizeof(aInAddr.s_addr));
+}
+
 otbrError Ip6Address::FromString(const char *aStr, Ip6Address &aAddr)
 {
     int ret;
