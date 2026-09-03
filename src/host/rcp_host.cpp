@@ -34,6 +34,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <openthread/backbone_router_ftd.h>
 #include <openthread/border_agent.h>
@@ -44,11 +45,15 @@
 #include <openthread/logging.h>
 #include <openthread/nat64.h>
 #include <openthread/netdiag.h>
+#include <openthread/openthread-system.h>
 #include <openthread/srp_server.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/trel.h>
+#if OTBR_ENABLE_MDNS_OPENTHREAD
+#include <openthread/mdns.h>
+#endif
 #include <openthread/platform/logging.h>
 #include <openthread/platform/misc.h>
 #include <openthread/platform/radio.h>
@@ -264,6 +269,63 @@ void RcpHost::Init(void)
         ThreadHelper::LogOpenThreadResult("Set state callback", result);
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
+
+#if OTBR_ENABLE_MDNS_OPENTHREAD
+    {
+        // Advertise under the system's host name instead of the default
+        // "ot<extaddr>": the border router should be reachable under the name
+        // its administrator gave the device. This must happen before the mDNS
+        // module is enabled, which follows the infra link, so this is the
+        // last easy moment. Best effort: keep the default on any failure.
+        // Larger than any name the kernel allows: glibc reports
+        // ENAMETOOLONG instead of truncating when the name does not fit.
+        char hostname[256];
+
+        if (gethostname(hostname, sizeof(hostname)) == 0)
+        {
+            hostname[sizeof(hostname) - 1] = '\0';
+            // Only the first label: mDNS host names are single labels.
+            if (char *dot = strchr(hostname, '.'))
+            {
+                *dot = '\0';
+            }
+            // A DNS label carries at most 63 octets; cut on a UTF-8
+            // character boundary, dropping a partially fitting character.
+            if (strlen(hostname) > 63)
+            {
+                size_t cut = 63;
+
+                while (cut > 0 && (static_cast<uint8_t>(hostname[cut]) & 0xC0) == 0x80)
+                {
+                    cut--;
+                }
+                hostname[cut] = '\0';
+            }
+            if (hostname[0] != '\0')
+            {
+                otError result;
+                // The name can only change while the module is disabled, and
+                // the auto-enable mode may have brought it up with the infra
+                // link already; bounce it around the rename. Nothing has been
+                // published yet at this point in startup.
+                bool wasEnabled = otMdnsIsEnabled(mInstance);
+
+                if (wasEnabled)
+                {
+                    IgnoreError(otMdnsSetEnabled(mInstance, false, 0));
+                }
+
+                result = otMdnsSetLocalHostName(mInstance, hostname);
+                ThreadHelper::LogOpenThreadResult("Set mDNS local host name", result);
+
+                if (wasEnabled)
+                {
+                    IgnoreError(otMdnsSetEnabled(mInstance, true, otSysGetInfraNetifIndex()));
+                }
+            }
+        }
+    }
+#endif
 
 #if OTBR_ENABLE_FEATURE_FLAGS && OTBR_ENABLE_TREL
     // Enable/Disable trel according to feature flag default value.
