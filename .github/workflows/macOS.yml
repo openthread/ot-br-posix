@@ -46,6 +46,18 @@ permissions:
 jobs:
   build-check:
     runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mdns: "OFF"
+            border_agent: "OFF"
+          # The border router configuration used on macOS hosts: native
+          # mDNSResponder with the border agent (and border routing) on.
+          - mdns: "mDNSResponder"
+            border_agent: "ON"
+    env:
+      OTBR_MDNS: ${{ matrix.mdns }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -57,9 +69,8 @@ jobs:
         brew reinstall jsoncpp ninja protobuf@21 googletest
     - name: Build
       run: |
-        OTBR_OPTIONS="-DOTBR_BORDER_AGENT=OFF \
+        OTBR_OPTIONS="-DOTBR_BORDER_AGENT=${{ matrix.border_agent }} \
                       -DOTBR_BACKBONE_ROUTER=OFF \
-                      -DOTBR_MDNS=OFF \
                       -DOTBR_TREL=OFF \
                       -DOTBR_NAT64=OFF \
                       -DOTBR_DNS_UPSTREAM_QUERY=OFF \
