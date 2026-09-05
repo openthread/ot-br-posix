@@ -103,6 +103,11 @@ if(OTBR_NFTABLES)
         PkgConfig::LIBMNL
     )
 endif()
+if(OTBR_PF)
+    target_sources(otbr-gtest-firewall PRIVATE
+        test_pf_firewall.cpp
+    )
+endif()
 gtest_discover_tests(otbr-gtest-firewall)
 
 add_executable(otbr-gtest-unit-dnssd

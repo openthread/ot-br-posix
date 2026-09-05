@@ -51,13 +51,16 @@
 #include "host/posix/dnssd.hpp"
 #include "utils/infra_link_selector.hpp"
 
-#if OTBR_ENABLE_NFTABLES
+#if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
 #include <algorithm>
 #include <string.h>
 #include <vector>
 
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
+#endif
+#if OTBR_ENABLE_PF
+#include <openthread/openthread-system.h>
 #endif
 
 namespace otbr {
@@ -400,18 +403,26 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     });
 #endif
 #endif // OTBR_ENABLE_BORDER_AGENT
-#if OTBR_ENABLE_NFTABLES
-    // The firewall is a security control: if it was built in (OTBR_NFTABLES) but
-    // cannot be installed, abort rather than silently forward traffic unfiltered.
-    // This mirrors the legacy script path, which `die`d when the otbr-firewall /
-    // otbr-nat44 services failed to start.
+#if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
+    // The firewall is a security control: if it was built in (OTBR_NFTABLES or
+    // OTBR_PF) but cannot be installed, abort rather than silently forward
+    // traffic unfiltered. This mirrors the legacy script path, which `die`d when
+    // the otbr-firewall / otbr-nat44 services failed to start.
     // Each result is taken once: SuccessOrDie() names its argument twice, so a
     // call passed to it directly runs a second time on the failing path and the
     // fatal log reports what that second attempt returned.
     otbrError firewallError;
 
+#if OTBR_ENABLE_NFTABLES
     firewallError = mNftables->Init();
     SuccessOrDie(firewallError, "Failed to initialize the nftables firewall!");
+#else
+    // pf rules are scoped to the Thread interface by name, and on macOS the
+    // kernel picks that name (utunN) when mHost.Init() creates the interface,
+    // so the backend is created here rather than in CreateRcpMode().
+    mPfctl    = MakeUnique<Firewall::PfctlProcess>();
+    mFirewall = MakeUnique<Firewall::PfFirewall>(*mPfctl, otSysGetThreadNetifName());
+#endif
     firewallError = mFirewall->Init();
     SuccessOrDie(firewallError, "Failed to initialize the firewall manager!");
     firewallError = mFirewall->EnableIngressFilter();
@@ -457,7 +468,7 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #endif
 }
 
-#if OTBR_ENABLE_NFTABLES
+#if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
 void Application::UpdateIngressPrefixes(void)
 {
     otNetworkDataIterator    iterator = OT_NETWORK_DATA_ITERATOR_INIT;
@@ -505,7 +516,7 @@ void Application::UpdateIngressPrefixes(void)
 
     if (mFirewall->ReplaceIngressPrefixes(denySrc, allowDst) != OTBR_ERROR_NONE)
     {
-        otbrLogWarning("FirewallManager: failed to update ingress prefixes");
+        otbrLogWarning("Firewall: failed to update ingress prefixes");
     }
 
 exit:
@@ -515,23 +526,31 @@ exit:
 
 void Application::DeinitRcpMode(void)
 {
-#if OTBR_ENABLE_NFTABLES
-    // Tear down the OTBR nftables table while the netlink socket is still open
-    // (mNftables outlives mFirewall by member declaration order).
+#if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
+    // Tear down the OTBR firewall while its backend is still usable (the
+    // backend outlives mFirewall by member declaration order).
     if (mFirewall != nullptr)
     {
         otbrError firewallError = mFirewall->Deinit();
         if (firewallError != OTBR_ERROR_NONE)
         {
-            otbrLogWarning("FirewallManager: teardown failed (%d)", firewallError);
+            otbrLogWarning("Firewall: teardown failed (%d)", firewallError);
         }
     }
+#if OTBR_ENABLE_NFTABLES
     // Close the netlink socket too, or a later InitRcpMode() dies in
     // mNftables->Init() on the still-open socket.
     if (mNftables != nullptr)
     {
         mNftables->Deinit();
     }
+#endif
+#if OTBR_ENABLE_PF
+    // Both are recreated by InitRcpMode(); release them in reverse order of
+    // creation so mFirewall never outlives the pfctl runner it references.
+    mFirewall.reset();
+    mPfctl.reset();
+#endif
 #endif
 #if OTBR_ENABLE_DNSSD_PLAT
     mDnssdPlatform.Stop();

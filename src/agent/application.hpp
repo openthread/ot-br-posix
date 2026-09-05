@@ -53,6 +53,9 @@
 #include "firewall/firewall_manager.hpp"
 #include "firewall/nftables_impl.hpp"
 #endif
+#if OTBR_ENABLE_PF
+#include "firewall/pf_firewall.hpp"
+#endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #include "sdp_proxy/advertising_proxy.hpp"
 #endif
@@ -263,7 +266,7 @@ private:
     void InitRcpMode(const std::string &aRestListenAddress, int aRestListenPort);
     void DeinitRcpMode(void);
 
-#if OTBR_ENABLE_NFTABLES
+#if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
     void UpdateIngressPrefixes(void);
 #endif
 
@@ -302,6 +305,10 @@ private:
 #if OTBR_ENABLE_NFTABLES
     std::unique_ptr<Firewall::Nftables>        mNftables;
     std::unique_ptr<Firewall::FirewallManager> mFirewall;
+#endif
+#if OTBR_ENABLE_PF
+    std::unique_ptr<Firewall::PfctlProcess> mPfctl;
+    std::unique_ptr<Firewall::PfFirewall>   mFirewall;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;

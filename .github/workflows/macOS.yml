@@ -54,11 +54,18 @@ jobs:
           - name: "Minimal (mDNS OFF, Border Agent OFF)"
             mdns: "OFF"
             border_agent: "OFF"
+            pf: "OFF"
           # The border router configuration used on macOS hosts: native
           # mDNSResponder with the border agent (and border routing) on.
           - name: "Native (mDNSResponder, Border Agent ON)"
             mdns: "mDNSResponder"
             border_agent: "ON"
+            pf: "OFF"
+          # The same, with the in-process pf firewall backend.
+          - name: "Native + pf firewall (mDNSResponder, Border Agent ON, OTBR_PF ON)"
+            mdns: "mDNSResponder"
+            border_agent: "ON"
+            pf: "ON"
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -72,9 +79,16 @@ jobs:
       run: |
         OTBR_OPTIONS="-DOTBR_MDNS=${{ matrix.mdns }} \
                       -DOTBR_BORDER_AGENT=${{ matrix.border_agent }} \
+                      -DOTBR_PF=${{ matrix.pf }} \
                       -DOTBR_BACKBONE_ROUTER=OFF \
                       -DOTBR_TREL=OFF \
                       -DOTBR_NAT64=OFF \
                       -DOTBR_DNS_UPSTREAM_QUERY=OFF \
                       -DOT_FIREWALL=OFF \
                       -DOTBR_DBUS=OFF" ./script/test build
+    # `script/test check` installs into /usr and runs the Linux-only suites;
+    # run the firewall unit tests directly (the pf tests only exist with
+    # OTBR_PF=ON, the FirewallManager tests in every configuration).
+    - name: Test
+      run: |
+        cd build/otbr && CTEST_OUTPUT_ON_FAILURE=1 ctest -R 'FirewallManagerTest|PfFirewall'
