@@ -102,6 +102,24 @@ else()
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NFTABLES=0)
 endif()
 
+# Opt-in, macOS-only: build the in-process pf firewall backend. otbr-agent then
+# owns the Thread ingress filter (and the NAT44 masquerade) in the pf anchor
+# "otbr", driven through pfctl(8), and produces the ingress prefix tables from
+# Thread network data. The main ruleset (/etc/pf.conf) has to reference the
+# anchor; script/_firewall adds the reference.
+option(OTBR_PF "Enable in-process pf firewall backend (pfctl)" OFF)
+if (OTBR_PF)
+    if (NOT APPLE)
+        message(FATAL_ERROR "OTBR_PF is only supported on macOS")
+    endif()
+    if (OTBR_NFTABLES)
+        message(FATAL_ERROR "OTBR_PF and OTBR_NFTABLES are mutually exclusive")
+    endif()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PF=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PF=0)
+endif()
+
 option(OTBR_OPENWRT "Enable OpenWrt support" OFF)
 if(OTBR_OPENWRT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_OPENWRT=1)

@@ -37,7 +37,7 @@ add_executable(otbr-agent
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_BORDER_AGENT}>:otbr-border-agent>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
-    $<$<BOOL:${OTBR_NFTABLES}>:otbr-firewall>
+    $<$<OR:$<BOOL:${OTBR_NFTABLES}>,$<BOOL:${OTBR_PF}>>:otbr-firewall>
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
@@ -125,6 +125,17 @@ else()
 endif()
 configure_file(nftables-backend.in nftables-backend @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nftables-backend
+    DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/otbr
+)
+
+# Same arrangement for the pf backend on macOS.
+if(OTBR_PF)
+    set(OTBR_PF_MARKER_VALUE 1)
+else()
+    set(OTBR_PF_MARKER_VALUE 0)
+endif()
+configure_file(pf-backend.in pf-backend @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pf-backend
     DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/otbr
 )
 

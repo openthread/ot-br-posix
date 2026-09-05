@@ -37,6 +37,13 @@ if(OTBR_NFTABLES)
     )
 endif()
 
+if(OTBR_PF)
+    list(APPEND OTBR_FIREWALL_SOURCES
+        pf_firewall.cpp
+        pfctl.cpp
+    )
+endif()
+
 add_library(otbr-firewall ${OTBR_FIREWALL_SOURCES})
 
 target_link_libraries(otbr-firewall PUBLIC
