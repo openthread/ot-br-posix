@@ -956,9 +956,9 @@ void RestWebServer::DeletePendingDataset(Response &aResponse) const
     otbrError error = OTBR_ERROR_NONE;
 
     SuccessOrExit(error = RunInMainLoop([this]() {
-                      otOperationalDatasetTlvs datasetTlvs;
+                      // Setting a zero-length TLV buffer clears the pending dataset.
+                      otOperationalDatasetTlvs datasetTlvs = {};
 
-                      datasetTlvs.mLength = 0;
                       VerifyOrReturn(otDatasetSetPendingTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE,
                                      OTBR_ERROR_REST);
                       return OTBR_ERROR_NONE;
@@ -984,14 +984,10 @@ void RestWebServer::Dataset(DatasetType aDatasetType, const Request &aRequest, R
         SetDataset(aDatasetType, aRequest, aResponse);
         break;
     case HttpMethod::kDelete:
-        if (aDatasetType == DatasetType::kPending)
-        {
-            DeletePendingDataset(aResponse);
-        }
-        else
-        {
-            ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
-        }
+        // DELETE is only registered for the pending dataset, so the active
+        // dataset never reaches here: RoutingErrorHandler answers it with a
+        // 405 and an Allow header built from the route registry.
+        DeletePendingDataset(aResponse);
         break;
     default:
         ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);

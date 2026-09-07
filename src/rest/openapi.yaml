@@ -1552,6 +1552,11 @@ paths:
         Clears the pending operational dataset, canceling any scheduled network
         configuration changes (e.g. a pending channel migration) before they
         take effect.
+        Note: Deleting the pending dataset clears local state and stops the local
+        delay timer. If the pending dataset has already been disseminated to other
+        Thread nodes, deleting it here does not actively recall or roll back the
+        dataset on those nodes, which may cause nodes to transition to the new
+        configuration when their timers expire.
       responses:
         "200":
           description: Successfully deleted the pending operational dataset.

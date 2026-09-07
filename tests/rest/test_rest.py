@@ -837,8 +837,8 @@ def node_dataset_if_none_match_test():
     body = json.dumps({"activeDataset": {"activeTimestamp": {"seconds": 20}}, "delay": 3600000})
 
     # A rerun against the same node may find the pending dataset a previous
-    # run left behind (there is no DELETE to clean it up with); the
-    # conditional create is only expected on a node that has none.
+    # run left behind; the conditional create is only expected on a node that
+    # has none.
     try:
         with urllib.request.urlopen(url) as response:
             has_pending = response.status == 200
@@ -870,6 +870,60 @@ def node_dataset_if_none_match_test():
     print(" /node/dataset If-None-Match : OK")
 
 
+def node_dataset_pending_delete_test():
+    """DELETE /node/dataset/pending clears the pending dataset.
+
+    GET on a node without a pending dataset answers 204 (no content), not 404,
+    so that is what "cleared" looks like here.
+    """
+    url = rest_api_addr + "/node/dataset/pending"
+
+    def delete(target=None):
+        return urllib.request.urlopen(urllib.request.Request(target or url, method='DELETE'))
+
+    def pending_status():
+        with urllib.request.urlopen(url) as response:
+            return response.status
+
+    # Seed a pending dataset so the delete below has something real to clear.
+    # The delay is long enough that it cannot fire during the test.
+    body = json.dumps({"activeDataset": {"activeTimestamp": {"seconds": 40}}, "delay": 3600000})
+    req = urllib.request.Request(url, data=body.encode(), method='PUT',
+                                 headers={'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req) as response:
+        assert response.status in (200, 201)
+    assert pending_status() == 200
+
+    with delete() as response:
+        assert response.status == 200
+    assert pending_status() == 204
+
+    # Deleting again when there is nothing to delete is not an error.
+    with delete() as response:
+        assert response.status == 200
+    assert pending_status() == 204
+
+    # DELETE is advertised on the pending route ...
+    req = urllib.request.Request(url, method='OPTIONS')
+    with urllib.request.urlopen(req) as response:
+        assert response.status == 204
+        assert response.headers.get("Allow") == "GET, PUT, DELETE, OPTIONS"
+
+    # ... and not on the active route, where RoutingErrorHandler rejects it.
+    active_url = rest_api_addr + "/node/dataset/active"
+    try:
+        delete(active_url)
+        assert False, "expected HTTP 405 for DELETE /node/dataset/active"
+    except urllib.error.HTTPError as e:
+        assert e.code == 405, "expected HTTP 405, got {}".format(e.code)
+        assert e.headers.get("Allow") == "GET, PUT, OPTIONS"
+        body = json.loads(e.read())
+        assert body["status"] == 405
+        assert body.get("detail") == "method not supported"
+
+    print(" DELETE /node/dataset/pending : OK")
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
@@ -896,6 +950,7 @@ def main():
     well_known_thread_test(20)
     epskc_test()
     node_dataset_if_none_match_test()
+    node_dataset_pending_delete_test()
 
     return 0
 
