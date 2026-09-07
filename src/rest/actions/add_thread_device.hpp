@@ -32,17 +32,11 @@
 #include <openthread/platform/radio.h>
 
 #include "action.hpp"
+#include "rest/names.hpp"
 
 namespace otbr {
 namespace rest {
 namespace actions {
-
-#define ADD_DEVICE_ACTION_TYPE_NAME "addThreadDeviceTask"
-
-#define KEY_DISCERNER "discerner"
-#define KEY_JOINERID "joinerId"
-#define KEY_EUI "eui"
-#define KEY_PSKD "pskd"
 
 /**
  * @brief This class implements a json:api item for holding network diagnostic attributes.

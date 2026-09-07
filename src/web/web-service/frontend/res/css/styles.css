@@ -48,6 +48,14 @@ text {
     color: grey;
 }
 
+.epskc-tap-code {
+    font-size: 32px;
+    font-family: monospace;
+    letter-spacing: 4px;
+    text-align: center;
+    width: 100%;
+}
+
 .tooltip {
     border: 2px solid #7d807d;
     padding: 10px;

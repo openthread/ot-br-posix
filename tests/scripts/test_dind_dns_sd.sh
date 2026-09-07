@@ -75,16 +75,22 @@ test_teardown()
     echo "Active and inactive containers:"
     docker ps -a || true
     echo "Container logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web" "test-client" "dhcp6-server" "eth1-server" "eth2-server"; do
         docker logs "$c" || true
     done
 
+    echo "Radvd/Tcpdump logs on eth2-server:"
+    docker exec -i eth2-server cat /var/log/radvd.log || true
+    docker exec -i eth2-server cat /var/log/tcpdump.log || true
+    ip -6 route del 2002:1234::1234 || true
+    ip route del 38.106.217.165 || true
+
     echo "Agent logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web"; do
         docker exec -i "$c" cat /var/log/otbr-agent.log || true
     done
 
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-web" "test-client"; do
+    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web" "test-client" "dhcp6-server"; do
         docker stop "$c" || true
         docker rm "$c" || true
     done
@@ -118,30 +124,35 @@ test_setup()
         sleep 1
     done
 
-    echo "Adding iptables rule to allow port 9000 traffic..."
-    iptables -I INPUT 1 -p tcp --dport 9000 -j ACCEPT || true
+    echo "Adding iptables rule to allow ports 9000 to 9005 traffic..."
+    iptables -I INPUT 1 -p tcp --dport 9000:9005 -j ACCEPT || true
+
+    if [[ -f "${REPO_ROOT}/ubuntu-24.04.tar" ]]; then
+        echo "Loading cached ubuntu:24.04 image..."
+        docker load -i "${REPO_ROOT}/ubuntu-24.04.tar"
+    fi
 
     # 1. Build the production Docker image
-    local otbr_options=""
+    local otbr_options="-DOTBR_DHCP6_PD=ON -DOTBR_DHCP6_PD_CLIENT=openthread"
     if [[ "$(uname)" == "Darwin" || "$(uname -r)" == *"linuxkit"* ]]; then
-        otbr_options="-DOTBR_BACKBONE_ROUTER=OFF"
+        otbr_options="${otbr_options} -DOTBR_BACKBONE_ROUTER=OFF"
     fi
     echo "Building production border-router image with OTBR_MDNS=${OTBR_MDNS} OTBR_OPTIONS=${otbr_options}..."
     docker build --build-arg OTBR_MDNS="${OTBR_MDNS}" --build-arg OTBR_OPTIONS="${otbr_options}" -t "${OTBR_DOCKER_IMAGE}" -f "${OTBR_DOCKER_FILE}" "${REPO_ROOT}"
 
     # 2. Create the IPv6-enabled Docker bridge network for infrastructure-link
-    if ! docker network inspect "${INFRA_NET_NAME}" >/dev/null 2>&1; then
-        echo "Creating ${INFRA_NET_NAME} Docker bridge network..."
-        docker network create --driver bridge --ipv6 --subnet fd00:db8:1::/64 "${INFRA_NET_NAME}"
-    else
-        echo "Network ${INFRA_NET_NAME} already exists."
+    if docker network inspect "${INFRA_NET_NAME}" >/dev/null 2>&1; then
+        echo "Removing existing ${INFRA_NET_NAME} Docker bridge network..."
+        docker network rm "${INFRA_NET_NAME}"
     fi
+    echo "Creating ${INFRA_NET_NAME} Docker bridge network..."
+    docker network create --driver bridge --subnet 192.168.1.0/24 --ipv6 --subnet fd00:db8:1::/64 "${INFRA_NET_NAME}"
 
     # 3. Build the test client image with mdns-scan and ping/ndisc6 tools
     echo "Building test client image with mdns-scan and ping/ndisc6 tools..."
     docker build -t "${TEST_CLIENT_IMAGE}" - <<EOF
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server dnsmasq python3-scapy radvd tcpdump procps --no-install-recommends && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["mdns-scan"]
 EOF
 
@@ -183,23 +194,85 @@ test_run()
     echo "--- Running DNS-SD integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_dns_sd.exp"
 
+    echo "--- Running Service discovery on Thread and Infrastructure (1_3_DPR_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_dpr_tc_1.exp"
+
+    echo "--- Running Service discovery on Thread and Infrastructure (1_3_DPR_TC_2) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_dpr_tc_2.exp"
+
+    echo "--- Running SRP Register Single Service (1_3_SRP_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_1.exp"
+
+    echo "--- Running SRP Name Conflicts (1_3_SRP_TC_2) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_2.exp"
+
+    echo "--- Running SRP Service Instance Lease (1_3_SRP_TC_3) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_3.exp"
+
+    echo "--- Running SRP Key Lease (1_3_SRP_TC_4) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_4.exp"
+
+    echo "--- Running SRP KEY Record Inclusion/Omission (1_3_SRP_TC_5) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_5.exp"
+
+    echo "--- Running SRP Name Compression (1_3_SRP_TC_6) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_6.exp"
+
+    echo "--- Running Removing Some Published Services (1_3_SRP_TC_8) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_8.exp"
+
+    echo "--- Running SRP Recovery after reboot (1_3_SRP_TC_11) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_11.exp"
+
+    echo "--- Running SRP Device Address Update (1_3_SRP_TC_13) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_13.exp"
+
+    echo "--- Running SRP Subtype Validation (1_3_SRP_TC_15) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_srp_tc_15.exp"
+
     echo "--- Running TREL integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_trel.exp"
 
-    echo "--- Cleaning up TREL containers and orphaned processes ---"
-    docker stop otbr-test-container-1 otbr-test-container-2 || true
-    pkill -f ot-rcp || true
-    pkill -f socat || true
+    echo "--- Running TREL Attach and Connectivity (1_4_TREL_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_1.exp"
+
+    echo "--- Running TREL Multi-hop Routing (1_4_TREL_TC_2) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_2.exp"
+
+    echo "--- Running TREL Radio Link (Re)discovery using Probe Mechanism (1_4_TREL_TC_3) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_3.exp"
+
+    echo "--- Running TREL Radio Link (Re)discovery through Receive (1_4_TREL_TC_4) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_4.exp"
+
+    echo "--- Running TREL Discover Scan over multi-radio (1_4_TREL_TC_5) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_5.exp"
+
+    echo "--- Running TREL mDNS Discovery of TREL Service (1_4_TREL_TC_6) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_trel_tc_6.exp"
+
+    echo "--- Running NAT64 integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_nat64.exp"
+
+    echo "--- Running DHCPv6 Prefix Delegation integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_dhcp6_pd.exp"
 
     if [[ "$(uname)" != "Darwin" && "$(uname -r)" != *"linuxkit"* ]]; then
         echo "--- Running BBR Multicast Forwarding integration test ---"
         expect -df "${SCRIPT_DIR}/expect/dind_multicast.exp"
-        pkill -f ot-rcp || true
-        pkill -f socat || true
     fi
 
     echo "--- Running Web UI integration test ---"
     expect -df "${SCRIPT_DIR}/expect/dind_web.exp"
+
+    echo "--- Running IPv6 Connectivity using DHCPv6-PD (1_4_PIC_TC_1) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_1.exp"
+
+    echo "--- Running IPv6 default route advertisement (1_4_PIC_TC_3) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_3.exp"
+
+    echo "--- Running IPv4 Connectivity using BR built-in NAT64 (1_4_PIC_TC_4) integration test ---"
+    expect -df "${SCRIPT_DIR}/expect/dind_1_4_pic_tc_4.exp"
 }
 
 main()

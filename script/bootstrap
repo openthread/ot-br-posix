@@ -81,7 +81,7 @@ install_packages_apt()
     # mDNS
 
     # OT backbone CI tests require Avahi to publish records for testing.
-    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 ]]; then
+    if [[ ${OT_BACKBONE_CI} == 1 ]]; then
         sudo apt-get install --no-install-recommends -y avahi-daemon libavahi-client-dev libavahi-client3 libavahi-common-dev
         # Increase the object number limit to rid of 'Too many objects' error
         sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
@@ -136,8 +136,10 @@ EOF
     # web dependencies
     without WEB_GUI || command -v npm || sudo apt-get install --no-install-recommends -y nodejs npm
 
-    # firewall
+    # firewall — ipset for the legacy shell firewall (default); libnftnl + libmnl
+    # for the opt-in in-process nftables backend (-DOTBR_NFTABLES=ON).
     sudo apt-get install -y ipset
+    sudo apt-get install -y libnftnl-dev libmnl-dev
 
     # protobuf compiler
     sudo apt-get install -y libprotobuf-dev protobuf-compiler
@@ -158,8 +160,10 @@ install_packages_rpm()
     sudo $PM install -y gcc gcc-c++
     with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
-    sudo $PM install -y avahi avahi-devel
     sudo $PM install -y iptables
+    # firewall — libnftnl + libmnl for the opt-in in-process nftables backend
+    # (-DOTBR_NFTABLES=ON).
+    sudo $PM install -y libnftnl-devel libmnl-devel
     sudo $PM install -y jsoncpp-devel
     sudo $PM install -y wget
     sudo $PM install -y protobuf protobuf-devel

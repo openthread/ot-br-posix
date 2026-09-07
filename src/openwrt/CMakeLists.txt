@@ -39,9 +39,12 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.uci-config
     RENAME otbr-agent)
 
 
-if(OT_FIREWALL)
+# When OTBR_NFTABLES is on, otbr-agent installs the ingress filter in-process
+# via FirewallManager, so the legacy ipset/ip6tables init script is skipped.
+# It remains available for builds with OTBR_NFTABLES=OFF.
+if(OT_FIREWALL AND NOT OTBR_NFTABLES)
     configure_file(otbr-firewall.init.in otbr-firewall.init)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-firewall.init
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
         RENAME otbr-firewall)
-endif(OT_FIREWALL)
+endif()

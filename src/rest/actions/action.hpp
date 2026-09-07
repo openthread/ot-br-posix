@@ -33,6 +33,7 @@
 
 #include <openthread/error.h>
 
+#include "rest/names.hpp"
 #include "rest/rest_generic_collection.hpp"
 #include "rest/services.hpp"
 #include "rest/uuid.hpp"
@@ -52,12 +53,6 @@ enum ActionStatus
     kActionStatusStopped,
     kActionStatusFailed,
 };
-
-#define KEY_STATUS "status"
-#define KEY_TIMEOUT "timeout"
-#define KEY_DESTINATION "destination"
-#define KEY_DESTINATION_TYPE "destinationType"
-#define KEY_TYPES "types"
 
 /**
  * @brief This virtual class implements a general json:api item for holding action attributes.

@@ -450,6 +450,43 @@
 
 
         </div>
+        <div class="demo-charts mdl-color--white  mdl-cell mdl-cell--12-col mdl-shadow--2dp mdl-grid" ng-show="menu[7].show">
+          <h4>Ephemeral Key (ePSKc) Credential Sharing</h4>
+            <md-content layout-padding flex="100">
+              <div layout="row" layout-align="start center">
+                <span class="status-title">&nbsp;&nbsp;Feature:&nbsp;</span>
+                <md-switch ng-model="epskc.enabled" ng-change="toggleEpskcEnabled()" aria-label="Enable ePSKc">
+                  {{ epskc.enabled ? 'Enabled' : 'Disabled' }}
+                </md-switch>
+              </div>
+              <div>
+                <span class="status-title">&nbsp;&nbsp;Session state:&nbsp;</span>
+                <span class="status-content">{{ epskc.state }}</span>
+              </div>
+
+              <form name="epskcForm" ng-if="!epskc.active">
+                <md-input-container flex="50">
+                  <label>Lifetime (minutes, 2 default, 10 max)</label>
+                  <input name="lifetimeMinutes" type="number" min="1" max="10" ng-model="epskc.lifetimeMinutes" placeholder="use router default">
+                  <div ng-messages="epskcForm.lifetimeMinutes.$error">
+                    <div ng-message-exp="['min', 'max']">Lifetime must be between 1 and 10 minutes.</div>
+                  </div>
+                </md-input-container>
+                <div>
+                  <md-button name="activateEpskcButton" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" ng-disabled="!epskc.enabled || isEpskcBusy || epskcForm.$invalid" ng-click="activateEpskc($event)">Activate</md-button>
+                </div>
+              </form>
+
+              <div ng-if="epskc.tap" class="epskc-tap-display">
+                <h3>TAP Code</h3>
+                <input readonly class="epskc-tap-code" ng-value="epskc.tap" ng-click="selectEpskcTap($event)">
+              </div>
+
+              <div ng-if="epskc.active">
+                <md-button name="deactivateEpskcButton" class="mdl-button mdl-js-button mdl-button--raised" ng-disabled="isEpskcBusy" ng-click="deactivateEpskc($event)">Deactivate</md-button>
+              </div>
+            </md-content>
+        </div>
       </div>
     </main>
   </div>
@@ -460,6 +497,7 @@
   <script src="res/js/angular-aria.min.js"></script>
   <script src="res/js/angular-material.min.js"></script>
   <script src="res/js/angular-messages.min.js"></script>
+  <script src="res/js/qrcode.js"></script>
   <script src="res/js/app.js"></script>
   <script src="res/js/d3.min.js"></script>
 </body>

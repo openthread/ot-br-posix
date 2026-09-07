@@ -28,13 +28,17 @@
 
 #include "multicast_routing_manager.hpp"
 
+#include <algorithm>
 #include <assert.h>
+#include <errno.h>
 #include <net/if.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #ifdef __linux__
@@ -45,6 +49,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/time.hpp"
 #include "common/types.hpp"
 #include "utils/socket_utils.hpp"
 
@@ -61,6 +66,9 @@ MulticastRoutingManager::MulticastRoutingManager(const Netif                   &
     , mNetworkProperties(aNetworkProperties)
     , mLastExpireTime(otbr::Timepoint::min())
     , mMulticastRouterSock(-1)
+    , mState(kStateDisabled)
+    , mRetryIntervalUs(kMinRetryIntervalUs)
+    , mNextRetryTime(otbr::Timepoint::min())
 {
 }
 
@@ -98,6 +106,18 @@ void MulticastRoutingManager::HandleBackboneMulticastListenerEvent(otBackboneRou
 
 void MulticastRoutingManager::Update(MainloopContext &aContext)
 {
+    if (mState == kStateEnabling)
+    {
+        otbr::Timepoint now     = Clock::now();
+        auto            delay   = (mNextRetryTime > now) ? (mNextRetryTime - now) : Clock::duration::zero();
+        struct timeval  timeout = ToTimeval(delay);
+        if (timercmp(&timeout, &aContext.mTimeout, <))
+        {
+            aContext.mTimeout = timeout;
+        }
+        ExitNow();
+    }
+
     VerifyOrExit(IsEnabled());
 
     aContext.AddFdToReadSet(mMulticastRouterSock);
@@ -108,6 +128,30 @@ exit:
 
 void MulticastRoutingManager::Process(const MainloopContext &aContext)
 {
+    if (mState == kStateEnabling)
+    {
+        if (Clock::now() >= mNextRetryTime)
+        {
+            if (InitMulticastRouterSock() == OTBR_ERROR_NONE)
+            {
+                mState           = kStateEnabled;
+                mRetryIntervalUs = kMinRetryIntervalUs;
+                mNextRetryTime   = otbr::Timepoint::min();
+                otbrLogResult(OTBR_ERROR_NONE, "Retried InitMulticastRouterSock successfully");
+            }
+            else
+            {
+                int savedErrno = errno;
+
+                mRetryIntervalUs = std::min(mRetryIntervalUs * 2, static_cast<uint32_t>(kMaxRetryIntervalUs));
+                mNextRetryTime   = Clock::now() + std::chrono::microseconds(mRetryIntervalUs);
+                otbrLogWarning("Failed to retry InitMulticastRouterSock: %s, will retry again in %u ms",
+                               strerror(savedErrno), mRetryIntervalUs / 1000);
+            }
+        }
+        ExitNow();
+    }
+
     VerifyOrExit(IsEnabled());
 
     ExpireMulticastForwardingCache();
@@ -123,12 +167,20 @@ exit:
 
 void MulticastRoutingManager::Enable(void)
 {
-    VerifyOrExit(!IsEnabled());
-    VerifyOrExit(mInfraIf.GetIfIndex() != 0); // Only enable the MulticastRoutingManager when the Infra If has been set.
+    VerifyOrExit(mState == kStateDisabled);
+    mRetryIntervalUs = kMinRetryIntervalUs;
 
-    InitMulticastRouterSock();
-
-    otbrLogResult(OTBR_ERROR_NONE, "%s", __FUNCTION__);
+    if (InitMulticastRouterSock() != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to init multicast router socket: %s, will retry in mainloop", strerror(errno));
+        mState         = kStateEnabling;
+        mNextRetryTime = Clock::now() + std::chrono::microseconds(mRetryIntervalUs);
+    }
+    else
+    {
+        mState = kStateEnabled;
+        otbrLogResult(OTBR_ERROR_NONE, "%s", __FUNCTION__);
+    }
 
 exit:
     return;
@@ -136,9 +188,16 @@ exit:
 
 void MulticastRoutingManager::Disable(void)
 {
+    VerifyOrExit(mState != kStateDisabled);
+    mState           = kStateDisabled;
+    mRetryIntervalUs = kMinRetryIntervalUs;
+    mNextRetryTime   = otbr::Timepoint::min();
+
     FinalizeMulticastRouterSock();
 
     otbrLogResult(OTBR_ERROR_NONE, "%s", __FUNCTION__);
+exit:
+    return;
 }
 
 void MulticastRoutingManager::Add(const Ip6Address &aAddress)
@@ -188,24 +247,30 @@ bool MulticastRoutingManager::HasMulticastListener(const Ip6Address &aAddress) c
     return mMulticastListeners.find(aAddress) != mMulticastListeners.end();
 }
 
-void MulticastRoutingManager::InitMulticastRouterSock(void)
+otbrError MulticastRoutingManager::InitMulticastRouterSock(void)
 {
-    int                 one = 1;
+    otbrError           error = OTBR_ERROR_NONE;
+    int                 one   = 1;
     struct icmp6_filter filter;
     struct mif6ctl      mif6ctl;
 
+    for (MulticastForwardingCache &mfc : mMulticastForwardingCacheTable)
+    {
+        mfc.Erase();
+    }
+
     // Create a Multicast Routing socket
     mMulticastRouterSock = SocketWithCloseExec(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6, kSocketBlock);
-    VerifyOrDie(mMulticastRouterSock != -1, "Failed to create socket");
+    VerifyOrExit(mMulticastRouterSock != -1, error = OTBR_ERROR_ERRNO);
 
     // Enable Multicast Forwarding in Kernel
-    VerifyOrDie(0 == setsockopt(mMulticastRouterSock, IPPROTO_IPV6, MRT6_INIT, &one, sizeof(one)),
-                "Failed to enable multicast forwarding");
+    VerifyOrExit(0 == setsockopt(mMulticastRouterSock, IPPROTO_IPV6, MRT6_INIT, &one, sizeof(one)),
+                 error = OTBR_ERROR_ERRNO);
 
     // Filter all ICMPv6 messages
     ICMP6_FILTER_SETBLOCKALL(&filter);
-    VerifyOrDie(0 == setsockopt(mMulticastRouterSock, IPPROTO_ICMPV6, ICMP6_FILTER, (void *)&filter, sizeof(filter)),
-                "Failed to set filter");
+    VerifyOrExit(0 == setsockopt(mMulticastRouterSock, IPPROTO_ICMPV6, ICMP6_FILTER, (void *)&filter, sizeof(filter)),
+                 error = OTBR_ERROR_ERRNO);
 
     memset(&mif6ctl, 0, sizeof(mif6ctl));
     mif6ctl.mif6c_flags     = 0;
@@ -215,21 +280,36 @@ void MulticastRoutingManager::InitMulticastRouterSock(void)
     // Add Thread network interface to MIF
     mif6ctl.mif6c_mifi = kMifIndexThread;
     mif6ctl.mif6c_pifi = mNetif.GetIfIndex();
-    VerifyOrDie(mif6ctl.mif6c_pifi > 0, "Thread interface index is invalid");
-    VerifyOrDie(0 == setsockopt(mMulticastRouterSock, IPPROTO_IPV6, MRT6_ADD_MIF, &mif6ctl, sizeof(mif6ctl)),
-                "Failed to add Thread network interface to MIF");
+    VerifyOrExit(mif6ctl.mif6c_pifi > 0, (errno = ENODEV, error = OTBR_ERROR_INVALID_STATE));
+    VerifyOrExit(0 == setsockopt(mMulticastRouterSock, IPPROTO_IPV6, MRT6_ADD_MIF, &mif6ctl, sizeof(mif6ctl)),
+                 error = OTBR_ERROR_ERRNO);
 
     // Add Backbone network interface to MIF
     mif6ctl.mif6c_mifi = kMifIndexBackbone;
     mif6ctl.mif6c_pifi = mInfraIf.GetIfIndex();
-    VerifyOrDie(mif6ctl.mif6c_pifi > 0, "Backbone interface index is invalid");
-    VerifyOrDie(0 == setsockopt(mMulticastRouterSock, IPPROTO_IPV6, MRT6_ADD_MIF, &mif6ctl, sizeof(mif6ctl)),
-                "Failed to add Backbone interface to MIF");
+    VerifyOrExit(mif6ctl.mif6c_pifi > 0, (errno = ENODEV, error = OTBR_ERROR_INVALID_STATE));
+    VerifyOrExit(0 == setsockopt(mMulticastRouterSock, IPPROTO_IPV6, MRT6_ADD_MIF, &mif6ctl, sizeof(mif6ctl)),
+                 error = OTBR_ERROR_ERRNO);
+
+    for (const Ip6Address &address : mMulticastListeners)
+    {
+        UpdateMldReport(address, true);
+    }
+
+exit:
+    if (error != OTBR_ERROR_NONE && mMulticastRouterSock != -1)
+    {
+        int savedErrno = errno;
+        close(mMulticastRouterSock);
+        mMulticastRouterSock = -1;
+        errno                = savedErrno;
+    }
+    return error;
 }
 
 void MulticastRoutingManager::FinalizeMulticastRouterSock(void)
 {
-    VerifyOrExit(IsEnabled());
+    VerifyOrExit(mMulticastRouterSock >= 0);
 
     close(mMulticastRouterSock);
     mMulticastRouterSock = -1;

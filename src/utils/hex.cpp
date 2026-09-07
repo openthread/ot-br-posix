@@ -38,6 +38,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "common/code_utils.hpp"
+
 namespace otbr {
 
 namespace Utils {
@@ -94,31 +96,37 @@ int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength)
 
 size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
 {
-    char byteHex[3];
+    static const char kHexChars[] = "0123456789ABCDEF";
+    size_t            len         = 0;
 
-    // Make sure strcat appends at the beginning of the output buffer even
-    // if uninitialized.
+    VerifyOrExit(aHex != nullptr);
+
     aHex[0] = '\0';
 
-    for (int i = 0; i < aBytesLength; i++)
-    {
-        snprintf(byteHex, sizeof(byteHex), "%02X", aBytes[i]);
-        strcat(aHex, byteHex);
-    }
+    VerifyOrExit(aBytes != nullptr);
 
-    return strlen(aHex);
+    for (uint16_t i = 0; i < aBytesLength; i++)
+    {
+        aHex[len++] = kHexChars[aBytes[i] >> 4];
+        aHex[len++] = kHexChars[aBytes[i] & 0x0F];
+    }
+    aHex[len] = '\0';
+
+exit:
+    return len;
 }
 
 std::string Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength)
 {
-    char       *hex = new char[2 * aBytesLength + 1];
     std::string s;
-    size_t      len;
 
-    len = Bytes2Hex(aBytes, aBytesLength, hex);
-    s   = std::string(hex, len);
-    delete[] hex;
+    VerifyOrExit(aBytes != nullptr && aBytesLength > 0);
 
+    s.resize(2 * aBytesLength + 1);
+    Bytes2Hex(aBytes, aBytesLength, &s[0]);
+    s.resize(2 * aBytesLength);
+
+exit:
     return s;
 }
 

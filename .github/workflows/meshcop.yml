@@ -40,6 +40,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
 
   meshcop:
@@ -47,11 +50,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mdns: ["openthread", "avahi"]
+        mdns: ["openthread"]
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Bootstrap
       env:
         BUILD_TARGET: "meshcop"
@@ -65,11 +69,12 @@ jobs:
         script/bootstrap
         script/test build
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: '24'
     - name: Install Bruno CLI
-      run: npm install -g @usebruno/cli
+      # zizmor: ignore[adhoc-packages]
+      run: npm install -g @usebruno/cli@4.0.0
     - name: mDNS service
       env:
         TEST_CASE: "mdns_service"
@@ -91,4 +96,4 @@ jobs:
         TEST_CASE: "http_restapi"
       run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: Codecov
-      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0

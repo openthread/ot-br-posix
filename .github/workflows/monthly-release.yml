@@ -41,10 +41,15 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   create-release:
     name: Create Monthly Release
     runs-on: ubuntu-24.04
+    outputs:
+      tag_name: ${{ steps.generate_tag.outputs.TAG_NAME }}
     
     # Required permission to create tags and releases
     permissions:
@@ -52,16 +57,18 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5ef0c079ce82195b2a36a210272d6b661572d83e # v2.14.2
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
         with:
           egress-policy: block
           allowed-endpoints: >
             api.github.com:443
             github.com:443
+            uploads.github.com:443
 
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          submodules: recursive
           persist-credentials: false
 
       - name: Generate CalVer Tag Name
@@ -76,14 +83,36 @@ jobs:
             CALVER_TAG="v$(date +'%Y.%m').0"
           fi
           echo "TAG_NAME=$CALVER_TAG" >> $GITHUB_ENV
+          echo "TAG_NAME=$CALVER_TAG" >> $GITHUB_OUTPUT
           echo "Generated tag: $CALVER_TAG"
+
+      - name: Package Source Tarball
+        run: |
+          TAR_NAME="ot-br-posix-${TAG_NAME}.tar.gz"
+          tar --exclude-vcs --transform "s|^\.|ot-br-posix-${TAG_NAME}|" -czf "../${TAR_NAME}" .
+          mv "../${TAR_NAME}" .
+          echo "TAR_NAME=${TAR_NAME}" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # Uses the built-in GitHub CLI to create the tag and release simultaneously
         run: |
-          gh release create "$TAG_NAME" \
-            --target "${{ github.ref_name }}" \
-            --title "OpenThread Border Router $TAG_NAME" \
-            --generate-notes
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists, skipping release creation"
+            gh release upload "$TAG_NAME" "$TAR_NAME" --clobber || true
+          else
+            gh release create "$TAG_NAME" "$TAR_NAME" \
+              --target "${GITHUB_REF_NAME}" \
+              --title "OpenThread Border Router $TAG_NAME" \
+              --generate-notes
+          fi
+
+  build-docker:
+    needs: create-release
+    uses: ./.github/workflows/docker-border-router.yml
+    with:
+      release_tag: ${{ needs.create-release.outputs.tag_name }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

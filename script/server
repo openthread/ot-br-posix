@@ -51,7 +51,7 @@ startup()
     start_service dbus
     # OT backbone CI tests require Avahi to publish records for testing. Since the
     # same image is used for all tests Avahi needs to be started here.
-    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 ]]; then
+    if [[ ${OT_BACKBONE_CI} == 1 ]]; then
         start_service avahi-daemon
     fi
     if have service && [[ ${OTBR_MDNS} == "mDNSResponder" || ${OT_BACKBONE_CI} == 1 ]]; then
@@ -71,7 +71,7 @@ shutdown()
 
     stop_service rsyslog
     stop_service dbus
-    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
+    if [[ ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
         systemctl is-active avahi-daemon && sudo systemctl stop avahi-daemon || echo 'Failed to stop avahi!'
     fi
     if have service; then

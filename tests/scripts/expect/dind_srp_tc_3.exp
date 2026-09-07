@@ -1,0 +1,437 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start border router in Docker
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# 2. Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the Border Routing Manager to fully stabilize its dynamic OMR prefix
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Step 3: Verify the SRP Server information (specifically DNS-SD Unicast Dataset) is in Network Data on DUT
+send_user "Verifying DNS-SD Unicast Dataset in Network Data...\n"
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+
+# Get the running Border Router's active dataset dynamically to configure the client
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ED_1)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr [get_omr_addr]
+set mleid [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $mleid\n"
+send_user "ED_1 OMR Address: $omr_addr\n"
+sleep 1
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+exec docker run -d \
+    --name $test_client \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+
+# Configure routes on test client
+set has_rio [expr {[catch {exec docker exec -i $test_client test -e /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+if {$has_rio} {
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client rdisc6 eth0
+} else {
+    set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
+    set otbr_ip [exec docker inspect $container -f $format]
+    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
+}
+sleep 2
+
+# Retrieve Border Router's RLOC address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr == ""} {
+    set otbr_dns_addr [string trim [lindex [split $otbr_addrs "\n"] 0]]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Step 4: Configure & Register host & service on SRP Client (ED_1)
+# Lease: 30s, Key Lease: 10m (600s)
+send_user "Step 4: Register service on ED_1 with lease 30s, key lease 600s...\n"
+send "srp client leaseinterval 30\r\n"
+expect_line "Done"
+send "srp client keyleaseinterval 600\r\n"
+expect_line "Done"
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $mleid $omr_addr\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify registration is successful (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Stop SRP client to prevent automatic renewal
+send_user "Stopping SRP client to avoid automatic renewal...\n"
+send "srp client stop\r\n"
+expect_line "Done"
+
+# Step 6-7: Unicast DNS query QType=SRV to the DUT for service-test-1
+send_user "Step 6-7: Verifying DNS query QType=SRV from ED_1...\n"
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+send "dns servicehost service-test-1 _thread-test._udp.default.service.arpa.\r\n"
+set timeout 30
+set found_port 0
+set found_host 0
+expect {
+    -re "Port:55555" {
+        set found_port 1
+        exp_continue
+    }
+    -re "Host:host-test-1.default.service.arpa." {
+        set found_host 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS SRV query failed"
+    }
+}
+if {!$found_port || !$found_host} {
+    fail "Unicast DNS SRV query response missing Port or Host"
+}
+
+# Step 8-9: Verify service is published on Infrastructure link Eth_1
+send_user "Step 8-9: Verifying mDNS resolution from test-client (Eth_1)...\n"
+set py_srv {import time
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+for _ in range(10):
+    info.request(zc, 2000)
+    if info.port is not None and info.server is not None:
+        break
+    time.sleep(1)
+print(f'{info.port},{info.server}' if (info.port is not None and info.server is not None) else 'None')
+zc.close()}
+
+set srv_res [exec docker exec -i $test_client python3 -c $py_srv]
+set srv_res [string trim $srv_res]
+send_user "mDNS SRV Result: $srv_res\n"
+if {![string equal $srv_res "55555,host-test-1.local."]} {
+    fail "mDNS SRV resolution incorrect (expected 55555,host-test-1.local.)"
+}
+
+set py_aaaa_check_omr {import time
+import socket
+import os
+import ipaddress
+from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+for _ in range(10):
+    info.request(zc, 2000)
+    if info.server is not None and info.addresses_by_version(IPVersion.V6Only):
+        break
+    time.sleep(1)
+if info.server is None:
+    print("FAIL: Service resolution timed out (info.server is None)")
+    exit(1)
+addrs = info.addresses_by_version(IPVersion.V6Only)
+resolved = [ipaddress.IPv6Address(socket.inet_ntop(socket.AF_INET6, a)) for a in addrs]
+zc.close()
+expected_omr = ipaddress.IPv6Address(os.environ['EXPECTED_OMR'])
+if expected_omr not in resolved:
+    print(f"FAIL: OMR address {expected_omr} not found in resolved IPs: {resolved}")
+    exit(1)
+print(f"OK: Found {expected_omr} in {resolved}")
+}
+
+set status [catch {exec docker exec -e EXPECTED_OMR=$omr_addr -i $test_client python3 -c $py_aaaa_check_omr} output]
+send_user "mDNS AAAA Result: $output\n"
+if {$status != 0} {
+    fail "mDNS AAAA resolution missing OMR address: $output"
+}
+
+# Step 10: Wait 15 seconds
+send_user "Step 10: Waiting 15 seconds...\n"
+sleep 15
+
+# Step 11-12: Renew the service lease by starting client again
+send_user "Step 11-12: Renewing service lease on ED_1...\n"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Stop client again to prevent auto-renewal
+send_user "Stopping SRP client again to avoid automatic renewal...\n"
+send "srp client stop\r\n"
+expect_line "Done"
+
+# Step 13: Wait 16 seconds
+send_user "Step 13: Waiting 16 seconds...\n"
+sleep 16
+
+# Step 14-15: Verify still registered via DNS browse
+send_user "Step 14-15: Verifying DNS query QType=SRV after 16 seconds (still active)...\n"
+send "dns servicehost service-test-1 _thread-test._udp.default.service.arpa.\r\n"
+set timeout 30
+set found_port 0
+set found_host 0
+expect {
+    -re "Port:55555" {
+        set found_port 1
+        exp_continue
+    }
+    -re "Host:host-test-1.default.service.arpa." {
+        set found_host 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS SRV query failed"
+    }
+}
+if {!$found_port || !$found_host} {
+    fail "Unicast DNS SRV query response missing Port or Host"
+}
+
+# Step 16-17: Verify still registered via mDNS PTR query
+send_user "Step 16-17: Verifying mDNS PTR query from Eth_1 (still active)...\n"
+set py_ptr_check {import time
+from zeroconf import Zeroconf, IPVersion
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+# Request service info
+from zeroconf import ServiceBrowser
+class MyListener:
+    def __init__(self):
+        self.found = False
+    def add_service(self, zc, type, name):
+        if 'service-test-1' in name:
+            self.found = True
+    def update_service(self, zc, type, name):
+        pass
+    def remove_service(self, zc, type, name):
+        pass
+
+listener = MyListener()
+browser = ServiceBrowser(zc, '_thread-test._udp.local.', listener=listener)
+time.sleep(5)
+browser.cancel()
+zc.close()
+print("FOUND" if listener.found else "NOT_FOUND")
+}
+set ptr_res [exec docker exec -i $test_client python3 -c $py_ptr_check]
+set ptr_res [string trim $ptr_res]
+send_user "mDNS PTR Result: $ptr_res\n"
+if {![string equal $ptr_res "FOUND"]} {
+    fail "mDNS PTR query failed to find service-test-1 (expected FOUND)"
+}
+
+# Step 18: Wait 20 seconds for the lease to expire (Total elapsed: 16 + 20 = 36 seconds > 30 seconds)
+send_user "Step 18: Waiting 20 seconds for lease to expire...\n"
+sleep 20
+
+# Step 19-20: Unicast DNS query to DUT (should return 0 answer records with RCODE=0 or RCODE=3)
+send_user "Step 19-20: Verifying DNS query QType=SRV returns no answer records...\n"
+send "dns servicehost service-test-1 _thread-test._udp.default.service.arpa.\r\n"
+set timeout 30
+set found_port 0
+expect {
+    -re "Port:55555" {
+        set found_port 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    -re "Error 3: Name Error" {
+        # NxDomain is also valid
+    }
+    timeout {
+        fail "Unicast DNS query after expiration failed"
+    }
+}
+if {$found_port} {
+    fail "Unicast DNS query still returned service port after expiration"
+}
+
+# Step 21-22: Verify host address query doesn't return AAAA (since lease expired)
+send_user "Step 21-22: Verifying host address query resolves to no IP...\n"
+send "dns resolve host-test-1.default.service.arpa.\r\n"
+set timeout 30
+set found_ip 0
+expect {
+    -re "$mleid" {
+        set found_ip 1
+        exp_continue
+    }
+    -re "$omr_addr" {
+        set found_ip 1
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    -re "Error 3: Name Error" {
+        # NxDomain is also valid
+    }
+    timeout {
+        fail "Unicast DNS resolve query after expiration failed"
+    }
+}
+if {$found_ip} {
+    fail "Host address still resolved to an IP after lease expiration"
+}
+
+# Step 23-24: Verify mDNS QType=SRV query fails to resolve service-test-1
+send_user "Step 23-24: Verifying mDNS QType=SRV query fails...\n"
+set py_srv_check_expired {from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.')
+info.request(zc, 2000)
+print(f'{info.port},{info.server}' if (info.port is not None and info.server is not None) else 'None')
+zc.close()}
+set expired_res [exec docker exec -i $test_client python3 -c $py_srv_check_expired]
+set expired_res [string trim $expired_res]
+send_user "Expired mDNS SRV Result: $expired_res\n"
+if {![string equal $expired_res "None"]} {
+    fail "Expired mDNS SRV query resolved service (expected None)"
+}
+
+# Step 25-26: Verify mDNS QType=PTR query doesn't find the service anymore
+send_user "Step 25-26: Verifying mDNS QType=PTR query doesn't find the service...\n"
+set ptr_res [exec docker exec -i $test_client python3 -c $py_ptr_check]
+set ptr_res [string trim $ptr_res]
+send_user "Expired mDNS PTR Result: $ptr_res\n"
+if {![string equal $ptr_res "NOT_FOUND"]} {
+    fail "Expired mDNS PTR query still found service-test-1 (expected NOT_FOUND)"
+}
+
+# Step 27-28: Verify mDNS QType=AAAA query for host-test-1.local fails
+send_user "Step 27-28: Verifying mDNS QType=AAAA query for host-test-1.local fails...\n"
+set py_aaaa_check_expired {from zeroconf import Zeroconf, IPVersion, ServiceInfo
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+info = ServiceInfo('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.', port=55555, server='host-test-1.local.')
+info.request(zc, 3000)
+addrs = info.addresses_by_version(IPVersion.V6Only)
+zc.close()
+print("FOUND" if addrs else "NOT_FOUND")
+}
+set aaaa_res [exec docker exec -i $test_client python3 -c $py_aaaa_check_expired]
+set aaaa_res [string trim $aaaa_res]
+send_user "Expired mDNS AAAA Result: $aaaa_res\n"
+if {![string equal $aaaa_res "NOT_FOUND"]} {
+    fail "Expired mDNS AAAA query still resolved host-test-1.local. (expected NOT_FOUND)"
+}
+
+# Cleanup
+dispose_all
+send_user "# Service Instance Lease (1_3_SRP_TC_3) integration test completed successfully!\n"
+exit 0

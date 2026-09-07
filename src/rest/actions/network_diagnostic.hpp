@@ -37,8 +37,6 @@ namespace otbr {
 namespace rest {
 namespace actions {
 
-#define NETWORK_DIAG_ACTION_TYPE_NAME "getNetworkDiagnosticTask"
-
 class NetworkDiagnostic : public BasicActions
 {
 public:

@@ -40,6 +40,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
 
   border-router:
@@ -50,88 +53,53 @@ jobs:
       matrix:
         include:
           - name: "Border Router (OT mDNS)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
             border_routing: 1
             internet: 0
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
             border_routing: 1
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
-          - name: "Border Router (Avahi)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "avahi"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
-            packet_verification: 1
           - name: "Border Router TREL (OT mDNS)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             internet: 0
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
           - name: "Border Router TREL (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON"
+            otbr_options: "-DOTBR_COVERAGE=ON"
             border_routing: 1
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
-          - name: "Border Router MATN (OT mDNS)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "openthread"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
-            packet_verification: 1
-          - name: "Border Router MATN (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "mDNSResponder"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
-            packet_verification: 1
           - name: "Border Router Internet Access Features (OT mDNS)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
+            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
             border_routing: 1
             internet: 1
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Border Router Internet Access Features (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
+            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
             border_routing: 1
             internet: 1
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Backbone Router (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_OT_DISCOVERY_PROXY=OFF"
+            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_OT_SRP_ADV_PROXY=OFF -DOTBR_OT_DISCOVERY_PROXY=OFF"
             border_routing: 0
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
-            packet_verification: 1
-          - name: "Border Router with OT Core Advertising Proxy (avahi)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF -DOTBR_OT_SRP_ADV_PROXY=ON"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "avahi"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
-            packet_verification: 1
-          - name: "Border Router with OT Core Advertising Proxy (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_BORDER_AGENT_MESHCOP_SERVICE=OFF -DOTBR_OT_SRP_ADV_PROXY=ON"
-            border_routing: 1
-            internet: 0
-            otbr_mdns: "mDNSResponder"
-            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
 
     name: ${{ matrix.name }}
@@ -150,16 +118,17 @@ jobs:
       MAX_JOBS: 3
       VERBOSE: 1
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         submodules: recursive
+        persist-credentials: false
     - name: Get Border Router Test ID
       id: unique_action_id
       run: |
         echo "id=${GITHUB_WORKFLOW}-${GITHUB_JOB}-${GITHUB_RUN_ID}-${{matrix.name}}" >> $GITHUB_OUTPUT
     - name: Check cached result
       id: check_cache_result
-      uses: actions/cache@v5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           _test_complete_
@@ -198,7 +167,7 @@ jobs:
         export CI_ENV="$(bash <(curl -s https://codecov.io/env)) -e GITHUB_ACTIONS -e OTBR_COVERAGE"
         echo "CI_ENV=${CI_ENV}"
         (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ${{ matrix.cert_scripts }} || (sudo chmod a+r ot_testing/* && false))
-    - uses: actions/upload-artifact@v7.0.0
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: ${{ failure() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       with:
         name: thread-1-4-backbone-results
@@ -208,7 +177,7 @@ jobs:
           third_party/openthread/repo/ot_testing/*.log
     - name: Codecov
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
-      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
     - name: Cache test result
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |

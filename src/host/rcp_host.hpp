@@ -241,14 +241,6 @@ public:
     bool IsAttached(void);
 
 private:
-    static void SafeInvokeAndClear(AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
-    {
-        if (aReceiver)
-        {
-            aReceiver(aError, aErrorInfo);
-            aReceiver = nullptr;
-        }
-    }
     static void SafeInvoke(const AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
     {
         if (aReceiver)
@@ -267,8 +259,9 @@ private:
     void        ThreadDetachGracefully(const DetachGracefullyCallback &aCallback);
     static void ThreadDetachGracefullyCallback(void *aContext);
     void        ThreadDetachGracefullyCallback(void);
-    void        ConditionalErasePersistentInfo(bool aErase);
+    otError     ConditionalErasePersistentInfo(bool aErase);
     void        DisableThreadAfterDetach(void);
+    void        LeaveAfterDetach(bool aEraseDataset, const AsyncResultReceiver &aReceiver);
     static void SendMgmtPendingSetCallback(otError aError, void *aContext);
     void        SendMgmtPendingSetCallback(otError aError);
 

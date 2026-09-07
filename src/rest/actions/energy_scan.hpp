@@ -37,13 +37,6 @@ namespace otbr {
 namespace rest {
 namespace actions {
 
-#define ENERGY_SCAN_ACTION_TYPE_NAME "getEnergyScanTask"
-
-#define KEY_CHANNELMASK "channelMask"
-#define KEY_COUNT "count"
-#define KEY_PERIOD "period"
-#define KEY_SCANDURATION "scanDuration"
-
 /**
  * @brief This class implements a json:api item for holding network diagnostic attributes.
  */

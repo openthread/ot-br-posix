@@ -38,6 +38,12 @@ readonly SYSCTL_ACCEPT_RA_FILE
 SYSCTL_IP_FORWARD_FILE="/etc/sysctl.d/60-otbr-ip-forward.conf"
 readonly SYSCTL_IP_FORWARD_FILE
 
+die()
+{
+    echo >&2 "ERROR: $*"
+    exit 1
+}
+
 accept_ra_install()
 {
     sudo tee $SYSCTL_ACCEPT_RA_FILE <<EOF

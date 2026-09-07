@@ -1,0 +1,430 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# Step 1: Start border router in Docker
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+set socket_ready false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state}]} {
+        set socket_ready true
+        break
+    }
+    sleep 2
+}
+if {!$socket_ready} {
+    fail "ot-ctl failed to communicate with otbr-agent"
+}
+
+# Step 2: Setup active dataset on OTBR and start Thread
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+set leader false
+for {set i 0} {$i < 20} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*leader*" $state]} {
+        set leader true
+        break
+    }
+    sleep 2
+}
+if {!$leader} {
+    fail "OTBR did not become leader"
+}
+
+# Enable SRP server explicitly
+exec docker exec -i $container ot-ctl srp server auto disable
+exec docker exec -i $container ot-ctl srp server enable
+sleep 2
+
+# Wait 15 seconds for the dynamic OMR prefix to fully stabilize
+send_user "Waiting 15 seconds for the dynamic OMR prefix to stabilize...\n"
+sleep 15
+
+# Step 3: Verify the SRP Server information (specifically DNS-SD Unicast Dataset) is in Network Data on DUT
+send_user "Step 3: Verifying DNS-SD Unicast Dataset in Network Data...\n"
+set netdata [exec docker exec -i $container ot-ctl netdata show]
+check_string_contains $netdata "44970 5d"
+
+# Get the running Border Router's active dataset dynamically to configure clients
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [string trim $active_dataset]
+
+# Join Thread network from Node 4 (ED_1)
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr_1 [get_omr_addr]
+expect_line "Done"
+set mleid_1 [get_ipaddr mleid]
+send_user "ED_1 ML-EID Address: $mleid_1\n"
+send_user "ED_1 OMR Address: $omr_addr_1\n"
+sleep 1
+
+# Join Thread network from Node 5 (ED_2)
+spawn_node 5 cli $::env(EXP_OT_CLI_PATH)
+send "dataset set active $active_dataset\r\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+set omr_addr_2 [get_omr_addr]
+expect_line "Done"
+set mleid_2 [get_ipaddr mleid]
+send_user "ED_2 ML-EID Address: $mleid_2\n"
+send_user "ED_2 OMR Address: $omr_addr_2\n"
+sleep 1
+
+# Set up test-client container to verify from adjacent infrastructure link (Eth_1)
+set test_client "test-client"
+track_container $test_client
+exec docker run -d \
+    --name $test_client \
+    --network infrastructure-link \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+
+# Configure routes on test client
+set has_rio [expr {[catch {exec docker exec -i $test_client test -e /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+if {$has_rio} {
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+    exec docker exec -i $test_client rdisc6 eth0
+} else {
+    set format {{{range .NetworkSettings.Networks}}{{.GlobalIPv6Address}}{{end}}}
+    set otbr_ip [string trim [exec docker inspect $container -f $format]]
+    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
+}
+sleep 2
+
+# Retrieve Border Router's RLOC address to use as DNS server
+set otbr_addrs [exec docker exec -i $container ot-ctl ipaddr]
+set otbr_dns_addr ""
+foreach addr [split $otbr_addrs "\n"] {
+    set addr [string trim $addr]
+    if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+        set otbr_dns_addr $addr
+        break
+    }
+}
+if {$otbr_dns_addr eq ""} {
+    set otbr_dns_addr [string trim [lindex [split $otbr_addrs "\n"] 0]]
+}
+send_user "OTBR DNS Server Address: $otbr_dns_addr\n"
+
+# Step 4-5: Register service on ED_1 (Lease: 30s, Key Lease: 120s)
+switch_node 4
+send_user "Step 4-5: Registering service on ED_1 (Lease: 30s, Key Lease: 120s)...\n"
+send "srp client leaseinterval 30\r\n"
+expect_line "Done"
+send "srp client keyleaseinterval 120\r\n"
+expect_line "Done"
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $mleid_1 $omr_addr_1\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify registration success (RCODE=0)
+wait_for "srp client host state" "Registered"
+expect_line "Done"
+
+# Stop SRP client on ED_1 to prevent auto-renewal
+send_user "Stopping SRP client on ED_1 to prevent automatic renewal...\n"
+send "srp client stop\r\n"
+expect_line "Done"
+
+# Step 6-7: Unicast DNS query QType=SRV to DUT for service-test-1
+send_user "Step 6-7: Verifying DNS query QType=SRV from ED_1...\n"
+send "dns config $otbr_dns_addr\r\n"
+expect_line "Done"
+send "dns servicehost service-test-1 _thread-test._udp.default.service.arpa.\r\n"
+set timeout 30
+set found_port 0
+set found_host 0
+expect {
+    "Port:55555" {
+        set found_port 1
+        exp_continue
+    }
+    -re {Host:host-test-1\.default\.service\.arpa\.} {
+        set found_host 1
+        exp_continue
+    }
+    "Error" {
+        fail "Unicast DNS SRV query failed with error"
+    }
+    "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS SRV query failed"
+    }
+}
+if {!$found_port || !$found_host} {
+    fail "Unicast DNS SRV query response missing Port or Host"
+}
+
+# Step 8-9: Unicast DNS query QType=PTR to DUT for _thread-test._udp
+send_user "Step 8-9: Verifying DNS query QType=PTR from ED_1...\n"
+send "dns browse _thread-test._udp.default.service.arpa.\r\n"
+set timeout 30
+set found_ptr 0
+expect {
+    "service-test-1" {
+        set found_ptr 1
+        exp_continue
+    }
+    "Error" {
+        fail "Unicast DNS PTR query failed with error"
+    }
+    "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "Unicast DNS PTR query failed"
+    }
+}
+if {!$found_ptr} {
+    fail "Unicast DNS PTR query response missing service-test-1"
+}
+
+# Step 10: Wait 35 seconds for service lease to expire
+send_user "Step 10: Waiting 35 seconds for service lease to expire...\n"
+sleep 35
+
+# Step 11-12: ED_2 attempts to register service-test-1 with conflicting host-test-2 (Lease: 30s, Key Lease: 30s)
+switch_node 5
+send_user "Step 11-12: ED_2 attempting conflicting registration with host-test-2...\n"
+send "srp client callback enable\r\n"
+expect_line "Done"
+send "srp client leaseinterval 30\r\n"
+expect_line "Done"
+send "srp client keyleaseinterval 30\r\n"
+expect_line "Done"
+send "srp client host name host-test-2\r\n"
+expect_line "Done"
+send "srp client host address $mleid_2 $omr_addr_2\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify DUT rejects update due to active key lease (RCODE=6 YXDomain / Duplicated)
+set timeout 15
+expect {
+    "SRP client callback - error:Duplicated" {
+        send_user "Conflicting registration correctly rejected with Duplicated (YXDomain).\n"
+    }
+    -re {SRP client callback - error:(\S+)} {
+        fail "Registration was not rejected with Duplicated (got $expect_out(1,string))"
+    }
+    timeout {
+        fail "Timed out waiting for Duplicated error on ED_2"
+    }
+}
+
+# Stop client and clear host/service on ED_2 to clean up state
+send "srp client stop\r\n"
+expect_line "Done"
+send "srp client host clear\r\n"
+expect_line "Done"
+
+# Step 13: Wait 90 seconds for 120s key lease to fully expire
+send_user "Step 13: Waiting 90 seconds for key lease expiration...\n"
+sleep 90
+
+# Step 14-15: ED_2 registers service-test-1 using legitimate host-test-1 (Lease: 10s clamped to 30s, Key Lease: 120s)
+send_user "Step 14-15: ED_2 registering service-test-1 using legitimate host-test-1...\n"
+send "srp client leaseinterval 10\r\n"
+expect_line "Done"
+send "srp client keyleaseinterval 120\r\n"
+expect_line "Done"
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $mleid_2 $omr_addr_2\r\n"
+expect_line "Done"
+send "srp client service add service-test-1 _thread-test._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify registration success via callback (RCODE=0)
+set timeout 15
+expect {
+    "SRP client callback - error:OK" {
+        send_user "ED_2 successfully registered host-test-1.\n"
+    }
+    -re {SRP client callback - error:(\S+)} {
+        fail "Registration failed with error: $expect_out(1,string)"
+    }
+    timeout {
+        fail "Timed out waiting for OK callback on ED_2"
+    }
+}
+
+# Stop SRP client on ED_2 to prevent auto-renewal
+send_user "Stopping SRP client on ED_2 to prevent automatic renewal...\n"
+send "srp client stop\r\n"
+expect_line "Done"
+
+# Step 16-17: Verify mDNS PTR query on Eth_1
+send_user "Step 16-17: Verifying mDNS resolution from test-client (Eth_1)...\n"
+set py_srv {import time
+from zeroconf import Zeroconf, IPVersion
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+for _ in range(10):
+    info = zc.get_service_info('_thread-test._udp.local.', 'service-test-1._thread-test._udp.local.', 2000)
+    if info and info.port is not None and info.server is not None:
+        print(f'{info.port},{info.server}')
+        break
+    time.sleep(1)
+else:
+    print('None')
+zc.close()}
+
+set srv_res [exec docker exec -i $test_client python3 -c $py_srv]
+set srv_res [string trim $srv_res]
+send_user "mDNS SRV Result: $srv_res\n"
+if {![string equal $srv_res "55555,host-test-1.local."]} {
+    fail "mDNS SRV resolution incorrect (expected 55555,host-test-1.local.)"
+}
+
+# Step 18: Wait 35 seconds for service lease to expire (clamped 30s lease)
+send_user "Step 18: Waiting 35 seconds for clamped service lease to expire...\n"
+sleep 35
+
+# Step 19-20: Verify mDNS PTR query on Eth_1 returns no answer
+send_user "Step 19-20: Verifying mDNS PTR query returns no answer after expiration...\n"
+set py_ptr_check {import time
+from zeroconf import Zeroconf, IPVersion, ServiceBrowser
+zc = Zeroconf(ip_version=IPVersion.V6Only)
+class MyListener:
+    def __init__(self):
+        self.found = False
+    def add_service(self, zc, type_, name):
+        if 'service-test-1' in name:
+            self.found = True
+    def update_service(self, zc, type_, name):
+        pass
+    def remove_service(self, zc, type_, name):
+        pass
+
+listener = MyListener()
+browser = ServiceBrowser(zc, '_thread-test._udp.local.', listener=listener)
+time.sleep(5)
+browser.cancel()
+zc.close()
+print("FOUND" if listener.found else "NOT_FOUND")
+}
+set ptr_res [exec docker exec -i $test_client python3 -c $py_ptr_check]
+set ptr_res [string trim $ptr_res]
+send_user "Expired mDNS PTR Result: $ptr_res\n"
+if {![string equal $ptr_res "NOT_FOUND"]} {
+    fail "Expired mDNS PTR query still found service-test-1 (expected NOT_FOUND)"
+}
+
+# Step 21-22: ED_1 attempts to register service-test-3 using expired host-test-1 (claimed by ED_2)
+switch_node 4
+send_user "Step 21-22: ED_1 attempting registration on host-test-1 claimed by ED_2...\n"
+send "srp client host clear\r\n"
+expect_line "Done"
+send "srp client callback enable\r\n"
+expect_line "Done"
+send "srp client leaseinterval 30\r\n"
+expect_line "Done"
+send "srp client keyleaseinterval 30\r\n"
+expect_line "Done"
+send "srp client host name host-test-1\r\n"
+expect_line "Done"
+send "srp client host address $mleid_1 $omr_addr_1\r\n"
+expect_line "Done"
+send "srp client service add service-test-3 _thread-test._udp 55555\r\n"
+expect_line "Done"
+send "srp client autostart enable\r\n"
+expect_line "Done"
+
+# Verify DUT rejects update due to ED_2's active key lease (RCODE=6 YXDomain / Duplicated)
+set timeout 15
+expect {
+    "SRP client callback - error:Duplicated" {
+        send_user "Registration correctly rejected with Duplicated (YXDomain).\n"
+    }
+    -re {SRP client callback - error:(\S+)} {
+        fail "Registration was not rejected with Duplicated (got $expect_out(1,string))"
+    }
+    timeout {
+        fail "Timed out waiting for Duplicated error on ED_1"
+    }
+}
+
+# Cleanup
+dispose_all
+send_user "# Key Lease (1_3_SRP_TC_4) integration test completed successfully!\n"
+exit 0

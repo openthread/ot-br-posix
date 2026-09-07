@@ -34,6 +34,7 @@
 #include "common/code_utils.hpp"
 
 #include "rest/json.hpp"
+#include "rest/names.hpp"
 #include "rest/network_diag_handler.hpp"
 #include "rest/rest_diagnostics_coll.hpp"
 #include "rest/rest_server_common.hpp"

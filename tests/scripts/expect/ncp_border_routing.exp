@@ -51,9 +51,8 @@ send "thread start\r\n"
 expect_line "Done"
 wait_for "state" "leader"
 
-switch_node 3
-send "dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join \"array:byte:${dataset_dbus}\"\n"
-expect "app#"
+dbus_join $dataset_dbus "--system" $container
+wait_for_device_role {router|child} 30 "--system" $container
 sleep 20
 
 switch_node 4

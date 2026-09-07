@@ -275,7 +275,7 @@ EOF
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.JoinerStart \
-        string:ABCDEF string:mock string:mock \
+        string:ABCDEF string:"" string:mock \
         string:mock string:mock string:mock
     sleep 10
     ot_ctl state | grep router

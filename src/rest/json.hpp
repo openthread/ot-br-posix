@@ -38,11 +38,13 @@
 
 #include <httplib.h>
 
+#include <openthread/border_agent_ephemeral_key.h>
 #include <openthread/dataset.h>
 #include <openthread/link.h>
 #include <openthread/thread_ftd.h>
 
 #include "common/types.hpp"
+#include "rest/names.hpp"
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
 
@@ -59,66 +61,6 @@ namespace rest {
  * string.
  */
 namespace Json {
-
-// key names used in json objects
-#define KEY_ORIGIN "origin"
-#define KEY_REPORT "report"
-#define KEY_CHANNEL "channel"
-#define KEY_MAXRSSI "maxRssi"
-
-#define KEY_EXTADDRESS "extAddress" // 64-bit MAC address
-#define KEY_MLEIDIID "mlEidIid"
-#define KEY_OMRIPV6 "omrIpv6Address"
-#define KEY_EUI64 "eui64" // EUI-64 address
-#define KEY_HOSTNAME "hostName"
-#define KEY_PSKD "pskd"
-
-#define KEY_BORDERAGENTID "baId"
-#define KEY_BORDERAGENTSTATE "baState"
-#define KEY_STATE "state"
-#define KEY_ROLE "role"
-#define KEY_ROUTERCOUNT "routerCount"
-#define KEY_RLOC16_IPV6ADDRESS "rlocAddress"
-#define KEY_NETWORKNAME "networkName"
-#define KEY_RLOC16 "rloc16" // 16-bit MAC address
-#define KEY_ROUTERID "routerId"
-#define KEY_LEADERDATA "leaderData" // Leader data
-#define KEY_EXTPANID "extPanId"
-
-#define KEY_IP6ADDRESSLIST "ipv6Addresses"          // List of IPv6 addresses
-#define KEY_MACCOUNTERS "macCounters"               // MAC packet/event counters
-#define KEY_CHANNELPAGES "channelPages"             // Supported frequency bands
-#define KEY_VERSION "version"                       // Thread version
-#define KEY_VENDORNAME "vendorName"                 // Vendor name
-#define KEY_VENDORMODEL "vendorModel"               // Vendor model
-#define KEY_VENDORSWVERSION "vendorSwVersion"       // Vendor software version
-#define KEY_THREADSTACKVERSION "threadStackVersion" // Thread stack version
-#define KEY_MLECOUNTERS "mleCounters"               // MLE counters
-#define KEY_CHILDREN "children"                     // Child table
-#define KEY_CHILDRENIP6 "childIpv6Addresses"        // IPv6 addresses of child
-#define KEY_NEIGHBORS "routerNeighbors"             // Router neighbor info
-#define KEY_BRCOUNTERS "brCounters"
-#define KEY_LEADER "isLeader"
-#define KEY_SERVICE "hostsService"
-#define KEY_PBBR "isPrimaryBBR"
-#define KEY_BR "isBorderRouter"
-
-#define KEY_MODE "mode"           // Mode
-#define KEY_ISFTD "deviceTypeFTD" // is FullThreadDevice
-#define KEY_RXONWHENIDLE "rxOnWhenIdle"
-#define KEY_FULLNETWORKDATA "fullNetworkData"
-#define KEY_TIMEOUT "timeout"                 // Timeout (max polling time period for SEDs)
-#define KEY_CONNECTIVITY "connectivity"       // Connectivity information
-#define KEY_ROUTE "route"                     // Route64 information
-#define KEY_NETWORKDATA "networkData"         // Network data
-#define KEY_BATTERYLEVEL "batteryLevel"       // Battery energy level
-#define KEY_SUPPLYVOLTAGE "supplyVoltage"     // Current supply voltage
-#define KEY_CHILDTABLE "childTable"           // List of children
-#define KEY_MAXCHILDTIMEOUT "maxChildTimeout" // Max child timeout
-
-// unused
-#define KEY_LDEVID "lDevIdSubject" // LDevID subject public key info
-#define KEY_IDEV "iDevIdCert"      // IDevID certificate
 
 /**
  * This method formats an integer to a Json number and serialize it to a string.
@@ -445,6 +387,39 @@ otbrError StringDiscerner2Discerner(char *aString, otJoinerDiscerner &aDiscerner
 bool JsonJoinerInfoString2JoinerInfo(const std::string &aJsonJoinerInfo, otJoinerInfo &aJoinerInfo);
 
 std::string JoinerTable2JsonString(const std::vector<otJoinerInfo> &aJoinerTable);
+
+#if OTBR_ENABLE_EPSKC
+/**
+ * This method formats an ephemeral key (ePSKc) status to a Json object and serializes it to a string.
+ *
+ * @param[in] aState  The ephemeral key state.
+ * @param[in] aPort   The UDP port being used.
+ *
+ * @returns A string of serialized Json object.
+ */
+std::string EpskcKeyStatus2JsonString(otBorderAgentEphemeralKeyState aState, uint16_t aPort);
+
+/**
+ * This method formats an ephemeral key (ePSKc) activation result to a Json object and serializes it to a string.
+ *
+ * @param[in] aTap   The generated 9-digit Thread Administration Passcode (TAP).
+ * @param[in] aPort  The UDP port being used.
+ *
+ * @returns A string of serialized Json object.
+ */
+std::string EpskcActivateResult2JsonString(const std::string &aTap, uint16_t aPort);
+
+/**
+ * This method parses a Json string for ephemeral key (ePSKc) activation parameters.
+ *
+ * @param[in]  aJson      The Json string to be parsed.
+ * @param[out] aLifetime  The lifetime in milliseconds.
+ * @param[out] aPort      The UDP port.
+ *
+ * @returns If the Json string has been successfully parsed.
+ */
+bool JsonEpskcActivateParams(const std::string &aJson, uint32_t &aLifetime, uint16_t &aPort);
+#endif // OTBR_ENABLE_EPSKC
 
 /**
  * Converts a cJSON object to string.

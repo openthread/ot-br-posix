@@ -42,7 +42,6 @@
 #include <netinet/ip.h>
 #include <sys/socket.h>
 
-#include <unordered_map>
 #include <vector>
 
 #include <openthread/border_agent.h>
@@ -99,6 +98,63 @@ private:
         kPending, ///< Pending Dataset
     };
 
+    /**
+     * Tracks, for every registered route pattern, which HTTP methods it was
+     * registered under.
+     *
+     * cpp-httplib routes each method (GET/POST/PUT/DELETE) independently and has no notion of
+     * "this path exists but not for that method" - an unmatched method simply falls through to
+     * a generic 404. This class lets RestWebServer tell an unknown path (status 404) apart from
+     * a known path used with an unsupported method (status 405).
+     */
+    class RouteRegistry
+    {
+    public:
+        /**
+         * Bitmask of the HTTP methods (see HttpMethod) registered for a route.
+         */
+        using RouteMethods = uint8_t;
+
+        /**
+         * Records that aPattern was registered for aMethod.
+         */
+        void Add(const std::string &aPattern, HttpMethod aMethod);
+
+        /**
+         * Returns the methods registered for the route matching aPath, or 0 if no route matches.
+         */
+        RouteMethods GetMethods(const std::string &aPath) const;
+
+        /**
+         * Returns whether aMethod is supported by aMethods.
+         */
+        static bool MatchMethod(RouteMethods aMethods, HttpMethod aMethod);
+
+        /**
+         * Returns whether aMethods has any methods at all.
+         */
+        static bool AnyMethod(RouteMethods aMethods);
+
+        /**
+         * Formats aMethods as a comma-separated Allow-header value (e.g. "GET, POST, OPTIONS"),
+         * or "" if aMethods has no methods.
+         */
+        static std::string BuildMethodsString(RouteMethods aMethods);
+
+    private:
+        struct Route
+        {
+            std::string  mPattern;
+            RouteMethods mMethodMask = 0;
+        };
+
+        static bool MatchPath(const std::string &aPattern, const std::string &aPath);
+
+        static RouteMethods MethodBit(HttpMethod aMethod);
+
+        std::vector<Route> mRoutes;
+    };
+
     void NodeInfo(const Request &aRequest, Response &aResponse) const;
     void BaId(const Request &aRequest, Response &aResponse) const;
     void ExtendedAddr(const Request &aRequest, Response &aResponse) const;
@@ -138,6 +194,16 @@ private:
     void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
     void GetCoprocessorVersion(Response &aResponse) const;
 
+#if OTBR_ENABLE_EPSKC
+    void EpskcState(const Request &aRequest, Response &aResponse) const;
+    void GetEpskcState(Response &aResponse) const;
+    void SetEpskcState(const Request &aRequest, Response &aResponse) const;
+    void EpskcKey(const Request &aRequest, Response &aResponse) const;
+    void GetEpskcKey(Response &aResponse) const;
+    void ActivateEpskcKey(const Request &aRequest, Response &aResponse) const;
+    void DeactivateEpskcKey(const Request &aRequest, Response &aResponse) const;
+#endif
+
     void ApiActionsHandler(const Request &aRequest, Response &aResponse);
     void ApiActionsGetHandler(const Request &aRequest, Response &aResponse);
     void ApiActionsItemGetHandler(const Request &aRequest, Response &aResponse);
@@ -159,10 +225,20 @@ private:
     void ApiDiagnosticsDeleteHandler(const Request &aRequest, Response &aResponse);
     void ApiDiagnosticsItemDeleteHandler(const Request &aRequest, Response &aResponse);
 
+    void WellKnownThreadHandler(const Request &aRequest, Response &aResponse) const;
+    void WellKnownThreadGetHandler(const Request &aRequest, Response &aResponse) const;
+
     void                               RoutingErrorHandler(const Request &aRequest, Response &aResponse);
     std::map<std::string, std::string> ExtractFieldsQueries(const Request               &aRequest,
                                                             const std::set<std::string> &aContainedTypes) const;
-    otError                            HasValidChars(const Request &aRequest, std::string &aErrorDetails);
+    otError                            HasValidChars(const Request &aRequest, std::string &aErrorDetails) const;
+
+    void RegisterGet(const std::string &aPattern, httplib::Server::Handler aHandler);
+    void RegisterPost(const std::string &aPattern, httplib::Server::Handler aHandler);
+    void RegisterPut(const std::string &aPattern, httplib::Server::Handler aHandler);
+    void RegisterDelete(const std::string &aPattern, httplib::Server::Handler aHandler);
+
+    httplib::Server::HandlerResponse OptionsHandler(const Request &aRequest, Response &aResponse);
 
     otInstance *GetInstance(void) const { return mHost.GetThreadHelper()->GetInstance(); }
 
@@ -179,6 +255,14 @@ private:
     auto RunInMainLoop(Milliseconds aDelay, Call aCall, Args... aArgs) const -> decltype(aCall(aArgs...))
     {
         return mHost.GetTaskRunner().PostAndWait<decltype(aCall(aArgs...))>([&]() { return aCall(aArgs...); }, aDelay);
+    }
+
+    httplib::Server::HandlerWithResponse MakePreRoutingHandler(
+        httplib::Server::HandlerResponse (RestWebServer::*aHandler)(const Request &, Response &))
+    {
+        return [this, aHandler](const Request &aRequest, Response &aResponse) {
+            return (this->*aHandler)(aRequest, aResponse);
+        };
     }
 
     template <typename HandlerType> httplib::Server::Handler MakeHandler(HandlerType aHandler)
@@ -199,6 +283,8 @@ private:
 
     httplib::Server mServer;
     std::thread     mServerThread;
+
+    RouteRegistry mRouteRegistry;
 
     Services mServices;
 };

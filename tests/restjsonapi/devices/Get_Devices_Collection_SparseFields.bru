@@ -54,8 +54,8 @@ tests {
       expect(item.attributes).to.have.property("extAddress").that.is.not.oneOf([""]);
       expect(item.attributes).to.have.property("mlEidIid").that.is.not.oneOf([""]);
       expect(item.attributes).to.not.have.property("omrIpv6Address").that.is.not.oneOf(["", "::"]);
-      expect(item.attributes).to.not.have.property("eui64").that.is.not.oneOf([""]);
-      expect(item.attributes).to.not.have.property("hostName");
+      expect(item.attributes).to.not.have.property("eui").that.is.not.oneOf([""]);
+      expect(item.attributes).to.not.have.property("hostname");
       expect(item.attributes).to.have.property("created").that.is.not.empty;
     }
   });

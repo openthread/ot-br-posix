@@ -35,6 +35,7 @@
 #include "rest/actions/handler.hpp"
 #include "rest/commissioner_manager.hpp"
 #include "rest/json.hpp"
+#include "rest/names.hpp"
 #include "rest/rest_server_common.hpp"
 #include "rest/services.hpp"
 

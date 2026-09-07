@@ -37,12 +37,6 @@ namespace otbr {
 namespace rest {
 namespace actions {
 
-#define DISCOVER_NETWORK_ACTION_TYPE_NAME "updateDeviceCollectionTask"
-
-#define KEY_MAX_AGE "maxAge"
-#define KEY_MAX_RETRIES "maxRetries"
-#define KEY_DEVICE_COUNT "deviceCount"
-
 class DiscoverNetwork : public BasicActions
 {
 public:

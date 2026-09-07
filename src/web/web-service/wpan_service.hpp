@@ -65,6 +65,8 @@
 namespace otbr {
 namespace Web {
 
+class WebServiceTest;
+
 /**
  * This class provides web service to manage WPAN.
  */
@@ -136,6 +138,45 @@ public:
     std::string HandleCommission(const std::string &aCommissionRequest);
 
     /**
+     * This method handles the http request to get the ePSKc (ephemeral key) feature status.
+     *
+     * @returns The string to the http response, containing the "enabled" flag, the raw session
+     *          "state" ("disabled"/"stopped"/"started"/"connected"/"accepted"), an "active"
+     *          convenience flag, and the current "port".
+     */
+    std::string HandleGetEpskcStatusRequest(void);
+
+    /**
+     * This method handles the http request to enable or disable the ePSKc feature.
+     *
+     * @param[in] aSetEpskcEnabledRequest  A reference to the http request body, containing an
+     *                                     "enabled" boolean field.
+     *
+     * @returns The string to the http response of enabling/disabling the ePSKc feature.
+     */
+    std::string HandleSetEpskcEnabledRequest(const std::string &aSetEpskcEnabledRequest);
+
+    /**
+     * This method handles the http request to generate a TAP code and activate an ePSKc session.
+     *
+     * @param[in] aActivateEpskcRequest  A reference to the http request body, containing optional
+     *                                   "lifetime" (session lifetime in ms; 0/omitted means "use
+     *                                   the router's default") and "port" (0/omitted means "use
+     *                                   the router's default ephemeral UDP port") fields.
+     *
+     * @returns The string to the http response of activating the ePSKc session, including the
+     *          generated "tap" code and the effective "port".
+     */
+    std::string HandleActivateEpskcRequest(const std::string &aActivateEpskcRequest);
+
+    /**
+     * This method handles the http request to deactivate the current ePSKc session.
+     *
+     * @returns The string to the http response of deactivating the ePSKc session.
+     */
+    std::string HandleDeactivateEpskcRequest(void);
+
+    /**
      * This method sets the Thread interface name.
      *
      * @param[in] aIfName  The pointer to the Thread interface name.
@@ -169,6 +210,8 @@ public:
     std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
+    friend class WebServiceTest;
+
     int                formActiveDataset(otbr::Web::OpenThreadClient &aClient,
                                          const std::string           &aNetworkKey,
                                          const std::string           &aNetworkName,
@@ -181,6 +224,7 @@ private:
                                          uint16_t                     aChannel,
                                          uint16_t                     aPanId);
     static std::string escapeOtCliEscapable(const std::string &aArg);
+    static std::string toLower(const std::string &aStr);
 
     WpanNetworkInfo mNetworks[OT_SCANNED_NET_BUFFER_SIZE];
     int             mNetworksCount;

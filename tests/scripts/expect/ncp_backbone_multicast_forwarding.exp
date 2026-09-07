@@ -53,9 +53,10 @@ try {
     sleep 5
 
     # Join a Thread network.
-    send "dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join \"array:byte:${dataset_dbus}\"\n"
-    expect "dbus-send"
-    expect "app#"
+    dbus_join $dataset_dbus "--system" $container
+    wait_for_device_role {leader} 30 "--system" $container
+
+    switch_node 3
     send "sysctl -w net.ipv6.icmp.echo_ignore_all=1\n"
     expect_line "net.ipv6.icmp.echo_ignore_all = 1"
     sleep 20

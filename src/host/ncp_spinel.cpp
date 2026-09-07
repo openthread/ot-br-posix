@@ -69,7 +69,7 @@ NcpSpinel::NcpSpinel(void)
     , mDiscoveryProxyId(0)
 #endif
 {
-    std::fill_n(mWaitingKeyTable, SPINEL_PROP_LAST_STATUS, sizeof(mWaitingKeyTable));
+    std::fill_n(mWaitingKeyTable, kMaxTids, SPINEL_PROP_LAST_STATUS);
     memset(mCmdTable, 0, sizeof(mCmdTable));
 }
 
@@ -79,6 +79,19 @@ void NcpSpinel::Init(ot::Spinel::SpinelDriver &aSpinelDriver, PropsObserver &aOb
     mPropsObserver = &aObserver;
     mIid           = mSpinelDriver->GetIid();
     mSpinelDriver->SetFrameHandler(&HandleReceivedFrame, &HandleSavedFrame, this);
+
+    // Get both datasets to have initial values: on startup against an
+    // already-provisioned NCP the caches would otherwise stay empty until the
+    // NCP next reports a change.
+    for (spinel_prop_key_t key : {SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, SPINEL_PROP_THREAD_PENDING_DATASET_TLVS})
+    {
+        otError error = GetProperty(key);
+
+        if (error != OT_ERROR_NONE)
+        {
+            otbrLogWarning("Failed to get dataset property %u, %s", key, otThreadErrorToString(error));
+        }
+    }
 }
 
 void NcpSpinel::Deinit(void)
@@ -481,6 +494,28 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
+    {
+        otOperationalDatasetTlvs datasetTlvs = {};
+
+        // The active dataset also changes without otbr asking for it, most
+        // notably when a pending dataset is applied at the end of a migration.
+        VerifyOrExit(ParseOperationalDatasetTlvs(aBuffer, aLength, datasetTlvs) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+        break;
+    }
+
+    case SPINEL_PROP_THREAD_PENDING_DATASET_TLVS:
+    {
+        otOperationalDatasetTlvs datasetTlvs = {};
+
+        VerifyOrExit(ParseOperationalDatasetTlvs(aBuffer, aLength, datasetTlvs) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        mPropsObserver->SetDatasetPendingTlvs(datasetTlvs);
+        break;
+    }
+
     case SPINEL_PROP_IPV6_ADDRESS_TABLE:
     {
         std::vector<Ip6AddressInfo> addressInfoTable;
@@ -667,7 +702,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->PublishHost(host.mHostName, addressList, [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
@@ -676,7 +711,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         otPlatDnssdService           service;
         Mdns::Publisher::SubTypeList subTypeList;
         const char                  *subTypeArray[kMaxSubTypes];
-        uint16_t                     subTypeCount;
+        uint16_t                     subTypeCount = kMaxSubTypes;
         Mdns::Publisher::TxtData     txtData;
         otPlatDnssdRequestId         requestId;
         const uint8_t               *callbackData;
@@ -694,7 +729,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
 
         mPublisher->PublishService(service.mHostName, service.mServiceInstance, service.mServiceType, subTypeList,
                                    service.mPort, txtData, [this, requestId, callbackDataCopy](otbrError aError) {
-                                       OT_UNUSED_VARIABLE(
+                                       IgnoreError(
                                            SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
                                    });
         break;
@@ -713,7 +748,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->PublishKey(KeyNameFor(key), keyData, [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
@@ -732,7 +767,7 @@ void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuff
         DnssdPlatform::Get().StartServiceBrowser(browser,
                                                  std::make_shared<DnssdPlatform::StdBrowseCallback>(
                                                      [this, callbackDataCopy](const otPlatDnssdBrowseResult &aResult) {
-                                                         SendDnssdBrowseResult(aResult, callbackDataCopy);
+                                                         IgnoreError(SendDnssdBrowseResult(aResult, callbackDataCopy));
                                                      },
                                                      mDiscoveryProxyId++));
         break;
@@ -780,7 +815,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->UnpublishHost(host.mHostName, [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
@@ -788,7 +823,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
     {
         otPlatDnssdService   service;
         const char          *subTypeArray[kMaxSubTypes];
-        uint16_t             subTypeCount;
+        uint16_t             subTypeCount = kMaxSubTypes;
         otPlatDnssdRequestId requestId;
         const uint8_t       *callbackData;
         uint16_t             callbackDataSize;
@@ -799,8 +834,8 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->UnpublishService(
-            service.mHostName, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
-                OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            service.mServiceInstance, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
+                IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
             });
         break;
     }
@@ -816,7 +851,7 @@ void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffe
         callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
 
         mPublisher->UnpublishKey(KeyNameFor(key), [this, requestId, callbackDataCopy](otbrError aError) {
-            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            IgnoreError(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
         });
         break;
     }
@@ -866,6 +901,37 @@ otbrError NcpSpinel::HandleResponseForPropGet(spinel_tid_t      aTid,
         break;
     }
 
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
+    case SPINEL_PROP_THREAD_PENDING_DATASET_TLVS:
+    {
+        otOperationalDatasetTlvs datasetTlvs = {};
+
+        // A failed get comes back as LAST_STATUS with the error status as
+        // payload, which must not reach the TLV parser.
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            spinel_status_t status = SPINEL_STATUS_OK;
+
+            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+            otbrLogWarning("Failed to get dataset property %u: %s", mWaitingKeyTable[aTid],
+                           otThreadErrorToString(ot::Spinel::SpinelStatusToOtError(status)));
+            ExitNow();
+        }
+        VerifyOrExit(aKey == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
+
+        VerifyOrExit(ParseOperationalDatasetTlvs(aData, aLength, datasetTlvs) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        if (mWaitingKeyTable[aTid] == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS)
+        {
+            mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+        }
+        else
+        {
+            mPropsObserver->SetDatasetPendingTlvs(datasetTlvs);
+        }
+        break;
+    }
+
     default:
         VerifyOrExit(aKey == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
         break;
@@ -889,36 +955,68 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
     switch (mWaitingKeyTable[aTid])
     {
     case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
-        VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, error = OTBR_ERROR_INVALID_STATE);
-        CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
         {
-            otOperationalDatasetTlvs datasetTlvs;
-            VerifyOrExit(ParseOperationalDatasetTlvs(aData, aLength, datasetTlvs) == OT_ERROR_NONE,
-                         error = OTBR_ERROR_PARSE);
-            mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mDatasetSetActiveTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
+            {
+                otOperationalDatasetTlvs datasetTlvs;
+                VerifyOrExit(ParseOperationalDatasetTlvs(aData, aLength, datasetTlvs) == OT_ERROR_NONE,
+                             error = OTBR_ERROR_PARSE);
+                mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+            }
         }
         break;
 
     case SPINEL_PROP_NET_IF_UP:
-        VerifyOrExit(aKey == SPINEL_PROP_NET_IF_UP, error = OTBR_ERROR_INVALID_STATE);
-        CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
         {
-            bool isUp;
-            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_BOOL_S, &isUp));
-            SafeInvoke(mNetifStateChangedCallback, isUp);
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mIp6SetEnabledTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_NET_IF_UP, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
+            {
+                bool isUp;
+                SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_BOOL_S, &isUp));
+                SafeInvoke(mNetifStateChangedCallback, isUp);
+            }
         }
         break;
 
     case SPINEL_PROP_NET_STACK_UP:
-        VerifyOrExit(aKey == SPINEL_PROP_NET_STACK_UP, error = OTBR_ERROR_INVALID_STATE);
-        CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mThreadSetEnabledTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_NET_STACK_UP, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        }
         break;
 
     case SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS:
         if (aKey == SPINEL_PROP_LAST_STATUS)
         { // Failed case
-            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
-            CallAndClear(mDatasetMgmtSetPendingTask, ot::Spinel::SpinelStatusToOtError(status));
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mDatasetMgmtSetPendingTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
         }
         else if (aKey != SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS)
         {
@@ -951,22 +1049,66 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
         break;
 
     case SPINEL_PROP_HOST_POWER_STATE:
-        CallAndClear(mSetHostPowerStateTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mSetHostPowerStateTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_HOST_POWER_STATE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mSetHostPowerStateTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Set Host Power result: %s", spinel_status_to_cstr(status));
         break;
 
     case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ENABLE:
-        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mEphemeralKeyTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ENABLE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Set Ephemeral Key Enable result: %s", spinel_status_to_cstr(status));
         break;
 
     case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ACTIVATE:
-        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mEphemeralKeyTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_ACTIVATE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Activate Ephemeral Key result: %s", spinel_status_to_cstr(status));
         break;
 
     case SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_DEACTIVATE:
-        CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        {
+            error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status);
+            CallAndClear(mEphemeralKeyTask,
+                         (error == OTBR_ERROR_NONE) ? ot::Spinel::SpinelStatusToOtError(status) : OT_ERROR_PARSE);
+            SuccessOrExit(error);
+        }
+        else
+        {
+            VerifyOrExit(aKey == SPINEL_PROP_BORDER_AGENT_EPHEMERAL_KEY_DEACTIVATE, error = OTBR_ERROR_INVALID_STATE);
+            CallAndClear(mEphemeralKeyTask, OT_ERROR_NONE);
+        }
         otbrLogInfo("Deactivate Ephemeral Key result: %s", spinel_status_to_cstr(status));
         break;
 
@@ -1155,6 +1297,7 @@ otError NcpSpinel::RemoveProperty(spinel_prop_key_t aKey, const EncodingFunc &aE
 otError NcpSpinel::SendEncodedFrame(void)
 {
     otError  error = OT_ERROR_NONE;
+    otError  removeError;
     uint8_t  frame[kTxBufferSize];
     uint16_t frameLength;
 
@@ -1164,7 +1307,13 @@ otError NcpSpinel::SendEncodedFrame(void)
     SuccessOrExit(error = mSpinelDriver->GetSpinelInterface()->SendFrame(frame, frameLength));
 
 exit:
-    error = mNcpBuffer.OutFrameRemove();
+    removeError = mNcpBuffer.OutFrameRemove();
+
+    if (error == OT_ERROR_NONE)
+    {
+        error = removeError;
+    }
+
     return error;
 }
 

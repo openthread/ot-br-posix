@@ -31,13 +31,12 @@ find_package(PkgConfig)
 
 option(OTBR_DOC "Build documentation" OFF)
 
-if (OTBR_MDNS STREQUAL "avahi")
-    message(DEPRECATION "OTBR_MDNS=avahi is deprecated. Use OTBR_MDNS=openthread or OTBR_MDNS=mDNSResponder instead.")
-    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_AVAHI=1)
-elseif (OTBR_MDNS STREQUAL "mDNSResponder")
+if (OTBR_MDNS STREQUAL "mDNSResponder")
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_MDNSSD=1)
 elseif (OTBR_MDNS STREQUAL "openthread")
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MDNS_OPENTHREAD=1)
+elseif (OTBR_MDNS STREQUAL "avahi")
+    message(FATAL_ERROR "OTBR_MDNS=avahi is no longer supported. Use OTBR_MDNS=openthread or OTBR_MDNS=mDNSResponder.")
 endif()
 
 option(OTBR_BORDER_AGENT "Enable Border Agent" ON)
@@ -87,6 +86,22 @@ if (OTBR_TELEMETRY_DATA_API)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TELEMETRY_DATA_API=1)
 endif()
 
+# Opt-in, Linux-only: build the in-process nftables firewall backend instead of
+# relying on the legacy ipset/ip6tables shell firewall (which remains the
+# default). Requires libnftnl + libmnl at build time and nf_tables kernel
+# support at runtime.
+option(OTBR_NFTABLES "Enable in-process nftables firewall backend (libnftnl/libmnl)" OFF)
+if (OTBR_NFTABLES)
+    if (NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        message(FATAL_ERROR "OTBR_NFTABLES is only supported on Linux")
+    endif()
+    pkg_check_modules(LIBNFTNL REQUIRED IMPORTED_TARGET libnftnl)
+    pkg_check_modules(LIBMNL REQUIRED IMPORTED_TARGET libmnl)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NFTABLES=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NFTABLES=0)
+endif()
+
 option(OTBR_OPENWRT "Enable OpenWrt support" OFF)
 if(OTBR_OPENWRT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_OPENWRT=1)
@@ -98,7 +113,7 @@ if(OTBR_REST)
 endif()
 
 set(OTBR_OT_SRP_ADV_PROXY_DEFAULT OFF)
-if (OTBR_MDNS STREQUAL "openthread")
+if (OTBR_MDNS)
     set(OTBR_OT_SRP_ADV_PROXY_DEFAULT ON)
 endif()
 
@@ -186,6 +201,16 @@ option(OTBR_WEB "Enable Web GUI" OFF)
 option(OTBR_NOTIFY_UPSTART "Notify upstart when ready." ON)
 if(OTBR_NOTIFY_UPSTART)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
+endif()
+
+# When OTBR_PLATFORM_RESET_EXIT is enabled, the daemon exits with status 0 on
+# platform reset. Ensure the service supervisor is configured to restart on clean
+# exits as well (e.g. systemd Restart=always).
+option(OTBR_PLATFORM_RESET_EXIT "Exit on platform reset instead of restarting in-place" OFF)
+if(OTBR_PLATFORM_RESET_EXIT)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PLATFORM_RESET_EXIT=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PLATFORM_RESET_EXIT=0)
 endif()
 
 set(OTBR_NAT64_DEFAULT OFF)

@@ -49,7 +49,7 @@ readonly OT_NCP
 OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE:-otbr-ncp}"
 readonly OTBR_DOCKER_IMAGE
 
-OTBR_MDNS="${OTBR_MDNS:-avahi}"
+OTBR_MDNS="${OTBR_MDNS:-mDNSResponder}"
 readonly OTBR_MDNS
 
 ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
@@ -295,6 +295,7 @@ otbr_exec_expect_script()
         sudo killall ot-cli-mtd || true
         sudo killall ot-ncp-ftd || true
         sudo killall ot-ncp-mtd || true
+        sudo killall "${OTBR_AGENT}" || true
         sudo rm -rf tmp
         mkdir tmp
         # avahi-browser is used to discover the service and verify in the test cases no matter what OTBR_MDNS is.

@@ -52,6 +52,8 @@ endif()
 
 add_subdirectory(utils)
 
+add_subdirectory(firewall)
+
 if(OTBR_OPENWRT)
     add_subdirectory(openwrt)
 endif()

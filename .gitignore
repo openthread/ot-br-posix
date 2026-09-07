@@ -68,6 +68,7 @@ src/agent/otbr-agent.conf
 src/web/otbr-web
 src/web/otbr-web.service
 src/web/otbr-web.init
+src/web/web-service/frontend/node_modules
 
 # Test code.
 tests/mdns/otbr-test-mdns

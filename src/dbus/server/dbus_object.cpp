@@ -150,22 +150,34 @@ DBusHandlerResult DBusObject::sMessageHandler(DBusConnection *aConnection, DBusM
 DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMessage *aMessage)
 {
     DBusHandlerResult handled = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-    DBusRequest       request(aConnection, aMessage);
-    std::string       interface  = dbus_message_get_interface(aMessage);
-    std::string       memberName = interface + "." + dbus_message_get_member(aMessage);
-    auto              iter       = mMethodHandlers.find(memberName);
 
-    if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
+    VerifyOrExit(dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL);
+
     {
-        otbrLogDebug("Handling method %s", memberName.c_str());
-        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        const char *interface = dbus_message_get_interface(aMessage);
+        const char *member    = dbus_message_get_member(aMessage);
+
+        if (interface != nullptr && member != nullptr)
         {
-            DumpDBusMessage(*aMessage);
+            std::string memberName = std::string(interface) + "." + member;
+            auto        iter       = mMethodHandlers.find(memberName);
+
+            if (iter != mMethodHandlers.end())
+            {
+                DBusRequest request(aConnection, aMessage);
+
+                otbrLogDebug("Handling method %s", memberName.c_str());
+                if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+                {
+                    DumpDBusMessage(*aMessage);
+                }
+                (iter->second)(request);
+                handled = DBUS_HANDLER_RESULT_HANDLED;
+            }
         }
-        (iter->second)(request);
-        handled = DBUS_HANDLER_RESULT_HANDLED;
     }
 
+exit:
     return handled;
 }
 

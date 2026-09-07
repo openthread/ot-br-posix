@@ -30,6 +30,7 @@
 
 #include "common/code_utils.hpp"
 #include "rest/json.hpp"
+#include "rest/names.hpp"
 #include "rest/services.hpp"
 
 #include <openthread/netdiag.h>
@@ -40,8 +41,6 @@
 namespace otbr {
 namespace rest {
 namespace actions {
-
-constexpr const char *ResetDiagnosticCounters::kJsonType;
 
 ResetDiagnosticCounters::ResetDiagnosticCounters(const cJSON &aJson, Services &aServices)
     : BasicActions(aJson, aServices)

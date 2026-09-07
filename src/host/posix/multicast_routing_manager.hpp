@@ -54,13 +54,15 @@ public:
                                      const Host::NetworkProperties &aNetworkProperties);
 
     void Deinit(void) { FinalizeMulticastRouterSock(); }
-    bool IsEnabled(void) const { return mMulticastRouterSock >= 0; }
+    bool IsEnabled(void) const { return mState == kStateEnabled; }
     void HandleStateChange(otBackboneRouterState aState);
     void HandleBackboneMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
                                               const Ip6Address                      &aAddress);
 
 private:
-    static constexpr uint32_t kUsPerSecond = 1000000; //< Microseconds per second.
+    static constexpr uint32_t kUsPerSecond        = 1000000; //< Microseconds per second.
+    static constexpr uint32_t kMinRetryIntervalUs = 100000;  //< Minimum retry interval (100 ms) in microseconds.
+    static constexpr uint32_t kMaxRetryIntervalUs = 5000000; //< Maximum retry interval (5 seconds) in microseconds.
     static constexpr uint32_t kMulticastForwardingCacheExpireTimeout =
         300; //< Expire timeout of Multicast Forwarding Cache (in seconds)
     static constexpr uint32_t kMulticastForwardingCacheExpiringInterval =
@@ -68,6 +70,13 @@ private:
     static constexpr uint32_t kMulticastMaxListeners = 75; //< The max number of Multicast listeners
     static constexpr uint32_t kMulticastForwardingCacheTableSize =
         kMulticastMaxListeners * 10; //< The max size of MFC table.
+
+    enum State : uint8_t
+    {
+        kStateDisabled,
+        kStateEnabling,
+        kStateEnabled,
+    };
 
     enum MifIndex : uint8_t
     {
@@ -109,7 +118,7 @@ private:
     void      Remove(const Ip6Address &aAddress);
     void      UpdateMldReport(const Ip6Address &aAddress, bool isAdd);
     bool      HasMulticastListener(const Ip6Address &aAddress) const;
-    void      InitMulticastRouterSock(void);
+    otbrError InitMulticastRouterSock(void);
     void      FinalizeMulticastRouterSock(void);
     void      ProcessMulticastRouterMessages(void);
     otbrError AddMulticastForwardingCache(const Ip6Address &aSrcAddr, const Ip6Address &aGroupAddr, MifIndex aIif);
@@ -134,6 +143,9 @@ private:
     otbr::Timepoint                mLastExpireTime;
     int                            mMulticastRouterSock;
     std::set<Ip6Address>           mMulticastListeners;
+    State                          mState;
+    uint32_t                       mRetryIntervalUs;
+    otbr::Timepoint                mNextRetryTime;
 };
 
 } // namespace otbr

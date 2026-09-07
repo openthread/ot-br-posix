@@ -107,6 +107,10 @@ private:
     std::string HandleGetStatusRequest(const std::string &aGetStatusRequest);
     std::string HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest);
     std::string HandleCommission(const std::string &aCommissionRequest);
+    std::string HandleGetEpskcStatusRequest(const std::string &aGetEpskcStatusRequest);
+    std::string HandleSetEpskcEnabledRequest(const std::string &aSetEpskcEnabledRequest);
+    std::string HandleActivateEpskcRequest(const std::string &aActivateEpskcRequest);
+    std::string HandleDeactivateEpskcRequest(const std::string &aDeactivateEpskcRequest);
 
     void HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback);
     void ResponseGetQRCode(void);
@@ -118,6 +122,10 @@ private:
     void ResponseGetAvailableNetwork(void);
     void DefaultHttpResponse(void);
     void ResponseCommission(void);
+    void ResponseGetEpskcStatus(void);
+    void ResponseSetEpskcEnabled(void);
+    void ResponseActivateEpskc(void);
+    void ResponseDeactivateEpskc(void);
     void ResponseGetRestApiInfo(void);
 
     void Init(void);

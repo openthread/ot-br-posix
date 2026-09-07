@@ -55,8 +55,6 @@ install_common_dependencies()
         doxygen \
         expect \
         net-tools \
-        libavahi-common-dev \
-        libavahi-client-dev \
         libgmock-dev \
         libgtest-dev \
         libreadline-dev \
@@ -65,7 +63,9 @@ install_common_dependencies()
         coreutils \
         git \
         libprotobuf-dev \
-        protobuf-compiler
+        protobuf-compiler \
+        libnftnl-dev \
+        libmnl-dev
 }
 
 install_openthread_binraries()

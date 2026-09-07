@@ -1,0 +1,471 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "tests/scripts/expect/_common.exp"
+
+proc synthesize_ipv6 {prefix ip4} {
+    scan $ip4 "%d.%d.%d.%d" oct1 oct2 oct3 oct4
+    set hex_ip4 [format "%02x%02x:%02x%02x" $oct1 $oct2 $oct3 $oct4]
+    set prefix_val [lindex [split $prefix "/"] 0]
+    if {[string match "*::" $prefix_val]} {
+        set colons [regexp -all ":" $prefix_val]
+        if {$colons >= 7} {
+            set base [string range $prefix_val 0 [expr {[string length $prefix_val] - 2}]]
+            return "${base}${hex_ip4}"
+        }
+        return "${prefix_val}${hex_ip4}"
+    } elseif {[string match "*:" $prefix_val]} {
+        return "${prefix_val}${hex_ip4}"
+    } else {
+        return "${prefix_val}:${hex_ip4}"
+    }
+}
+
+set pty1 [create_socat_tcp 1 9000]
+set container "otbr-test-container"
+set eth2_server "eth2-server"
+set eth1_server "eth1-server"
+
+set dataset "0e080000000000010000000300001435060004001fffe002087d61eb42cdc48d6a0708fd0d07fca1b9f0500510ba088fc2bd6c3b3897f7a10f58263ff3030f4f70656e5468726561642d353234660102524f04109dc023ccd447b12b50997ef68020f19e0c0402a0f7f8"
+
+# 1. Start Eth_2 container (Gateway, simulated internet, DNS, HTTP)
+send_user "Starting Eth_2 container (CPE/DNS/Internet)...\n"
+track_container $eth2_server
+exec docker run -d \
+    --name $eth2_server \
+    --network infrastructure-link \
+    --ip 192.168.1.254 \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "sleep infinity"
+
+# Wait for container interface to stabilize
+sleep 2
+
+# Add loopback alias IP 38.106.217.165 to simulate the internet server threadv4.org
+exec docker exec -i $eth2_server ip addr add 38.106.217.165/32 dev lo
+
+# Start dnsmasq on eth2-server resolving threadv4.org to 38.106.217.165
+exec docker exec -d $eth2_server dnsmasq --address=/threadv4.org/38.106.217.165 --no-hosts --no-resolv --interface=eth0 --port=53
+
+# Start Python HTTP server serving testv4.html
+exec docker exec -i $eth2_server mkdir -p /var/www/html
+exec docker exec -i $eth2_server bash -c "echo 'test-content-eth2' > /var/www/html/testv4.html"
+exec docker exec -d $eth2_server bash -c "cd /var/www/html && python3 -m http.server 80 --bind 38.106.217.165 >/tmp/http.log 2>&1"
+
+# Start Python UDP echo server on eth2-server
+exec docker exec -i $eth2_server bash -c {cat <<'EOF' > /tmp/udp_server.py
+import socket
+import sys
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(('38.106.217.165', 7777))
+    print("Bound to 38.106.217.165:7777", flush=True)
+except Exception as e:
+    print(f"Bind failed: {e}", file=sys.stderr, flush=True)
+    sys.exit(1)
+
+while True:
+    try:
+        data, addr = s.recvfrom(1024)
+        print(f"Received {data} from {addr}", flush=True)
+        s.sendto(data, addr)
+        print(f"Sent reply to {addr}", flush=True)
+    except Exception as e:
+        print(f"Error during recv/send: {e}", file=sys.stderr, flush=True)
+EOF
+}
+exec docker exec -d $eth2_server bash -c "python3 /tmp/udp_server.py >/tmp/udp.log 2>&1"
+
+
+# 2. Start Eth_1 container (Local host server)
+send_user "Starting Eth_1 container (Local Server)...\n"
+track_container $eth1_server
+exec docker run -d \
+    --name $eth1_server \
+    --network infrastructure-link \
+    --ip 192.168.1.4 \
+    --cap-add=NET_ADMIN \
+    --privileged \
+    --entrypoint /bin/bash \
+    $::env(EXP_TEST_CLIENT_IMAGE) \
+    -c "sleep infinity"
+
+# Wait for container interface to stabilize
+sleep 2
+
+# Start Python HTTP server serving test2.html on local host eth1
+exec docker exec -i $eth1_server mkdir -p /var/www/html
+exec docker exec -i $eth1_server bash -c "echo 'test-content-eth1' > /var/www/html/test2.html"
+exec docker exec -d $eth1_server bash -c "cd /var/www/html && python3 -m http.server 80 --bind 192.168.1.4"
+
+# Configure routing on DinD host (so DinD runner knows to route 38.106.217.165 via eth2-server)
+send_user "Configuring routing for internet server on DinD host...\n"
+exec ip route replace 38.106.217.165 via 192.168.1.254
+
+# 3. Start Border Router in Docker (DUT)
+send_user "Starting OTBR Docker container...\n"
+start_otbr_docker_dind $container $::env(EXP_OT_RCP_PATH) 2 $pty1
+
+# Wait for otbr-agent to create the domain socket
+wait_for_otbr_agent [list $container]
+
+# Configure DNS nameserver of OTBR to use eth2-server's IPv4 address
+exec docker exec -i $container bash -c "echo nameserver 192.168.1.254 > /etc/resolv.conf"
+
+# Setup active dataset on OTBR via ot-ctl
+exec docker exec -i $container ot-ctl thread stop
+exec docker exec -i $container ot-ctl ifconfig down
+exec docker exec -i $container ot-ctl dataset set active ${dataset}
+exec docker exec -i $container ot-ctl ifconfig up
+exec docker exec -i $container ot-ctl thread start
+
+# Wait for OTBR to become leader
+wait_for_container_state $container "leader"
+
+# Enable NAT64 explicitly on the OTBR
+send_user "Enabling NAT64 on the OTBR...\n"
+exec docker exec -i $container ot-ctl nat64 enable
+
+# Verify NAT64 PrefixManager and Translator states are active
+set nat64_active false
+for {set i 0} {$i < 15} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl nat64 state} nat64_state]} {
+        set nat64_state [string trim $nat64_state]
+        send_user "NAT64 State (Attempt $i):\n$nat64_state\n"
+        if {[string match "*PrefixManager: Active*" $nat64_state] && [string match "*Translator: Active*" $nat64_state]} {
+            set nat64_active true
+            break
+        }
+    }
+    sleep 2
+}
+if {!$nat64_active} {
+    fail "NAT64 was not activated successfully on the Border Router"
+}
+
+# Retrieve the local NAT64 prefix from the Border Router
+set nat64_prefix ""
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl br nat64prefix local} prefix_out]} {
+        set prefix_out [string trim $prefix_out]
+        if {[regexp {([0-9a-fA-F:]+/96)} $prefix_out match prefix]} {
+            set nat64_prefix $prefix
+            break
+        }
+    }
+    sleep 2
+}
+if {$nat64_prefix == ""} {
+    fail "Failed to retrieve local NAT64 prefix from Border Router"
+}
+send_user "Discovered local NAT64 prefix: $nat64_prefix\n"
+
+# Verify NAT64 prefix length is 96 in Network Data
+set netdata_verified false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container ot-ctl netdata show} netdata]} {
+        send_user "DUT Network Data (Attempt $i):\n$netdata\n"
+        # Search for routes: e.g. "fd00:db8:1:0:0:0:0:0/96 sn"
+        # Match prefix value and check prefix length field
+        if {[regexp {([0-9a-fA-F:]+)/96\s+sn} $netdata match route_prefix]} {
+            set netdata_verified true
+            break
+        }
+    }
+    sleep 2
+}
+if {!$netdata_verified} {
+    fail "NAT64 prefix in Network Data does not meet criteria (length /96)"
+}
+send_user "NAT64 prefix verified in Thread Network Data successfully.\n"
+
+# Get the running Border Router's active dataset dynamically to configure clients
+set active_dataset [exec docker exec -i $container ot-ctl dataset active -x]
+set active_dataset [lindex [split [string trim $active_dataset] "\n"] 0]
+
+# Get DUT ExtAddr
+set dut_extaddr [exec docker exec -i $container ot-ctl extaddr]
+set dut_extaddr [lindex [split [string trim $dut_extaddr] "\n"] 0]
+send_user "DUT ExtAddr: $dut_extaddr\n"
+
+# Spawn Router_1 (Node 3)
+send_user "Starting Router_1 (Node 3)...\n"
+spawn_node 3 cli $::env(EXP_OT_CLI_PATH)
+
+# Get Router_1 ExtAddr
+send "extaddr\r\n"
+expect_line "extaddr"
+set router_extaddr [expect_line {[0-9a-fA-F]{16}}]
+expect_line "Done"
+send_user "Router_1 ExtAddr: $router_extaddr\n"
+
+# Configure Router_1
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+
+# Spawn ED_1 (Node 4)
+send_user "Starting ED_1 (Node 4)...\n"
+spawn_node 4 cli $::env(EXP_OT_CLI_PATH)
+
+# Get ED_1 ExtAddr
+send "extaddr\r\n"
+expect_line "extaddr"
+set ed_extaddr [expect_line {[0-9a-fA-F]{16}}]
+expect_line "Done"
+send_user "ED_1 ExtAddr: $ed_extaddr\n"
+
+# Configure ED_1
+send "dataset set active $active_dataset\n"
+expect_line "Done"
+send "mode rdn\r\n"
+expect_line "Done"
+send "routereligible disable\r\n"
+expect_line "Done"
+
+# Configure MAC filters to restrict topology: ED_1 (4) <-> Router_1 (3) <-> DUT (1)
+send_user "Configuring MAC filters for topology ED_1 <-> Router_1 <-> DUT...\n"
+
+# On ED_1 (Node 4), only allow Router_1 (Node 3)
+switch_node 4
+send "macfilter addr add $router_extaddr\r\n"
+expect_line "Done"
+send "macfilter addr allowlist\r\n"
+expect_line "Done"
+
+# On Router_1 (Node 3), allow DUT and ED_1
+switch_node 3
+send "macfilter addr add $dut_extaddr\r\n"
+expect_line "Done"
+send "macfilter addr add $ed_extaddr\r\n"
+expect_line "Done"
+send "macfilter addr allowlist\r\n"
+expect_line "Done"
+
+# On DUT (Node 1/container), only allow Router_1
+exec docker exec -i $container ot-ctl macfilter addr add $router_extaddr
+exec docker exec -i $container ot-ctl macfilter addr allowlist
+
+# Start Thread on Router_1 and wait for router state
+send_user "Starting Thread on Router_1...\n"
+switch_node 3
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "router"
+expect_line "Done"
+
+# Start Thread on ED_1 and wait for child state
+send_user "Starting Thread on ED_1...\n"
+switch_node 4
+send "ifconfig up\r\n"
+expect_line "Done"
+send "thread start\r\n"
+expect_line "Done"
+wait_for "state" "child"
+expect_line "Done"
+
+sleep 5
+
+# Retrieve DUT's RLOC address to use as DNS server on ED_1
+set otbr_rloc [get_rloc_dns_addr $container]
+send_user "OTBR RLOC IP: $otbr_rloc\n"
+
+# Configure DNS server on ED_1 (Node 4)
+switch_node 4
+send "dns config $otbr_rloc\r\n"
+expect_line "Done"
+
+# Synthesize target IPv6 addresses for DNS and ping verification
+set target_dns_ipv6 [synthesize_ipv6 $nat64_prefix "38.106.217.165"]
+set target_local_ipv6 [synthesize_ipv6 $nat64_prefix "192.168.1.4"]
+
+# Step 5-7: DNS resolution from ED_1
+send_user "Step 5-7: Resolving threadv4.org from ED_1...\n"
+send "dns resolve threadv4.org\r\n"
+set timeout 15
+set dns_resolved false
+expect {
+    -re "($target_dns_ipv6)" {
+        set dns_resolved true
+        exp_continue
+    }
+    -re "Done" {
+        # Succeeded
+    }
+    timeout {
+        fail "DNS resolution timed out"
+    }
+}
+if {!$dns_resolved} {
+    fail "DNS resolution failed to resolve threadv4.org to synthesized IPv6 address $target_dns_ipv6"
+}
+send_user "DNS resolution verified successfully.\n"
+
+# Step 8: Ping simulated Internet Server (38.106.217.165) via synthesized address
+send_user "Step 8: Verifying Ping to Internet Server ($target_dns_ipv6)...\n"
+send "ping $target_dns_ipv6 56 5\r\n"
+set timeout 15
+set ping_success false
+expect {
+    -re "bytes from" {
+        set ping_success true
+        exp_continue
+    }
+    -re "Done" {
+        # Finished
+    }
+    timeout {
+        send_user "Error: Ping to internet server timed out\n"
+    }
+}
+if {!$ping_success} {
+    fail "Ping from ED_1 to Internet Server failed"
+}
+send_user "Ping to Internet Server verified successfully.\n"
+
+# Step 8a: Verify UDP ping via UDP echo server
+send_user "Step 8a: Verifying UDP communication with Internet Server...\n"
+send "udp open\r\n"
+expect_line "Done"
+send "udp connect $target_dns_ipv6 7777\r\n"
+expect_line "Done"
+send "udp send testudp\r\n"
+expect_line "Done"
+set timeout 10
+set udp_success false
+expect {
+    -re "7 bytes from .* 7777 testudp" {
+        set udp_success true
+    }
+    timeout {
+        send_user "Error: UDP echo request timed out\n"
+    }
+}
+send "udp close\r\n"
+expect_line "Done"
+if {!$udp_success} {
+    fail "UDP loopback test via NAT64 failed"
+}
+send_user "UDP loopback test verified successfully.\n"
+
+# Step 9: HTTP GET to Internet Server (threadv4.org) from ED_1
+send_user "Step 9: Verifying HTTP GET to Internet Server...\n"
+send "tcp init\r\n"
+expect_line "Done"
+send "tcp connect $target_dns_ipv6 80\r\n"
+expect_line "Done"
+expect "TCP: Connection established"
+# Send GET request (hex representation for "GET /testv4.html HTTP/1.1\r\nHost: threadv4.org\r\n\r\n")
+send "tcp send -x 474554202f7465737476342e68746d6c20485454502f312e310d0a486f73743a2074687265616476342e6f72670d0a0d0a\r\n"
+expect_line "Done"
+set timeout 15
+set http_success false
+expect {
+    -re "test-content-eth2" {
+        set http_success true
+        exp_continue
+    }
+    -re "TCP: Reached end of stream" {
+        # Done
+    }
+}
+send "tcp deinit\r\n"
+expect_line "Done"
+
+if {!$http_success} {
+    fail "HTTP GET to Internet Server failed"
+}
+send_user "HTTP GET to Internet Server verified successfully.\n"
+
+# Step 10: Ping local IPv4 server Eth_1 (192.168.1.4) via synthesized address
+send_user "Step 10: Verifying Ping to Local Host (Eth_1) works...\n"
+switch_node 4
+send "ping $target_local_ipv6 56 5\r\n"
+set timeout 15
+set ping_success false
+expect {
+    -re "bytes from" {
+        set ping_success true
+        exp_continue
+    }
+    -re "Done" {
+        # Finished
+    }
+    timeout {
+        send_user "Error: Ping to local host timed out\n"
+    }
+}
+if {!$ping_success} {
+    fail "Ping from ED_1 to Local Host failed"
+}
+send_user "Ping to Local Host verified successfully.\n"
+
+# Step 11: HTTP GET to local server Eth_1 (192.168.1.4) from ED_1
+send_user "Step 11: Verifying HTTP GET to Local Host...\n"
+send "tcp init\r\n"
+expect_line "Done"
+send "tcp connect $target_local_ipv6 80\r\n"
+expect_line "Done"
+expect "TCP: Connection established"
+# Send GET request (hex representation for "GET /test2.html HTTP/1.1\r\nHost: localv4.org\r\n\r\n")
+send "tcp send -x 474554202f74657374322e68746d6c20485454502f312e310d0a486f73743a206c6f63616c76342e6f72670d0a0d0a\r\n"
+expect_line "Done"
+set timeout 15
+set http_success false
+expect {
+    -re "test-content-eth1" {
+        set http_success true
+        exp_continue
+    }
+    -re "TCP: Reached end of stream" {
+        # Done
+    }
+}
+send "tcp deinit\r\n"
+expect_line "Done"
+
+if {!$http_success} {
+    fail "HTTP GET to Local Server failed"
+}
+send_user "HTTP GET to Local Server verified successfully.\n"
+
+# Cleanup routing
+catch { exec ip route del 38.106.217.165 }
+
+# Cleanup containers
+send_user "Tearing down containers...\n"
+dispose_all
+send_user "# IPv4 Connectivity using BR built-in NAT64 (1_4_PIC_TC_4) integration test completed successfully!\n"

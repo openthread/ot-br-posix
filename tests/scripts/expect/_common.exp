@@ -28,13 +28,37 @@
 #
 
 proc fail {message} {
+    global in_fail
     send_user "Error: $message\n"
+    if {![info exists in_fail]} {
+        set in_fail 1
+        global docker_containers
+        if {[info exists docker_containers]} {
+            foreach c $docker_containers {
+                send_user "\n=== $c logs ===\n"
+                if {[catch {exec docker logs $c 2>&1} log_out]} {
+                    send_user "Failed to get logs: $log_out\n"
+                } else {
+                    send_user "$log_out\n"
+                }
+                if {[string match "*otbr*" $c]} {
+                    send_user "\n=== $c otbr-agent logs ===\n"
+                    if {[catch {exec docker exec -i $c cat /var/log/otbr-agent.log 2>&1} agent_out]} {
+                        send_user "Failed to get agent logs: $agent_out\n"
+                    } else {
+                        send_user "$agent_out\n"
+                    }
+                }
+            }
+        }
+        catch { dispose_all }
+    }
     exit 1
 }
 
 proc wait_for {command success {failure {[\r\n]FAILURE_NOT_EXPECTED[\r\n]}}} {
-    set timeout 1
-    for {set i 0} {$i < 40} {incr i} {
+    set timeout 2
+    for {set i 0} {$i < 30} {incr i} {
         if {$command != ""} {
             send "$command\n"
         }
@@ -58,6 +82,104 @@ proc expect_line {line} {
     set timeout 10
     expect -re "\[\r\n \]($line)(?=\[\r\n>\])"
     return $expect_out(1,string)
+}
+
+# Poll the otbr-agent DeviceRole D-Bus property until it matches `pattern`,
+# retrying up to `retries` times (roughly one attempt per second). Each
+# individual dbus-send call keeps a short reply-timeout, but polling absorbs
+# the CI timing variance in leader/router formation instead of relying on a
+# single read after a fixed sleep, which races with attach and intermittently
+# fails with "Error org.freedesktop.DBus.Error.NoReply".
+proc wait_for_device_role {pattern {retries 30} {bus "--system"} {container ""}} {
+    # spawn sets the global spawn_id, so the dbus-send calls below would
+    # otherwise silently redirect any send/expect the caller does afterwards
+    # on its own node. Save and restore it so this utility is transparent to
+    # the caller's spawn state.
+    global spawn_id
+    set has_spawn_id [info exists spawn_id]
+    if {$has_spawn_id} {
+        set backup_spawn_id $spawn_id
+    }
+
+    # Localize the timeout so a hung dbus-send can't inherit whatever
+    # timeout was active in the calling script, and so a genuine timeout
+    # (as opposed to a clean eof) still closes the spawned process below.
+    set timeout 3
+
+    set success 0
+    for {set i 0} {$i < $retries} {incr i} {
+        set cmd [list dbus-send $bus --print-reply --reply-timeout=2000 --dest=io.openthread.BorderRouter.wpan0 \
+            /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole]
+        if {$container ne ""} {
+            set cmd [linsert $cmd 0 docker exec -i $container]
+        }
+        spawn {*}$cmd
+        expect {
+            -re $pattern {
+                expect eof
+                catch {close}
+                catch {wait}
+                set success 1
+                break
+            }
+            eof {
+                catch {close}
+                catch {wait}
+                # NoReply, wrong role, or another transient D-Bus error: retry.
+            }
+            timeout {
+                # dbus-send hung instead of replying or closing; kill it off
+                # before retrying.
+                catch {close}
+                catch {wait}
+            }
+        }
+        sleep 1
+    }
+
+    if {$has_spawn_id} {
+        set spawn_id $backup_spawn_id
+    } else {
+        unset -nocomplain spawn_id
+    }
+
+    if {!$success} {
+        fail "Timed out waiting for DeviceRole matching '$pattern'"
+    }
+    return 0
+}
+
+# Join the network via the D-Bus Join method, given a hex-encoded active
+# operational dataset TLV string as used with the "array:byte:" dbus-send
+# type.
+#
+# NcpHost::Join chains three sequential spinel round-trips to the NCP
+# (DatasetSetActiveTlvs, Ip6SetEnabled, ThreadSetEnabled) before dbus-send
+# gets its reply. Under CI runner load, this can take longer than dbus-send's
+# default 25s reply-timeout (especially when forming a network as leader).
+# Pass an explicit generous reply-timeout and expect timeout.
+proc dbus_join {dataset_dbus {bus "--system"} {container ""}} {
+    global spawn_id
+    set has_spawn_id [info exists spawn_id]
+    if {$has_spawn_id} {
+        set backup_spawn_id $spawn_id
+    }
+
+    set cmd [list dbus-send $bus --print-reply --reply-timeout=60000 --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"]
+    if {$container ne ""} {
+        set cmd [linsert $cmd 0 docker exec -i $container]
+    }
+    spawn {*}$cmd
+    expect -timeout 65 eof
+    catch {close}
+    catch {wait}
+
+    if {$has_spawn_id} {
+        set spawn_id $backup_spawn_id
+    } else {
+        unset -nocomplain spawn_id
+    }
 }
 
 # type: The type of the node.
@@ -108,6 +230,7 @@ proc spawn_node {id type sim_app} {
         }
         otbr {
             spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -d7 --vendor-name="OpenThreadTest" --model-name="BorderRouter" "spinel+hdlc+forkpty://${sim_app}?forkpty-arg=${id}"
+            sleep 3
         }
     }
 
@@ -118,8 +241,10 @@ proc spawn_node {id type sim_app} {
 
 proc create_socat {id} {
     global socat_pid
+    global socat_spawn_ids
     spawn socat -d -d pty,raw,echo=0 pty,raw,echo=0
     set socat_pid [exp_pid]
+    lappend socat_spawn_ids $spawn_id
     set pty1 ""
     set pty2 ""
     expect {
@@ -131,14 +256,15 @@ proc create_socat {id} {
             fail "Timed out"
         }
     }
-    set spawn_ids($id) $spawn_id
     return [list $pty1 $pty2]
 }
 
 proc create_socat_tcp {id port} {
     global socat_pids
+    global socat_spawn_ids
     spawn socat -d -d pty,raw,echo=0 tcp-listen:$port,reuseaddr,bind=0.0.0.0
     lappend socat_pids [exp_pid]
+    lappend socat_spawn_ids $spawn_id
     set pty ""
     expect {
         -re {PTY is (\S+)} {
@@ -151,8 +277,16 @@ proc create_socat_tcp {id port} {
     return $pty
 }
 
+proc track_container {name} {
+    global docker_containers
+    lappend docker_containers $name
+}
+
 proc start_otbr_docker {name sim_app sim_id pty1 pty2} {
-    exec $sim_app $sim_id <$pty1 >$pty1 &
+    global rcp_pids
+    track_container $name
+    set rcp_pid [exec $sim_app $sim_id <$pty1 >$pty1 &]
+    lappend rcp_pids $rcp_pid
     exec docker run -d \
         --name $name \
         --network backbone1 \
@@ -181,6 +315,7 @@ proc dispose_node {id} {
 proc dispose_socat {} {
     global socat_pid
     global socat_pids
+    global socat_spawn_ids
     if { [info exists socat_pid] } {
         catch { exec kill $socat_pid }
         unset socat_pid
@@ -191,17 +326,51 @@ proc dispose_socat {} {
         }
         set socat_pids {}
     }
+    if { [info exists socat_spawn_ids] } {
+        foreach sid $socat_spawn_ids {
+            catch { close -i $sid }
+            catch { wait -i $sid }
+        }
+        set socat_spawn_ids {}
+    }
 }
 proc dispose_all {} {
+    catch { expect_after timeout }
     global spawn_ids
-    set max_node [array size spawn_ids]
-    for {set i 1} {$i <= $max_node} {incr i} {
-        if { [info exists spawn_ids($i)] } {
-            dispose_node $i
+    global rcp_pids
+    global docker_containers
+    if {[array exists spawn_ids]} {
+        foreach id [array names spawn_ids] {
+            catch { dispose_node $id }
         }
+        array unset spawn_ids
     }
-    array unset spawn_ids
     dispose_socat
+    if { [info exists rcp_pids] } {
+        foreach pid $rcp_pids {
+            catch { exec kill $pid }
+        }
+        set rcp_pids {}
+    }
+    if { [file exists "/tmp/ot_rcp_web_loop.pid"] } {
+        catch {
+            set fp [open "/tmp/ot_rcp_web_loop.pid" r]
+            set web_pid [string trim [read $fp]]
+            close $fp
+            if {[string is integer -strict $web_pid]} {
+                catch { exec kill -STOP $web_pid }
+                catch { exec pkill -P $web_pid }
+                catch { exec kill -KILL $web_pid }
+            }
+        }
+        catch { file delete "/tmp/ot_rcp_web_loop.pid" }
+    }
+    if { [info exists docker_containers] } {
+        foreach c $docker_containers {
+            catch { exec docker rm -f $c }
+        }
+        set docker_containers {}
+    }
 }
 
 proc get_ipaddr {type} {
@@ -221,7 +390,138 @@ proc get_omr_addr {} {
 
 proc check_string_contains {haystack needle} {
     if {![regexp $needle $haystack]} {
-        puts "Error: '$needle' not found."
-        exit 1
+        fail "'$needle' not found."
+    }
+}
+
+proc start_otbr_docker_dind {name sim_app sim_id pty {rcp_port 9000}} {
+    global rcp_pids
+    track_container $name
+    # Start the container using its native /init entrypoint (s6-overlay) and custom environment variables
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --add-host=host.docker.internal:host-gateway \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv4.conf.default.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.default.forwarding=1 \
+        -v $::env(EXP_REPO_ROOT)/tests/scripts/spinel_proxy.sh:/usr/bin/spinel_proxy.sh \
+        -e OT_RCP_DEVICE=spinel+hdlc+forkpty:///usr/bin/spinel_proxy.sh \
+        -e OT_INFRA_IF=eth0 \
+        -e OT_THREAD_IF=wpan0 \
+        -e EXP_RCP_PORT=$rcp_port \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
+    sleep 2
+
+    # Now start the simulated RCP binary on the host
+    set rcp_pid [exec $sim_app $sim_id <$pty >$pty &]
+    lappend rcp_pids $rcp_pid
+    sleep 5
+}
+
+proc start_test_client {name image} {
+    exec docker run -d \
+        --name $name \
+        --network infrastructure-link \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --entrypoint /bin/bash \
+        $image \
+        -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
+}
+
+proc configure_test_client_routes {test_client container} {
+    set has_rio [expr {[catch {exec docker exec -i $test_client test -e /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
+    if {$has_rio} {
+        exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
+        exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
+        exec docker exec -i $test_client rdisc6 eth0
+    } else {
+        set format {{{(index .NetworkSettings.Networks "infrastructure-link").GlobalIPv6Address}}}
+        set otbr_ip [string trim [exec docker inspect $container -f $format]]
+        exec docker exec -i $test_client ip -6 route replace fc00::/7 via $otbr_ip dev eth0
+    }
+}
+
+proc get_ipv6_regex {addr} {
+    regsub -all {:(?:0+:)+0*} $addr {::} addr
+    regsub -all {::} $addr {:(?:0+:)*0*:} regex
+    return "${regex}(?!\[0-9a-fA-F:\])"
+}
+
+proc get_rloc_dns_addr {container} {
+    set addrs [exec docker exec -i $container ot-ctl ipaddr]
+    foreach addr [split $addrs "\n"] {
+        set addr [string trim $addr]
+        if {[string match -nocase "*:ff:fe00:fc00" $addr]} {
+            return $addr
+        }
+    }
+    return [string trim [lindex [split $addrs "\n"] 0]]
+}
+
+proc wait_for_otbr_agent {containers} {
+    foreach c $containers {
+        set socket_ready false
+        for {set i 0} {$i < 10} {incr i} {
+            if {![catch {exec docker exec -i $c ot-ctl state}]} {
+                set socket_ready true
+                break
+            }
+            sleep 2
+        }
+        if {!$socket_ready} {
+            fail "ot-ctl failed to communicate with otbr-agent on $c"
+        }
+    }
+}
+
+proc wait_for_container_state {container expected_state} {
+    set state_reached false
+    for {set i 0} {$i < 20} {incr i} {
+        if {![catch {exec docker exec -i $container ot-ctl state} state] && [string match "*$expected_state*" $state]} {
+            set state_reached true
+            break
+        }
+        sleep 2
+    }
+    if {!$state_reached} {
+        fail "$container did not become $expected_state"
+    }
+}
+proc verify_trel_traffic {c1 expected_dir1 c2 expected_dir2} {
+    foreach {c expected_dir} [list $c1 $expected_dir1 $c2 $expected_dir2] {
+        if {$expected_dir eq "none"} { continue }
+        set cnts [exec docker exec -i $c ot-ctl trel counters]
+        if {$expected_dir eq "out"} {
+            if {![regexp {Outbound:\s+Packets\s+([1-9][0-9]*)} $cnts match val]} {
+                fail "TREL Outbound packet verification failed on $c."
+            }
+        } elseif {$expected_dir eq "in"} {
+            if {![regexp {Inbound:\s+Packets\s+([1-9][0-9]*)} $cnts match val]} {
+                fail "TREL Inbound packet verification failed on $c."
+            }
+        }
+    }
+}
+
+proc verify_no_trel_traffic {c} {
+    set cnts [exec docker exec -i $c ot-ctl trel counters]
+    send_user "TREL counters on $c:\n$cnts\n"
+    set inbound_bytes 0
+    set outbound_bytes 0
+    if {[regexp {Inbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match ibytes]} {
+        set inbound_bytes $ibytes
+    }
+    if {[regexp {Outbound:\s+Packets\s+\d+\s+Bytes\s+(\d+)} $cnts match obytes]} {
+        set outbound_bytes $obytes
+    }
+    if {$inbound_bytes > 1000 || $outbound_bytes > 1000} {
+        fail "TREL traffic occurred on $c (Inbound: $inbound_bytes bytes, Outbound: $outbound_bytes bytes) exceeding probe threshold!"
     }
 }

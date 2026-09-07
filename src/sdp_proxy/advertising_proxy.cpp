@@ -37,8 +37,8 @@
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
-#if !OTBR_ENABLE_MDNS_AVAHI && !OTBR_ENABLE_MDNS_MDNSSD && !OTBR_ENABLE_MDNS_MOJO
-#error "The Advertising Proxy requires OTBR_ENABLE_MDNS_AVAHI, OTBR_ENABLE_MDNS_MDNSSD or OTBR_ENABLE_MDNS_MOJO"
+#if !OTBR_ENABLE_MDNS_MDNSSD && !OTBR_ENABLE_MDNS_MOJO
+#error "The Advertising Proxy requires OTBR_ENABLE_MDNS_MDNSSD or OTBR_ENABLE_MDNS_MOJO"
 #endif
 
 #include <string>
@@ -112,16 +112,14 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
 {
     OTBR_UNUSED_VARIABLE(aTimeout);
 
-    OutstandingUpdate *update = nullptr;
-    otbrError          error  = OTBR_ERROR_NONE;
+    otbrError error = OTBR_ERROR_NONE;
 
     VerifyOrExit(IsEnabled());
 
     mOutstandingUpdates.emplace_back();
-    update      = &mOutstandingUpdates.back();
-    update->mId = aId;
+    mOutstandingUpdates.back().mId = aId;
 
-    error = PublishHostAndItsServices(aHost, update);
+    error = PublishHostAndItsServices(aHost, &mOutstandingUpdates.back());
 
     for (auto it = mOutstandingUpdates.begin(); it != mOutstandingUpdates.end(); ++it)
     {
