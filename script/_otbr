@@ -122,6 +122,8 @@ otbr_install()
         # does and the marker this build writes is not there yet at that point,
         # so the shell variable, not the file, is what keeps them agreeing.
         "-DOTBR_NFTABLES=$([ "${OTBR_NFTABLES:-0}" = "1" ] && echo ON || echo OFF)"
+        # Likewise for the pf backend on macOS.
+        "-DOTBR_PF=$([ "${OTBR_PF:-0}" = "1" ] && echo ON || echo OFF)"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="

@@ -1,0 +1,13 @@
+# Written by the build, and read by script/_firewall on macOS.
+#
+# 1 means otbr-agent was built with -DOTBR_PF=ON: it installs the Thread
+# ingress filter and the NAT44 masquerade in-process, into the pf anchor
+# "otbr", and the setup script's job is to reference that anchor from the
+# main ruleset. 0 means there is no firewall backend on this host.
+#
+# The value is written either way rather than the file standing for "on" by
+# existing, for the same reason as nftables-backend: installing does not
+# uninstall first.
+#
+# Setting OTBR_PF in the environment overrides this.
+@OTBR_PF_MARKER_VALUE@

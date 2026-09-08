@@ -29,7 +29,9 @@
 
 FIREWALL_SERVICE=/etc/init.d/otbr-firewall
 
-sudo modprobe ip6table_filter || true
+if have modprobe; then
+    sudo modprobe ip6table_filter || true
+fi
 
 FIREWALL="${FIREWALL:-1}"
 
@@ -51,9 +53,85 @@ if [ -z "${OTBR_NFTABLES:-}" ]; then
     fi
 fi
 
+# The in-process pf backend (-DOTBR_PF=ON, macOS) installs its rules into the
+# pf anchor "otbr" itself, and pf only evaluates an anchor the main ruleset
+# (/etc/pf.conf) references. Installing on macOS therefore means adding that
+# reference; there is no legacy firewall service there. The lines are tagged
+# so uninstall can find them again. pf wants translation rules before filter
+# rules, so the nat-anchor goes next to the system's own nat-anchor and only
+# the filter anchor is appended.
+# /usr/share sits on the SIP-protected system volume on macOS, so installs
+# there use another prefix; look in the usual ones.
+OTBR_PF_MARKER="/usr/share/otbr/pf-backend"
+[ -r "${OTBR_PF_MARKER}" ] || OTBR_PF_MARKER="/usr/local/share/otbr/pf-backend"
+[ -r "${OTBR_PF_MARKER}" ] || OTBR_PF_MARKER="/opt/homebrew/share/otbr/pf-backend"
+if [ -z "${OTBR_PF:-}" ]; then
+    OTBR_PF=0
+    if [ -r "${OTBR_PF_MARKER}" ] && grep -qx '1' "${OTBR_PF_MARKER}"; then
+        OTBR_PF=1
+    fi
+fi
+PF_CONF=/etc/pf.conf
+PF_ANCHOR_TAG="# otbr-agent (managed by script/_firewall)"
+
+firewall_is_macos()
+{
+    [[ ${PLATFORM:-} == "macOS" || ${OSTYPE:-} == darwin* ]]
+}
+
+# Replaces the main ruleset with the rewritten copy at "${PF_CONF}.otbr",
+# but only once pfctl has parsed it: a broken /etc/pf.conf would otherwise
+# be left in place.
+firewall_replace_pf_conf()
+{
+    # An empty file parses, so check for content first: a failed rewrite must
+    # not become an empty main ruleset.
+    [ -s "${PF_CONF}.otbr" ] || die 'Rewritten pf.conf is empty; leaving the original in place!'
+    sudo pfctl -n -f "${PF_CONF}.otbr" || die 'Rewritten pf.conf does not parse; leaving the original in place!'
+    sudo mv "${PF_CONF}.otbr" "${PF_CONF}"
+    sudo pfctl -f "${PF_CONF}" || die 'Failed to reload pf.conf!'
+}
+
+firewall_uninstall_macos()
+{
+    if grep -qF "${PF_ANCHOR_TAG}" "${PF_CONF}" 2>/dev/null; then
+        # awk matches the tag literally; it contains characters sed would
+        # read as a delimiter or metacharacters.
+        sudo awk -v tag="${PF_ANCHOR_TAG}" 'index($0, tag) { next } { print }' "${PF_CONF}" \
+            | sudo tee "${PF_CONF}.otbr" >/dev/null
+        sudo pfctl -a otbr -F all 2>/dev/null || true
+        firewall_replace_pf_conf
+    fi
+}
+
+firewall_install_macos()
+{
+    if [ "${OTBR_PF}" != "1" ]; then
+        echo "OTBR_PF=0: otbr-agent was built without the pf backend; no firewall to install on macOS."
+        return 0
+    fi
+
+    # Idempotent: earlier tagged lines are dropped before the new ones go in,
+    # so re-running setup never duplicates them. This deliberately does not
+    # go through firewall_uninstall_macos, which flushes the anchor: a running
+    # agent would lose its live rules until restarted.
+    sudo awk -v tag="${PF_ANCHOR_TAG}" '
+        index($0, tag) { next }
+        { print }
+        /^nat-anchor / && !done { print "nat-anchor \"otbr\" " tag; done = 1 }
+        END { if (!done) print "nat-anchor \"otbr\" " tag; print "anchor \"otbr\" " tag }
+    ' "${PF_CONF}" | sudo tee "${PF_CONF}.otbr" >/dev/null
+    firewall_replace_pf_conf
+}
+
 firewall_uninstall()
 {
     with FIREWALL || return 0
+
+    if firewall_is_macos; then
+        firewall_uninstall_macos
+        return 0
+    fi
 
     firewall_stop
     if have systemctl; then
@@ -70,6 +148,11 @@ firewall_install()
 {
     with FIREWALL || return 0
 
+    if firewall_is_macos; then
+        firewall_install_macos
+        return 0
+    fi
+
     if [ "${OTBR_NFTABLES}" = "1" ]; then
         echo "OTBR_NFTABLES=1: OTBR ingress filter is managed in-process (nftables); skipping legacy firewall service."
         return 0
@@ -85,6 +168,11 @@ firewall_install()
 
 firewall_start()
 {
+    # On macOS the agent installs the firewall itself; nothing to start.
+    if firewall_is_macos; then
+        return 0
+    fi
+
     # Same gate as the install: with the in-process backend there is no
     # otbr-firewall service to start, and starting the legacy one would put
     # its chain alongside the agent's.
@@ -104,6 +192,10 @@ firewall_start()
 firewall_stop()
 {
     with FIREWALL || return 0
+
+    if firewall_is_macos; then
+        return 0
+    fi
 
     if with DOCKER; then
         service otbr-firewall stop || true

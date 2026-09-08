@@ -50,10 +50,10 @@ set(OT_DNS_CLIENT_OVER_TCP OFF CACHE STRING "disable DNS query over TCP")
 set(OT_DNS_UPSTREAM_QUERY ${OTBR_DNS_UPSTREAM_QUERY} CACHE STRING "enable sending DNS queries to upstream" FORCE)
 set(OT_ECDSA ON CACHE STRING "enable ECDSA" FORCE)
 set(OT_EXTERNAL_HEAP ON CACHE STRING "enable external heap" FORCE)
-if (OTBR_NFTABLES)
-    # otbr-agent owns the OTBR ingress firewall in-process (nftables), including
-    # producing the ingress prefix sets from Thread network data, so the OT posix
-    # platform firewall (ipset/ip6tables producer) must be off.
+if (OTBR_NFTABLES OR OTBR_PF)
+    # otbr-agent owns the OTBR ingress firewall in-process (nftables or pf),
+    # including producing the ingress prefix sets from Thread network data, so
+    # the OT posix platform firewall (ipset/ip6tables producer) must be off.
     set(OT_FIREWALL OFF CACHE STRING "enable firewall feature" FORCE)
 else()
     set(OT_FIREWALL ON CACHE STRING "enable firewall feature")
