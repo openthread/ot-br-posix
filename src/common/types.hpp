@@ -213,6 +213,14 @@ public:
     std::string ToString(void) const;
 
     /**
+     * This method indicates whether or not the Ip6 address is an IPv4-mapped IPv6 address.
+     *
+     * @retval TRUE   If the Ip6 address is an IPv4-mapped IPv6 address.
+     * @retval FALSE  If the Ip6 address is not an IPv4-mapped IPv6 address.
+     */
+    bool IsIp4Mapped(void) const { return (m64[0] == 0 && m16[4] == 0 && m16[5] == 0xffff); }
+
+    /**
      * This method indicates whether or not the Ip6 address is the Unspecified Address.
      *
      * @retval TRUE   If the Ip6 address is the Unspecified Address.
@@ -318,6 +326,30 @@ public:
      * @param[out] aAddress  The `otIp6Address` structure to copy the Ip6 address to.
      */
     void CopyTo(otIp6Address &aAddress) const;
+
+    /**
+     * This method copies the Ip6 address from a `sockaddr` structure (supporting AF_INET6 and AF_INET).
+     *
+     * @param[in] aSockAddr  The `sockaddr` structure to copy the Ip6 address from.
+     *
+     * @retval OTBR_ERROR_NONE          Successfully copied the address.
+     * @retval OTBR_ERROR_INVALID_ARGS  The address family is neither AF_INET6 nor AF_INET.
+     */
+    otbrError CopyFrom(const struct sockaddr &aSockAddr);
+
+    /**
+     * This method copies the Ip6 address from a `sockaddr_in` structure (as an IPv4-mapped IPv6 address).
+     *
+     * @param[in] aSockAddr  The `sockaddr_in` structure to copy the Ip6 address from.
+     */
+    void CopyFrom(const struct sockaddr_in &aSockAddr);
+
+    /**
+     * This method copies the Ip6 address from an `in_addr` structure (as an IPv4-mapped IPv6 address).
+     *
+     * @param[in] aInAddr  The `in_addr` structure to copy the Ip6 address from.
+     */
+    void CopyFrom(const struct in_addr &aInAddr);
 
     union
     {
