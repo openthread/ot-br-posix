@@ -33,6 +33,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <future>
+#include <memory>
 #include <utility>
 
 #include <arpa/inet.h>
@@ -40,6 +42,7 @@
 #include <fcntl.h>
 #include <httplib.h>
 #include <string.h>
+#include <time.h>
 
 #include <openthread/commissioner.h>
 
@@ -834,6 +837,43 @@ static std::string TrimOws(const std::string &aValue)
     return begin == std::string::npos ? "" : aValue.substr(begin, end - begin + 1);
 }
 
+static void HandleMgmtPendingSetResponse(otError aResult, void *aContext)
+{
+    std::unique_ptr<std::promise<otError>> result(static_cast<std::promise<otError> *>(aContext));
+
+    result->set_value(aResult);
+}
+
+// Generates a Pending Timestamp from the current time. The leader rejects a
+// MGMT_PENDING_SET whose Pending Timestamp does not advance the one it holds,
+// and the clock may lag that value (not yet synchronized, or the dataset was
+// registered by a commissioner with a faster clock), so the result is made to
+// strictly advance the Pending Timestamp in @p aBaseTlvs when there is one.
+static otbrError GeneratePendingTimestamp(const otOperationalDatasetTlvs &aBaseTlvs, otTimestamp &aTimestamp)
+{
+    otbrError            error = OTBR_ERROR_NONE;
+    otOperationalDataset base;
+    timespec             now;
+
+    VerifyOrExit(clock_gettime(CLOCK_REALTIME, &now) == 0, error = OTBR_ERROR_REST);
+
+    aTimestamp.mSeconds = static_cast<uint64_t>(now.tv_sec) & 0xffffffffffff;
+    aTimestamp.mTicks   = static_cast<uint16_t>((static_cast<uint64_t>(now.tv_nsec) * 32768 / 1000000000) & 0x7fff);
+    aTimestamp.mAuthoritative = false;
+
+    if (otDatasetParseTlvs(&aBaseTlvs, &base) == OT_ERROR_NONE && base.mComponents.mIsPendingTimestampPresent &&
+        (aTimestamp.mSeconds < base.mPendingTimestamp.mSeconds ||
+         (aTimestamp.mSeconds == base.mPendingTimestamp.mSeconds &&
+          aTimestamp.mTicks <= base.mPendingTimestamp.mTicks)))
+    {
+        aTimestamp.mSeconds = (base.mPendingTimestamp.mSeconds + 1) & 0xffffffffffff;
+        aTimestamp.mTicks   = 0;
+    }
+
+exit:
+    return error;
+}
+
 void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
     otbrError       error = OTBR_ERROR_NONE;
@@ -841,13 +881,16 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
     std::string     body;
     StatusCode      errorCode = StatusCode::OK_200;
 
+    std::unique_ptr<std::promise<otError>> mgmtSetResult;
+    std::future<otError>                   mgmtSetFuture;
+    bool                                   mgmtSetSent = false;
+
     // RFC 9110 section 13.1.2: If-None-Match with "*" makes the write
-    // conditional on no dataset being in place. A pending dataset that is
-    // not newer than the one already held is silently ignored by the mesh
-    // while this handler accepts the write, so a client that does not intend
-    // to supersede an in-flight dataset can turn that collision into an
-    // error it sees. Other forms of the header (entity tags) have nothing to
-    // match against here and are rejected rather than mistaken for an
+    // conditional on no dataset being in place, so a client that does not
+    // intend to supersede an in-flight pending dataset can turn that
+    // collision into an error it sees, before anything is sent to the
+    // leader. Other forms of the header (entity tags) have nothing to match
+    // against here and are rejected rather than mistaken for an
     // unconditional write.
     const std::string ifNoneMatch  = TrimOws(aRequest.get_header_value(OT_REST_IF_NONE_MATCH_HEADER));
     const bool        onlyIfAbsent = ifNoneMatch == "*";
@@ -855,7 +898,8 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
     VerifyOrExit(ifNoneMatch.empty() || onlyIfAbsent, error = OTBR_ERROR_INVALID_ARGS);
 
     SuccessOrExit(
-        error = RunInMainLoop([this, aDatasetType, onlyIfAbsent, &errorCode, &aRequest]() {
+        error = RunInMainLoop([this, aDatasetType, onlyIfAbsent, &errorCode, &aRequest, &mgmtSetResult, &mgmtSetFuture,
+                               &mgmtSetSent]() {
             bool                     isTlv;
             otOperationalDataset     dataset = {};
             otOperationalDatasetTlvs datasetTlvs;
@@ -869,21 +913,38 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
             }
             else if (aDatasetType == DatasetType::kPending)
             {
+                // The Pending Dataset is registered with the leader (see below), which
+                // requires the device to be attached.
+                VerifyOrReturn(otThreadGetDeviceRole(GetInstance()) >= OT_DEVICE_ROLE_CHILD, OTBR_ERROR_INVALID_STATE);
                 errorOt = otDatasetGetPendingTlvs(GetInstance(), &datasetTlvs);
             }
 
             // RFC 9110 section 13.2.1: the precondition is evaluated after the
-            // request checks (the role check above still answers 409 first, the
+            // request checks (the role checks above still answer 409 first, the
             // header cannot downgrade that to a 412) and before the content is
-            // processed; evaluated in this main-loop task, it is atomic with
-            // the write below.
+            // processed. Evaluated in this main-loop task, it is atomic with
+            // the write below for the Active Dataset; for the Pending Dataset
+            // it is atomic with the MGMT_PENDING_SET send, and the leader's
+            // Pending Timestamp ordering arbitrates concurrent registrations.
             VerifyOrReturn(!onlyIfAbsent || errorOt != OT_ERROR_NONE, OTBR_ERROR_DUPLICATED);
 
-            // Create a new operational dataset if it doesn't exist.
             if (errorOt == OT_ERROR_NOT_FOUND)
             {
-                VerifyOrReturn(otDatasetCreateNewNetwork(GetInstance(), &dataset) == OT_ERROR_NONE, OTBR_ERROR_REST);
-                otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+                if (aDatasetType == DatasetType::kPending)
+                {
+                    // A Pending Dataset describes a change to the network this node is
+                    // attached to, so a new one starts from the current Active Dataset:
+                    // fields the request leaves out keep their current value.
+                    VerifyOrReturn(otDatasetGetActiveTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE,
+                                   OTBR_ERROR_REST);
+                }
+                else
+                {
+                    // Create a new operational dataset if it doesn't exist.
+                    VerifyOrReturn(otDatasetCreateNewNetwork(GetInstance(), &dataset) == OT_ERROR_NONE,
+                                   OTBR_ERROR_REST);
+                    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+                }
                 errorCode = StatusCode::Created_201;
             }
 
@@ -914,8 +975,27 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
                     VerifyOrReturn(Json::JsonPendingDatasetString2Dataset(aRequest.body, dataset),
                                    OTBR_ERROR_INVALID_ARGS);
                     VerifyOrReturn(dataset.mComponents.mIsDelayPresent, OTBR_ERROR_INVALID_ARGS);
+
+                    if (!dataset.mComponents.mIsPendingTimestampPresent)
+                    {
+                        VerifyOrReturn(GeneratePendingTimestamp(datasetTlvs, dataset.mPendingTimestamp) ==
+                                           OTBR_ERROR_NONE,
+                                       OTBR_ERROR_REST);
+                        dataset.mComponents.mIsPendingTimestampPresent = true;
+                    }
                 }
                 VerifyOrReturn(otDatasetUpdateTlvs(&dataset, &datasetTlvs) == OT_ERROR_NONE, OTBR_ERROR_REST);
+            }
+
+            if (aDatasetType == DatasetType::kPending)
+            {
+                otOperationalDataset merged;
+
+                // Without a Delay Timer the leader accepts the dataset but it never
+                // applies. The JSON path requires one in the request; this also
+                // covers the TLV path, whose merge result may lack one.
+                VerifyOrReturn(otDatasetParseTlvs(&datasetTlvs, &merged) == OT_ERROR_NONE, OTBR_ERROR_REST);
+                VerifyOrReturn(merged.mComponents.mIsDelayPresent, OTBR_ERROR_INVALID_ARGS);
             }
 
             if (aDatasetType == DatasetType::kActive)
@@ -924,10 +1004,65 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
             }
             else if (aDatasetType == DatasetType::kPending)
             {
-                VerifyOrReturn(otDatasetSetPendingTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE, OTBR_ERROR_REST);
+                // Register the Pending Dataset with the leader via MGMT_PENDING_SET
+                // rather than writing it locally, so that leader-side validation
+                // (Pending Timestamp ordering, minimum delay timer) applies even
+                // when this device is the leader.
+                otOperationalDataset emptyDataset = {};
+
+                mgmtSetResult.reset(new std::promise<otError>());
+                mgmtSetFuture = mgmtSetResult->get_future();
+
+                errorOt =
+                    otDatasetSendMgmtPendingSet(GetInstance(), &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
+                                                HandleMgmtPendingSetResponse, mgmtSetResult.get());
+                VerifyOrReturn(errorOt != OT_ERROR_ALREADY && errorOt != OT_ERROR_BUSY &&
+                                   errorOt != OT_ERROR_INVALID_STATE,
+                               OTBR_ERROR_INVALID_STATE);
+                VerifyOrReturn(errorOt == OT_ERROR_NONE, OTBR_ERROR_REST);
+
+                // On success the response callback owns (and frees) the promise.
+                mgmtSetResult.release();
+                mgmtSetSent = true;
             }
             return OTBR_ERROR_NONE;
         }));
+
+    if (mgmtSetSent)
+    {
+        otError mgmtError = OT_ERROR_RESPONSE_TIMEOUT;
+
+        // The callback is invoked on response reception, timeout, or abort.
+        // With OpenThread's default CoAP parameters the exchange can run for
+        // up to MAX_TRANSMIT_WAIT (62 to 93 s, RFC 7252 section 4.8.2) before
+        // it times out; answering earlier keeps the HTTP worker available.
+        // The client then learns the outcome is unknown (504), a late
+        // callback is absorbed by the heap-owned promise, and further
+        // registrations answer 409 (busy) until the exchange finalizes.
+        if (mgmtSetFuture.wait_for(std::chrono::seconds(30)) == std::future_status::ready)
+        {
+            mgmtError = mgmtSetFuture.get();
+        }
+
+        switch (mgmtError)
+        {
+        case OT_ERROR_NONE:
+            break;
+        case OT_ERROR_REJECTED:
+            ErrorHandler(aResponse, StatusCode::Conflict_409, "rejected by leader");
+            ExitNow();
+        case OT_ERROR_ABORT:
+            // Thread was stopped or the node detached while the request was in flight.
+            ErrorHandler(aResponse, StatusCode::Conflict_409, "no longer attached");
+            ExitNow();
+        case OT_ERROR_RESPONSE_TIMEOUT:
+            ErrorHandler(aResponse, StatusCode::GatewayTimeout_504, "no response from leader");
+            ExitNow();
+        default:
+            ErrorHandler(aResponse, StatusCode::InternalServerError_500);
+            ExitNow();
+        }
+    }
 
     aResponse.status = errorCode;
 
