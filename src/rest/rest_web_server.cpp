@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <chrono>
 #include <utility>
+#include <vector>
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -42,6 +43,7 @@
 #include <string.h>
 
 #include <openthread/commissioner.h>
+#include <openthread/dataset.h>
 
 #if OTBR_ENABLE_EPSKC
 #include <openthread/border_agent_ephemeral_key.h>
@@ -59,6 +61,8 @@
 #include "rest/rest_diagnostics_coll.hpp" // Diagnostics Collection
 #include "rest/services.hpp"
 #include "rest/version.hpp"
+#include "utils/hex.hpp"
+#include "utils/sha256.hpp"
 #include "utils/string_utils.hpp"
 
 #include <cJSON.h>
@@ -70,7 +74,11 @@
 #ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS
 #define OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS                                        \
     "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
-    "Access-Control-Request-Headers, If-None-Match"
+    "Access-Control-Request-Headers, If-Match, If-None-Match"
+#endif
+
+#ifndef OTBR_REST_ACCESS_CONTROL_EXPOSE_HEADERS
+#define OTBR_REST_ACCESS_CONTROL_EXPOSE_HEADERS "ETag"
 #endif
 
 #ifndef OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS
@@ -764,51 +772,164 @@ void RestWebServer::Rloc(const Request &aRequest, Response &aResponse) const
     }
 }
 
+// The entity tag of a dataset resource: a hash of the TLV bytes, so it
+// changes when the stored dataset does, and does not echo the credentials
+// it stands for.
+//
+// The tag is weak (RFC 9110 section 8.8.1), for two reasons that both rule
+// out calling it strong. The delay timer TLV is left out of the hash: it
+// counts down between any two reads of a pending dataset, and a tag that
+// changed every second would be useless as a precondition, but the
+// countdown is observable in the GET body, and a strong validator has to
+// change whenever anything in that body does. The same tag also stands for
+// both the JSON and the TLV representation, and a validator shared by two
+// representations of a resource is weak by definition. Weak is what the
+// specification offers for exactly this case: grouping representations "by
+// some self-determined set of equivalency rather than unique sequences of
+// data".
+static std::string DatasetEtag(const otOperationalDatasetTlvs &aDatasetTlvs)
+{
+    Sha256       sha256;
+    Sha256::Hash hash;
+    uint16_t     offset = 0;
+
+    sha256.Start();
+    while (offset + 2u <= aDatasetTlvs.mLength)
+    {
+        const uint8_t *tlv    = &aDatasetTlvs.mTlvs[offset];
+        uint16_t       length = static_cast<uint16_t>(2 + tlv[1]);
+
+        if (offset + length > aDatasetTlvs.mLength)
+        {
+            break;
+        }
+        if (tlv[0] != OT_MESHCOP_TLV_DELAYTIMER)
+        {
+            sha256.Update(tlv, length);
+        }
+        offset += length;
+    }
+    sha256.Finish(hash);
+
+    return "W/\"" + Utils::Bytes2Hex(hash.GetBytes(), 8) + '"';
+}
+
+static std::string TrimOws(const std::string &aValue)
+{
+    size_t begin = aValue.find_first_not_of(" \t");
+    size_t end   = aValue.find_last_not_of(" \t");
+
+    return begin == std::string::npos ? "" : aValue.substr(begin, end - begin + 1);
+}
+
+// The opaque part of an entity tag, which is what RFC 9110 section 8.8.3.2's
+// weak comparison matches on: equal opaque tags are equivalent whether or not
+// either side is marked weak.
+static std::string OpaqueTag(const std::string &aEntityTag)
+{
+    return aEntityTag.compare(0, 2, "W/") == 0 ? aEntityTag.substr(2) : aEntityTag;
+}
+
+// Parses an If-Match value (RFC 9110 section 13.1.1): `*`, or a list of entity
+// tags, weak (`W/"..."`) or strong. Returns false when the value fits neither
+// form. The tags are collected as opaque tags, since these are compared with
+// the weak function; see the comment on the precondition below.
+static bool ParseIfMatch(const std::string &aValue, bool &aStar, std::vector<std::string> &aTags)
+{
+    size_t begin  = 0;
+    bool   sawTag = false;
+
+    aStar = false;
+    aTags.clear();
+
+    if (TrimOws(aValue) == "*")
+    {
+        aStar = true;
+        return true;
+    }
+
+    while (begin <= aValue.size())
+    {
+        size_t      end    = aValue.find(',', begin);
+        std::string token  = TrimOws(aValue.substr(begin, (end == std::string::npos ? aValue.size() : end) - begin));
+        bool        isWeak = token.compare(0, 2, "W/") == 0;
+
+        if (isWeak)
+        {
+            token = token.substr(2);
+        }
+        if (token.empty() && !isWeak)
+        {
+            // RFC 9110 section 5.6.1: parse and ignore empty list elements.
+        }
+        else if (token.size() < 2 || token.front() != '"' || token.back() != '"' ||
+                 token.find('"', 1) != token.size() - 1)
+        {
+            return false;
+        }
+        else
+        {
+            sawTag = true;
+            aTags.push_back(token);
+        }
+        if (end == std::string::npos)
+        {
+            break;
+        }
+        begin = end + 1;
+    }
+
+    // The grammar requires at least one entity tag; a list of only empty
+    // elements is not a precondition to evaluate but a malformed header.
+    return sawTag;
+}
+
 void RestWebServer::GetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string body;
     std::string contentType = OT_REST_CONTENT_TYPE_JSON;
+    std::string etag;
 
-    SuccessOrExit(
-        error = RunInMainLoop([this, aDatasetType, &contentType, &aRequest, &body]() {
-            if (aRequest.get_header_value(OT_REST_ACCEPT_HEADER) == OT_REST_CONTENT_TYPE_PLAIN)
-            {
-                otOperationalDatasetTlvs datasetTlvs;
+    SuccessOrExit(error = RunInMainLoop([this, aDatasetType, &contentType, &aRequest, &body, &etag]() {
+                      otOperationalDatasetTlvs datasetTlvs;
 
-                if (aDatasetType == DatasetType::kActive)
-                {
-                    VerifyOrReturn(otDatasetGetActiveTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE,
-                                   OTBR_ERROR_NOT_FOUND);
-                }
-                else if (aDatasetType == DatasetType::kPending)
-                {
-                    VerifyOrReturn(otDatasetGetPendingTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE,
-                                   OTBR_ERROR_NOT_FOUND);
-                }
+                      if (aDatasetType == DatasetType::kActive)
+                      {
+                          VerifyOrReturn(otDatasetGetActiveTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE,
+                                         OTBR_ERROR_NOT_FOUND);
+                      }
+                      else if (aDatasetType == DatasetType::kPending)
+                      {
+                          VerifyOrReturn(otDatasetGetPendingTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE,
+                                         OTBR_ERROR_NOT_FOUND);
+                      }
 
-                contentType = OT_REST_CONTENT_TYPE_PLAIN;
-                body        = Utils::Bytes2Hex(datasetTlvs.mTlvs, datasetTlvs.mLength);
-            }
-            else
-            {
-                otOperationalDataset dataset;
+                      etag = DatasetEtag(datasetTlvs);
 
-                if (aDatasetType == DatasetType::kActive)
-                {
-                    VerifyOrReturn(otDatasetGetActive(GetInstance(), &dataset) == OT_ERROR_NONE, OTBR_ERROR_NOT_FOUND);
-                    body = Json::ActiveDataset2JsonString(dataset);
-                }
-                else if (aDatasetType == DatasetType::kPending)
-                {
-                    VerifyOrReturn(otDatasetGetPending(GetInstance(), &dataset) == OT_ERROR_NONE, OTBR_ERROR_NOT_FOUND);
-                    body = Json::PendingDataset2JsonString(dataset);
-                }
-            }
+                      if (aRequest.get_header_value(OT_REST_ACCEPT_HEADER) == OT_REST_CONTENT_TYPE_PLAIN)
+                      {
+                          contentType = OT_REST_CONTENT_TYPE_PLAIN;
+                          body        = Utils::Bytes2Hex(datasetTlvs.mTlvs, datasetTlvs.mLength);
+                      }
+                      else
+                      {
+                          otOperationalDataset dataset = {};
 
-            return OTBR_ERROR_NONE;
-        }));
+                          VerifyOrReturn(otDatasetParseTlvs(&datasetTlvs, &dataset) == OT_ERROR_NONE, OTBR_ERROR_REST);
+                          body = aDatasetType == DatasetType::kActive ? Json::ActiveDataset2JsonString(dataset)
+                                                                      : Json::PendingDataset2JsonString(dataset);
+                      }
 
+                      return OTBR_ERROR_NONE;
+                  }));
+
+    aResponse.set_header(OT_REST_ETAG_HEADER, etag);
+
+    // A dataset carries the network key and the PSKc, and the pending one also
+    // carries a delay timer that is already stale by the time a cache could
+    // replay it. Neither belongs in a store anywhere on the way.
+    aResponse.set_header(OT_REST_CACHE_CONTROL_HEADER, "no-store");
     aResponse.set_content(body, contentType);
 
 exit:
@@ -824,14 +945,6 @@ exit:
     {
         ErrorHandler(aResponse, StatusCode::InternalServerError_500);
     }
-}
-
-static std::string TrimOws(const std::string &aValue)
-{
-    size_t begin = aValue.find_first_not_of(" \t");
-    size_t end   = aValue.find_last_not_of(" \t");
-
-    return begin == std::string::npos ? "" : aValue.substr(begin, end - begin + 1);
 }
 
 void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
@@ -852,10 +965,22 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
     const std::string ifNoneMatch  = TrimOws(aRequest.get_header_value(OT_REST_IF_NONE_MATCH_HEADER));
     const bool        onlyIfAbsent = ifNoneMatch == "*";
 
+    // RFC 9110 section 13.1.1: If-Match makes the write conditional on the
+    // dataset still being the one whose entity tag a GET returned, turning a
+    // read-stamp-write sequence into a compare-and-swap; `*` only requires
+    // that some dataset exists.
+    const std::string        ifMatch     = aRequest.get_header_value(OT_REST_IF_MATCH_HEADER);
+    const bool               hasIfMatch  = !ifMatch.empty();
+    bool                     ifMatchStar = false;
+    std::vector<std::string> ifMatchTags;
+    std::string              etag;
+
     VerifyOrExit(ifNoneMatch.empty() || onlyIfAbsent, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(!hasIfMatch || ParseIfMatch(ifMatch, ifMatchStar, ifMatchTags), error = OTBR_ERROR_INVALID_ARGS);
 
     SuccessOrExit(
-        error = RunInMainLoop([this, aDatasetType, onlyIfAbsent, &errorCode, &aRequest]() {
+        error = RunInMainLoop([this, aDatasetType, onlyIfAbsent, hasIfMatch, ifMatchStar, &ifMatchTags, &etag,
+                               &errorCode, &aRequest]() {
             bool                     isTlv;
             otOperationalDataset     dataset = {};
             otOperationalDatasetTlvs datasetTlvs;
@@ -872,11 +997,31 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
                 errorOt = otDatasetGetPendingTlvs(GetInstance(), &datasetTlvs);
             }
 
-            // RFC 9110 section 13.2.1: the precondition is evaluated after the
-            // request checks (the role check above still answers 409 first, the
-            // header cannot downgrade that to a 412) and before the content is
-            // processed; evaluated in this main-loop task, it is atomic with
-            // the write below.
+            // RFC 9110 section 13.2.1: the preconditions are evaluated after
+            // the request checks (the role check above still answers 409
+            // first, the headers cannot downgrade that to a 412) and before
+            // the content is processed; evaluated in this main-loop task,
+            // they are atomic with the write below. Section 13.2.2: If-Match
+            // before If-None-Match. Section 13.1.1 asks for the strong
+            // comparison function here, but these tags are weak, and strong
+            // comparison never matches a weak tag: honouring it would make
+            // If-Match unusable on a resource whose validator cannot honestly
+            // be strong. The weak function is used instead, so the deviation
+            // stays on the write side, where this server defines what counts
+            // as the same dataset, rather than on the read side, where a
+            // strong-looking tag would mislead every cache as well.
+            if (hasIfMatch)
+            {
+                bool matched = (errorOt == OT_ERROR_NONE);
+
+                if (matched && !ifMatchStar)
+                {
+                    const std::string current = OpaqueTag(DatasetEtag(datasetTlvs));
+
+                    matched = std::find(ifMatchTags.begin(), ifMatchTags.end(), current) != ifMatchTags.end();
+                }
+                VerifyOrReturn(matched, OTBR_ERROR_DUPLICATED);
+            }
             VerifyOrReturn(!onlyIfAbsent || errorOt != OT_ERROR_NONE, OTBR_ERROR_DUPLICATED);
 
             // Create a new operational dataset if it doesn't exist.
@@ -926,9 +1071,11 @@ void RestWebServer::SetDataset(DatasetType aDatasetType, const Request &aRequest
             {
                 VerifyOrReturn(otDatasetSetPendingTlvs(GetInstance(), &datasetTlvs) == OT_ERROR_NONE, OTBR_ERROR_REST);
             }
+            etag = DatasetEtag(datasetTlvs);
             return OTBR_ERROR_NONE;
         }));
 
+    aResponse.set_header(OT_REST_ETAG_HEADER, etag);
     aResponse.status = errorCode;
 
 exit:
@@ -2235,7 +2382,8 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
             const httplib::Headers defaultHeaders = {
                 {"Access-Control-Allow-Origin", OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN},
                 {"Access-Control-Allow-Methods", OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS},
-                {"Access-Control-Allow-Headers", OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS}};
+                {"Access-Control-Allow-Headers", OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS},
+                {"Access-Control-Expose-Headers", OTBR_REST_ACCESS_CONTROL_EXPOSE_HEADERS}};
             self->mServer.set_default_headers(defaultHeaders);
             if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
             {

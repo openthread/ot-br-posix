@@ -11,7 +11,7 @@ info:
   license:
     name: BSD 3-Clause
     url: https://github.com/openthread/ot-br-posix/blob/main/LICENSE
-  version: 0.5.0
+  version: 0.6.0
 servers:
   - url: "{protocol}://{host}:{port}"
     description: Configurable Border Router destination.
@@ -1447,6 +1447,11 @@ paths:
       responses:
         "200":
           description: Returns currently active operational dataset
+          headers:
+            ETag:
+              $ref: "#/components/headers/DatasetEtag"
+            Cache-Control:
+              $ref: "#/components/headers/DatasetCacheControl"
           content:
             application/json:
               schema:
@@ -1465,6 +1470,7 @@ paths:
         is inactive. If the Thread node is active, a pending dataset should be used to update the current active
         operational dataset.
       parameters:
+        - $ref: "#/components/parameters/IfMatchEtag"
         - $ref: "#/components/parameters/IfNoneMatchStar"
       requestBody:
         description: |-
@@ -1481,14 +1487,20 @@ paths:
       responses:
         "200":
           description: Successfully updated the active operational dataset.
+          headers:
+            ETag:
+              $ref: "#/components/headers/DatasetEtag"
         "201":
           description: Successfully created the active operational dataset.
+          headers:
+            ETag:
+              $ref: "#/components/headers/DatasetEtag"
         "412":
           $ref: "#/components/responses/PreconditionFailedError"
         "400":
           description: |-
-            Invalid request body, or an `If-None-Match` header value other
-            than `*`.
+            Invalid request body, a syntactically invalid `If-Match` header
+            value, or an `If-None-Match` header value other than `*`.
         "409":
           description: Writing active operational dataset rejected because Thread network is active.
         "500":
@@ -1501,6 +1513,11 @@ paths:
       responses:
         "200":
           description: Returns currently pending operational dataset
+          headers:
+            ETag:
+              $ref: "#/components/headers/DatasetEtag"
+            Cache-Control:
+              $ref: "#/components/headers/DatasetCacheControl"
           content:
             application/json:
               schema:
@@ -1518,6 +1535,7 @@ paths:
         Creates or updates the pending operational dataset on the current node. Delay needs to be set to let
         the pending dataset apply as active dataset in the near future.
       parameters:
+        - $ref: "#/components/parameters/IfMatchEtag"
         - $ref: "#/components/parameters/IfNoneMatchStar"
       requestBody:
         description: |-
@@ -1534,14 +1552,20 @@ paths:
       responses:
         "200":
           description: Successfully updated the pending operational dataset.
+          headers:
+            ETag:
+              $ref: "#/components/headers/DatasetEtag"
         "201":
           description: Successfully created the pending operational dataset.
+          headers:
+            ETag:
+              $ref: "#/components/headers/DatasetEtag"
         "412":
           $ref: "#/components/responses/PreconditionFailedError"
         "400":
           description: |-
-            Invalid request body, or an `If-None-Match` header value other
-            than `*`.
+            Invalid request body, a syntactically invalid `If-Match` header
+            value, or an `If-None-Match` header value other than `*`.
         "500":
           $ref: "#/components/responses/InternalServerError"
   /node/commissioner/state:
@@ -2499,7 +2523,47 @@ components:
 
   ### Parameters ##############################################################
   #############################################################################
+  headers:
+    DatasetCacheControl:
+      description: |-
+        Always `no-store`. A dataset carries the network key and the PSKc,
+        and a pending one also carries a delay timer that is stale as soon
+        as it is stored, so no cache on the way should keep a copy.
+      schema:
+        type: string
+
+    DatasetEtag:
+      description: |-
+        The entity tag of the stored dataset, for use in `If-Match`. Derived
+        from the dataset TLVs, so it changes exactly when the stored dataset
+        does and is shared by the JSON and TLV representations.
+      schema:
+        type: string
+
   parameters:
+    IfMatchEtag:
+      name: If-Match
+      in: header
+      required: false
+      schema:
+        type: string
+      description: |-
+        One or more entity tags as returned in `ETag` by a GET of this
+        resource, or `*`. The dataset is only written when one of the tags
+        matches the stored dataset (`*`: when any dataset is stored),
+        turning a read-modify-write sequence into a compare-and-swap;
+        otherwise the request fails with 412 and nothing is written.
+        Evaluated before `If-None-Match` (RFC 9110 section 13.2.2),
+        atomically with the write. Tags are compared with the weak function
+        (section 8.8.3.2), so a tag matches whether or not it is sent in the
+        `W/` form: the tags this server hands out are weak, and the strong
+        comparison section 13.1.1 asks for never matches a weak tag, which
+        would leave `If-Match` unusable here. A syntactically
+        invalid value is rejected with 400. The active dataset is only
+        writable while Thread is stopped, and that check runs first: on a
+        running node the response is 409 whether or not this header is
+        present.
+
     IfNoneMatchStar:
       name: If-None-Match
       in: header
@@ -2510,11 +2574,12 @@ components:
       description: |-
         With the value `*`, the dataset is only written when none is in place
         yet; if one exists the request fails with 412 and nothing is written.
-        Any other value is rejected with 400: the dataset resources carry no
-        entity tags to match against. Without the header an existing dataset
-        is replaced. The active dataset is only writable while Thread is
-        stopped, and that check runs first: on a running node the response
-        is 409 whether or not this header is present.
+        Any other value is rejected with 400: only the `*` form is defined
+        here, entity-tag comparison is what `If-Match` is for. Without the
+        header an existing dataset is replaced. The active dataset is only
+        writable while Thread is stopped, and that check runs first: on a
+        running node the response is 409 whether or not this header is
+        present.
 
     actionId:
       name: actionId
@@ -2735,9 +2800,11 @@ components:
 
     PreconditionFailedError:
       description: |
-        A dataset is already in place and the request carried
-        `If-None-Match: *`. Nothing was written; retry without the header to
-        replace the dataset deliberately, or wait until none is in place.
+        The precondition the request carried was not met: with
+        `If-None-Match: *` a dataset is already in place, with `If-Match`
+        no stored dataset matched the given entity tags. Nothing was
+        written; re-read the resource to see the state the decision was
+        based on, or retry without the header to write unconditionally.
       content:
         application/json:
           schema:
