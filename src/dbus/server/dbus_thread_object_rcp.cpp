@@ -173,6 +173,8 @@ otbrError DBusThreadObjectRcp::Init(void)
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DEACTIVATE_EPHEMERAL_KEY_MODE_METHOD,
                    std::bind(&DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler, this, _1));
 #endif
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_TAKEOVER_LEADER_METHOD,
+                   std::bind(&DBusThreadObjectRcp::TakeoverLeaderHandler, this, _1));
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObjectRcp::IntrospectHandler, this, _1));
 
@@ -194,6 +196,8 @@ otbrError DBusThreadObjectRcp::Init(void)
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED,
                                std::bind(&DBusThreadObjectRcp::SetEphemeralKeyEnabled, this, _1));
 #endif
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LOCAL_LEADER_WEIGHT,
+                               std::bind(&DBusThreadObjectRcp::SetLocalLeaderWeightHandler, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObjectRcp::GetLinkModeHandler, this, _1));
@@ -982,6 +986,19 @@ otError DBusThreadObjectRcp::GetLocalLeaderWeightHandler(DBusMessageIter &aIter)
     uint8_t weight       = otThreadGetLocalLeaderWeight(threadHelper->GetInstance());
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, weight) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObjectRcp::SetLocalLeaderWeightHandler(DBusMessageIter &aIter)
+{
+    auto    threadHelper = mHost.GetThreadHelper();
+    otError error        = OT_ERROR_NONE;
+    uint8_t weight;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, weight) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    otThreadSetLocalLeaderWeight(threadHelper->GetInstance(), weight);
 
 exit:
     return error;
@@ -1904,6 +1921,19 @@ void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
 #endif
         }
     });
+}
+
+void DBusThreadObjectRcp::TakeoverLeaderHandler(DBusRequest &aRequest)
+{
+    auto         threadHelper = mHost.GetThreadHelper();
+    otError      error        = OT_ERROR_NONE;
+    otDeviceRole role         = otThreadGetDeviceRole(threadHelper->GetInstance());
+
+    VerifyOrExit(role != OT_DEVICE_ROLE_DISABLED && role != OT_DEVICE_ROLE_DETACHED, error = OT_ERROR_INVALID_STATE);
+    SuccessOrExit(error = otThreadBecomeLeader(threadHelper->GetInstance()));
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 #if OTBR_ENABLE_NAT64
