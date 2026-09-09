@@ -124,8 +124,12 @@ if [[ ! ${PLATFORM+x} ]]; then
             PLATFORM=macOS
             ;;
         *)
-            have_or_die lsb_release
-            PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+            if [[ -f /etc/rpi-issue ]]; then
+                PLATFORM=raspbian
+            else
+                have_or_die lsb_release
+                PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+            fi
             ;;
     esac
 fi
