@@ -113,12 +113,10 @@ USAGE: $0 COMMAND
 COMMAND:
     build       Build project for running tests. This can be used to rebuild the project for changes.
     clean       Clean built files to prepare new build.
+    extcap      Run ot-extcap functional sniffing tests.
     meshcop     Run MeshCoP tests.
     openwrt     Run OpenWRT tests.
     help        Print this help.
-
-EXAMPLES:
-    $0 clean build
 EOF
     exit "$1"
 }
@@ -233,6 +231,9 @@ main()
                 ;;
             doxygen)
                 do_doxygen
+                ;;
+            extcap)
+                print_result ./tests/scripts/check-extcap
                 ;;
             help)
                 print_usage 1

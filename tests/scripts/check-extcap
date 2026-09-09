@@ -1,0 +1,398 @@
+#!/bin/bash
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+set -euo pipefail
+
+OTBR_TOP_SRCDIR="$(pwd)"
+readonly OTBR_TOP_SRCDIR
+readonly OT_RCP_PATH="${OTBR_TOP_SRCDIR}/build/simulation/examples/apps/ncp/ot-rcp"
+readonly OT_CLI_FTD_PATH="${OTBR_TOP_SRCDIR}/build/simulation/examples/apps/cli/ot-cli-ftd"
+readonly OT_EXTCAP_BIN="${OTBR_TOP_SRCDIR}/build/extcap/ot-extcap"
+readonly FIXED_NETWORK_KEY="00112233445566778899aabbccddeeff"
+
+TEST_TEMP_DIR="$(mktemp -d -t ot-extcap-test.XXXXXX)"
+readonly TEST_TEMP_DIR
+
+g_spawned_pids=()
+
+#
+# Prints error message to stderr and terminates execution.
+#
+die()
+{
+    echo " *** ERROR: $*" >&2
+    exit 1
+}
+
+#
+# Clean up background processes, PTY nodes, symlinks, and temporary files on exit.
+#
+cleanup()
+{
+    local exit_code=$?
+
+    echo "Cleaning up processes and temporary files..."
+    for pid in "${g_spawned_pids[@]-}"; do
+        if [[ -n ${pid-} ]]; then
+            sudo pkill -9 -P "${pid}" 2>/dev/null || true
+            sudo kill -9 "${pid}" 2>/dev/null || true
+        fi
+    done
+    sudo rm -f /dev/ttyACM98 /dev/ttyACM99 2>/dev/null || true
+
+    if [[ ${exit_code} -ne 0 && -d ${TEST_TEMP_DIR-} ]]; then
+        echo "=== Test Debug Logs ==="
+        echo "--- socat 98 ---"
+        cat "${TEST_TEMP_DIR}/socat_98.log" 2>/dev/null || true
+        echo "--- socat 99 ---"
+        cat "${TEST_TEMP_DIR}/socat_99.log" 2>/dev/null || true
+        echo "--- socat uart ---"
+        cat "${TEST_TEMP_DIR}/socat_uart.log" 2>/dev/null || true
+        echo "--- detect_out.log ---"
+        cat "${TEST_TEMP_DIR}/detect_out.log" 2>/dev/null || true
+        echo "--- reload_out.log ---"
+        cat "${TEST_TEMP_DIR}/reload_out.log" 2>/dev/null || true
+        echo "--- tshark_fork.log ---"
+        cat "${TEST_TEMP_DIR}/tshark_fork.log" 2>/dev/null || true
+        echo "--- tshark_uart.log ---"
+        cat "${TEST_TEMP_DIR}/tshark_uart.log" 2>/dev/null || true
+    fi
+
+    if [[ -d ${TEST_TEMP_DIR-} ]]; then
+        sudo rm -rf "${TEST_TEMP_DIR}" 2>/dev/null || true
+    fi
+
+    if [[ ${exit_code} -ne 0 ]]; then
+        echo "Check script failed with exit code ${exit_code}." >&2
+    fi
+
+    exit ${exit_code}
+}
+
+trap cleanup INT TERM EXIT
+
+#
+# Configures Wireshark UAT key tables and helper scripts for traffic generation.
+#
+setup_environment()
+{
+    export XDG_CONFIG_HOME="${TEST_TEMP_DIR}/config"
+    export HOME="${TEST_TEMP_DIR}"
+    mkdir -p "${XDG_CONFIG_HOME}/wireshark"
+    echo "\"00000000\",\"${FIXED_NETWORK_KEY}\",\"1\",\"Thread\"" >"${XDG_CONFIG_HOME}/wireshark/wpan_keys"
+}
+
+#
+# Generates Thread network traffic on Channel 11 using ot-cli-ftd via inline expect here-doc.
+#
+gen_traffic()
+{
+    echo "Generating Thread network traffic on Channel 11 using ot-cli-ftd..."
+    expect - <<EOF
+set timeout 15
+spawn ${OT_CLI_FTD_PATH} 1
+expect ">"
+send "dataset init new\r\n"
+expect "Done"
+send "dataset channel 11\r\n"
+expect "Done"
+send "dataset networkkey ${FIXED_NETWORK_KEY}\r\n"
+expect "Done"
+send "dataset commit active\r\n"
+expect "Done"
+send "routerselectionjitter 1\r\n"
+expect "Done"
+send "ifconfig up\r\n"
+expect "Done"
+send "thread start\r\n"
+expect "Done"
+send "state\r\n"
+expect {
+    -timeout 1 "leader" {
+    } timeout {
+        send "state\r\n"
+        exp_continue
+    }
+}
+expect "Done"
+send "\x04"
+expect eof
+EOF
+    echo "Generating Thread network traffic done!"
+}
+
+#
+# Builds OpenThread simulation binaries and the ot-extcap sniffer executable.
+#
+build_binaries()
+{
+    if [[ ! -x ${OT_RCP_PATH} || ! -x ${OT_CLI_FTD_PATH} ]]; then
+        echo "Building OpenThread simulation binaries..."
+        (OT_CMAKE_BUILD_DIR="${OTBR_TOP_SRCDIR}/build/simulation" third_party/openthread/repo/script/cmake-build simulation -DOT_COVERAGE=OFF)
+    fi
+
+    echo "Building ot-extcap..."
+    "${OTBR_TOP_SRCDIR}/script/cmake-build" extcap
+
+    if [[ ! -x ${OT_EXTCAP_BIN} ]]; then
+        die "ot-extcap executable not found at ${OT_EXTCAP_BIN}"
+    fi
+}
+
+#
+# Installs the built ot-extcap Debian package.
+#
+install_package()
+{
+    local deb_file=""
+    for f in build/extcap/ot-extcap_*.deb; do
+        if [[ ${f} != *dbgsym* && -f ${f} ]]; then
+            deb_file="${f}"
+            break
+        fi
+    done
+    if [[ -z ${deb_file} ]]; then
+        die "ot-extcap .deb package not found in build/extcap/"
+    fi
+    echo "Installing package ${deb_file} with sudo..."
+    sudo dpkg -i "${deb_file}"
+}
+
+#
+# Launches socat via expect, waiting deterministically for "starting data transfer loop"
+# before backgrounding the socat process and returning.
+#
+simulate_uart()
+{
+    local link_path="$1"
+    local node_id="$2"
+    local log_file="$3"
+
+    # shellcheck disable=SC2024
+    sudo expect - <<EOF >"${log_file}" 2>&1
+        spawn socat -d -d pty,raw,echo=0,mode=666,link=${link_path} "exec:${OT_RCP_PATH} ${node_id}"
+        expect {
+            "starting data transfer loop" {
+                if {[fork] != 0} {
+                    exit 0
+                }
+                exp_continue
+            }
+            -timeout -1 eof {
+                exit 1
+            }
+        }
+EOF
+
+    local socat_pid
+    socat_pid=$(pgrep -f "link=${link_path}" | head -n1)
+    if [[ -n ${socat_pid-} ]]; then
+        g_spawned_pids+=("${socat_pid}")
+    fi
+
+    local retries=50
+    while [[ ! -e ${link_path} && ${retries} -gt 0 ]]; do
+        sleep 0.1
+        ((retries--))
+    done
+    [[ -e ${link_path} ]] || die "Symlink ${link_path} was not created by socat"
+}
+
+#
+# Test Case 1: Multi-Device Interface Discovery (--detect-interfaces)
+#
+test_multi_device_detection()
+{
+    echo "=== Test Case 1: Multi-Device Interface Discovery (--detect-interfaces) ==="
+    simulate_uart /dev/ttyACM98 3 "${TEST_TEMP_DIR}/socat_98.log" || die "Failed to simulate UART on /dev/ttyACM98"
+    simulate_uart /dev/ttyACM99 4 "${TEST_TEMP_DIR}/socat_99.log" || die "Failed to simulate UART on /dev/ttyACM99"
+
+    "${OT_EXTCAP_BIN}" --detect-interfaces --debug >"${TEST_TEMP_DIR}/detect_out.log" 2>&1 || die "ot-extcap --detect-interfaces failed"
+
+    grep -i "/dev/ttyACM98" "${TEST_TEMP_DIR}/detect_out.log" || die "/dev/ttyACM98 not detected"
+    grep -i "/dev/ttyACM99" "${TEST_TEMP_DIR}/detect_out.log" || die "/dev/ttyACM99 not detected"
+
+    echo "Multi-device detection PASSED."
+}
+
+#
+# Test Case 2: Dynamic Selector Option Reload (--extcap-reload-option)
+#
+test_dynamic_option_reload()
+{
+    echo "=== Test Case 2: Dynamic Selector Option Reload (--extcap-reload-option) ==="
+    "${OT_EXTCAP_BIN}" --extcap-reload-option spinel-hdlc-uart --debug >"${TEST_TEMP_DIR}/reload_out.log" 2>&1 || die "Reload option failed"
+
+    grep -i "/dev/ttyACM98" "${TEST_TEMP_DIR}/reload_out.log" || die "/dev/ttyACM98 missing in reload output"
+    grep -i "/dev/ttyACM99" "${TEST_TEMP_DIR}/reload_out.log" || die "/dev/ttyACM99 missing in reload output"
+
+    for pid in "${g_spawned_pids[@]-}"; do
+        if [[ -n ${pid-} ]]; then
+            sudo pkill -9 -P "${pid}" 2>/dev/null || true
+            sudo kill -9 "${pid}" 2>/dev/null || true
+        fi
+    done
+    g_spawned_pids=()
+    sudo rm -f /dev/ttyACM98 /dev/ttyACM99 2>/dev/null || true
+    sleep 1
+    echo "Dynamic selector reload PASSED."
+}
+
+#
+# Test Case 3: openthread_radio_url Capture & Decryption Verification (Forkpty)
+#
+test_forkpty_capture()
+{
+    echo "=== Test Case 3: spinel_radio_url Capture & Decryption (Forkpty Transport) ==="
+    local capture_file="${TEST_TEMP_DIR}/capture_forkpty.pcapng"
+    local tshark_pid=""
+    local mle_count=""
+
+    rm -f "${capture_file}"
+
+    echo "Starting tshark capture on spinel_radio_url interface..."
+    tshark -i spinel_radio_url \
+        -o extcap.spinel_radio_url.channel:11 \
+        -o "extcap.spinel_radio_url.radiourl:spinel+hdlc+forkpty://${OT_RCP_PATH}?forkpty-arg=2" \
+        -o extcap.spinel_radio_url.debug:true \
+        -a duration:14 -w "${capture_file}" >"${TEST_TEMP_DIR}/tshark_fork.log" 2>&1 &
+    tshark_pid=$!
+    g_spawned_pids+=("${tshark_pid}")
+    sleep 2
+
+    gen_traffic
+
+    wait ${tshark_pid} || true
+
+    sleep 1
+
+    [[ -s ${capture_file} ]] || die "Capture file ${capture_file} is missing or empty"
+
+    echo "Decrypting IEEE 802.15.4 frames and checking for Thread MLE protocol frames..."
+    mle_count=$(tshark -r "${capture_file}" -Y "mle" | wc -l)
+    echo "Decrypted MLE Frame Count: ${mle_count}"
+    [[ ${mle_count} -gt 0 ]] || die "No MLE frames decoded in Forkpty capture"
+    echo "Forkpty transport capture & decryption PASSED."
+}
+
+#
+# Test Case 4: spinel_hdlc_uart Capture & Decryption Verification (UART Transport)
+#
+test_uart_capture()
+{
+    echo "=== Test Case 4: spinel_hdlc_uart Capture & Decryption (UART Transport) ==="
+    local uart_pty="${TEST_TEMP_DIR}/ot-rcp-pty-extcap"
+    local capture_file="${TEST_TEMP_DIR}/capture_uart.pcapng"
+    local tshark_pid=""
+    local mle_count=""
+
+    simulate_uart "${uart_pty}" 2 "${TEST_TEMP_DIR}/socat_uart.log" || die "Failed to simulate UART on ${uart_pty}"
+
+    rm -f "${capture_file}"
+
+    echo "Starting tshark capture on spinel_hdlc_uart interface..."
+    tshark -i spinel_hdlc_uart \
+        -o extcap.spinel_hdlc_uart.channel:11 \
+        -o "extcap.spinel_hdlc_uart.spinelhdlcuart:spinel+hdlc+uart://${uart_pty}?uart-baudrate=115200" \
+        -o extcap.spinel_hdlc_uart.debug:true \
+        -a duration:14 -w "${capture_file}" >"${TEST_TEMP_DIR}/tshark_uart.log" 2>&1 &
+    tshark_pid=$!
+    g_spawned_pids+=("${tshark_pid}")
+    sleep 2
+
+    gen_traffic
+
+    wait ${tshark_pid} || true
+
+    for pid in "${g_spawned_pids[@]-}"; do
+        if [[ -n ${pid-} ]]; then
+            sudo pkill -9 -P "${pid}" 2>/dev/null || true
+            sudo kill -9 "${pid}" 2>/dev/null || true
+        fi
+    done
+    g_spawned_pids=()
+    sleep 1
+
+    if [[ ! -s ${capture_file} ]]; then
+        die "Capture file ${capture_file} is missing or empty"
+    fi
+
+    echo "Decrypting IEEE 802.15.4 frames and checking for Thread MLE protocol frames..."
+    mle_count=$(tshark -r "${capture_file}" -Y "mle" | wc -l)
+    echo "Decrypted MLE Frame Count: ${mle_count}"
+    if [[ ${mle_count} -eq 0 ]]; then
+        die "No MLE frames decoded in UART capture"
+    fi
+    echo "UART transport capture & decryption PASSED."
+}
+
+#
+# Test Case 5: Package Cleanup Verification
+#
+test_package_uninstall()
+{
+    echo "=== Test Case 5: Package Uninstall & Cleanup ==="
+    local manifest="/var/lib/ot-extcap/manifest.list"
+    local symlink_path=""
+    if [[ -f ${manifest} ]]; then
+        symlink_path=$(cat "${manifest}")
+    fi
+
+    sudo dpkg -r ot-extcap
+
+    if [[ -f /usr/bin/ot-extcap ]]; then
+        die "/usr/bin/ot-extcap binary was not removed"
+    fi
+    if [[ -n ${symlink_path-} && -L ${symlink_path} ]]; then
+        die "Symlink ${symlink_path} was not removed"
+    fi
+    echo "Package uninstall cleanup PASSED."
+}
+
+#
+# Main entry point for functional test execution sequence.
+#
+main()
+{
+    setup_environment
+    build_binaries
+    install_package
+
+    test_multi_device_detection
+    test_dynamic_option_reload
+    test_forkpty_capture
+    test_uart_capture
+    test_package_uninstall
+
+    echo "=============================================="
+    echo "ALL OT-EXTCAP FUNCTIONAL TESTS PASSED!"
+    echo "=============================================="
+}
+
+main "$@"
