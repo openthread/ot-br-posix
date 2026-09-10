@@ -870,6 +870,71 @@ def node_dataset_if_none_match_test():
     print(" /node/dataset If-None-Match : OK")
 
 
+def node_dataset_pending_put_test():
+    url = rest_api_addr + "/node/dataset/pending"
+
+    def put(body_dict):
+        req = urllib.request.Request(url,
+                                     data=json.dumps(body_dict).encode(),
+                                     method='PUT',
+                                     headers={'Content-Type': 'application/json'})
+        return urllib.request.urlopen(req)
+
+    def get_json(target):
+        with urllib.request.urlopen(urllib.request.Request(target, headers={'Accept': 'application/json'})) as response:
+            assert response.status == 200
+            return json.loads(response.read())
+
+    # The pending dataset is registered with the leader via MGMT_PENDING_SET,
+    # so the leader raises the delay timer to the allowed minimum (30 s; the
+    # network key is unchanged, so not the 5 min key-change default) rather
+    # than applying a 1 ms delay verbatim (which, written locally, would
+    # migrate this node alone almost immediately).
+    body = {"activeDataset": {"activeTimestamp": {"seconds": 20}}, "delay": 1}
+    with put(body) as response:
+        assert response.status in (200, 201)
+
+    pending = get_json(url)
+    assert 1000 < pending["delay"] <= 30000
+
+    # A partial request describes a change to the current network: the fields
+    # it leaves out come from the active dataset, not from a freshly generated
+    # random one.
+    active = get_json(rest_api_addr + "/node/dataset/active")
+    assert pending["activeDataset"]["networkKey"] == active["networkKey"]
+    assert pending["activeDataset"]["panId"] == active["panId"]
+
+    # A pending timestamp that does not advance is rejected by the leader and
+    # reported, not silently accepted.
+    body = {
+        "activeDataset": {"activeTimestamp": {"seconds": 30}},
+        "pendingTimestamp": {"seconds": 1},
+        "delay": 3600000,
+    }
+    expect_http_error(409, lambda: put(body))
+
+    # A request without a pending timestamp gets one generated that advances,
+    # even past a pending timestamp ahead of this node's clock.
+    body = {
+        "activeDataset": {"activeTimestamp": {"seconds": 30}},
+        "pendingTimestamp": {"seconds": 1000000000000},
+        "delay": 3600000,
+    }
+    with put(body) as response:
+        assert response.status == 200
+
+    body = {"activeDataset": {"activeTimestamp": {"seconds": 30}}, "delay": 3600000}
+    with put(body) as response:
+        assert response.status == 200
+    assert get_json(url)["pendingTimestamp"]["seconds"] > 1000000000000
+
+    # A pending dataset without a delay timer would never apply.
+    body = {"activeDataset": {"activeTimestamp": {"seconds": 30}}}
+    expect_http_error(400, lambda: put(body))
+
+    print(" /node/dataset/pending PUT : OK")
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
@@ -894,8 +959,12 @@ def main():
     # diagnostics_test(20)  # partly replaced with restjsonapi tests
     error_test(10)
     well_known_thread_test(20)
-    epskc_test()
+    # Pending dataset writes require an attached node. epskc_test disables
+    # Thread and the node only comes back through auto-attach, so these run
+    # before it, while the attached state is deterministic.
     node_dataset_if_none_match_test()
+    node_dataset_pending_put_test()
+    epskc_test()
 
     return 0
 

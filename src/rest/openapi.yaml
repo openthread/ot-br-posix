@@ -11,7 +11,7 @@ info:
   license:
     name: BSD 3-Clause
     url: https://github.com/openthread/ot-br-posix/blob/main/LICENSE
-  version: 0.5.0
+  version: 0.6.0
 servers:
   - url: "{protocol}://{host}:{port}"
     description: Configurable Border Router destination.
@@ -1517,13 +1517,27 @@ paths:
       description: |-
         Creates or updates the pending operational dataset on the current node. Delay needs to be set to let
         the pending dataset apply as active dataset in the near future.
+
+        The request is applied on top of the current pending dataset, or on top of the current active dataset
+        when none is pending: fields the request leaves out keep their current value, so a partial request
+        (for example only a new channel plus a newer active timestamp) describes a change to the current
+        network.
+
+        The dataset is registered with the Thread leader (MGMT_PENDING_SET), so leader-side validation applies:
+        the pending timestamp must be newer than that of any pending dataset already known to the network, the
+        active timestamp must be newer than that of the current active dataset unless the network key changes,
+        the delay timer is raised to the allowed minimum (default 30 s, or the default delay when the network
+        key changes), and the node must be attached to a Thread network. A JSON request that omits the pending
+        timestamp gets one generated from the current time, advanced past the pending timestamp of the dataset
+        it replaces if necessary.
       parameters:
         - $ref: "#/components/parameters/IfNoneMatchStar"
       requestBody:
         description: |-
           Operational dataset that will be stored as pending operational dataset. Supports request body Content-Type
           `text/plain` (dataset in TLV format as hex string) or `application/json` (dataset in JSON format). In both
-          cases keys which are not set will be initialized with defaults.
+          cases keys which are not set are taken from the current pending dataset, or from the current active
+          dataset when none is pending. A delay timer is required in either format.
         content:
           application/json:
             schema:
@@ -1540,10 +1554,22 @@ paths:
           $ref: "#/components/responses/PreconditionFailedError"
         "400":
           description: |-
-            Invalid request body, or an `If-None-Match` header value other
-            than `*`.
+            Invalid request body (including a pending dataset without a delay timer), or an `If-None-Match`
+            header value other than `*`.
+        "409":
+          description: |-
+            The leader rejected the dataset (for example, the pending or active timestamp does not advance), the
+            node is not attached to a Thread network (also when it detaches while the registration is in
+            flight), or another dataset update is still in progress.
         "500":
           $ref: "#/components/responses/InternalServerError"
+        "504":
+          description: |-
+            The leader did not answer the dataset registration in time: this node gateways the request
+            to the leader over CoAP (MGMT_PENDING_SET), and that exchange timed out. The outcome is
+            unknown - the leader may or may not have applied the dataset. Read back the pending dataset
+            and compare its pending timestamp to learn what happened; a retry needs a newer pending
+            timestamp.
   /node/commissioner/state:
     get:
       tags:
