@@ -661,4 +661,62 @@ bool MulticastRoutingManager::MatchesMeshLocalPrefix(const Ip6Address        &aA
 } // namespace otbr
 
 #endif // OTBR_ENABLE_BACKBONE_ROUTER
+#else  // __linux__
+#if OTBR_ENABLE_BACKBONE_ROUTER
+
+// Kernel multicast routing (MRT6) is Linux-only. Elsewhere the class exists so
+// that a Backbone Router build links, but it forwards nothing: the Backbone
+// Router will not relay multicast between the Thread network and the backbone
+// link on this platform.
+
+namespace otbr {
+
+MulticastRoutingManager::MulticastRoutingManager(const Netif                   &aNetif,
+                                                 const InfraIf                 &aInfraIf,
+                                                 const Host::NetworkProperties &aNetworkProperties)
+    : mNetif(aNetif)
+    , mInfraIf(aInfraIf)
+    , mNetworkProperties(aNetworkProperties)
+    , mLastExpireTime(otbr::Timepoint::min())
+    , mMulticastRouterSock(-1)
+    , mState(kStateDisabled)
+    , mRetryIntervalUs(kMinRetryIntervalUs)
+    , mNextRetryTime(otbr::Timepoint::min())
+{
+    OTBR_UNUSED_VARIABLE(mMulticastForwardingCacheTable);
+    OTBR_UNUSED_VARIABLE(mMulticastListeners);
+
+    otbrLogWarning(
+        "Multicast routing is not available on this platform; the Backbone Router will not forward multicast");
+}
+
+void MulticastRoutingManager::HandleStateChange(otBackboneRouterState aState)
+{
+    OTBR_UNUSED_VARIABLE(aState);
+}
+
+void MulticastRoutingManager::HandleBackboneMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                                   const Ip6Address                      &aAddress)
+{
+    OTBR_UNUSED_VARIABLE(aEvent);
+    OTBR_UNUSED_VARIABLE(aAddress);
+}
+
+void MulticastRoutingManager::FinalizeMulticastRouterSock(void)
+{
+}
+
+void MulticastRoutingManager::Update(MainloopContext &aContext)
+{
+    OTBR_UNUSED_VARIABLE(aContext);
+}
+
+void MulticastRoutingManager::Process(const MainloopContext &aContext)
+{
+    OTBR_UNUSED_VARIABLE(aContext);
+}
+
+} // namespace otbr
+
+#endif // OTBR_ENABLE_BACKBONE_ROUTER
 #endif // __linux__
