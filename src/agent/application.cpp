@@ -448,6 +448,21 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent->Init();
 #endif
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+    // Created here rather than in CreateRcpMode(): the Thread interface name
+    // is only known once mHost.Init() has created the interface.
+    mMcastForwarder = MakeUnique<McastForwarder>(otSysGetThreadNetifName(), mBackboneInterfaceName);
+    mHost.SetBackboneRouterMulticastListenerCallback(
+        [this](otBackboneRouterMulticastListenerEvent aEvent, const Ip6Address &aAddress) {
+            mMcastForwarder->HandleBackboneMulticastListenerEvent(aEvent, aAddress);
+        });
+    mHost.SetBackboneRouterStateChangedCallback(
+        [this](otBackboneRouterState aState) { mMcastForwarder->HandleBackboneRouterStateChange(aState); });
+    mMcastForwarder->HandleBackboneRouterStateChange(otBackboneRouterGetState(rcpHost.GetInstance()));
+#if OTBR_ENABLE_REST_SERVER
+    mRestWebServer->SetMcastForwarder(mMcastForwarder.get());
+#endif
+#endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy->SetEnabled(true);
 #endif
@@ -526,6 +541,16 @@ exit:
 
 void Application::DeinitRcpMode(void)
 {
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+    // The host callbacks and the REST resource refer to the forwarder; drop
+    // them before it goes.
+    mHost.SetBackboneRouterMulticastListenerCallback(nullptr);
+    mHost.SetBackboneRouterStateChangedCallback(nullptr);
+#if OTBR_ENABLE_REST_SERVER
+    mRestWebServer->SetMcastForwarder(nullptr);
+#endif
+    mMcastForwarder.reset();
+#endif
 #if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
     // Tear down the OTBR firewall while its backend is still usable (the
     // backend outlives mFirewall by member declaration order).
