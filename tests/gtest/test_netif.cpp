@@ -62,6 +62,166 @@
 #include "host/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
 
+namespace otbr {
+
+class NetifUnicastAddressCacheTestPeer
+{
+public:
+    struct Change
+    {
+        Ip6AddressInfo mAddressInfo;
+        bool           mIsAdded;
+        bool           mAllowAlreadyExists;
+    };
+
+    static std::vector<Ip6AddressInfo> ReconcileIp6UnicastAddresses(
+        const std::vector<Ip6AddressInfo> &aCachedAddrInfos,
+        const std::vector<Ip6AddressInfo> &aDesiredAddrInfos,
+        const std::function<otbrError(const Ip6AddressInfo &, bool)> &aChangeHandler)
+    {
+        return Netif::ReconcileIp6UnicastAddresses(
+            aCachedAddrInfos, aDesiredAddrInfos,
+            [&](const std::vector<Netif::UnicastAddressChange> &aChanges) {
+                std::vector<Netif::UnicastAddressChangeResult> results;
+
+                results.reserve(aChanges.size());
+                for (const Netif::UnicastAddressChange &change : aChanges)
+                {
+                    results.push_back({aChangeHandler(change.mAddressInfo, change.mIsAdded), 0});
+                }
+
+                return results;
+            });
+    }
+
+    static std::vector<Ip6AddressInfo> ReconcileIp6UnicastAddresses(
+        const std::vector<Ip6AddressInfo> &aCachedAddrInfos,
+        const std::vector<Ip6AddressInfo> &aDesiredAddrInfos,
+        const std::function<std::vector<otbrError>(const std::vector<Change> &)> &aChangeHandler)
+    {
+        return Netif::ReconcileIp6UnicastAddresses(
+            aCachedAddrInfos, aDesiredAddrInfos,
+            [&](const std::vector<Netif::UnicastAddressChange> &aChanges) {
+                std::vector<Change>                           changes;
+                std::vector<otbrError>                        errors;
+                std::vector<Netif::UnicastAddressChangeResult> results;
+
+                changes.reserve(aChanges.size());
+                for (const Netif::UnicastAddressChange &change : aChanges)
+                {
+                    changes.push_back({change.mAddressInfo, change.mIsAdded, change.mAllowAlreadyExists});
+                }
+
+                errors = aChangeHandler(changes);
+                results.reserve(errors.size());
+                for (otbrError error : errors)
+                {
+                    results.push_back({error, 0});
+                }
+
+                return results;
+            });
+    }
+};
+
+} // namespace otbr
+
+TEST(Netif, ReconcileUnicastAddressesReplacesStaleMetadataAfterSuccessfulAdd)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x07, 0x7f}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated =
+        otbr::NetifUnicastAddressCacheTestPeer::ReconcileIp6UnicastAddresses(
+            {kCached}, {kDesired}, [&](const otbr::Ip6AddressInfo &aAddrInfo, bool aIsAdded) {
+                if (!aIsAdded)
+                {
+                    EXPECT_EQ(aAddrInfo, kCached);
+                    return OTBR_ERROR_ERRNO;
+                }
+
+                EXPECT_EQ(aAddrInfo, kDesired);
+                return OTBR_ERROR_NONE;
+            });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kDesired);
+}
+
+TEST(Netif, ReconcileUnicastAddressesKeepsCachedEntryWhenReplacementAddFails)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x07, 0x7f}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated =
+        otbr::NetifUnicastAddressCacheTestPeer::ReconcileIp6UnicastAddresses(
+            {kCached}, {kDesired},
+            [&](const otbr::Ip6AddressInfo &, bool) { return OTBR_ERROR_ERRNO; });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kCached);
+}
+
+TEST(Netif, ReconcileUnicastAddressesBatchesRemoveAndAdd)
+{
+    const otIp6Address kCachedAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x07, 0x7f}};
+    const otIp6Address kDesiredAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x08, 0x80}};
+    const otbr::Ip6AddressInfo kCached(kCachedAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kDesiredAddress, 64, 0, true, false);
+    size_t                     batchCount = 0;
+
+    std::vector<otbr::Ip6AddressInfo> updated =
+        otbr::NetifUnicastAddressCacheTestPeer::ReconcileIp6UnicastAddresses(
+            {kCached}, {kDesired},
+            [&](const std::vector<otbr::NetifUnicastAddressCacheTestPeer::Change> &aChanges) {
+                ++batchCount;
+                EXPECT_EQ(aChanges.size(), 2U);
+                if (aChanges.size() == 2U)
+                {
+                    EXPECT_EQ(aChanges[0].mAddressInfo, kCached);
+                    EXPECT_FALSE(aChanges[0].mIsAdded);
+                    EXPECT_EQ(aChanges[1].mAddressInfo, kDesired);
+                    EXPECT_TRUE(aChanges[1].mIsAdded);
+                }
+                return std::vector<otbrError>{OTBR_ERROR_NONE, OTBR_ERROR_NONE};
+            });
+
+    EXPECT_EQ(batchCount, 1U);
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kDesired);
+}
+
+TEST(Netif, ReconcileUnicastAddressesDoesNotAllowExistingAddressForMetadataReplacement)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x07, 0x7f}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated =
+        otbr::NetifUnicastAddressCacheTestPeer::ReconcileIp6UnicastAddresses(
+            {kCached}, {kDesired},
+            [&](const std::vector<otbr::NetifUnicastAddressCacheTestPeer::Change> &aChanges) {
+                EXPECT_EQ(aChanges.size(), 2U);
+                if (aChanges.size() == 2U)
+                {
+                    EXPECT_FALSE(aChanges[0].mIsAdded);
+                    EXPECT_TRUE(aChanges[1].mIsAdded);
+                    EXPECT_FALSE(aChanges[1].mAllowAlreadyExists);
+                }
+                return std::vector<otbrError>{OTBR_ERROR_ERRNO, OTBR_ERROR_ERRNO};
+            });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kCached);
+}
+
 // Only Test on linux platform for now.
 #ifdef __linux__
 
