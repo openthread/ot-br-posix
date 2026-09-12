@@ -59,6 +59,20 @@ if (OTBR_BACKBONE_ROUTER)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BACKBONE_ROUTER=1)
 endif()
 
+# Forwards multicast between the Thread network and the backbone in userspace
+# (BPF taps) where the kernel has no multicast routing. Replaces the OpenThread
+# posix platform's MRT6-based multicast routing, which is Linux-only.
+option(OTBR_USERSPACE_MCAST_FWD "Enable the userspace Backbone Router multicast forwarder (macOS)" OFF)
+if (OTBR_USERSPACE_MCAST_FWD)
+    if (NOT APPLE)
+        message(FATAL_ERROR "OTBR_USERSPACE_MCAST_FWD is only supported on macOS")
+    endif()
+    if (NOT OTBR_BACKBONE_ROUTER)
+        message(FATAL_ERROR "OTBR_USERSPACE_MCAST_FWD requires OTBR_BACKBONE_ROUTER")
+    endif()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_USERSPACE_MCAST_FWD=1)
+endif()
+
 option(OTBR_BORDER_ROUTING "Enable Border Routing Manager" ON)
 if (OTBR_BORDER_ROUTING)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_ROUTING=1)

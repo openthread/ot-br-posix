@@ -265,6 +265,20 @@ void RcpHost::Init(void)
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
 
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    // State set through the hooks before this (re)initialization must reach
+    // the new instance: a reset re-creates it with the Backbone Router
+    // disabled and no callback.
+    if (mBackboneRouterEnabled)
+    {
+        otBackboneRouterSetEnabled(mInstance, true);
+    }
+    if (mBackboneRouterMulticastListenerCallback)
+    {
+        RegisterBackboneRouterMulticastListenerCallback();
+    }
+#endif
+
 #if OTBR_ENABLE_FEATURE_FLAGS && OTBR_ENABLE_TREL
     // Enable/Disable trel according to feature flag default value.
     otTrelSetEnabled(mInstance, featureFlagList.enable_trel());
@@ -378,6 +392,13 @@ void RcpHost::HandleStateChanged(otChangedFlags aFlags)
 
     mThreadHelper->StateChangedCallback(aFlags);
 
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    if ((aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE) && mBackboneRouterStateChangedCallback)
+    {
+        mBackboneRouterStateChangedCallback(otBackboneRouterGetState(mInstance));
+    }
+#endif
+
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         otDeviceRole role = GetDeviceRole();
@@ -455,20 +476,66 @@ void RcpHost::AddThreadRoleChangedCallback(ThreadRoleChangedCallback aCallback)
 #if OTBR_ENABLE_BACKBONE_ROUTER
 void RcpHost::SetBackboneRouterEnabled(bool aEnabled)
 {
-    // TODO: Implement this in RCP mode.
-    OTBR_UNUSED_VARIABLE(aEnabled);
+    mBackboneRouterEnabled = aEnabled;
+
+    VerifyOrExit(mInstance != nullptr);
+    otBackboneRouterSetEnabled(mInstance, aEnabled);
+
+exit:
+    return;
 }
 
 void RcpHost::SetBackboneRouterMulticastListenerCallback(BackboneRouterMulticastListenerCallback aCallback)
 {
-    // TODO: Implement this in RCP mode.
-    OTBR_UNUSED_VARIABLE(aCallback);
+    // The OpenThread instance has one slot for this callback. Where the posix
+    // platform does the multicast routing itself (Linux, MRT6) it registers
+    // its own handler there; a host-side consumer must only be installed on
+    // platforms where it does not.
+    mBackboneRouterMulticastListenerCallback = std::move(aCallback);
+
+    VerifyOrExit(mInstance != nullptr);
+    RegisterBackboneRouterMulticastListenerCallback();
+
+exit:
+    return;
 }
 
 void RcpHost::SetBackboneRouterStateChangedCallback(BackboneRouterStateChangedCallback aCallback)
 {
-    // TODO: Implement this in RCP mode.
-    OTBR_UNUSED_VARIABLE(aCallback);
+    mBackboneRouterStateChangedCallback = std::move(aCallback);
+}
+
+void RcpHost::RegisterBackboneRouterMulticastListenerCallback(void)
+{
+    if (mBackboneRouterMulticastListenerCallback)
+    {
+        otBackboneRouterSetMulticastListenerCallback(mInstance, &RcpHost::HandleBackboneRouterMulticastListenerEvent,
+                                                     this);
+    }
+    else
+    {
+        otBackboneRouterSetMulticastListenerCallback(mInstance, nullptr, nullptr);
+    }
+}
+
+void RcpHost::HandleBackboneRouterMulticastListenerEvent(void                                  *aContext,
+                                                         otBackboneRouterMulticastListenerEvent aEvent,
+                                                         const otIp6Address                    *aAddress)
+{
+    VerifyOrExit(aAddress != nullptr);
+    static_cast<RcpHost *>(aContext)->HandleBackboneRouterMulticastListenerEvent(aEvent, *aAddress);
+
+exit:
+    return;
+}
+
+void RcpHost::HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                         const otIp6Address                    &aAddress)
+{
+    if (mBackboneRouterMulticastListenerCallback)
+    {
+        mBackboneRouterMulticastListenerCallback(aEvent, Ip6Address(aAddress));
+    }
 }
 #endif
 

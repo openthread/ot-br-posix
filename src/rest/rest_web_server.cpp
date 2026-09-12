@@ -63,6 +63,9 @@
 #include "rest/services.hpp"
 #include "rest/version.hpp"
 #include "utils/string_utils.hpp"
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+#include "host/posix/mcast_forwarder.hpp"
+#endif
 
 #include <cJSON.h>
 
@@ -86,6 +89,7 @@
 #define OT_REST_RESOURCE_PATH_NODE_RLOC16 "/node/rloc16"
 #define OT_REST_RESOURCE_PATH_NODE_EXTADDRESS "/node/ext-address"
 #define OT_REST_RESOURCE_PATH_NODE_STATE "/node/state"
+#define OT_REST_RESOURCE_PATH_NODE_MCAST_FORWARDER "/node/mcast-forwarder"
 #define OT_REST_RESOURCE_PATH_NODE_NETWORKNAME "/node/network-name"
 #define OT_REST_RESOURCE_PATH_NODE_LEADERDATA "/node/leader-data"
 #define OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER "/node/num-of-router"
@@ -163,6 +167,11 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     RegisterGet(OT_REST_RESOURCE_PATH_NODE_BAID, MakeHandler(&RestWebServer::BaId));
     RegisterGet(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&RestWebServer::State));
     RegisterPut(OT_REST_RESOURCE_PATH_NODE_STATE, MakeHandler(&RestWebServer::State));
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+    // The forwarder lives on the main loop; read it there.
+    RegisterGet(OT_REST_RESOURCE_PATH_NODE_MCAST_FORWARDER,
+                MakeHandlerInMainLoop(&RestWebServer::McastForwarderStatus));
+#endif
     RegisterGet(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, MakeHandler(&RestWebServer::ExtendedAddr));
     RegisterGet(OT_REST_RESOURCE_PATH_NODE_NETWORKNAME, MakeHandler(&RestWebServer::NetworkName));
     RegisterGet(OT_REST_RESOURCE_PATH_NODE_RLOC16, MakeHandler(&RestWebServer::Rloc16));
@@ -605,6 +614,63 @@ void RestWebServer::State(const Request &aRequest, Response &aResponse) const
         break;
     }
 }
+
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+void RestWebServer::McastForwarderStatus(const Request &aRequest, Response &aResponse)
+{
+    cJSON      *root = nullptr;
+    cJSON      *list;
+    char       *printed;
+    std::string body;
+
+    OTBR_UNUSED_VARIABLE(aRequest);
+
+    VerifyOrExit(mMcastForwarder != nullptr, ErrorHandler(aResponse, StatusCode::NotFound_404));
+
+    root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "enabled", mMcastForwarder->IsEnabled());
+    cJSON_AddStringToObject(root, "threadInterface", mMcastForwarder->GetThreadIfName().c_str());
+    cJSON_AddStringToObject(root, "backboneInterface", mMcastForwarder->GetBackboneIfName().c_str());
+
+    list = cJSON_AddArrayToObject(root, "threadListeners");
+    for (const Ip6Address &group : mMcastForwarder->GetThreadListeners())
+    {
+        cJSON_AddItemToArray(list, cJSON_CreateString(group.ToString().c_str()));
+    }
+    list = cJSON_AddArrayToObject(root, "backboneListeners");
+    for (const auto &entry : mMcastForwarder->GetBackboneListeners())
+    {
+        cJSON_AddItemToArray(list, cJSON_CreateString(entry.first.ToString().c_str()));
+    }
+
+    for (const auto &direction : {std::make_pair("threadToBackbone", &mMcastForwarder->GetThreadToBackboneCounters()),
+                                  std::make_pair("backboneToThread", &mMcastForwarder->GetBackboneToThreadCounters())})
+    {
+        const McastForwarder::Counters &c        = *direction.second;
+        cJSON                          *counters = cJSON_AddObjectToObject(root, direction.first);
+
+        cJSON_AddNumberToObject(counters, "received", static_cast<double>(c.mReceived));
+        cJSON_AddNumberToObject(counters, "forwarded", static_cast<double>(c.mForwarded));
+        cJSON_AddNumberToObject(counters, "rejected", static_cast<double>(c.mRejected));
+        cJSON_AddNumberToObject(counters, "noListener", static_cast<double>(c.mNoListener));
+        cJSON_AddNumberToObject(counters, "duplicates", static_cast<double>(c.mDuplicates));
+        cJSON_AddNumberToObject(counters, "rateLimited", static_cast<double>(c.mRateLimited));
+        cJSON_AddNumberToObject(counters, "errors", static_cast<double>(c.mErrors));
+    }
+
+    printed = cJSON_PrintUnformatted(root);
+    body    = printed;
+    free(printed);
+    aResponse.set_content(body, OT_REST_CONTENT_TYPE_JSON);
+    aResponse.status = StatusCode::OK_200;
+
+exit:
+    if (root != nullptr)
+    {
+        cJSON_Delete(root);
+    }
+}
+#endif // OTBR_ENABLE_USERSPACE_MCAST_FWD
 
 void RestWebServer::GetDataNetworkName(Response &aResponse) const
 {

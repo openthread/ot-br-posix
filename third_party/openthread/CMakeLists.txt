@@ -166,6 +166,15 @@ if (NOT OT_THREAD_VERSION STREQUAL "1.1")
     )
 endif()
 
+if (OTBR_USERSPACE_MCAST_FWD)
+    # The userspace forwarder replaces the posix platform's kernel multicast
+    # routing; the core keeps its multicast listener table, which the
+    # forwarder consumes.
+    target_compile_definitions(ot-config INTERFACE
+        "-DOPENTHREAD_POSIX_CONFIG_BACKBONE_ROUTER_MULTICAST_ROUTING_ENABLE=0"
+    )
+endif()
+
 if (OTBR_MDNS STREQUAL "openthread")
     target_compile_definitions(ot-config INTERFACE
         "-DOPENTHREAD_CONFIG_MULTICAST_DNS_PUBLIC_API_ENABLE=1"

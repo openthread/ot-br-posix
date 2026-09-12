@@ -290,6 +290,19 @@ private:
     std::vector<std::function<void(void)>> mResetHandlers;
     TaskRunner                             mTaskRunner;
 
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    void        RegisterBackboneRouterMulticastListenerCallback(void);
+    static void HandleBackboneRouterMulticastListenerEvent(void                                  *aContext,
+                                                           otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address                    *aAddress);
+    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address                    &aAddress);
+
+    BackboneRouterMulticastListenerCallback mBackboneRouterMulticastListenerCallback;
+    BackboneRouterStateChangedCallback      mBackboneRouterStateChangedCallback;
+    bool                                    mBackboneRouterEnabled = false;
+#endif
+
     std::vector<ThreadStateChangedCallback>       mThreadStateChangedCallbacks;
     std::vector<ThreadEnabledStateCallback>       mThreadEnabledStateChangedCallbacks;
     std::vector<ThreadRoleChangedCallback>        mThreadRoleChangedCallbacks;
