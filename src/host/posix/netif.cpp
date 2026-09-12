@@ -57,6 +57,15 @@
 
 namespace otbr {
 
+namespace {
+
+bool HasSameIp6Address(const Ip6AddressInfo &aFirst, const Ip6AddressInfo &aSecond)
+{
+    return Ip6Address(aFirst.mAddress) == Ip6Address(aSecond.mAddress);
+}
+
+} // namespace
+
 otbrError Netif::Dependencies::Ip6Send(const uint8_t *aData, uint16_t aLength)
 {
     OTBR_UNUSED_VARIABLE(aData);
@@ -154,29 +163,108 @@ void Netif::Deinit(void)
 
 void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)
 {
-    // Remove stale addresses
-    for (const Ip6AddressInfo &addrInfo : mIp6UnicastAddresses)
+    mIp6UnicastAddresses = ReconcileIp6UnicastAddresses(
+        mIp6UnicastAddresses, aAddrInfos,
+        [this](const std::vector<UnicastAddressChange> &aChanges) { return ProcessUnicastAddressChanges(aChanges); });
+}
+
+std::vector<Ip6AddressInfo> Netif::ReconcileIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aCachedAddrInfos,
+                                                                const std::vector<Ip6AddressInfo> &aDesiredAddrInfos,
+                                                                const UnicastAddressChangeHandler &aChangeHandler)
+{
+    std::vector<UnicastAddressChange> changes;
+    std::vector<Ip6AddressInfo>       updatedAddresses;
+    std::vector<otbrError>            errors;
+
+    changes.reserve(aCachedAddrInfos.size() + aDesiredAddrInfos.size());
+    updatedAddresses.reserve(std::max(aCachedAddrInfos.size(), aDesiredAddrInfos.size()));
+
+    for (const Ip6AddressInfo &cached : aCachedAddrInfos)
     {
-        if (std::find(aAddrInfos.begin(), aAddrInfos.end(), addrInfo) == aAddrInfos.end())
+        auto it = std::find_if(aDesiredAddrInfos.begin(), aDesiredAddrInfos.end(),
+                               [&](const Ip6AddressInfo &aDesired) { return HasSameIp6Address(cached, aDesired); });
+
+        if (it == aDesiredAddrInfos.end())
         {
-            otbrLogInfo("Remove address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
-            // TODO: Verify success of the addition or deletion in Netlink response.
-            ProcessUnicastAddressChange(addrInfo, false);
+            otbrLogInfo("Remove address: %s/%u", Ip6Address(cached.mAddress).ToString().c_str(), cached.mPrefixLength);
+            changes.push_back({cached, UnicastAddressAction::kRemove});
+        }
+        else if (*it != cached)
+        {
+            otbrLogInfo("Replace address: %s/%u", Ip6Address(it->mAddress).ToString().c_str(), it->mPrefixLength);
+            changes.push_back({*it, UnicastAddressAction::kReplace});
+        }
+        else
+        {
+            updatedAddresses.push_back(cached);
         }
     }
 
-    // Add new addresses
-    for (const Ip6AddressInfo &addrInfo : aAddrInfos)
+    for (const Ip6AddressInfo &desired : aDesiredAddrInfos)
     {
-        if (std::find(mIp6UnicastAddresses.begin(), mIp6UnicastAddresses.end(), addrInfo) == mIp6UnicastAddresses.end())
+        auto it = std::find_if(aCachedAddrInfos.begin(), aCachedAddrInfos.end(),
+                               [&](const Ip6AddressInfo &aCached) { return HasSameIp6Address(desired, aCached); });
+
+        if (it == aCachedAddrInfos.end())
         {
-            otbrLogInfo("Add address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
-            // TODO: Verify success of the addition or deletion in Netlink response.
-            ProcessUnicastAddressChange(addrInfo, true);
+            otbrLogInfo("Add address: %s/%u", Ip6Address(desired.mAddress).ToString().c_str(), desired.mPrefixLength);
+            changes.push_back({desired, UnicastAddressAction::kAdd});
         }
     }
 
-    mIp6UnicastAddresses.assign(aAddrInfos.begin(), aAddrInfos.end());
+    VerifyOrExit(!changes.empty());
+
+    errors = aChangeHandler(changes);
+
+    if (errors.size() != changes.size())
+    {
+        otbrLogWarning("Netlink results count mismatch (expected %zu, got %zu)", changes.size(), errors.size());
+        errors.assign(changes.size(), OTBR_ERROR_INVALID_STATE);
+    }
+
+    for (size_t i = 0; i < changes.size(); ++i)
+    {
+        const UnicastAddressChange &change = changes[i];
+        otbrError                   error  = errors[i];
+
+        switch (change.mAction)
+        {
+        case UnicastAddressAction::kRemove:
+            if (error != OTBR_ERROR_NONE)
+            {
+                updatedAddresses.push_back(change.mAddressInfo);
+            }
+            break;
+
+        case UnicastAddressAction::kReplace:
+            if (error == OTBR_ERROR_NONE)
+            {
+                updatedAddresses.push_back(change.mAddressInfo);
+            }
+            else
+            {
+                auto it =
+                    std::find_if(aCachedAddrInfos.begin(), aCachedAddrInfos.end(), [&](const Ip6AddressInfo &aCached) {
+                        return HasSameIp6Address(change.mAddressInfo, aCached);
+                    });
+                if (it != aCachedAddrInfos.end())
+                {
+                    updatedAddresses.push_back(*it);
+                }
+            }
+            break;
+
+        case UnicastAddressAction::kAdd:
+            if (error == OTBR_ERROR_NONE)
+            {
+                updatedAddresses.push_back(change.mAddressInfo);
+            }
+            break;
+        }
+    }
+
+exit:
+    return updatedAddresses;
 }
 
 otbrError Netif::UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs)
