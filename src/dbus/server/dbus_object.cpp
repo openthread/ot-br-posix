@@ -238,7 +238,7 @@ exit:
 void DBusObject::GetAllPropertiesMethodHandler(DBusRequest &aRequest)
 {
     UniqueDBusMessage reply{dbus_message_new_method_return(aRequest.GetMessage())};
-    DBusMessageIter   iter, subIter, dictEntryIter;
+    DBusMessageIter   iter, arrayIter;
     std::string       interfaceName;
     auto              args  = std::tie(interfaceName);
     otError           error = OT_ERROR_NONE;
@@ -248,25 +248,54 @@ void DBusObject::GetAllPropertiesMethodHandler(DBusRequest &aRequest)
     VerifyOrExit(mGetPropertyHandlers.find(interfaceName) != mGetPropertyHandlers.end(), error = OT_ERROR_NOT_FOUND);
     dbus_message_iter_init_append(reply.get(), &iter);
 
-    for (auto &p : mGetPropertyHandlers.at(interfaceName))
+    VerifyOrExit(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
+                                                  "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}",
+                                                  &arrayIter),
+                 error = OT_ERROR_FAILED);
+
+    for (const auto &p : mGetPropertyHandlers.at(interfaceName))
     {
-        VerifyOrExit(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
-                                                      "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}",
-                                                      &subIter),
-                     error = OT_ERROR_FAILED);
-        VerifyOrExit(dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, nullptr, &dictEntryIter),
+        UniqueDBusMessage propMsg{dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN)};
+        DBusMessageIter   propAppendIter;
+        DBusMessageIter   propReadIter;
+        DBusMessageIter   dictEntryIter;
+        otError           propError;
+
+        VerifyOrExit(propMsg != nullptr, error = OT_ERROR_NO_BUFS);
+        dbus_message_iter_init_append(propMsg.get(), &propAppendIter);
+        propError = p.second(propAppendIter);
+        if (propError != OT_ERROR_NONE)
+        {
+            otbrLogDebug("GetAllProperties: property %s failed with %s, omitting", p.first.c_str(),
+                         ConvertToDBusErrorName(propError));
+            continue;
+        }
+
+        if (!dbus_message_iter_init(propMsg.get(), &propReadIter) ||
+            dbus_message_iter_get_arg_type(&propReadIter) == DBUS_TYPE_INVALID)
+        {
+            otbrLogWarning("GetAllProperties: property %s returned empty message, omitting", p.first.c_str());
+            continue;
+        }
+
+        VerifyOrExit(dbus_message_iter_open_container(&arrayIter, DBUS_TYPE_DICT_ENTRY, nullptr, &dictEntryIter),
                      error = OT_ERROR_FAILED);
         VerifyOrExit(DBusMessageEncode(&dictEntryIter, p.first) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
-
-        SuccessOrExit(error = p.second(dictEntryIter));
-
-        VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter), error = OT_ERROR_FAILED);
-        VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter));
+        VerifyOrExit(DBusMessageCopy(&dictEntryIter, &propReadIter) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+        VerifyOrExit(dbus_message_iter_close_container(&arrayIter, &dictEntryIter), error = OT_ERROR_FAILED);
     }
+
+    VerifyOrExit(dbus_message_iter_close_container(&iter, &arrayIter), error = OT_ERROR_FAILED);
 
 exit:
     if (error == OT_ERROR_NONE)
     {
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        {
+            otbrLogDebug("GetAllProperties %s reply:", interfaceName.c_str());
+            DumpDBusMessage(*reply);
+        }
+
         dbus_connection_send(aRequest.GetConnection(), reply.get(), nullptr);
     }
     else
