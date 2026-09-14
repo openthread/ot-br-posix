@@ -41,8 +41,12 @@
 #include <linux/rtnetlink.h>
 #include <net/if.h>
 #include <net/if_arp.h>
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <algorithm>
+#include <chrono>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -141,7 +145,9 @@ otbrError Netif::InitNetlink(void)
 
         memset(&sa, 0, sizeof(sa));
         sa.nl_family = AF_NETLINK;
-        sa.nl_groups = RTMGRP_LINK | RTMGRP_IPV6_IFADDR;
+        // Do not subscribe to multicast groups because mNetlinkFd is only used for synchronous
+        // request/ACK communication and is not polled for asynchronous link or address events.
+        sa.nl_groups = 0;
         VerifyOrExit(bind(mNetlinkFd, reinterpret_cast<sockaddr *>(&sa), sizeof(sa)) == 0, error = OTBR_ERROR_ERRNO);
     }
 
@@ -152,6 +158,41 @@ exit:
 void Netif::PlatformSpecificInit(void)
 {
     SetAddrGenModeToNone();
+}
+
+static ssize_t SendNetlinkMessage(int aFd, const void *aBuffer, size_t aLength)
+{
+    ssize_t sendLen;
+
+    while ((sendLen = send(aFd, aBuffer, aLength, 0)) == -1)
+    {
+        if (errno == EINTR)
+        {
+            continue;
+        }
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            struct pollfd pfd;
+            int           pollResult;
+
+            pfd.fd      = aFd;
+            pfd.events  = POLLOUT;
+            pfd.revents = 0;
+
+            while ((pollResult = poll(&pfd, 1, 10)) == -1 && errno == EINTR)
+            {
+                continue;
+            }
+
+            if (pollResult > 0 && (pfd.revents & POLLOUT))
+            {
+                continue;
+            }
+        }
+        break;
+    }
+
+    return sendLen;
 }
 
 void Netif::SetAddrGenModeToNone(void)
@@ -168,7 +209,7 @@ void Netif::SetAddrGenModeToNone(void)
     memset(&req, 0, sizeof(req));
 
     req.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(ifinfomsg));
-    req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+    req.nh.nlmsg_flags = NLM_F_REQUEST;
     req.nh.nlmsg_type  = RTM_NEWLINK;
     req.nh.nlmsg_pid   = 0;
     req.nh.nlmsg_seq   = ++mNetlinkSequence;
@@ -186,7 +227,7 @@ void Netif::SetAddrGenModeToNone(void)
         afSpec->rta_len += afInet6->rta_len;
     }
 
-    if (send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) != -1)
+    if (SendNetlinkMessage(mNetlinkFd, &req, req.nh.nlmsg_len) != -1)
     {
         otbrLogInfo("Sent request#%u to set addr_gen_mode to %d", mNetlinkSequence, mode);
     }
@@ -196,52 +237,250 @@ void Netif::SetAddrGenModeToNone(void)
     }
 }
 
-void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
+static const char *ActionToString(Netif::UnicastAddressAction aAction)
 {
-    struct
+    const char *str;
+
+    switch (aAction)
     {
-        nlmsghdr  nh;
-        ifaddrmsg ifa;
-        char      buf[512];
-    } req;
-
-    assert(mIpFd >= 0);
-    memset(&req, 0, sizeof(req));
-
-    req.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(ifaddrmsg));
-    req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | (aIsAdded ? (NLM_F_CREATE | NLM_F_EXCL) : 0);
-    req.nh.nlmsg_type  = aIsAdded ? RTM_NEWADDR : RTM_DELADDR;
-    req.nh.nlmsg_pid   = 0;
-    req.nh.nlmsg_seq   = ++mNetlinkSequence;
-
-    req.ifa.ifa_family    = AF_INET6;
-    req.ifa.ifa_prefixlen = aAddressInfo.mPrefixLength;
-    req.ifa.ifa_flags     = IFA_F_NODAD;
-    req.ifa.ifa_scope     = aAddressInfo.mScope;
-    req.ifa.ifa_index     = mNetifIndex;
-
-    AddRtAttr(&req.nh, sizeof(req), IFA_LOCAL, &aAddressInfo.mAddress, sizeof(aAddressInfo.mAddress));
-
-    if (!aAddressInfo.mPreferred || aAddressInfo.mMeshLocal)
-    {
-        ifa_cacheinfo cacheinfo;
-
-        memset(&cacheinfo, 0, sizeof(cacheinfo));
-        cacheinfo.ifa_valid = UINT32_MAX;
-
-        AddRtAttr(&req.nh, sizeof(req), IFA_CACHEINFO, &cacheinfo, sizeof(cacheinfo));
+    case Netif::UnicastAddressAction::kAdd:
+        str = "add";
+        break;
+    case Netif::UnicastAddressAction::kRemove:
+        str = "remove";
+        break;
+    case Netif::UnicastAddressAction::kReplace:
+        str = "replace";
+        break;
+    default:
+        str = "unknown";
+        break;
     }
 
-    if (send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) != -1)
+    return str;
+}
+
+static bool ParseAckResponse(const nlmsghdr &aHeader, Netif::UnicastAddressAction aAction, int &aKernelErr)
+{
+    bool isSuccess = false;
+
+    VerifyOrExit(aHeader.nlmsg_type == NLMSG_ERROR, aKernelErr = EPROTO);
+    VerifyOrExit(aHeader.nlmsg_len >= NLMSG_LENGTH(sizeof(int)), aKernelErr = EBADMSG);
+
     {
-        otbrLogInfo("Sent request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
-                    Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+        const int *err = reinterpret_cast<const int *>(NLMSG_DATA(&aHeader));
+
+        aKernelErr = (*err < 0) ? -*err : *err;
     }
-    else
+
+    isSuccess =
+        (aKernelErr == 0 || (aAction == Netif::UnicastAddressAction::kAdd && aKernelErr == EEXIST) ||
+         (aAction == Netif::UnicastAddressAction::kRemove && (aKernelErr == ENOENT || aKernelErr == EADDRNOTAVAIL)));
+
+exit:
+    return isSuccess;
+}
+
+std::vector<otbrError> Netif::ProcessUnicastAddressChanges(const std::vector<UnicastAddressChange> &aChanges)
+{
+    constexpr int kNetlinkAckTimeoutMs = 50;
+
+    struct PendingAck
     {
-        otbrLogWarning("Failed to send request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
-                       Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+        uint32_t mSequence;
+        size_t   mChangeIndex;
+        bool     mIsDone;
+    };
+
+    std::vector<otbrError>  errors(aChanges.size(), OTBR_ERROR_ERRNO);
+    std::vector<PendingAck> pendingAcks;
+    size_t                  pendingAckCount = 0;
+
+    VerifyOrExit(mNetlinkFd >= 0 && mIpFd >= 0, errors.assign(aChanges.size(), OTBR_ERROR_INVALID_STATE));
+
+    pendingAcks.reserve(aChanges.size());
+
+    for (size_t i = 0; i < aChanges.size(); ++i)
+    {
+        const UnicastAddressChange &change   = aChanges[i];
+        const Ip6AddressInfo       &addrInfo = change.mAddressInfo;
+        struct
+        {
+            nlmsghdr  nh;
+            ifaddrmsg ifa;
+            char      buf[512];
+        } req;
+
+        memset(&req, 0, sizeof(req));
+
+        req.nh.nlmsg_len = NLMSG_LENGTH(sizeof(ifaddrmsg));
+        req.nh.nlmsg_pid = 0;
+        req.nh.nlmsg_seq = ++mNetlinkSequence;
+
+        switch (change.mAction)
+        {
+        case UnicastAddressAction::kAdd:
+            req.nh.nlmsg_type  = RTM_NEWADDR;
+            req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_CREATE | NLM_F_EXCL;
+            break;
+        case UnicastAddressAction::kRemove:
+            req.nh.nlmsg_type  = RTM_DELADDR;
+            req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+            break;
+        case UnicastAddressAction::kReplace:
+            req.nh.nlmsg_type  = RTM_NEWADDR;
+            req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_REPLACE;
+            break;
+        }
+
+        req.ifa.ifa_family    = AF_INET6;
+        req.ifa.ifa_prefixlen = addrInfo.mPrefixLength;
+        req.ifa.ifa_flags     = IFA_F_NODAD;
+        req.ifa.ifa_scope     = addrInfo.mScope;
+        req.ifa.ifa_index     = mNetifIndex;
+
+        AddRtAttr(&req.nh, sizeof(req), IFA_LOCAL, &addrInfo.mAddress, sizeof(addrInfo.mAddress));
+
+        if (change.mAction != UnicastAddressAction::kRemove)
+        {
+            ifa_cacheinfo cacheinfo;
+
+            memset(&cacheinfo, 0, sizeof(cacheinfo));
+            cacheinfo.ifa_valid    = UINT32_MAX;
+            cacheinfo.ifa_prefered = (addrInfo.mPreferred && !addrInfo.mMeshLocal) ? UINT32_MAX : 0;
+
+            AddRtAttr(&req.nh, sizeof(req), IFA_CACHEINFO, &cacheinfo, sizeof(cacheinfo));
+        }
+
+        if (SendNetlinkMessage(mNetlinkFd, &req, req.nh.nlmsg_len) == -1)
+        {
+            otbrLogWarning("Failed to send request#%u to %s %s/%u: %s", req.nh.nlmsg_seq,
+                           ActionToString(change.mAction), Ip6Address(addrInfo.mAddress).ToString().c_str(),
+                           addrInfo.mPrefixLength, strerror(errno));
+            continue;
+        }
+
+        otbrLogInfo("Sent request#%u to %s %s/%u", req.nh.nlmsg_seq, ActionToString(change.mAction),
+                    Ip6Address(addrInfo.mAddress).ToString().c_str(), addrInfo.mPrefixLength);
+
+        pendingAcks.push_back({req.nh.nlmsg_seq, i, false});
+        ++pendingAckCount;
     }
+
+    VerifyOrExit(pendingAckCount > 0);
+
+    {
+        auto deadline =
+            std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<int>(kNetlinkAckTimeoutMs));
+        int failureErrno = ETIMEDOUT;
+        union
+        {
+            nlmsghdr mHeader;
+            uint8_t  mBuffer[8192];
+        } response;
+
+        while (pendingAckCount > 0)
+        {
+            auto now = std::chrono::steady_clock::now();
+            if (now >= deadline)
+            {
+                break;
+            }
+
+            int pollTimeoutMs = std::max(
+                static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count()), 1);
+
+            struct pollfd pfd;
+            pfd.fd      = mNetlinkFd;
+            pfd.events  = POLLIN;
+            pfd.revents = 0;
+
+            int pollResult = poll(&pfd, 1, pollTimeoutMs);
+            if (pollResult == 0)
+            {
+                break;
+            }
+
+            if (pollResult < 0)
+            {
+                if (errno == EINTR)
+                {
+                    continue;
+                }
+                failureErrno = errno;
+                break;
+            }
+
+            if ((pfd.revents & POLLIN) == 0)
+            {
+                failureErrno = EIO;
+                break;
+            }
+
+            ssize_t length = recv(mNetlinkFd, response.mBuffer, sizeof(response.mBuffer), MSG_TRUNC);
+            if (length <= 0)
+            {
+                if (length < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
+                {
+                    continue;
+                }
+                failureErrno = (length < 0) ? errno : EIO;
+                break;
+            }
+
+            if (length > static_cast<ssize_t>(sizeof(response.mBuffer)))
+            {
+                otbrLogWarning("Netlink response truncated (received %zd, buffer size %zu)", length,
+                               sizeof(response.mBuffer));
+            }
+
+            ssize_t msgLen = std::min(length, static_cast<ssize_t>(sizeof(response.mBuffer)));
+
+            for (nlmsghdr *header = &response.mHeader;
+                 msgLen >= static_cast<ssize_t>(sizeof(nlmsghdr)) && NLMSG_OK(header, static_cast<size_t>(msgLen));
+                 header = NLMSG_NEXT(header, msgLen))
+            {
+                auto it = std::find_if(pendingAcks.begin(), pendingAcks.end(), [&](const PendingAck &aPending) {
+                    return !aPending.mIsDone && aPending.mSequence == header->nlmsg_seq;
+                });
+
+                if (it != pendingAcks.end())
+                {
+                    const UnicastAddressChange &change    = aChanges[it->mChangeIndex];
+                    int                         kernelErr = 0;
+
+                    if (ParseAckResponse(*header, change.mAction, kernelErr))
+                    {
+                        errors[it->mChangeIndex] = OTBR_ERROR_NONE;
+                    }
+                    else
+                    {
+                        otbrLogWarning("Failed to %s address %s/%u: %s", ActionToString(change.mAction),
+                                       Ip6Address(change.mAddressInfo.mAddress).ToString().c_str(),
+                                       change.mAddressInfo.mPrefixLength, strerror(kernelErr));
+                    }
+
+                    it->mIsDone = true;
+                    --pendingAckCount;
+                }
+            }
+        }
+
+        for (const PendingAck &pendingAck : pendingAcks)
+        {
+            if (!pendingAck.mIsDone)
+            {
+                const UnicastAddressChange &change = aChanges[pendingAck.mChangeIndex];
+
+                otbrLogWarning("Failed to %s address %s/%u: %s", ActionToString(change.mAction),
+                               Ip6Address(change.mAddressInfo.mAddress).ToString().c_str(),
+                               change.mAddressInfo.mPrefixLength, strerror(failureErrno));
+            }
+        }
+    }
+
+exit:
+    return errors;
 }
 
 } // namespace otbr

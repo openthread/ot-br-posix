@@ -74,11 +74,29 @@ public:
     otbrError UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
     void      SetNetifState(bool aState);
 
+    enum class UnicastAddressAction : uint8_t
+    {
+        kAdd,     ///< Add a new address.
+        kRemove,  ///< Remove an existing address.
+        kReplace, ///< Replace metadata of an existing address in-place.
+    };
+
+    struct UnicastAddressChange
+    {
+        Ip6AddressInfo       mAddressInfo;
+        UnicastAddressAction mAction;
+    };
+
+    using UnicastAddressChangeHandler =
+        std::function<std::vector<otbrError>(const std::vector<UnicastAddressChange> &)>;
+
     void Ip6Receive(const uint8_t *aBuf, uint16_t aLen);
 
     unsigned int GetIfIndex(void) const { return mNetifIndex; }
 
 private:
+    friend class NetifTestPeer;
+
     // TODO: Retrieve the Maximum Ip6 size from the coprocessor.
     static constexpr size_t kIp6Mtu = 1280;
 
@@ -88,12 +106,17 @@ private:
     otbrError InitNetlink(void);
     otbrError InitMldListener(void);
 
-    void      PlatformSpecificInit(void);
-    void      SetAddrGenModeToNone(void);
-    void      ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
-    otbrError ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded);
-    void      ProcessIp6Send(void);
-    void      ProcessMldEvent(void);
+    void PlatformSpecificInit(void);
+    void SetAddrGenModeToNone(void);
+
+    static std::vector<Ip6AddressInfo> ReconcileIp6UnicastAddresses(
+        const std::vector<Ip6AddressInfo> &aCachedAddrInfos,
+        const std::vector<Ip6AddressInfo> &aDesiredAddrInfos,
+        const UnicastAddressChangeHandler &aChangeHandler);
+    std::vector<otbrError> ProcessUnicastAddressChanges(const std::vector<UnicastAddressChange> &aChanges);
+    otbrError              ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded);
+    void                   ProcessIp6Send(void);
+    void                   ProcessMldEvent(void);
 #if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
     otbrError TryProcessIcmp6RaMessage(const uint8_t *aData, uint16_t aLength);
 #endif

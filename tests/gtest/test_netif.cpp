@@ -62,6 +62,196 @@
 #include "host/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
 
+namespace otbr {
+
+class NetifTestPeer
+{
+public:
+    static std::vector<Ip6AddressInfo> ReconcileIp6UnicastAddresses(
+        const std::vector<Ip6AddressInfo>        &aCachedAddrInfos,
+        const std::vector<Ip6AddressInfo>        &aDesiredAddrInfos,
+        const Netif::UnicastAddressChangeHandler &aChangeHandler)
+    {
+        return Netif::ReconcileIp6UnicastAddresses(aCachedAddrInfos, aDesiredAddrInfos, aChangeHandler);
+    }
+};
+
+} // namespace otbr
+
+TEST(Netif, ReconcileUnicastAddresses_AddSuccess)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            if (!aChanges.empty())
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kAdd);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kDesired);
+            }
+            return std::vector<otbrError>{OTBR_ERROR_NONE};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kDesired);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AddFailure)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            return std::vector<otbrError>{OTBR_ERROR_ERRNO};
+        });
+
+    EXPECT_TRUE(updated.empty());
+}
+
+TEST(Netif, ReconcileUnicastAddresses_RemoveSuccess)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            if (!aChanges.empty())
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kRemove);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kCached);
+            }
+            return std::vector<otbrError>{OTBR_ERROR_NONE};
+        });
+
+    EXPECT_TRUE(updated.empty());
+}
+
+TEST(Netif, ReconcileUnicastAddresses_RemoveFailure)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            return std::vector<otbrError>{OTBR_ERROR_ERRNO};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kCached);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_ReplaceSuccess)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            if (!aChanges.empty())
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kReplace);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kDesired);
+            }
+            return std::vector<otbrError>{OTBR_ERROR_NONE};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kDesired);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_ReplaceFailure)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            return std::vector<otbrError>{OTBR_ERROR_ERRNO};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kCached);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_UnchangedNoHandlerCall)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kAddr(kAddress, 64, 0, true, false);
+    size_t                     handlerCalls = 0;
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kAddr}, {kAddr}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &) {
+            ++handlerCalls;
+            return std::vector<otbrError>{};
+        });
+
+    EXPECT_EQ(handlerCalls, 0U);
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kAddr);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_BatchedChanges)
+{
+    const otIp6Address kAddr1 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otIp6Address kAddr2 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}};
+    const otIp6Address kAddr3 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03}};
+    const otIp6Address kAddr4 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04}};
+
+    const otbr::Ip6AddressInfo kCached1(kAddr1, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kCached2(kAddr2, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kCached3(kAddr3, 64, 0, true, false);
+
+    const otbr::Ip6AddressInfo kDesired2(kAddr2, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired3(kAddr3, 64, 0, false, true);
+    const otbr::Ip6AddressInfo kDesired4(kAddr4, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached1, kCached2, kCached3}, {kDesired2, kDesired3, kDesired4},
+        [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 3U);
+            if (aChanges.size() == 3U)
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kRemove);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kCached1);
+
+                EXPECT_EQ(aChanges[1].mAction, otbr::Netif::UnicastAddressAction::kReplace);
+                EXPECT_EQ(aChanges[1].mAddressInfo, kDesired3);
+
+                EXPECT_EQ(aChanges[2].mAction, otbr::Netif::UnicastAddressAction::kAdd);
+                EXPECT_EQ(aChanges[2].mAddressInfo, kDesired4);
+            }
+            return std::vector<otbrError>{
+                OTBR_ERROR_NONE,
+                OTBR_ERROR_NONE,
+                OTBR_ERROR_NONE,
+            };
+        });
+
+    ASSERT_EQ(updated.size(), 3U);
+    EXPECT_THAT(updated, ::testing::UnorderedElementsAre(kDesired2, kDesired3, kDesired4));
+}
+
 // Only Test on linux platform for now.
 #ifdef __linux__
 
