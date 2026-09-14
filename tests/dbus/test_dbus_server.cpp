@@ -47,6 +47,9 @@ public:
         RegisterMethod("io.openthread", "Ping", std::bind(&TestObject::PingHandler, this, _1));
         RegisterGetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountGetHandler, this, _1));
         RegisterSetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountSetHandler, this, _1));
+        RegisterGetPropertyHandler("io.openthread", "Unimplemented",
+                                   std::bind(&TestObject::UnimplementedGetHandler, this, _1));
+        RegisterGetPropertyHandler("io.openthread", "Name", std::bind(&TestObject::NameGetHandler, this, _1));
     }
 
     bool IsEnded(void) const { return mEnded; }
@@ -55,6 +58,20 @@ private:
     otError CountGetHandler(DBusMessageIter &aIter)
     {
         DBusMessageEncodeToVariant(&aIter, mCount);
+        return OT_ERROR_NONE;
+    }
+
+    otError UnimplementedGetHandler(DBusMessageIter &aIter)
+    {
+        OTBR_UNUSED_VARIABLE(aIter);
+        return OT_ERROR_NOT_IMPLEMENTED;
+    }
+
+    otError NameGetHandler(DBusMessageIter &aIter)
+    {
+        std::string name = "Test";
+
+        DBusMessageEncodeToVariant(&aIter, name);
         return OT_ERROR_NONE;
     }
 
