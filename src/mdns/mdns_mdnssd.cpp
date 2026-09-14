@@ -247,7 +247,6 @@ bool IsRetryableError(DNSServiceErrorType aError)
     case kDNSServiceErr_NoRouter:
     case kDNSServiceErr_NATTraversal:
     case kDNSServiceErr_DoubleNAT:
-    case kDNSServiceErr_Timeout:
     case kDNSServiceErr_DefunctConnection:
 #if OTBR_MDNSSD_HAVE_STALE_DATA
     case kDNSServiceErr_StaleData:
@@ -583,8 +582,6 @@ otbrError PublisherMDnsSd::DnssdServiceRegistration::Register(void)
 
     // Note: If the mDNSResponder service is in some bad state, `DNSServiceRegister` may block here for 60 seconds at
     // most.
-    // TODO: Abort on `Timeout` error, as it indicates an unresponsive mDNSResponder. This may require removing
-    // `kDNSServiceErr_Timeout` from `IsRetryableError` and adding specific handling for it.
     dnsError = DNSServiceRegister(&mServiceRef, kDNSServiceFlagsNoAutoRename, kDNSServiceInterfaceIndexAny,
                                   serviceNameCString, regType.c_str(),
                                   /* domain */ nullptr, hostNameCString, htons(mPort), mTxtData.size(), mTxtData.data(),
