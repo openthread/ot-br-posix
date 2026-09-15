@@ -80,6 +80,9 @@
 #if OTBR_ENABLE_TREL_DNSSD
 #include "trel_dnssd/trel_dnssd.hpp"
 #endif
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+#include "host/posix/mcast_forwarder.hpp"
+#endif
 #include "host/posix/multicast_routing_manager.hpp"
 #include "host/posix/netif.hpp"
 #include "utils/infra_link_selector.hpp"
@@ -313,6 +316,9 @@ private:
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
     std::unique_ptr<MulticastRoutingManager>       mMulticastRoutingManager;
+#endif
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+    std::unique_ptr<McastForwarder> mMcastForwarder;
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     std::unique_ptr<AdvertisingProxy> mAdvertisingProxy;

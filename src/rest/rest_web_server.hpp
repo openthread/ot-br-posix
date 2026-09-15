@@ -59,6 +59,11 @@
 #include "rest/types.hpp"
 
 namespace otbr {
+
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+class McastForwarder;
+#endif
+
 namespace rest {
 
 /**
@@ -83,6 +88,14 @@ public:
      * This method initializes the REST server.
      */
     void Init(const std::string &aRestListenAddress, int aRestListenPort);
+
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+    /**
+     * Sets the multicast forwarder whose state GET /node/mcast-forwarder
+     * reports; nullptr (the default) makes the resource 404.
+     */
+    void SetMcastForwarder(const McastForwarder *aForwarder) { mMcastForwarder = aForwarder; }
+#endif
 
 private:
     using Request    = httplib::Request;
@@ -159,6 +172,9 @@ private:
     void BaId(const Request &aRequest, Response &aResponse) const;
     void ExtendedAddr(const Request &aRequest, Response &aResponse) const;
     void State(const Request &aRequest, Response &aResponse) const;
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+    void McastForwarderStatus(const Request &aRequest, Response &aResponse);
+#endif
     void NetworkName(const Request &aRequest, Response &aResponse) const;
     void LeaderData(const Request &aRequest, Response &aResponse) const;
     void NumOfRoute(const Request &aRequest, Response &aResponse) const;
@@ -279,6 +295,9 @@ private:
     }
 
     Host::RcpHost &mHost;
+#if OTBR_ENABLE_USERSPACE_MCAST_FWD
+    const McastForwarder *mMcastForwarder = nullptr;
+#endif
 
     httplib::Server mServer;
     std::thread     mServerThread;

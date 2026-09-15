@@ -152,6 +152,20 @@ if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     gtest_discover_tests(otbr-gtest-mdns-subscribe)
 endif()
 
+if(OTBR_USERSPACE_MCAST_FWD)
+    add_executable(otbr-gtest-mcast-forwarder
+        test_mcast_forwarder.cpp
+        test_mcast_policy.cpp
+    )
+    target_link_libraries(otbr-gtest-mcast-forwarder
+        otbr-config
+        otbr-posix
+        otbr-common
+        GTest::gmock_main
+    )
+    gtest_discover_tests(otbr-gtest-mcast-forwarder)
+endif()
+
 add_executable(otbr-posix-gtest-unit
     ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
     fake_posix_platform.cpp

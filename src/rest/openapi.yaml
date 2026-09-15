@@ -1338,6 +1338,45 @@ paths:
                 type: string
                 description: 8-byte IEEE 802.15.4 Extended Address of this node as hex string.
                 example: "C21F906BE0352A4C"
+  /node/mcast-forwarder:
+    get:
+      tags:
+        - node
+      summary: Get the state of the userspace multicast forwarder.
+      description: |-
+        Present only when the border router was built with the userspace
+        Backbone Router multicast forwarder (OTBR_USERSPACE_MCAST_FWD). Reports
+        whether forwarding is active (the device is Primary Backbone Router),
+        the interfaces it bridges, the groups with listeners on each side and
+        the forwarding counters per direction.
+      responses:
+        '200':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  threadInterface:
+                    type: string
+                  backboneInterface:
+                    type: string
+                  threadListeners:
+                    type: array
+                    items:
+                      type: string
+                  backboneListeners:
+                    type: array
+                    items:
+                      type: string
+                  threadToBackbone:
+                    $ref: '#/components/schemas/McastForwarderCounters'
+                  backboneToThread:
+                    $ref: '#/components/schemas/McastForwarderCounters'
+        '404':
+          description: The forwarder is not built in.
   /node/state:
     get:
       tags:
@@ -1801,6 +1840,31 @@ components:
   ### Schemas #################################################################
   #############################################################################
   schemas:
+    McastForwarderCounters:
+      type: object
+      description: Forwarding statistics for one direction of the userspace multicast forwarder.
+      properties:
+        received:
+          type: integer
+          description: Packets taken from the interface tap.
+        forwarded:
+          type: integer
+          description: Packets written to the other side.
+        rejected:
+          type: integer
+          description: Packets a Backbone Router must not forward (scope, source, hop limit).
+        noListener:
+          type: integer
+          description: Packets to a group without a listener on the other side.
+        duplicates:
+          type: integer
+          description: Copies of a packet already forwarded.
+        rateLimited:
+          type: integer
+          description: Packets dropped by the rate limiter.
+        errors:
+          type: integer
+          description: Write failures.
     ### Actions #################################################################
     Actions_addThreadDeviceTask:
       type: object
