@@ -151,6 +151,11 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
     for (const char *url : aRadioUrls)
     {
         mConfig.mCoprocessorUrls.mUrls[mConfig.mCoprocessorUrls.mNum++] = url;
+
+        if (url != nullptr && strncmp(url, "trel:", sizeof("trel:") - 1) == 0)
+        {
+            mTrelUrlPresent = true;
+        }
     }
     mConfig.mSpeedUpFactor = 1;
 }
@@ -265,9 +270,19 @@ void RcpHost::Init(void)
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
 
-#if OTBR_ENABLE_FEATURE_FLAGS && OTBR_ENABLE_TREL
-    // Enable/Disable trel according to feature flag default value.
-    otTrelSetEnabled(mInstance, featureFlagList.enable_trel());
+#if OTBR_ENABLE_TREL
+    if (!mTrelUrlPresent)
+    {
+        otTrelSetEnabled(mInstance, false);
+        otbrLogNotice("TREL is disabled because no trel:// radio URL was provided");
+    }
+#if OTBR_ENABLE_FEATURE_FLAGS
+    else
+    {
+        // Enable/Disable TREL according to the feature flag default value.
+        otTrelSetEnabled(mInstance, featureFlagList.enable_trel());
+    }
+#endif
 #endif
 
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE && OTBR_ENABLE_SRP_SERVER_ON_INIT
@@ -332,7 +347,11 @@ otError RcpHost::ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList)
     }
 
 #if OTBR_ENABLE_TREL
-    otTrelSetEnabled(mInstance, aFeatureFlagList.enable_trel());
+    if (aFeatureFlagList.enable_trel() && !mTrelUrlPresent)
+    {
+        otbrLogWarning("Ignoring TREL enable request because no trel:// radio URL was provided");
+    }
+    otTrelSetEnabled(mInstance, mTrelUrlPresent && aFeatureFlagList.enable_trel());
 #endif
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otDnssdUpstreamQuerySetEnabled(mInstance, aFeatureFlagList.enable_dns_upstream_query());

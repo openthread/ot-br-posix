@@ -286,6 +286,7 @@ private:
     otInstance *mInstance;
 
     otPlatformConfig                       mConfig;
+    bool                                   mTrelUrlPresent = false;
     std::unique_ptr<ThreadHelper>          mThreadHelper;
     std::vector<std::function<void(void)>> mResetHandlers;
     TaskRunner                             mTaskRunner;
