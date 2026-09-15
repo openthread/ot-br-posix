@@ -1258,5 +1258,85 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const MeshDiagRouterInfo &aMeshDiagResult)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mExtAddress));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mRloc16));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mRouterId));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mVersion));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mIsThisDevice));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mIsThisDeviceParent));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mIsLeader));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mIsBorderRouter));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mLinkQualities));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mMeshDiagChildInfos));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagResult.mIp6Address));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, MeshDiagRouterInfo &aMeshDiagResult)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mExtAddress));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mRloc16));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mRouterId));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mVersion));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mIsThisDevice));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mIsThisDeviceParent));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mIsLeader));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mIsBorderRouter));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mLinkQualities));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mMeshDiagChildInfos));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagResult.mIp6Address));
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const MeshDiagChildInfo &aMeshDiagChildInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagChildInfo.mRloc16));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagChildInfo.mLinkQuality));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagChildInfo.mIsThisDevice));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMeshDiagChildInfo.mIsBorderRouter));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, MeshDiagChildInfo &aMeshDiagChildInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagChildInfo.mRloc16));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagChildInfo.mLinkQuality));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagChildInfo.mIsThisDevice));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMeshDiagChildInfo.mIsBorderRouter));
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr
