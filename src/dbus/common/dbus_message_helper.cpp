@@ -199,5 +199,155 @@ bool IsDBusMessageEmpty(DBusMessage &aMessage)
     return dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID;
 }
 
+otbrError DBusMessageCopy(DBusMessageIter *aDest, DBusMessageIter *aSrc)
+{
+    otbrError error   = OTBR_ERROR_NONE;
+    int       argType = dbus_message_iter_get_arg_type(aSrc);
+    char     *sig     = nullptr;
+
+    VerifyOrExit(argType != DBUS_TYPE_INVALID, error = OTBR_ERROR_DBUS);
+
+    if (dbus_type_is_basic(argType))
+    {
+        switch (argType)
+        {
+        case DBUS_TYPE_BYTE:
+        {
+            uint8_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_BOOLEAN:
+        {
+            dbus_bool_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_INT16:
+        {
+            int16_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_UINT16:
+        {
+            uint16_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_INT32:
+        {
+            int32_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_UINT32:
+        {
+            uint32_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_INT64:
+        {
+            int64_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_UINT64:
+        {
+            uint64_t val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_DOUBLE:
+        {
+            double val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_STRING:
+        case DBUS_TYPE_OBJECT_PATH:
+        case DBUS_TYPE_SIGNATURE:
+        {
+            const char *val = nullptr;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        case DBUS_TYPE_UNIX_FD:
+        {
+            int val;
+
+            dbus_message_iter_get_basic(aSrc, &val);
+            VerifyOrExit(dbus_message_iter_append_basic(aDest, argType, &val), error = OTBR_ERROR_DBUS);
+            break;
+        }
+        default:
+            ExitNow(error = OTBR_ERROR_DBUS);
+        }
+    }
+    else if (dbus_type_is_container(argType))
+    {
+        DBusMessageIter subSrc;
+        DBusMessageIter subDest;
+        const char     *containedSig = nullptr;
+
+        dbus_message_iter_recurse(aSrc, &subSrc);
+
+        if (argType == DBUS_TYPE_ARRAY)
+        {
+            sig = dbus_message_iter_get_signature(aSrc);
+            VerifyOrExit(sig != nullptr, error = OTBR_ERROR_DBUS);
+            containedSig = sig + 1;
+        }
+        else if (argType == DBUS_TYPE_VARIANT)
+        {
+            sig = dbus_message_iter_get_signature(&subSrc);
+            VerifyOrExit(sig != nullptr, error = OTBR_ERROR_DBUS);
+            containedSig = sig;
+        }
+
+        VerifyOrExit(dbus_message_iter_open_container(aDest, argType, containedSig, &subDest), error = OTBR_ERROR_DBUS);
+
+        while (dbus_message_iter_get_arg_type(&subSrc) != DBUS_TYPE_INVALID)
+        {
+            SuccessOrExit(error = DBusMessageCopy(&subDest, &subSrc));
+            dbus_message_iter_next(&subSrc);
+        }
+
+        VerifyOrExit(dbus_message_iter_close_container(aDest, &subDest), error = OTBR_ERROR_DBUS);
+    }
+    else
+    {
+        ExitNow(error = OTBR_ERROR_DBUS);
+    }
+
+exit:
+    if (sig != nullptr)
+    {
+        dbus_free(sig);
+    }
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

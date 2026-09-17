@@ -846,6 +846,17 @@ otbrError DBusMessageToTuple(UniqueDBusMessage const &aMessage, std::tuple<Field
 
 bool IsDBusMessageEmpty(DBusMessage &aMessage);
 
+/**
+ * This function copies a single D-Bus element from source iterator to destination iterator.
+ *
+ * @param[in,out] aDest  The destination message iterator to append to.
+ * @param[in,out] aSrc   The source message iterator to copy from.
+ *
+ * @retval OTBR_ERROR_NONE  Successfully copied the element.
+ * @retval OTBR_ERROR_DBUS  Failed to copy the element.
+ */
+otbrError DBusMessageCopy(DBusMessageIter *aDest, DBusMessageIter *aSrc);
+
 } // namespace DBus
 } // namespace otbr
 
