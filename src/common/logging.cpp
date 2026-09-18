@@ -171,7 +171,7 @@ static android_LogPriority ConvertToAndroidLogPriority(otbrLogLevel aLevel)
 }
 #endif
 
-/** log to the syslog or standard out */
+/** log to the syslog or standard error */
 void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 {
     const uint16_t kBufferSize = 1024;
@@ -202,7 +202,7 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
     return;
 }
 
-/** log to the syslog or standard out */
+/** log to the syslog or standard error */
 void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
 {
     assert(aFormat);
@@ -213,13 +213,19 @@ void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
     }
 }
 
-/** log to the syslog or standard out */
+/** log to the syslog or standard error */
 void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
 {
     if (sSyslogDisabled)
     {
-        vprintf(aFormat, aArgList);
-        printf("\n");
+        const uint16_t kBufferSize = 1024;
+        char           buffer[kBufferSize];
+
+        // fprintf() writes the line in a single call: prevents output interleaving in certain cases.
+        if (vsnprintf(buffer, sizeof(buffer), aFormat, aArgList) >= 0)
+        {
+            fprintf(stderr, "%s\n", buffer);
+        }
     }
     else
     {
