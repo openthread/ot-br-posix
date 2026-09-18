@@ -88,7 +88,7 @@ void otbrLogSyslogSetEnabled(bool aEnabled);
  *
  * @param[in] aProgramName    The name of this runnable program.
  * @param[in] aLevel          Log level of the logger.
- * @param[in] aPrintStderr    Whether to log to stderr.
+ * @param[in] aPrintStderr    Whether to log to stderr also, when logging to syslog.
  * @param[in] aSyslogDisable  Whether to disable logging to syslog.
  */
 void otbrLogInit(const char *aProgramName, otbrLogLevel aLevel, bool aPrintStderr, bool aSyslogDisable);
