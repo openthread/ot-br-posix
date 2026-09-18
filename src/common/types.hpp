@@ -481,7 +481,12 @@ public:
     bool         mPreferred : 1;
     bool         mMeshLocal : 1;
 
-    bool operator==(const Ip6AddressInfo &aOther) const { return memcmp(this, &aOther, sizeof(Ip6AddressInfo)) == 0; }
+    bool operator==(const Ip6AddressInfo &aOther) const
+    {
+        return memcmp(&mAddress, &aOther.mAddress, sizeof(mAddress)) == 0 && mPrefixLength == aOther.mPrefixLength &&
+               mScope == aOther.mScope && mPreferred == aOther.mPreferred && mMeshLocal == aOther.mMeshLocal;
+    }
+    bool operator!=(const Ip6AddressInfo &aOther) const { return !(*this == aOther); }
 };
 
 /**

@@ -57,6 +57,15 @@
 
 namespace otbr {
 
+namespace {
+
+bool HasSameIp6Address(const Ip6AddressInfo &aFirst, const Ip6AddressInfo &aSecond)
+{
+    return memcmp(&aFirst.mAddress, &aSecond.mAddress, sizeof(otIp6Address)) == 0;
+}
+
+} // namespace
+
 otbrError Netif::Dependencies::Ip6Send(const uint8_t *aData, uint16_t aLength)
 {
     OTBR_UNUSED_VARIABLE(aData);
@@ -154,29 +163,189 @@ void Netif::Deinit(void)
 
 void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)
 {
-    // Remove stale addresses
-    for (const Ip6AddressInfo &addrInfo : mIp6UnicastAddresses)
+    ProcessNetlinkEvent();
+
+    std::vector<Ip6AddressInfo> reconciled = ReconcileIp6UnicastAddresses(
+        GetEffectiveUnicastAddresses(), aAddrInfos,
+        [this](const std::vector<UnicastAddressChange> &aChanges) { return ProcessUnicastAddressChanges(aChanges); });
+
+    if (mNetlinkFd < 0)
     {
-        if (std::find(aAddrInfos.begin(), aAddrInfos.end(), addrInfo) == aAddrInfos.end())
+        mIp6UnicastAddresses = std::move(reconciled);
+    }
+
+    ProcessNetlinkEvent();
+}
+
+std::vector<Ip6AddressInfo> Netif::ReconcileIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aCachedAddrInfos,
+                                                                const std::vector<Ip6AddressInfo> &aDesiredAddrInfos,
+                                                                const UnicastAddressChangeHandler &aChangeHandler)
+{
+    std::vector<UnicastAddressChange> changes;
+    std::vector<Ip6AddressInfo>       updatedAddresses;
+    std::vector<otbrError>            errors;
+
+    changes.reserve(aCachedAddrInfos.size() + aDesiredAddrInfos.size());
+    updatedAddresses.reserve(std::max(aCachedAddrInfos.size(), aDesiredAddrInfos.size()));
+
+    for (const Ip6AddressInfo &cached : aCachedAddrInfos)
+    {
+        auto it = std::find_if(aDesiredAddrInfos.begin(), aDesiredAddrInfos.end(),
+                               [&](const Ip6AddressInfo &aDesired) { return HasSameIp6Address(cached, aDesired); });
+
+        if (it == aDesiredAddrInfos.end())
         {
-            otbrLogInfo("Remove address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
-            // TODO: Verify success of the addition or deletion in Netlink response.
-            ProcessUnicastAddressChange(addrInfo, false);
+            otbrLogInfo("Remove address: %s/%u", Ip6Address(cached.mAddress).ToString().c_str(), cached.mPrefixLength);
+            changes.push_back({cached, UnicastAddressAction::kRemove});
+        }
+        else if (*it != cached)
+        {
+            otbrLogInfo("Replace address: %s/%u", Ip6Address(it->mAddress).ToString().c_str(), it->mPrefixLength);
+            changes.push_back({*it, UnicastAddressAction::kReplace});
+        }
+        else
+        {
+            updatedAddresses.push_back(cached);
         }
     }
 
-    // Add new addresses
-    for (const Ip6AddressInfo &addrInfo : aAddrInfos)
+    for (const Ip6AddressInfo &desired : aDesiredAddrInfos)
     {
-        if (std::find(mIp6UnicastAddresses.begin(), mIp6UnicastAddresses.end(), addrInfo) == mIp6UnicastAddresses.end())
+        auto it = std::find_if(aCachedAddrInfos.begin(), aCachedAddrInfos.end(),
+                               [&](const Ip6AddressInfo &aCached) { return HasSameIp6Address(desired, aCached); });
+
+        if (it == aCachedAddrInfos.end())
         {
-            otbrLogInfo("Add address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
-            // TODO: Verify success of the addition or deletion in Netlink response.
-            ProcessUnicastAddressChange(addrInfo, true);
+            otbrLogInfo("Add address: %s/%u", Ip6Address(desired.mAddress).ToString().c_str(), desired.mPrefixLength);
+            changes.push_back({desired, UnicastAddressAction::kAdd});
         }
     }
 
-    mIp6UnicastAddresses.assign(aAddrInfos.begin(), aAddrInfos.end());
+    VerifyOrExit(!changes.empty());
+
+    errors = aChangeHandler(changes);
+
+    if (errors.size() != changes.size())
+    {
+        otbrLogWarning("Netlink results count mismatch (expected %zu, got %zu)", changes.size(), errors.size());
+        errors.assign(changes.size(), OTBR_ERROR_INVALID_STATE);
+    }
+
+    for (size_t i = 0; i < changes.size(); ++i)
+    {
+        const UnicastAddressChange &change = changes[i];
+        otbrError                   error  = errors[i];
+
+        switch (change.mAction)
+        {
+        case UnicastAddressAction::kRemove:
+            if (error != OTBR_ERROR_NONE)
+            {
+                updatedAddresses.push_back(change.mAddressInfo);
+            }
+            break;
+
+        case UnicastAddressAction::kReplace:
+            if (error == OTBR_ERROR_NONE)
+            {
+                updatedAddresses.push_back(change.mAddressInfo);
+            }
+            else
+            {
+                auto it =
+                    std::find_if(aCachedAddrInfos.begin(), aCachedAddrInfos.end(), [&](const Ip6AddressInfo &aCached) {
+                        return HasSameIp6Address(change.mAddressInfo, aCached);
+                    });
+                if (it != aCachedAddrInfos.end())
+                {
+                    updatedAddresses.push_back(*it);
+                }
+            }
+            break;
+
+        case UnicastAddressAction::kAdd:
+            if (error == OTBR_ERROR_NONE)
+            {
+                updatedAddresses.push_back(change.mAddressInfo);
+            }
+            break;
+        }
+    }
+
+exit:
+    return updatedAddresses;
+}
+
+void Netif::ApplyUnicastAddressChange(std::vector<Ip6AddressInfo> &aAddresses,
+                                      UnicastAddressAction         aAction,
+                                      const Ip6AddressInfo        &aAddressInfo)
+{
+    auto it = std::find_if(aAddresses.begin(), aAddresses.end(),
+                           [&](const Ip6AddressInfo &aCached) { return HasSameIp6Address(aAddressInfo, aCached); });
+
+    switch (aAction)
+    {
+    case UnicastAddressAction::kAdd:
+    case UnicastAddressAction::kReplace:
+        if (it != aAddresses.end())
+        {
+            *it = aAddressInfo;
+        }
+        else
+        {
+            aAddresses.push_back(aAddressInfo);
+        }
+        break;
+
+    case UnicastAddressAction::kRemove:
+        if (it != aAddresses.end())
+        {
+            aAddresses.erase(it);
+        }
+        break;
+    }
+}
+
+void Netif::CommitUnicastAddressChange(const PendingNetlinkRequest &aRequest)
+{
+    ApplyUnicastAddressChange(mIp6UnicastAddresses, aRequest.mAction, aRequest.mAddressInfo);
+}
+
+std::vector<Ip6AddressInfo> Netif::GetEffectiveUnicastAddresses(void) const
+{
+    std::vector<Ip6AddressInfo> effective = mIp6UnicastAddresses;
+
+    for (const PendingNetlinkRequest &pending : mPendingNetlinkRequests)
+    {
+        ApplyUnicastAddressChange(effective, pending.mAction, pending.mAddressInfo);
+    }
+
+    return effective;
+}
+
+void Netif::PruneExpiredNetlinkRequests(void)
+{
+    VerifyOrExit(!mPendingNetlinkRequests.empty() && mPendingNetlinkTxQueue.IsEmpty());
+
+    {
+        auto now = std::chrono::steady_clock::now();
+
+        for (auto it = mPendingNetlinkRequests.begin(); it != mPendingNetlinkRequests.end();)
+        {
+            if (it->mExpireTime <= now)
+            {
+                otbrLogWarning("Netlink request#%u timed out waiting for ACK", it->mSequence);
+                it = mPendingNetlinkRequests.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+exit:
+    return;
 }
 
 otbrError Netif::UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs)
@@ -420,31 +589,33 @@ exit:
 
 void Netif::Clear(void)
 {
-    if (mTunFd != -1)
+    if (mTunFd >= 0)
     {
         close(mTunFd);
         mTunFd = -1;
     }
 
-    if (mIpFd != -1)
+    if (mIpFd >= 0)
     {
         close(mIpFd);
         mIpFd = -1;
     }
 
-    if (mNetlinkFd != -1)
+    if (mNetlinkFd >= 0)
     {
         close(mNetlinkFd);
         mNetlinkFd = -1;
     }
 
-    if (mMldFd != -1)
+    if (mMldFd >= 0)
     {
         close(mMldFd);
         mMldFd = -1;
     }
 
     mNetifIndex = 0;
+    mPendingNetlinkTxQueue.Clear();
+    mPendingNetlinkRequests.clear();
     mIp6UnicastAddresses.clear();
     mIp6MulticastAddresses.clear();
 }
@@ -491,7 +662,7 @@ void Netif::ProcessMldEvent(void)
     struct sockaddr_in6 srcAddr;
     socklen_t           addrLen  = sizeof(srcAddr);
     bool                fromSelf = false;
-    Mldv2Header        *hdr      = reinterpret_cast<Mldv2Header *>(buffer);
+    Mldv2Header        *hdr;
     size_t              offset;
     uint8_t             type;
     struct ifaddrs     *ifAddrs = nullptr;
@@ -600,6 +771,45 @@ void Netif::Update(MainloopContext &aContext)
 
     aContext.AddFdToSet(mTunFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
     aContext.AddFdToSet(mMldFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
+
+    if (mNetlinkFd >= 0)
+    {
+        aContext.AddFdToSet(mNetlinkFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
+
+        if (!mPendingNetlinkTxQueue.IsEmpty())
+        {
+            aContext.AddFdToSet(mNetlinkFd, MainloopContext::kWriteFdSet);
+        }
+        else if (!mPendingNetlinkRequests.empty())
+        {
+            auto    now              = std::chrono::steady_clock::now();
+            auto    minExp           = mPendingNetlinkRequests.front().mExpireTime;
+            int64_t delayUs          = 0;
+            int64_t currentTimeoutUs = 0;
+
+            for (const auto &pending : mPendingNetlinkRequests)
+            {
+                if (pending.mExpireTime < minExp)
+                {
+                    minExp = pending.mExpireTime;
+                }
+            }
+
+            delayUs = std::chrono::duration_cast<std::chrono::microseconds>(minExp - now).count();
+            if (delayUs < 0)
+            {
+                delayUs = 0;
+            }
+
+            currentTimeoutUs = static_cast<int64_t>(aContext.mTimeout.tv_sec) * 1000000 + aContext.mTimeout.tv_usec;
+
+            if (delayUs < currentTimeoutUs)
+            {
+                aContext.mTimeout.tv_sec  = delayUs / 1000000;
+                aContext.mTimeout.tv_usec = delayUs % 1000000;
+            }
+        }
+    }
 }
 
 void Netif::Process(const MainloopContext &aContext)
@@ -616,6 +826,12 @@ void Netif::Process(const MainloopContext &aContext)
         DieNow("Error on MLD Fd!");
     }
 
+    if (mNetlinkFd >= 0 && FD_ISSET(mNetlinkFd, &aContext.mErrorFdSet))
+    {
+        close(mNetlinkFd);
+        DieNow("Error on Netlink Fd!");
+    }
+
     if (FD_ISSET(mTunFd, &aContext.mReadFdSet))
     {
         ProcessIp6Send();
@@ -624,6 +840,21 @@ void Netif::Process(const MainloopContext &aContext)
     if (FD_ISSET(mMldFd, &aContext.mReadFdSet))
     {
         ProcessMldEvent();
+    }
+
+    if (mNetlinkFd >= 0)
+    {
+        if (FD_ISSET(mNetlinkFd, &aContext.mWriteFdSet))
+        {
+            ProcessPendingNetlinkTx();
+        }
+
+        if (FD_ISSET(mNetlinkFd, &aContext.mReadFdSet))
+        {
+            ProcessNetlinkEvent();
+        }
+
+        PruneExpiredNetlinkRequests();
     }
 }
 

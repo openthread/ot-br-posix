@@ -51,6 +51,8 @@
 
 #ifdef __linux__
 #include <linux/if_link.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
 #endif
 
 #include <openthread/ip6.h>
@@ -62,8 +64,608 @@
 #include "host/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
 
+namespace otbr {
+
+class NetifTestPeer
+{
+public:
+    static std::vector<Ip6AddressInfo> ReconcileIp6UnicastAddresses(
+        const std::vector<Ip6AddressInfo>        &aCachedAddrInfos,
+        const std::vector<Ip6AddressInfo>        &aDesiredAddrInfos,
+        const Netif::UnicastAddressChangeHandler &aChangeHandler)
+    {
+        return Netif::ReconcileIp6UnicastAddresses(aCachedAddrInfos, aDesiredAddrInfos, aChangeHandler);
+    }
+
+    static void SetFds(Netif &aNetif, int aTunFd, int aIpFd, int aNetlinkFd, int aMldFd)
+    {
+        aNetif.mTunFd     = aTunFd;
+        aNetif.mIpFd      = aIpFd;
+        aNetif.mNetlinkFd = aNetlinkFd;
+        aNetif.mMldFd     = aMldFd;
+    }
+
+    static const std::vector<Ip6AddressInfo> &GetIp6UnicastAddresses(const Netif &aNetif)
+    {
+        return aNetif.mIp6UnicastAddresses;
+    }
+
+    static size_t GetPendingNetlinkRequestsCount(const Netif &aNetif) { return aNetif.mPendingNetlinkRequests.size(); }
+
+    static size_t GetPendingNetlinkTxQueueCount(const Netif &aNetif) { return aNetif.mPendingNetlinkTxQueue.mCount; }
+
+    static void Update(Netif &aNetif, MainloopContext &aContext) { aNetif.Update(aContext); }
+
+    static void Process(Netif &aNetif, const MainloopContext &aContext) { aNetif.Process(aContext); }
+
+    static void ExpirePendingNetlinkRequests(Netif &aNetif)
+    {
+        auto expiredTime = std::chrono::steady_clock::now() - std::chrono::seconds(1);
+
+        for (auto &pending : aNetif.mPendingNetlinkRequests)
+        {
+            pending.mExpireTime = expiredTime;
+        }
+    }
+};
+
+} // namespace otbr
+
+TEST(Netif, ReconcileUnicastAddresses_AddSuccess)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            if (!aChanges.empty())
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kAdd);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kDesired);
+            }
+            return std::vector<otbrError>{OTBR_ERROR_NONE};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kDesired);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AddFailure)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            return std::vector<otbrError>{OTBR_ERROR_ERRNO};
+        });
+
+    EXPECT_TRUE(updated.empty());
+}
+
+TEST(Netif, ReconcileUnicastAddresses_RemoveSuccess)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            if (!aChanges.empty())
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kRemove);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kCached);
+            }
+            return std::vector<otbrError>{OTBR_ERROR_NONE};
+        });
+
+    EXPECT_TRUE(updated.empty());
+}
+
+TEST(Netif, ReconcileUnicastAddresses_RemoveFailure)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            return std::vector<otbrError>{OTBR_ERROR_ERRNO};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kCached);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_ReplaceSuccess)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            if (!aChanges.empty())
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kReplace);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kDesired);
+            }
+            return std::vector<otbrError>{OTBR_ERROR_NONE};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kDesired);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_ReplaceFailure)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached}, {kDesired}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 1U);
+            return std::vector<otbrError>{OTBR_ERROR_ERRNO};
+        });
+
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kCached);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_UnchangedNoHandlerCall)
+{
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kAddr(kAddress, 64, 0, true, false);
+    size_t                     handlerCalls = 0;
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kAddr}, {kAddr}, [&](const std::vector<otbr::Netif::UnicastAddressChange> &) {
+            ++handlerCalls;
+            return std::vector<otbrError>{};
+        });
+
+    EXPECT_EQ(handlerCalls, 0U);
+    ASSERT_EQ(updated.size(), 1U);
+    EXPECT_EQ(updated[0], kAddr);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_BatchedChanges)
+{
+    const otIp6Address kAddr1 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otIp6Address kAddr2 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}};
+    const otIp6Address kAddr3 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03}};
+    const otIp6Address kAddr4 = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04}};
+
+    const otbr::Ip6AddressInfo kCached1(kAddr1, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kCached2(kAddr2, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kCached3(kAddr3, 64, 0, true, false);
+
+    const otbr::Ip6AddressInfo kDesired2(kAddr2, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired3(kAddr3, 64, 0, false, true);
+    const otbr::Ip6AddressInfo kDesired4(kAddr4, 64, 0, true, false);
+
+    std::vector<otbr::Ip6AddressInfo> updated = otbr::NetifTestPeer::ReconcileIp6UnicastAddresses(
+        {kCached1, kCached2, kCached3}, {kDesired2, kDesired3, kDesired4},
+        [&](const std::vector<otbr::Netif::UnicastAddressChange> &aChanges) {
+            EXPECT_EQ(aChanges.size(), 3U);
+            if (aChanges.size() == 3U)
+            {
+                EXPECT_EQ(aChanges[0].mAction, otbr::Netif::UnicastAddressAction::kRemove);
+                EXPECT_EQ(aChanges[0].mAddressInfo, kCached1);
+
+                EXPECT_EQ(aChanges[1].mAction, otbr::Netif::UnicastAddressAction::kReplace);
+                EXPECT_EQ(aChanges[1].mAddressInfo, kDesired3);
+
+                EXPECT_EQ(aChanges[2].mAction, otbr::Netif::UnicastAddressAction::kAdd);
+                EXPECT_EQ(aChanges[2].mAddressInfo, kDesired4);
+            }
+            return std::vector<otbrError>{
+                OTBR_ERROR_NONE,
+                OTBR_ERROR_NONE,
+                OTBR_ERROR_NONE,
+            };
+        });
+
+    ASSERT_EQ(updated.size(), 3U);
+    EXPECT_THAT(updated, ::testing::UnorderedElementsAre(kDesired2, kDesired3, kDesired4));
+}
+
 // Only Test on linux platform for now.
 #ifdef __linux__
+
+static void SendNetlinkAck(int aPeerFd, uint32_t aSeq, int aError)
+{
+    struct
+    {
+        nlmsghdr nh;
+        int      error;
+    } ack{};
+
+    ack.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(int));
+    ack.nh.nlmsg_type  = NLMSG_ERROR;
+    ack.nh.nlmsg_flags = NLM_F_CAPPED;
+    ack.nh.nlmsg_seq   = aSeq;
+    ack.nh.nlmsg_pid   = 0;
+    ack.error          = aError;
+
+    EXPECT_EQ(send(aPeerFd, &ack, sizeof(ack), 0), static_cast<ssize_t>(sizeof(ack)));
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AsyncAckSuccess)
+{
+    int sv[2];
+    int dummySv[2];
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    netif.UpdateIp6UnicastAddresses({kDesired});
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 1U);
+    EXPECT_TRUE(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).empty());
+
+    uint8_t buf[512];
+    ssize_t len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    uint32_t seq = reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq;
+
+    SendNetlinkAck(sv[1], seq, 0);
+
+    otbr::MainloopContext context{};
+    otbr::NetifTestPeer::Update(netif, context);
+    EXPECT_TRUE(FD_ISSET(sv[0], &context.mReadFdSet));
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 0U);
+    ASSERT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).size(), 1U);
+    EXPECT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif)[0], kDesired);
+
+    otbr::NetifTestPeer::SetFds(netif, -1, -1, -1, -1);
+    close(sv[0]);
+    close(sv[1]);
+    close(dummySv[0]);
+    close(dummySv[1]);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AsyncAckFailureRollbacksCache)
+{
+    int sv[2];
+    int dummySv[2];
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    netif.UpdateIp6UnicastAddresses({kDesired});
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 1U);
+    EXPECT_TRUE(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).empty());
+
+    uint8_t buf[512];
+    ssize_t len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    uint32_t seq = reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq;
+
+    SendNetlinkAck(sv[1], seq, -EACCES);
+
+    otbr::MainloopContext context{};
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 0U);
+    EXPECT_TRUE(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).empty());
+
+    otbr::NetifTestPeer::SetFds(netif, -1, -1, -1, -1);
+    close(sv[0]);
+    close(sv[1]);
+    close(dummySv[0]);
+    close(dummySv[1]);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AsyncAckRemoveFailureRollbacksCache)
+{
+    int sv[2];
+    int dummySv[2];
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+
+    netif.UpdateIp6UnicastAddresses({kCached});
+    uint8_t buf[512];
+    ssize_t len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    SendNetlinkAck(sv[1], reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq, 0);
+
+    otbr::MainloopContext context{};
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+    ASSERT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).size(), 1U);
+
+    netif.UpdateIp6UnicastAddresses({});
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 1U);
+    ASSERT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).size(), 1U);
+
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    SendNetlinkAck(sv[1], reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq, -EACCES);
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    ASSERT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).size(), 1U);
+    EXPECT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif)[0], kCached);
+
+    otbr::NetifTestPeer::SetFds(netif, -1, -1, -1, -1);
+    close(sv[0]);
+    close(sv[1]);
+    close(dummySv[0]);
+    close(dummySv[1]);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AsyncAckReplaceFailureRollbacksCache)
+{
+    int sv[2];
+    int dummySv[2];
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kCached(kAddress, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, false, true);
+
+    netif.UpdateIp6UnicastAddresses({kCached});
+    uint8_t buf[512];
+    ssize_t len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    SendNetlinkAck(sv[1], reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq, 0);
+
+    otbr::MainloopContext context{};
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    netif.UpdateIp6UnicastAddresses({kDesired});
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 1U);
+    ASSERT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).size(), 1U);
+    EXPECT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif)[0], kCached);
+
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    SendNetlinkAck(sv[1], reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq, -EINVAL);
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    ASSERT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).size(), 1U);
+    EXPECT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif)[0], kCached);
+
+    otbr::NetifTestPeer::SetFds(netif, -1, -1, -1, -1);
+    close(sv[0]);
+    close(sv[1]);
+    close(dummySv[0]);
+    close(dummySv[1]);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AsyncAckTransientRetry)
+{
+    int sv[2];
+    int dummySv[2];
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    netif.UpdateIp6UnicastAddresses({kDesired});
+
+    uint8_t buf[512];
+    ssize_t len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    uint32_t seq1 = reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq;
+
+    SendNetlinkAck(sv[1], seq1, -EBUSY);
+
+    otbr::MainloopContext context{};
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 1U);
+
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+    uint32_t seq2 = reinterpret_cast<const nlmsghdr *>(buf)->nlmsg_seq;
+    EXPECT_GT(seq2, seq1);
+
+    SendNetlinkAck(sv[1], seq2, 0);
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_SET(sv[0], &context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 0U);
+    ASSERT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).size(), 1U);
+    EXPECT_EQ(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif)[0], kDesired);
+
+    otbr::NetifTestPeer::SetFds(netif, -1, -1, -1, -1);
+    close(sv[0]);
+    close(sv[1]);
+    close(dummySv[0]);
+    close(dummySv[1]);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_PendingNetlinkTxQueueFlush)
+{
+    int sv[2];
+    int dummySv[2];
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    int sndbuf = 1024;
+    (void)setsockopt(sv[0], SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf));
+
+    uint8_t dummy[512] = {};
+    while (send(sv[0], dummy, sizeof(dummy), 0) >= 0)
+    {
+    }
+    ASSERT_TRUE(errno == EAGAIN || errno == EWOULDBLOCK);
+
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    netif.UpdateIp6UnicastAddresses({kDesired});
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkTxQueueCount(netif), 1U);
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 1U);
+
+    otbr::MainloopContext context{};
+    otbr::NetifTestPeer::Update(netif, context);
+    EXPECT_TRUE(FD_ISSET(sv[0], &context.mWriteFdSet));
+
+    uint8_t recvBuf[1024];
+    while (recv(sv[1], recvBuf, sizeof(recvBuf), 0) > 0)
+    {
+    }
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkTxQueueCount(netif), 0U);
+
+    ssize_t len = recv(sv[1], recvBuf, sizeof(recvBuf), 0);
+    EXPECT_GE(len, static_cast<ssize_t>(sizeof(nlmsghdr)));
+
+    otbr::NetifTestPeer::SetFds(netif, -1, -1, -1, -1);
+    close(sv[0]);
+    close(sv[1]);
+    close(dummySv[0]);
+    close(dummySv[1]);
+}
+
+TEST(Netif, ReconcileUnicastAddresses_AsyncAckTimeoutRollbacksCache)
+{
+    int sv[2];
+    int dummySv[2];
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kAddress = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otbr::Ip6AddressInfo kDesired(kAddress, 64, 0, true, false);
+
+    netif.UpdateIp6UnicastAddresses({kDesired});
+
+    EXPECT_TRUE(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).empty());
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 1U);
+
+    otbr::MainloopContext context{};
+    context.mTimeout.tv_sec  = 10;
+    context.mTimeout.tv_usec = 0;
+    otbr::NetifTestPeer::Update(netif, context);
+    EXPECT_EQ(context.mTimeout.tv_sec, 0);
+    EXPECT_LE(context.mTimeout.tv_usec, 50000);
+
+    otbr::NetifTestPeer::ExpirePendingNetlinkRequests(netif);
+
+    FD_ZERO(&context.mReadFdSet);
+    FD_ZERO(&context.mWriteFdSet);
+    FD_ZERO(&context.mErrorFdSet);
+    otbr::NetifTestPeer::Process(netif, context);
+
+    EXPECT_EQ(otbr::NetifTestPeer::GetPendingNetlinkRequestsCount(netif), 0U);
+    EXPECT_TRUE(otbr::NetifTestPeer::GetIp6UnicastAddresses(netif).empty());
+
+    otbr::NetifTestPeer::SetFds(netif, -1, -1, -1, -1);
+    close(sv[0]);
+    close(sv[1]);
+    close(dummySv[0]);
+    close(dummySv[1]);
+}
 
 static constexpr size_t kMaxIp6Size = 1280;
 
