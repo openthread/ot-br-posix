@@ -125,6 +125,11 @@ public:
      * by otbr-agent on Thread network-data changes; doing it in one batch means
      * there is never a window where the sets are half-populated.
      *
+     * Prefixes may overlap, as on-mesh prefixes do when a /48 is advertised
+     * next to a /64 inside it. A prefix that another one in the same list
+     * covers is left out: it adds no address to the set, and the kernel
+     * refuses overlapping intervals.
+     *
      * @param[in] aDenySrc   Prefixes for the deny-source set (on-mesh + mesh-local).
      * @param[in] aAllowDst  Prefixes for the allow-destination set (on-mesh).
      */
