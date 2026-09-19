@@ -471,6 +471,68 @@ TEST(FirewallManagerTest, ReplaceIngressPrefixesFlushesThenRefillsBothSets)
     EXPECT_EQ(fw.ReplaceIngressPrefixes(denySrc, allowDst), OTBR_ERROR_NONE);
 }
 
+TEST(FirewallManagerTest, ReplaceIngressPrefixesLeavesOutPrefixesAnotherOneCovers)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
+
+    // An on-mesh /48 without SLAAC next to a /64 inside it. The sets are
+    // interval sets and the kernel refuses the second of two overlapping
+    // intervals, which used to fail the whole update.
+    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressDenySrcSet), Ip6Prefix("fd11::", 48))).Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressDenySrcSet), Ip6Prefix("fd22:0:0:1::", 64)))
+        .Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressAllowDstSet), Ip6Prefix("fd11::", 48))).Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, _, Ip6Prefix("fd11::", 64))).Times(0);
+
+    // In either order: what matters is which prefix covers which.
+    std::vector<Ip6Prefix> denySrc  = {Ip6Prefix("fd11::", 48), Ip6Prefix("fd11::", 64), Ip6Prefix("fd22:0:0:1::", 64)};
+    std::vector<Ip6Prefix> allowDst = {Ip6Prefix("fd11::", 64), Ip6Prefix("fd11::", 48)};
+    EXPECT_EQ(fw.ReplaceIngressPrefixes(denySrc, allowDst), OTBR_ERROR_NONE);
+}
+
+TEST(FirewallManagerTest, ReplaceIngressPrefixesReducesEachSetOnItsOwn)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
+
+    // The /48 is denied as a source; that must not swallow the /64 allowed
+    // as a destination, which lives in another set.
+    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressDenySrcSet), Ip6Prefix("fd11::", 48))).Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressAllowDstSet), Ip6Prefix("fd11::", 64))).Times(1);
+
+    EXPECT_EQ(fw.ReplaceIngressPrefixes({Ip6Prefix("fd11::", 48)}, {Ip6Prefix("fd11::", 64)}), OTBR_ERROR_NONE);
+}
+
+TEST(FirewallManagerTest, ReplaceIngressPrefixesComparesOnlyTheBitsOfThePrefix)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
+
+    // A /33 covers the half of the /32 whose next bit is clear: 2001:db8:4000::/34
+    // lies inside it, 2001:db8:8000::/34 does not. Bits after a prefix's
+    // length do not count, and a repeated prefix is added once.
+    EXPECT_CALL(mock, AddSetElement(_, _, Ip6Prefix("2001:db8::", 33))).Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, _, Ip6Prefix("2001:db8:8000::", 34))).Times(1);
+    EXPECT_CALL(mock, AddSetElement(_, _, Ip6Prefix("2001:db8:4000::", 34))).Times(0);
+
+    std::vector<Ip6Prefix> allowDst = {Ip6Prefix("2001:db8:4000::", 34), Ip6Prefix("2001:db8:0:0:dead::", 33),
+                                       Ip6Prefix("2001:db8:8000::", 34), Ip6Prefix("2001:db8::", 33)};
+    EXPECT_EQ(fw.ReplaceIngressPrefixes({}, allowDst), OTBR_ERROR_NONE);
+}
+
 TEST(FirewallManagerTest, ReplaceIngressPrefixesRejectsAnInvalidPrefix)
 {
     NiceMock<MockNftables> mock;
@@ -480,14 +542,33 @@ TEST(FirewallManagerTest, ReplaceIngressPrefixesRejectsAnInvalidPrefix)
     ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
     ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
 
+    // Refused before any batch is opened (Init() and EnableIngressFilter()
+    // open one each, so this expectation is set only after they have run).
+    EXPECT_CALL(mock, BeginBatch()).Times(0);
     EXPECT_CALL(mock, CommitBatch()).Times(0);
-    EXPECT_CALL(mock, AbortBatch()).Times(AtLeast(1));
 
     // A zero-length prefix is invalid; the whole update must be discarded
     // rather than leaving the sets flushed but only partly refilled.
     std::vector<Ip6Prefix> denySrc  = {Ip6Prefix("2001:db8::", 0)};
     std::vector<Ip6Prefix> allowDst = {};
     EXPECT_EQ(fw.ReplaceIngressPrefixes(denySrc, allowDst), OTBR_ERROR_INVALID_ARGS);
+}
+
+TEST(FirewallManagerTest, ReplaceIngressPrefixesValidatesBeforeReducing)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+
+    FirewallManager fw(mock, "wpan0");
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
+
+    EXPECT_CALL(mock, BeginBatch()).Times(0);
+
+    // The /200 is invalid, and the /48 covers it: reduced first, it would be
+    // dropped unseen and the update would succeed on bad input.
+    std::vector<Ip6Prefix> denySrc = {Ip6Prefix("fd11::", 48), Ip6Prefix("fd11::", 200)};
+    EXPECT_EQ(fw.ReplaceIngressPrefixes(denySrc, {}), OTBR_ERROR_INVALID_ARGS);
 }
 
 TEST(FirewallManagerTest, FailedOperationAbortsTheBatch)
