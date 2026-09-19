@@ -87,6 +87,10 @@ public:
     MOCK_METHOD(otbrError, DelSetElement, (const std::string &, const std::string &, const Ip6Prefix &), (override));
     MOCK_METHOD(otbrError, FlushSet, (const std::string &, const std::string &), (override));
     MOCK_METHOD(otbrError,
+                AddRuleNfprotoNeqIp6Return,
+                (const std::string &, const std::string &, uint64_t *),
+                (override));
+    MOCK_METHOD(otbrError,
                 AddRuleOifnameNeqReturn,
                 (const std::string &, const std::string &, const std::string &, uint64_t *),
                 (override));
@@ -143,6 +147,7 @@ void SetSuccessfulDefaults(MockNftables &mock)
     ON_CALL(mock, CommitBatch).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, DelRule).WillByDefault(Return(OTBR_ERROR_NONE));
 
+    ON_CALL(mock, AddRuleNfprotoNeqIp6Return).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddRuleOifnameNeqReturn).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddRuleIifPkttypeVerdict).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddRulePkttypeVerdict).WillByDefault(Return(OTBR_ERROR_NONE));
@@ -241,6 +246,11 @@ TEST(FirewallManagerTest, EnableIngressFilterInstallsChainAndRulesInOrder)
             .Times(1);
         EXPECT_CALL(mock, AddChain(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressChain),
                                    Hook::kForward, ChainPriority::kFilter, ChainType::kFilter))
+            .Times(1);
+        // First, so that nothing below it -- the unicast drop in particular --
+        // ever sees IPv4: NAT64 replies are forwarded to the Thread interface.
+        EXPECT_CALL(mock, AddRuleNfprotoNeqIp6Return(StrEq(FirewallManager::kTableName),
+                                                     StrEq(FirewallManager::kIngressChain), _))
             .Times(1);
         EXPECT_CALL(mock, AddRuleOifnameNeqReturn(StrEq(FirewallManager::kTableName),
                                                   StrEq(FirewallManager::kIngressChain), StrEq("wpan0"), _))

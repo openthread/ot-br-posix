@@ -935,6 +935,37 @@ exit:
     return error;
 }
 
+otbrError Nftables::AddRuleNfprotoNeqIp6Return(const std::string &aTable,
+                                               const std::string &aChain,
+                                               uint64_t          *aHandleOut)
+{
+    otbrError          error      = OTBR_ERROR_NONE;
+    struct nftnl_rule *rule       = nullptr;
+    uint8_t            ipv6Family = NFPROTO_IPV6;
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+
+    rule = nftnl_rule_alloc();
+    VerifyOrExit(rule != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, aTable.c_str());
+    nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, aChain.c_str());
+    nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, NFPROTO_INET);
+
+    SuccessOrExit(error = AddExpr(rule, MakeMetaLoad(NFT_META_NFPROTO, NFT_REG_1)));
+    SuccessOrExit(error = AddExpr(rule, MakeCmpNeq(NFT_REG_1, &ipv6Family, sizeof(ipv6Family))));
+    SuccessOrExit(error = AddExpr(rule, MakeImmediateVerdict(NFT_RETURN)));
+
+    error = QueueNewRule(rule, aHandleOut);
+
+exit:
+    if (rule != nullptr)
+    {
+        nftnl_rule_free(rule);
+    }
+    return error;
+}
+
 otbrError Nftables::AddRuleOifnameNeqReturn(const std::string &aTable,
                                             const std::string &aChain,
                                             const std::string &aOifname,
