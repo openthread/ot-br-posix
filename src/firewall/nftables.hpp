@@ -163,7 +163,6 @@ public:
     virtual otbrError AddIp6PrefixSet(const std::string &aTable, const std::string &aSet) = 0;
 
     virtual otbrError AddSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix) = 0;
-    virtual otbrError DelSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix) = 0;
     virtual otbrError FlushSet(const std::string &aTable, const std::string &aSet)                                = 0;
 
     /**
