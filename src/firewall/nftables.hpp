@@ -167,6 +167,15 @@ public:
     virtual otbrError FlushSet(const std::string &aTable, const std::string &aSet)                                = 0;
 
     /**
+     * `meta nfproto != ipv6 return` — the table is of the inet family, so its
+     * chains see IPv4 as well. A chain that filters IPv6 alone opens with
+     * this rule, or its closing verdicts apply to IPv4 traffic too.
+     */
+    virtual otbrError AddRuleNfprotoNeqIp6Return(const std::string &aTable,
+                                                 const std::string &aChain,
+                                                 uint64_t          *aHandleOut) = 0;
+
+    /**
      * `meta oifname != <ifname> return` — used as the first rule of an
      * inet/forward base chain to bail out on traffic not destined for the
      * Thread interface.
