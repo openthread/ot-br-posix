@@ -259,62 +259,6 @@ exit:
     return error;
 }
 
-otbrError FirewallManager::AddIngressSetElement(IngressSet aSet, const Ip6Prefix &aPrefix)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
-    VerifyOrExit(aPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
-
-    SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.AddSetElement(kTableName, SetName(aSet), aPrefix));
-    SuccessOrExit(error = mNftables.CommitBatch());
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        mNftables.AbortBatch();
-    }
-    return error;
-}
-
-otbrError FirewallManager::DelIngressSetElement(IngressSet aSet, const Ip6Prefix &aPrefix)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
-    VerifyOrExit(aPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
-
-    SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.DelSetElement(kTableName, SetName(aSet), aPrefix));
-    SuccessOrExit(error = mNftables.CommitBatch());
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        mNftables.AbortBatch();
-    }
-    return error;
-}
-
-otbrError FirewallManager::FlushIngressSet(IngressSet aSet)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
-
-    SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.FlushSet(kTableName, SetName(aSet)));
-    SuccessOrExit(error = mNftables.CommitBatch());
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        mNftables.AbortBatch();
-    }
-    return error;
-}
-
 otbrError FirewallManager::ReplaceIngressPrefixes(const std::vector<Ip6Prefix> &aDenySrc,
                                                   const std::vector<Ip6Prefix> &aAllowDst)
 {
@@ -344,18 +288,6 @@ exit:
     }
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
-}
-
-const char *FirewallManager::SetName(IngressSet aSet)
-{
-    switch (aSet)
-    {
-    case IngressSet::kDenySrc:
-        return kIngressDenySrcSet;
-    case IngressSet::kAllowDst:
-        return kIngressAllowDstSet;
-    }
-    return "";
 }
 
 } // namespace Firewall
