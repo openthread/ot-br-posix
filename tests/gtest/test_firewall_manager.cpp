@@ -96,7 +96,6 @@ public:
                 (override));
     MOCK_METHOD(otbrError, AddIp6PrefixSet, (const std::string &, const std::string &), (override));
     MOCK_METHOD(otbrError, AddSetElement, (const std::string &, const std::string &, const Ip6Prefix &), (override));
-    MOCK_METHOD(otbrError, DelSetElement, (const std::string &, const std::string &, const Ip6Prefix &), (override));
     MOCK_METHOD(otbrError, FlushSet, (const std::string &, const std::string &), (override));
     MOCK_METHOD(otbrError,
                 AddRuleNfprotoNeqIp6Return,
@@ -153,7 +152,6 @@ void SetSuccessfulDefaults(MockNftables &mock)
     ON_CALL(mock, AddChain).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddIp6PrefixSet).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddSetElement).WillByDefault(Return(OTBR_ERROR_NONE));
-    ON_CALL(mock, DelSetElement).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, FlushSet).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, BeginBatch).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, CommitBatch).WillByDefault(Return(OTBR_ERROR_NONE));
@@ -423,27 +421,6 @@ TEST(FirewallManagerTest, EnableNdProxyBeforeInitFails)
     EXPECT_EQ(fw.EnableNdProxyRedirect(domainPrefix, "eth0", 88), OTBR_ERROR_INVALID_STATE);
 }
 
-TEST(FirewallManagerTest, IngressSetOpsRouteToCorrectSets)
-{
-    NiceMock<MockNftables> mock;
-    SetSuccessfulDefaults(mock);
-
-    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressDenySrcSet), _)).Times(1);
-    EXPECT_CALL(mock, AddSetElement(_, StrEq(FirewallManager::kIngressAllowDstSet), _)).Times(1);
-    EXPECT_CALL(mock, DelSetElement(_, StrEq(FirewallManager::kIngressDenySrcSet), _)).Times(1);
-    EXPECT_CALL(mock, FlushSet(_, StrEq(FirewallManager::kIngressAllowDstSet))).Times(1);
-
-    FirewallManager fw(mock, "wpan0");
-    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
-    ASSERT_EQ(fw.EnableIngressFilter(), OTBR_ERROR_NONE);
-
-    Ip6Prefix prefix("2001:db8::", 64);
-    EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_NONE);
-    EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kAllowDst, prefix), OTBR_ERROR_NONE);
-    EXPECT_EQ(fw.DelIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_NONE);
-    EXPECT_EQ(fw.FlushIngressSet(FirewallManager::IngressSet::kAllowDst), OTBR_ERROR_NONE);
-}
-
 TEST(FirewallManagerTest, ReplaceIngressPrefixesFlushesThenRefillsBothSets)
 {
     NiceMock<MockNftables> mock;
@@ -505,8 +482,7 @@ TEST(FirewallManagerTest, FailedOperationAbortsTheBatch)
     EXPECT_CALL(mock, CommitBatch()).Times(0);
     EXPECT_CALL(mock, AbortBatch()).Times(1);
 
-    Ip6Prefix prefix("2001:db8::", 64);
-    EXPECT_NE(fw.AddIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_NONE);
+    EXPECT_NE(fw.ReplaceIngressPrefixes({Ip6Prefix("2001:db8::", 64)}, {}), OTBR_ERROR_NONE);
 }
 
 TEST(FirewallManagerTest, EnableNdProxyKeepsRuleHandleWhenCommitFails)
@@ -534,7 +510,7 @@ TEST(FirewallManagerTest, EnableNdProxyKeepsRuleHandleWhenCommitFails)
     EXPECT_EQ(fw.EnableNdProxyRedirect(domain, "eth0", 88), OTBR_ERROR_NONE);
 }
 
-TEST(FirewallManagerTest, IngressSetOpsRequireEnableIngressFilter)
+TEST(FirewallManagerTest, ReplaceIngressPrefixesRequiresEnableIngressFilter)
 {
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
@@ -542,19 +518,22 @@ TEST(FirewallManagerTest, IngressSetOpsRequireEnableIngressFilter)
     FirewallManager fw(mock, "wpan0");
     ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
 
-    // EnableIngressFilter NOT called — set ops must reject.
-    Ip6Prefix prefix("2001:db8::", 64);
-    EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_INVALID_STATE);
+    // EnableIngressFilter NOT called — there are no sets to fill yet, and the
+    // refusal comes before any batch is opened (Init() opens one of its own,
+    // so this expectation is set only after Init has run).
+    EXPECT_CALL(mock, BeginBatch()).Times(0);
+    EXPECT_EQ(fw.ReplaceIngressPrefixes({Ip6Prefix("2001:db8::", 64)}, {}), OTBR_ERROR_INVALID_STATE);
 }
 
-TEST(FirewallManagerTest, AddIngressSetElementBeforeInitFails)
+TEST(FirewallManagerTest, ReplaceIngressPrefixesBeforeInitFails)
 {
     NiceMock<MockNftables> mock;
 
     FirewallManager fw(mock, "wpan0");
 
-    Ip6Prefix prefix("2001:db8::", 64);
-    EXPECT_EQ(fw.AddIngressSetElement(FirewallManager::IngressSet::kDenySrc, prefix), OTBR_ERROR_INVALID_STATE);
+    // Nothing may reach the backend before Init(): not even a batch.
+    EXPECT_CALL(mock, BeginBatch()).Times(0);
+    EXPECT_EQ(fw.ReplaceIngressPrefixes({Ip6Prefix("2001:db8::", 64)}, {}), OTBR_ERROR_INVALID_STATE);
 }
 
 TEST(FirewallManagerTest, EnableNat44InstallsThreeChainsAndFiveRules)
