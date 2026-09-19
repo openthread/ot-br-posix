@@ -179,7 +179,9 @@ public:
 
     size_t DrainCount(void) const { return mDrainCount; }
     size_t SendCount(void) const { return mSent.size(); }
-    size_t PendingReplies(void) const { return mReplies.size(); }
+    /// The bytes of the aIndex-th datagram sent, for a test to parse.
+    const std::vector<uint8_t> &Sent(size_t aIndex) const { return mSent.at(aIndex); }
+    size_t                      PendingReplies(void) const { return mReplies.size(); }
 
     /// How many drains had happened by the time send @p aIndex was issued.
     size_t DrainsBeforeSend(size_t aIndex) const { return mDrainsBeforeThisSend.at(aIndex); }
