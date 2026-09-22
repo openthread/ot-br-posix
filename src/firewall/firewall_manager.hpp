@@ -78,8 +78,7 @@ public:
     /**
      * Install the static ingress filter chain (forward_ingress) and the
      * named sets (ingress_deny_src, ingress_allow_dst). After this returns,
-     * AddIngressSetElement / DelIngressSetElement / FlushIngressSet are
-     * available. No-op if already enabled.
+     * ReplaceIngressPrefixes is available. No-op if already enabled.
      */
     otbrError EnableIngressFilter(void);
 
@@ -107,16 +106,6 @@ public:
      * Remove the ND-proxy NFQUEUE redirect rule. No-op if not currently enabled.
      */
     otbrError DisableNdProxyRedirect(void);
-
-    enum class IngressSet
-    {
-        kDenySrc,  ///< Source addresses denied on Thread-bound traffic.
-        kAllowDst, ///< Destination addresses allowed on Thread-bound traffic.
-    };
-
-    otbrError AddIngressSetElement(IngressSet aSet, const Ip6Prefix &aPrefix);
-    otbrError DelIngressSetElement(IngressSet aSet, const Ip6Prefix &aPrefix);
-    otbrError FlushIngressSet(IngressSet aSet);
 
     /**
      * Atomically replace the full contents of both ingress sets in a single
@@ -152,8 +141,6 @@ public:
     static constexpr uint32_t kNat44Mark = 0x1001;
 
 private:
-    static const char *SetName(IngressSet aSet);
-
     INftables  &mNftables;
     std::string mThreadIfName;
     bool        mInitialized;

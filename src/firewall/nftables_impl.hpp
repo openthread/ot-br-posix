@@ -96,7 +96,6 @@ public:
     otbrError AddIp6PrefixSet(const std::string &aTable, const std::string &aSet) override;
 
     otbrError AddSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix) override;
-    otbrError DelSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix) override;
     otbrError FlushSet(const std::string &aTable, const std::string &aSet) override;
 
     otbrError AddRuleOifnameNeqReturn(const std::string &aTable,
