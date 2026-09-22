@@ -32,11 +32,61 @@
 
 #include <string.h>
 #include <utility>
+#include <vector>
 
 #include "common/logging.hpp"
 
 namespace otbr {
 namespace Firewall {
+
+namespace {
+
+// Whether every address of aInner is an address of aOuter as well.
+bool Covers(const Ip6Prefix &aOuter, const Ip6Prefix &aInner)
+{
+    bool      covers    = false;
+    Ip6Prefix truncated = aInner;
+
+    VerifyOrExit(aOuter.mLength <= aInner.mLength);
+
+    // Ip6Prefix compares the leading mLength bits and nothing after them.
+    truncated.mLength = aOuter.mLength;
+    covers            = (truncated == aOuter);
+
+exit:
+    return covers;
+}
+
+// The prefixes of aPrefixes that no other one covers, in their order.
+//
+// The sets are interval sets, and the kernel refuses an interval that
+// overlaps one already in the set. Two prefixes overlap exactly when one
+// covers the other, and the covered one adds no address to the set.
+std::vector<Ip6Prefix> WithoutCoveredPrefixes(const std::vector<Ip6Prefix> &aPrefixes)
+{
+    std::vector<Ip6Prefix> uncovered;
+
+    for (size_t i = 0; i < aPrefixes.size(); i++)
+    {
+        bool covered = false;
+
+        for (size_t j = 0; j < aPrefixes.size() && !covered; j++)
+        {
+            // Equal prefixes cover each other; the first of them stays.
+            covered = (j != i) && Covers(aPrefixes[j], aPrefixes[i]) &&
+                      (aPrefixes[j].mLength < aPrefixes[i].mLength || j < i);
+        }
+
+        if (!covered)
+        {
+            uncovered.push_back(aPrefixes[i]);
+        }
+    }
+
+    return uncovered;
+}
+
+} // namespace
 
 const char *const  FirewallManager::kTableName           = "otbr";
 const char *const  FirewallManager::kIngressChain        = "forward_ingress";
@@ -325,14 +375,24 @@ otbrError FirewallManager::ReplaceIngressPrefixes(const std::vector<Ip6Prefix> &
     SuccessOrExit(error = mNftables.BeginBatch());
     SuccessOrExit(error = mNftables.FlushSet(kTableName, kIngressDenySrcSet));
     SuccessOrExit(error = mNftables.FlushSet(kTableName, kIngressAllowDstSet));
+    // Validated before the covered ones are dropped: a zero-length prefix
+    // would cover, and so hide, every other one.
     for (const Ip6Prefix &prefix : aDenySrc)
     {
         VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
-        SuccessOrExit(error = mNftables.AddSetElement(kTableName, kIngressDenySrcSet, prefix));
     }
     for (const Ip6Prefix &prefix : aAllowDst)
     {
         VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
+    }
+
+    // Each set on its own: what one set covers says nothing about the other.
+    for (const Ip6Prefix &prefix : WithoutCoveredPrefixes(aDenySrc))
+    {
+        SuccessOrExit(error = mNftables.AddSetElement(kTableName, kIngressDenySrcSet, prefix));
+    }
+    for (const Ip6Prefix &prefix : WithoutCoveredPrefixes(aAllowDst))
+    {
         SuccessOrExit(error = mNftables.AddSetElement(kTableName, kIngressAllowDstSet, prefix));
     }
     SuccessOrExit(error = mNftables.CommitBatch());
