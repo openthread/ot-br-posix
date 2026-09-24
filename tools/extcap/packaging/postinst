@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+set -e
+
+case "$1" in
+    configure)
+        # Query tshark for Global Extcap path
+        # We must handle the case where tshark is not installed yet
+        EXTCAP_DIR=""
+        if command -v tshark >/dev/null 2>&1; then
+            # Run tshark -G folders and extract the Global Extcap path.
+            # Try "Global Extcap path:" first, fallback to "Extcap path:" excluding "Personal".
+            EXTCAP_DIR=$(tshark -G folders 2>/dev/null | grep -i "^Global Extcap path:" | sed -E 's/^.*[Ee]xtcap[[:space:]]+[Pp]ath:[[:space:]]*//' | xargs)
+            if [ -z "$EXTCAP_DIR" ]; then
+                EXTCAP_DIR=$(tshark -G folders 2>/dev/null | grep -i "Extcap path:" | grep -vi "Personal" | sed -E 's/^.*[Ee]xtcap[[:space:]]+[Pp]ath:[[:space:]]*//' | xargs)
+            fi
+        fi
+
+        # Fallback to standard paths if tshark is not available or returned empty
+        if [ -z "$EXTCAP_DIR" ]; then
+            echo "WARNING: tshark not found or extcap path not detected at install time!"
+            echo "Fallback to checking standard paths..."
+            # Check which standard path exists
+            if [ -d "/usr/libexec/wireshark/extcap" ]; then
+                EXTCAP_DIR="/usr/libexec/wireshark/extcap"
+            elif [ -d "/usr/lib/x86_64-linux-gnu/wireshark/extcap" ]; then
+                EXTCAP_DIR="/usr/lib/x86_64-linux-gnu/wireshark/extcap"
+            elif [ -d "/usr/lib/aarch64-linux-gnu/wireshark/extcap" ]; then
+                EXTCAP_DIR="/usr/lib/aarch64-linux-gnu/wireshark/extcap"
+            elif [ -d "/usr/lib/arm-linux-gnueabihf/wireshark/extcap" ]; then
+                EXTCAP_DIR="/usr/lib/arm-linux-gnueabihf/wireshark/extcap"
+            elif [ -d "/usr/lib/wireshark/extcap" ]; then
+                EXTCAP_DIR="/usr/lib/wireshark/extcap"
+            else
+                # If neither exists, we skip and print a loud warning
+                echo "----------------------------------------------------------------------"
+                echo "WARNING: No standard Wireshark extcap directory found on the system."
+                echo "Symlink was NOT created."
+                echo ""
+                echo "NOTE: You can check or verify your actual Wireshark extcap folder"
+                echo "by running: tshark -G folders"
+                echo ""
+                echo "Please install Wireshark/TShark or create the symlink manually:"
+                echo "  sudo ln -s /usr/bin/ot-extcap <your-wireshark-extcap-dir>/ot-extcap"
+                echo "----------------------------------------------------------------------"
+            fi
+        fi
+
+        if [ -n "$EXTCAP_DIR" ]; then
+            echo "----------------------------------------------------------------------"
+            echo "Detected Wireshark extcap folder: $EXTCAP_DIR"
+            echo "Installing ot-extcap symlink to:  $EXTCAP_DIR/ot-extcap"
+            echo ""
+            echo "NOTE: You can check or verify your actual Wireshark extcap folder"
+            echo "by running: tshark -G folders"
+            echo "----------------------------------------------------------------------"
+            mkdir -p "$EXTCAP_DIR"
+            # Create absolute symlink pointing to the installed binary
+            ln -sf /usr/bin/ot-extcap "$EXTCAP_DIR/ot-extcap"
+
+            # Record installed symlink in manifest for clean removal
+            mkdir -p /var/lib/ot-extcap
+            echo "$EXTCAP_DIR/ot-extcap" >/var/lib/ot-extcap/manifest.list
+        fi
+        ;;
+
+    abort-upgrade | abort-remove | abort-install) ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
