@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <net/if.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -40,8 +41,10 @@
 #include <openthread/border_routing.h>
 #include <openthread/dataset.h>
 #include <openthread/dnssd_server.h>
+#include <openthread/link.h>
 #include <openthread/link_metrics.h>
 #include <openthread/logging.h>
+#include <openthread/mdns.h>
 #include <openthread/nat64.h>
 #include <openthread/netdiag.h>
 #include <openthread/srp_server.h>
@@ -474,17 +477,154 @@ void RcpHost::SetBackboneRouterStateChangedCallback(BackboneRouterStateChangedCa
 
 void RcpHost::Reset(void)
 {
+    HostConfig hostConfig;
+
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
+
+    SaveHostConfig(hostConfig);
 
     otSysDeinit();
     mInstance = nullptr;
 
     Init();
+    RestoreHostConfig(hostConfig);
+
     for (auto &handler : mResetHandlers)
     {
         handler();
     }
     mEnableAutoAttach = true;
+}
+
+void RcpHost::SaveHostConfig(HostConfig &aHostConfig) const
+{
+#ifndef OTBR_VENDOR_NAME
+    aHostConfig.mVendorName = otThreadGetVendorName(mInstance);
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    aHostConfig.mVendorModel = otThreadGetVendorModel(mInstance);
+#endif
+
+#if OTBR_ENABLE_MDNS_OPENTHREAD
+    {
+        const char         *localHostName                                         = otMdnsGetLocalHostName(mInstance);
+        const otExtAddress *extAddress                                            = otLinkGetExtendedAddress(mInstance);
+        char                generatedName[sizeof("ot") + OT_EXT_ADDRESS_SIZE * 2] = "ot";
+
+        // In the auto-enable mode the mDNS module follows the infrastructure interface state on its own, only an
+        // explicitly enabled mDNS module needs to be restored.
+        aHostConfig.mMdnsEnabled = otMdnsIsEnabled(mInstance) && !otMdnsGetAutoEnableMode(mInstance);
+
+        // The auto-generated local host name is "ot" followed by the extended address. It is generated again from
+        // the (possibly new) extended address after the reset, any other name was set explicitly and is preserved.
+        for (uint8_t byte : extAddress->m8)
+        {
+            snprintf(generatedName + strlen(generatedName), sizeof("00"), "%02x", byte);
+        }
+
+        if (strcmp(localHostName, generatedName) != 0)
+        {
+            aHostConfig.mMdnsLocalHostName = localHostName;
+        }
+    }
+#endif
+
+#if OTBR_ENABLE_NAT64
+    aHostConfig.mNat64Enabled = otNat64GetTranslatorState(mInstance) != OT_NAT64_STATE_DISABLED;
+#endif
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+    aHostConfig.mDnsUpstreamQueryEnabled = otDnssdUpstreamQueryIsEnabled(mInstance);
+#endif
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    aHostConfig.mDhcp6PdEnabled =
+        otBorderRoutingDhcp6PdGetState(mInstance) != OT_BORDER_ROUTING_DHCP6_PD_STATE_DISABLED;
+#endif
+#if OTBR_ENABLE_TREL
+    aHostConfig.mTrelEnabled = otTrelIsEnabled(mInstance);
+#endif
+
+    aHostConfig.mTxPowerValid = otPlatRadioGetTransmitPower(mInstance, &aHostConfig.mTxPower) == OT_ERROR_NONE;
+}
+
+void RcpHost::RestoreHostConfig(const HostConfig &aHostConfig)
+{
+#ifndef OTBR_VENDOR_NAME
+    if (!aHostConfig.mVendorName.empty())
+    {
+        ThreadHelper::LogOpenThreadResult("Restore vendor name",
+                                          otThreadSetVendorName(mInstance, aHostConfig.mVendorName.c_str()));
+    }
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    if (!aHostConfig.mVendorModel.empty())
+    {
+        ThreadHelper::LogOpenThreadResult("Restore vendor model",
+                                          otThreadSetVendorModel(mInstance, aHostConfig.mVendorModel.c_str()));
+    }
+#endif
+
+#if OTBR_ENABLE_FEATURE_FLAGS
+    if (!mAppliedFeatureFlagListBytes.empty())
+    {
+        FeatureFlagList featureFlagList;
+
+        if (featureFlagList.ParseFromString(mAppliedFeatureFlagListBytes))
+        {
+            ThreadHelper::LogOpenThreadResult("Restore feature flags", ApplyFeatureFlagList(featureFlagList));
+        }
+        else
+        {
+            otbrLogWarning("Failed to parse the applied feature flags");
+        }
+    }
+#endif
+
+#if OTBR_ENABLE_NAT64
+    otNat64SetEnabled(mInstance, aHostConfig.mNat64Enabled);
+#endif
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+    otDnssdUpstreamQuerySetEnabled(mInstance, aHostConfig.mDnsUpstreamQueryEnabled);
+#endif
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+    otBorderRoutingDhcp6PdSetEnabled(mInstance, aHostConfig.mDhcp6PdEnabled);
+#endif
+#if OTBR_ENABLE_TREL
+    otTrelSetEnabled(mInstance, aHostConfig.mTrelEnabled);
+#endif
+
+    if (aHostConfig.mTxPowerValid)
+    {
+        ThreadHelper::LogOpenThreadResult("Restore transmit power",
+                                          otPlatRadioSetTransmitPower(mInstance, aHostConfig.mTxPower));
+    }
+
+#if OTBR_ENABLE_MDNS_OPENTHREAD
+    // The local host name can only be set while the mDNS module is disabled.
+    if (!aHostConfig.mMdnsLocalHostName.empty())
+    {
+        ThreadHelper::LogOpenThreadResult("Restore mDNS local host name",
+                                          otMdnsSetLocalHostName(mInstance, aHostConfig.mMdnsLocalHostName.c_str()));
+    }
+
+    if (aHostConfig.mMdnsEnabled)
+    {
+        uint32_t infraIfIndex = 0;
+
+        if (mConfig.mBackboneInterfaceName != nullptr)
+        {
+            infraIfIndex = if_nametoindex(mConfig.mBackboneInterfaceName);
+        }
+
+        if (infraIfIndex != 0)
+        {
+            ThreadHelper::LogOpenThreadResult("Restore mDNS", otMdnsSetEnabled(mInstance, true, infraIfIndex));
+        }
+        else
+        {
+            otbrLogWarning("Failed to restore mDNS: unknown infrastructure interface");
+        }
+    }
+#endif
 }
 
 const char *RcpHost::GetThreadVersion(void)
