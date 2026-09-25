@@ -129,6 +129,15 @@ otbr_install()
         "-DOT_PACKAGE_VERSION="
     )
 
+    # On macOS, recover from an RCP failure in place. Without it the agent
+    # exits on the first radio timeout, and a restart is expensive here: the
+    # utun is re-created (often under a new name), the pf anchor reloaded and
+    # the mDNSResponder registrations redone. The agent still exits once this
+    # many recoveries in a row have failed. OTBR_OPTIONS can override it.
+    if [[ ${PLATFORM:-} == macOS || ${OSTYPE:-} == darwin* ]]; then
+        otbr_options+=("-DOT_RCP_RESTORATION_MAX_COUNT=2")
+    fi
+
     # If the user provided custom options, append them
     if [[ -n ${OTBR_OPTIONS:-} ]]; then
         local user_options=()
