@@ -343,6 +343,20 @@ private:
 
         bool IsEmpty(void) { return mEntries.empty(); }
 
+        // mDNS reports the interface it saw a record on, which for a service on this very host is the loopback
+        // interface first. Whatever the interface, the Thread side reaches it through this host: deliver the result
+        // to every resolver registered for the name, tagged with the interface that resolver asked about.
+        void InvokeAllCallbacksAnyInterface(CallbackResultType &aResult)
+        {
+            std::vector<RequestType> copyEntries(mEntries);
+
+            for (const RequestType &entry : copyEntries)
+            {
+                aResult.mInfraIfIndex = static_cast<uint32_t>(entry.first);
+                entry.second->InvokeCallback(aResult);
+            }
+        }
+
         void InvokeAllCallbacks(uint64_t aInfraIfIndex, CallbackResultType &aResult)
         {
             std::vector<CallbackPtrType> copyCallbacks;
