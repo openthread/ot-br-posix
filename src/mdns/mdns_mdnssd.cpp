@@ -1414,7 +1414,9 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleResolveResult(DNSServiceR
     mInstanceInfo.mWeight   = 0;
 
     DeallocateServiceRef();
-    error = GetAddrInfo(aInterfaceIndex);
+    // The reply for a service on this host arrives on the loopback interface, where the host's only address is
+    // the loopback link-local one. Look the host up on any interface, as `HostSubscription` does.
+    error = GetAddrInfo(kDNSServiceInterfaceIndexAny);
 
 exit:
     if (error != OTBR_ERROR_NONE)
@@ -1502,7 +1504,8 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
 
     SuccessOrExit(address.CopyFrom(*aAddress), otbrLogWarning("DNSServiceGetAddrInfo unsupported sa_family %u",
                                                               static_cast<unsigned int>(aAddress->sa_family)));
-    VerifyOrExit(!address.IsUnspecified() && !address.IsMulticast() && !address.IsLoopback(),
+    // A link-local address cannot be reached beyond its link: useless to the Thread devices asking.
+    VerifyOrExit(!address.IsUnspecified() && !address.IsMulticast() && !address.IsLoopback() && !address.IsLinkLocal(),
                  otbrLogDebug("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
 
     otbrLogInfo("DNSServiceGetAddrInfo reply: %s address=%s, ttl=%" PRIu32, isAdd ? "add" : "remove",
@@ -1524,11 +1527,10 @@ exit:
         otbrLogInfo("Will re-resolve service instance %s on the retryable error: %s", mInstanceInfo.mName.c_str(),
                     DNSErrorToString(aErrorCode));
 
-        mPublisher.ScheduleRetry<ServiceInstanceResolution>(this,
-                                                            [aInterfaceIndex](ServiceInstanceResolution *aInstance) {
-                                                                aInstance->Release();
-                                                                aInstance->GetAddrInfo(aInterfaceIndex);
-                                                            });
+        mPublisher.ScheduleRetry<ServiceInstanceResolution>(this, [](ServiceInstanceResolution *aInstance) {
+            aInstance->Release();
+            aInstance->GetAddrInfo(kDNSServiceInterfaceIndexAny);
+        });
     }
     else if ((!mInstanceInfo.mAddresses.empty() && !moreComing) || aErrorCode != kDNSServiceErr_NoError)
     {
@@ -1610,7 +1612,8 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
 
     SuccessOrExit(address.CopyFrom(*aAddress), otbrLogWarning("DNSServiceGetAddrInfo unsupported sa_family %u",
                                                               static_cast<unsigned int>(aAddress->sa_family)));
-    VerifyOrExit(!address.IsUnspecified() && !address.IsMulticast() && !address.IsLoopback(),
+    // A link-local address cannot be reached beyond its link: useless to the Thread devices asking.
+    VerifyOrExit(!address.IsUnspecified() && !address.IsMulticast() && !address.IsLoopback() && !address.IsLinkLocal(),
                  otbrLogDebug("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
 
     otbrLogInfo("DNSServiceGetAddrInfo reply: %s address=%s, ttl=%" PRIu32, isAdd ? "add" : "remove",
