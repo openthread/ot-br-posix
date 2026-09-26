@@ -483,7 +483,7 @@ void DnssdPlatform::ProcessServiceBrowsers(const std::string                    
     result.mTtl             = aInfo.mTtl;
     result.mInfraIfIndex    = aInfo.mNetifIndex;
 
-    it->second.InvokeAllCallbacks(result.mInfraIfIndex, result);
+    it->second.InvokeAllCallbacksAnyInterface(result);
 
 exit:
     return;
@@ -512,7 +512,7 @@ void DnssdPlatform::ProcessServiceResolvers(const std::string                   
     srvResult.mTtl             = aInfo.mTtl;
     srvResult.mInfraIfIndex    = aInfo.mNetifIndex;
 
-    it->second.InvokeAllCallbacks(srvResult.mInfraIfIndex, srvResult);
+    it->second.InvokeAllCallbacksAnyInterface(srvResult);
 
 exit:
     return;
@@ -536,7 +536,7 @@ void DnssdPlatform::ProcessTxtResolvers(const std::string &aType, const Mdns::Pu
     txtResult.mTtl             = aInfo.mTtl;
     txtResult.mInfraIfIndex    = aInfo.mNetifIndex;
 
-    it->second.InvokeAllCallbacks(txtResult.mInfraIfIndex, txtResult);
+    it->second.InvokeAllCallbacksAnyInterface(txtResult);
 
 exit:
     return;
@@ -567,7 +567,7 @@ void DnssdPlatform::ProcessIpAddrResolvers(const std::string                    
     result.mAddressesLength = addressAndTtls.size();
     result.mInfraIfIndex    = aInfo.mNetifIndex;
 
-    it->second.InvokeAllCallbacks(result.mInfraIfIndex, result);
+    it->second.InvokeAllCallbacksAnyInterface(result);
 
 exit:
     return;

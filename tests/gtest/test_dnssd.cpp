@@ -294,4 +294,52 @@ TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
     EXPECT_FALSE(invoked);
 }
 
+TEST_F(DnssdTest, TestServiceResolverResultIsDeliveredWhateverInterfaceReportedIt)
+{
+    // mDNS reports the interface it saw a record on. A service published on this very host is reported on the
+    // loopback interface first; its result must still reach the resolver registered for the infrastructure
+    // interface, tagged with that interface.
+    constexpr uint8_t kInfraIfIndex    = 1;
+    constexpr uint8_t kLoopbackIfIndex = 2;
+
+    otbr::DnssdPlatform::SrvResolver              resolver;
+    otbr::Mdns::Publisher::DiscoveredInstanceInfo discoveredInstanceInfo;
+    const char                                   *serviceType = "_plant._tcp";
+    bool                                          invoked     = false;
+
+    resolver.mServiceType     = serviceType;
+    resolver.mServiceInstance = "ZGMF-X20A #1";
+    resolver.mInfraIfIndex    = kInfraIfIndex;
+    resolver.mCallback        = nullptr;
+
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(resolver.mServiceInstance))).Times(1);
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(resolver.mServiceInstance))).Times(1);
+
+    mDnssdPlatform->StartServiceResolver(resolver,
+                                         std::make_unique<otbr::DnssdPlatform::StdSrvCallback>(
+                                             [&resolver, &invoked](const otbr::DnssdPlatform::SrvResult &aResult) {
+                                                 EXPECT_EQ(aResult.mInfraIfIndex, resolver.mInfraIfIndex);
+                                                 EXPECT_STREQ(aResult.mServiceInstance, resolver.mServiceInstance);
+                                                 EXPECT_STREQ(aResult.mHostName, "Minerva");
+                                                 EXPECT_EQ(aResult.mPort, 8941);
+                                                 invoked = true;
+                                             },
+                                             /* aId */ 4));
+    ProcessMainloop();
+
+    discoveredInstanceInfo.mRemoved    = false;
+    discoveredInstanceInfo.mNetifIndex = kLoopbackIfIndex;
+    discoveredInstanceInfo.mName       = "ZGMF-X20A #1";
+    discoveredInstanceInfo.mHostName   = "Minerva.";
+    discoveredInstanceInfo.mTtl        = 10;
+    discoveredInstanceInfo.mPort       = 8941;
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+
+    EXPECT_TRUE(invoked);
+
+    mDnssdPlatform->StopServiceResolver(resolver, otbr::DnssdPlatform::StdSrvCallback(nullptr, 4));
+    ProcessMainloop();
+}
+
 #endif // OTBR_ENABLE_DNSSD_PLAT
