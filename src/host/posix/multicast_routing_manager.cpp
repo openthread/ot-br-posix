@@ -26,6 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "MCAST"
+
 #include "multicast_routing_manager.hpp"
 
 #include <algorithm>
@@ -53,10 +55,11 @@
 #include "common/types.hpp"
 #include "utils/socket_utils.hpp"
 
-#ifdef __linux__
 #if OTBR_ENABLE_BACKBONE_ROUTER
 
 namespace otbr {
+
+#ifdef __linux__
 
 MulticastRoutingManager::MulticastRoutingManager(const Netif                   &aNetif,
                                                  const InfraIf                 &aInfraIf,
@@ -658,7 +661,51 @@ bool MulticastRoutingManager::MatchesMeshLocalPrefix(const Ip6Address        &aA
     return otIp6PrefixMatch(reinterpret_cast<const otIp6Address *>(aAddress.m8), &matcher) >= OT_IP6_PREFIX_BITSIZE;
 }
 
+#else // __linux__
+
+// Kernel multicast routing (MRT6) is Linux-only. Elsewhere the class exists so
+// that a Backbone Router build links, but it forwards nothing: the Backbone
+// Router will not relay multicast between the Thread network and the backbone
+// link on this platform.
+
+MulticastRoutingManager::MulticastRoutingManager(const Netif                   &aNetif,
+                                                 const InfraIf                 &aInfraIf,
+                                                 const Host::NetworkProperties &aNetworkProperties)
+{
+    OTBR_UNUSED_VARIABLE(aNetif);
+    OTBR_UNUSED_VARIABLE(aInfraIf);
+    OTBR_UNUSED_VARIABLE(aNetworkProperties);
+}
+
+void MulticastRoutingManager::HandleStateChange(otBackboneRouterState aState)
+{
+    // Constructed whenever the Backbone Router is compiled in: warn only when it would start forwarding.
+    if (aState == OT_BACKBONE_ROUTER_STATE_PRIMARY)
+    {
+        otbrLogWarning(
+            "Multicast routing is not available on this platform; the Backbone Router will not forward multicast");
+    }
+}
+
+void MulticastRoutingManager::HandleBackboneMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                                   const Ip6Address                      &aAddress)
+{
+    OTBR_UNUSED_VARIABLE(aEvent);
+    OTBR_UNUSED_VARIABLE(aAddress);
+}
+
+void MulticastRoutingManager::Update(MainloopContext &aContext)
+{
+    OTBR_UNUSED_VARIABLE(aContext);
+}
+
+void MulticastRoutingManager::Process(const MainloopContext &aContext)
+{
+    OTBR_UNUSED_VARIABLE(aContext);
+}
+
+#endif // __linux__
+
 } // namespace otbr
 
 #endif // OTBR_ENABLE_BACKBONE_ROUTER
-#endif // __linux__

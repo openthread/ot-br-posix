@@ -53,13 +53,23 @@ public:
                                      const InfraIf                 &aInfraIf,
                                      const Host::NetworkProperties &aNetworkProperties);
 
+#ifdef __linux__
     void Deinit(void) { FinalizeMulticastRouterSock(); }
     bool IsEnabled(void) const { return mState == kStateEnabled; }
+#else
+    // Kernel multicast routing (MRT6) is Linux-only: elsewhere this class forwards nothing.
+    void Deinit(void) {}
+    bool IsEnabled(void) const { return false; }
+#endif
     void HandleStateChange(otBackboneRouterState aState);
     void HandleBackboneMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
                                               const Ip6Address                      &aAddress);
 
 private:
+    void Update(MainloopContext &aContext) override;
+    void Process(const MainloopContext &aContext) override;
+
+#ifdef __linux__
     static constexpr uint32_t kUsPerSecond        = 1000000; //< Microseconds per second.
     static constexpr uint32_t kMinRetryIntervalUs = 100000;  //< Minimum retry interval (100 ms) in microseconds.
     static constexpr uint32_t kMaxRetryIntervalUs = 5000000; //< Maximum retry interval (5 seconds) in microseconds.
@@ -109,9 +119,6 @@ private:
         MifIndex      mOif;
     };
 
-    void Update(MainloopContext &aContext) override;
-    void Process(const MainloopContext &aContext) override;
-
     void      Enable(void);
     void      Disable(void);
     void      Add(const Ip6Address &aAddress);
@@ -146,6 +153,7 @@ private:
     State                          mState;
     uint32_t                       mRetryIntervalUs;
     otbr::Timepoint                mNextRetryTime;
+#endif // __linux__
 };
 
 } // namespace otbr
