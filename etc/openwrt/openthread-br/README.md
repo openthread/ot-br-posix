@@ -51,7 +51,7 @@ opkg install openthread-br-1.0*.ipk
 
 NOTES:
 
-- `openthread-br` requires `ipset` and `iptables-mod-extra` packages if the firewall feature is enabled. When built with the opt-in `OTBR_NFTABLES=ON`, it instead requires `libmnl`, `libnftnl`, `kmod-nft-core` and `kmod-nft-nat`.
+- `openthread-br` requires `ipset` and `iptables-mod-extra` packages if the firewall feature is enabled. When built with the opt-in `OTBR_NFTABLES=ON`, it instead requires `libmnl`, `libnftnl` and `kmod-nft-core`, plus `kmod-nft-nat` when `OTBR_NAT64=ON`.
 - `openthread-br` requires `libavahi-client` and `avahi-daemon` package if the MDNS feature is enabled.
 
 ## Usage
