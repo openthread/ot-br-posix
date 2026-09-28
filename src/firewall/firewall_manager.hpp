@@ -57,23 +57,32 @@ public:
      *                       Caller is responsible for Init()/Deinit() of the
      *                       backend; FirewallManager only uses it.
      * @param[in] aThreadInterfaceName  Interface name (e.g. "wpan0") used to
-     *                                  scope ingress filtering rules.
+     *                                  scope ingress filtering rules and to
+     *                                  name this instance's table.
      */
-    FirewallManager(INftables &aNftables, std::string aThreadInterfaceName);
+    FirewallManager(INftables &aNftables, const std::string &aThreadInterfaceName);
 
     /**
-     * Create the OTBR table. Idempotent: tears down any pre-existing OTBR
-     * table first. The ingress filter chain (forward_ingress) and the
-     * prerouting chain (dua_prerouting) are NOT created here — they are
-     * created on demand by EnableIngressFilter() and EnableNdProxyRedirect()
-     * respectively, so a phase that doesn't need them doesn't pay for them.
+     * Create this instance's table. Idempotent: tears down a pre-existing
+     * table of the same name first. The ingress filter chain (forward_ingress)
+     * and the prerouting chain (dua_prerouting) are NOT created here — they
+     * are created on demand by EnableIngressFilter() and
+     * EnableNdProxyRedirect() respectively, so a phase that doesn't need them
+     * doesn't pay for them.
      */
     otbrError Init(void);
 
     /**
-     * Tear down the OTBR table (cascades chains/sets/rules).
+     * Tear down this instance's table (cascades chains/sets/rules).
      */
     otbrError Deinit(void);
+
+    /**
+     * Returns the name of this instance's table: "otbr_" followed by the
+     * Thread interface name, so that agents on different interfaces keep
+     * their rules apart.
+     */
+    const std::string &GetTableName(void) const { return mTableName; }
 
     /**
      * Install the static ingress filter chain (forward_ingress) and the
@@ -139,7 +148,6 @@ public:
     // with the C++11 out-of-line ones when parts of a build (a C++17 gtest,
     // say) compile this header under a newer standard. A single definition
     // in the .cpp means the same thing in every standard.
-    static const char *const kTableName;
     static const char *const kIngressChain;
     static const char *const kPreroutingChain;
     static const char *const kNatPreroutingChain;
@@ -156,6 +164,7 @@ private:
 
     INftables  &mNftables;
     std::string mThreadIfName;
+    std::string mTableName;
     bool        mInitialized;
     bool        mIngressFilterEnabled;
     bool        mNat44Enabled;

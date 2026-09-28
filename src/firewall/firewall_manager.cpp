@@ -31,14 +31,12 @@
 #include "firewall/firewall_manager.hpp"
 
 #include <string.h>
-#include <utility>
 
 #include "common/logging.hpp"
 
 namespace otbr {
 namespace Firewall {
 
-const char *const  FirewallManager::kTableName           = "otbr";
 const char *const  FirewallManager::kIngressChain        = "forward_ingress";
 const char *const  FirewallManager::kPreroutingChain     = "dua_prerouting";
 const char *const  FirewallManager::kNatPreroutingChain  = "nat_prerouting";
@@ -48,9 +46,10 @@ const char *const  FirewallManager::kIngressDenySrcSet   = "ingress_deny_src";
 const char *const  FirewallManager::kIngressAllowDstSet  = "ingress_allow_dst";
 constexpr uint32_t FirewallManager::kNat44Mark;
 
-FirewallManager::FirewallManager(INftables &aNftables, std::string aThreadInterfaceName)
+FirewallManager::FirewallManager(INftables &aNftables, const std::string &aThreadInterfaceName)
     : mNftables(aNftables)
-    , mThreadIfName(std::move(aThreadInterfaceName))
+    , mThreadIfName(aThreadInterfaceName)
+    , mTableName("otbr_" + aThreadInterfaceName)
     , mInitialized(false)
     , mIngressFilterEnabled(false)
     , mNat44Enabled(false)
@@ -66,11 +65,11 @@ otbrError FirewallManager::Init(void)
     VerifyOrExit(!mInitialized, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(!mThreadIfName.empty(), error = OTBR_ERROR_INVALID_ARGS);
 
-    // Idempotent reset: drop any leftover OTBR table from a prior run and
-    // recreate it empty, in one transaction so no partial state is visible.
+    // Idempotent reset: drop a leftover table of this name from a prior run
+    // and recreate it empty, in one transaction so no partial state is visible.
     SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.DelTable(kTableName));
-    SuccessOrExit(error = mNftables.AddTable(kTableName));
+    SuccessOrExit(error = mNftables.DelTable(mTableName));
+    SuccessOrExit(error = mNftables.AddTable(mTableName));
     SuccessOrExit(error = mNftables.CommitBatch());
 
     mInitialized = true;
@@ -92,7 +91,7 @@ otbrError FirewallManager::Deinit(void)
 
     if ((error = mNftables.BeginBatch()) == OTBR_ERROR_NONE)
     {
-        if ((error = mNftables.DelTable(kTableName)) == OTBR_ERROR_NONE)
+        if ((error = mNftables.DelTable(mTableName)) == OTBR_ERROR_NONE)
         {
             error = mNftables.CommitBatch();
         }
@@ -123,27 +122,27 @@ otbrError FirewallManager::EnableIngressFilter(void)
 
     SuccessOrExit(error = mNftables.BeginBatch());
 
-    SuccessOrExit(error = mNftables.AddIp6PrefixSet(kTableName, kIngressDenySrcSet));
-    SuccessOrExit(error = mNftables.AddIp6PrefixSet(kTableName, kIngressAllowDstSet));
+    SuccessOrExit(error = mNftables.AddIp6PrefixSet(mTableName, kIngressDenySrcSet));
+    SuccessOrExit(error = mNftables.AddIp6PrefixSet(mTableName, kIngressAllowDstSet));
 
-    SuccessOrExit(error = mNftables.AddChain(kTableName, kIngressChain, Hook::kForward, ChainPriority::kFilter));
+    SuccessOrExit(error = mNftables.AddChain(mTableName, kIngressChain, Hook::kForward, ChainPriority::kFilter));
 
     // This chain filters IPv6 and nothing else, as the ip6tables rules it
     // replaces did. The table is inet, though, so without this the unicast
     // drop below also catches IPv4 forwarded to the Thread interface -- the
     // replies NAT64 depends on. nat_forward accepting them does not help:
     // an accept ends that base chain only, and this one still runs.
-    SuccessOrExit(error = mNftables.AddRuleNfprotoNeqIp6Return(kTableName, kIngressChain, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleOifnameNeqReturn(kTableName, kIngressChain, mThreadIfName, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleIifPkttypeVerdict(kTableName, kIngressChain, mThreadIfName,
+    SuccessOrExit(error = mNftables.AddRuleNfprotoNeqIp6Return(mTableName, kIngressChain, nullptr));
+    SuccessOrExit(error = mNftables.AddRuleOifnameNeqReturn(mTableName, kIngressChain, mThreadIfName, nullptr));
+    SuccessOrExit(error = mNftables.AddRuleIifPkttypeVerdict(mTableName, kIngressChain, mThreadIfName,
                                                              PktType::kUnicast, Verdict::kDrop, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleSetLookupVerdict(kTableName, kIngressChain, kIngressDenySrcSet,
+    SuccessOrExit(error = mNftables.AddRuleSetLookupVerdict(mTableName, kIngressChain, kIngressDenySrcSet,
                                                             SetDirection::kSrc, Verdict::kDrop, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleSetLookupVerdict(kTableName, kIngressChain, kIngressAllowDstSet,
+    SuccessOrExit(error = mNftables.AddRuleSetLookupVerdict(mTableName, kIngressChain, kIngressAllowDstSet,
                                                             SetDirection::kDst, Verdict::kAccept, nullptr));
     SuccessOrExit(
-        error = mNftables.AddRulePkttypeVerdict(kTableName, kIngressChain, PktType::kUnicast, Verdict::kDrop, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleVerdict(kTableName, kIngressChain, Verdict::kAccept, nullptr));
+        error = mNftables.AddRulePkttypeVerdict(mTableName, kIngressChain, PktType::kUnicast, Verdict::kDrop, nullptr));
+    SuccessOrExit(error = mNftables.AddRuleVerdict(mTableName, kIngressChain, Verdict::kAccept, nullptr));
 
     SuccessOrExit(error = mNftables.CommitBatch());
 
@@ -170,25 +169,25 @@ otbrError FirewallManager::EnableNat44Masquerade(const std::string &aUpstreamInt
 
     // Mangle-prerouting: tag packets coming from the Thread interface so the
     // postrouting chain can MASQUERADE them. Type filter, mangle priority.
-    SuccessOrExit(error = mNftables.AddChain(kTableName, kNatPreroutingChain, Hook::kPrerouting, ChainPriority::kMangle,
+    SuccessOrExit(error = mNftables.AddChain(mTableName, kNatPreroutingChain, Hook::kPrerouting, ChainPriority::kMangle,
                                              ChainType::kFilter));
     SuccessOrExit(error =
-                      mNftables.AddRuleIifMark(kTableName, kNatPreroutingChain, mThreadIfName, kNat44Mark, nullptr));
+                      mNftables.AddRuleIifMark(mTableName, kNatPreroutingChain, mThreadIfName, kNat44Mark, nullptr));
 
     // Postrouting: source-NAT marked traffic. Type nat, srcnat priority.
-    SuccessOrExit(error = mNftables.AddChain(kTableName, kNatPostroutingChain, Hook::kPostrouting,
+    SuccessOrExit(error = mNftables.AddChain(mTableName, kNatPostroutingChain, Hook::kPostrouting,
                                              ChainPriority::kSrcNat, ChainType::kNat));
-    SuccessOrExit(error = mNftables.AddRuleMarkMasquerade(kTableName, kNatPostroutingChain, kNat44Mark, nullptr));
+    SuccessOrExit(error = mNftables.AddRuleMarkMasquerade(mTableName, kNatPostroutingChain, kNat44Mark, nullptr));
 
     // Forward: accept traffic in either direction on the upstream interface.
     // Hooked at FORWARD/filter alongside forward_ingress. Accepting here does
     // not exempt a packet from that chain -- every base chain on a hook runs
     // -- so forward_ingress leaves IPv4 alone by itself.
-    SuccessOrExit(error = mNftables.AddChain(kTableName, kNatForwardChain, Hook::kForward, ChainPriority::kFilter,
+    SuccessOrExit(error = mNftables.AddChain(mTableName, kNatForwardChain, Hook::kForward, ChainPriority::kFilter,
                                              ChainType::kFilter));
-    SuccessOrExit(error = mNftables.AddRuleOifnameVerdict(kTableName, kNatForwardChain, aUpstreamInterfaceName,
+    SuccessOrExit(error = mNftables.AddRuleOifnameVerdict(mTableName, kNatForwardChain, aUpstreamInterfaceName,
                                                           Verdict::kAccept, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleIifnameVerdict(kTableName, kNatForwardChain, aUpstreamInterfaceName,
+    SuccessOrExit(error = mNftables.AddRuleIifnameVerdict(mTableName, kNatForwardChain, aUpstreamInterfaceName,
                                                           Verdict::kAccept, nullptr));
 
     SuccessOrExit(error = mNftables.CommitBatch());
@@ -219,15 +218,15 @@ otbrError FirewallManager::EnableNdProxyRedirect(const Ip6Prefix   &aDomainPrefi
 
     if (!mDuaChainCreated)
     {
-        SuccessOrExit(error = mNftables.AddChain(kTableName, kPreroutingChain, Hook::kPrerouting, ChainPriority::kRaw));
+        SuccessOrExit(error = mNftables.AddChain(mTableName, kPreroutingChain, Hook::kPrerouting, ChainPriority::kRaw));
     }
 
     if (mNdRuleHandle != 0)
     {
-        SuccessOrExit(error = mNftables.DelRule(kTableName, kPreroutingChain, mNdRuleHandle));
+        SuccessOrExit(error = mNftables.DelRule(mTableName, kPreroutingChain, mNdRuleHandle));
     }
 
-    SuccessOrExit(error = mNftables.AddRuleNdNsRedirect(kTableName, kPreroutingChain, aDomainPrefix,
+    SuccessOrExit(error = mNftables.AddRuleNdNsRedirect(mTableName, kPreroutingChain, aDomainPrefix,
                                                         aBackboneInterfaceName, aQueueNum, &newHandle));
 
     SuccessOrExit(error = mNftables.CommitBatch());
@@ -252,7 +251,7 @@ otbrError FirewallManager::DisableNdProxyRedirect(void)
     VerifyOrExit(mNdRuleHandle != 0);
 
     SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.DelRule(kTableName, kPreroutingChain, mNdRuleHandle));
+    SuccessOrExit(error = mNftables.DelRule(mTableName, kPreroutingChain, mNdRuleHandle));
     SuccessOrExit(error = mNftables.CommitBatch());
 
     mNdRuleHandle = 0;
@@ -274,7 +273,7 @@ otbrError FirewallManager::AddIngressSetElement(IngressSet aSet, const Ip6Prefix
     VerifyOrExit(aPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
 
     SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.AddSetElement(kTableName, SetName(aSet), aPrefix));
+    SuccessOrExit(error = mNftables.AddSetElement(mTableName, SetName(aSet), aPrefix));
     SuccessOrExit(error = mNftables.CommitBatch());
 
 exit:
@@ -293,7 +292,7 @@ otbrError FirewallManager::DelIngressSetElement(IngressSet aSet, const Ip6Prefix
     VerifyOrExit(aPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
 
     SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.DelSetElement(kTableName, SetName(aSet), aPrefix));
+    SuccessOrExit(error = mNftables.DelSetElement(mTableName, SetName(aSet), aPrefix));
     SuccessOrExit(error = mNftables.CommitBatch());
 
 exit:
@@ -311,7 +310,7 @@ otbrError FirewallManager::FlushIngressSet(IngressSet aSet)
     VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
 
     SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.FlushSet(kTableName, SetName(aSet)));
+    SuccessOrExit(error = mNftables.FlushSet(mTableName, SetName(aSet)));
     SuccessOrExit(error = mNftables.CommitBatch());
 
 exit:
@@ -330,17 +329,17 @@ otbrError FirewallManager::ReplaceIngressPrefixes(const std::vector<Ip6Prefix> &
     VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
 
     SuccessOrExit(error = mNftables.BeginBatch());
-    SuccessOrExit(error = mNftables.FlushSet(kTableName, kIngressDenySrcSet));
-    SuccessOrExit(error = mNftables.FlushSet(kTableName, kIngressAllowDstSet));
+    SuccessOrExit(error = mNftables.FlushSet(mTableName, kIngressDenySrcSet));
+    SuccessOrExit(error = mNftables.FlushSet(mTableName, kIngressAllowDstSet));
     for (const Ip6Prefix &prefix : aDenySrc)
     {
         VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
-        SuccessOrExit(error = mNftables.AddSetElement(kTableName, kIngressDenySrcSet, prefix));
+        SuccessOrExit(error = mNftables.AddSetElement(mTableName, kIngressDenySrcSet, prefix));
     }
     for (const Ip6Prefix &prefix : aAllowDst)
     {
         VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
-        SuccessOrExit(error = mNftables.AddSetElement(kTableName, kIngressAllowDstSet, prefix));
+        SuccessOrExit(error = mNftables.AddSetElement(mTableName, kIngressAllowDstSet, prefix));
     }
     SuccessOrExit(error = mNftables.CommitBatch());
 
