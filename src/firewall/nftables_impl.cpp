@@ -570,37 +570,6 @@ exit:
     return error;
 }
 
-otbrError Nftables::DelSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix)
-{
-    otbrError         error = OTBR_ERROR_NONE;
-    struct nftnl_set *s     = nullptr;
-
-    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
-
-    s = nftnl_set_alloc();
-    VerifyOrExit(s != nullptr, error = OTBR_ERROR_ERRNO);
-
-    nftnl_set_set_str(s, NFTNL_SET_TABLE, aTable.c_str());
-    nftnl_set_set_str(s, NFTNL_SET_NAME, aSet.c_str());
-    nftnl_set_set_u32(s, NFTNL_SET_FAMILY, NFPROTO_INET);
-
-    SuccessOrExit(error = AttachPrefixInterval(s, aPrefix));
-
-    {
-        struct nlmsghdr *nlh = nftnl_nlmsg_build_hdr(reinterpret_cast<char *>(mnl_nlmsg_batch_current(mBatch)),
-                                                     NFT_MSG_DELSETELEM, NFPROTO_INET, NLM_F_ACK, mSeq++);
-        nftnl_set_elems_nlmsg_build_payload(nlh, s);
-        SuccessOrExit(error = AdvanceBatch());
-    }
-
-exit:
-    if (s != nullptr)
-    {
-        nftnl_set_free(s);
-    }
-    return error;
-}
-
 otbrError Nftables::FlushSet(const std::string &aTable, const std::string &aSet)
 {
     otbrError         error = OTBR_ERROR_NONE;

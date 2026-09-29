@@ -100,8 +100,9 @@ enum class ChainPriority : int
  * kernel via libnftnl/libmnl. Tests substitute a gmock.
  *
  * Rule-creation methods return a kernel-assigned handle through @p aHandleOut
- * so the rule can be deleted later with DelRule(). Set elements are addressed
- * by value, not handle.
+ * so the rule can be deleted later with DelRule(). Sets are only ever refilled
+ * as a whole, with FlushSet() and AddSetElement(), so set elements carry no
+ * handle.
  *
  * Mutating operations must be wrapped in BeginBatch()/CommitBatch() so the
  * kernel applies them atomically. DelTable() is the only operation safe to
@@ -163,7 +164,6 @@ public:
     virtual otbrError AddIp6PrefixSet(const std::string &aTable, const std::string &aSet) = 0;
 
     virtual otbrError AddSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix) = 0;
-    virtual otbrError DelSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix) = 0;
     virtual otbrError FlushSet(const std::string &aTable, const std::string &aSet)                                = 0;
 
     /**
