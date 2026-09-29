@@ -230,14 +230,14 @@ private:
         {
         }
 
-        bool      Matches(uint32_t           aInterfaceIndex,
-                          const std::string &aInstanceName,
-                          const std::string &aType,
-                          const std::string &aDomain) const;
-        void      Release(void);
-        void      Resolve(void);
-        otbrError GetAddrInfo(uint32_t aInterfaceIndex);
-        void      FinishResolution(void);
+        bool                Matches(uint32_t           aInterfaceIndex,
+                                    const std::string &aInstanceName,
+                                    const std::string &aType,
+                                    const std::string &aDomain) const;
+        void                Release(void);
+        void                Resolve(void);
+        DNSServiceErrorType GetAddrInfo(void);
+        void                FinishResolution(void);
 
         static void HandleResolveResult(DNSServiceRef        aServiceRef,
                                         DNSServiceFlags      aFlags,
