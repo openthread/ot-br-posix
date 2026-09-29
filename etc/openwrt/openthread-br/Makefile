@@ -62,7 +62,8 @@ define Package/openthread-br
 	TITLE:=OpenThread Border Router
 	# When building with -DOTBR_NFTABLES=ON (opt-in, see CMAKE_OPTIONS), drop
 	# +ip6tables +ipset +iptables-mod-extra and add
-	# +libmnl +libnftnl +kmod-nft-core +kmod-nft-nat instead.
+	# +libmnl +libnftnl +kmod-nft-core instead (+kmod-nft-nat with
+	# -DOTBR_NAT64=ON, which is what the masquerade is for).
 	DEPENDS:= \
 		+ip6tables \
 		+ipset \

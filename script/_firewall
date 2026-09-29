@@ -59,7 +59,8 @@ fi
 # reference; there is no legacy firewall service there. The lines are tagged
 # so uninstall can find them again. pf wants translation rules before filter
 # rules, so the nat-anchor goes next to the system's own nat-anchor and only
-# the filter anchor is appended.
+# the filter anchor is appended. The nat-anchor carries the NAT44 masquerade,
+# which the agent only installs with NAT64, so it is added only then.
 # /usr/share sits on the SIP-protected system volume on macOS, so installs
 # there use another prefix; look in the usual ones.
 OTBR_PF_MARKER="/usr/share/otbr/pf-backend"
@@ -115,11 +116,11 @@ firewall_install_macos()
     # so re-running setup never duplicates them. This deliberately does not
     # go through firewall_uninstall_macos, which flushes the anchor: a running
     # agent would lose its live rules until restarted.
-    sudo awk -v tag="${PF_ANCHOR_TAG}" '
+    sudo awk -v tag="${PF_ANCHOR_TAG}" -v nat64="$(with NAT64 && echo 1 || echo 0)" '
         index($0, tag) { next }
         { print }
-        /^nat-anchor / && !done { print "nat-anchor \"otbr\" " tag; done = 1 }
-        END { if (!done) print "nat-anchor \"otbr\" " tag; print "anchor \"otbr\" " tag }
+        /^nat-anchor / && nat64 && !done { print "nat-anchor \"otbr\" " tag; done = 1 }
+        END { if (nat64 && !done) print "nat-anchor \"otbr\" " tag; print "anchor \"otbr\" " tag }
     ' "${PF_CONF}" | sudo tee "${PF_CONF}.otbr" >/dev/null
     firewall_replace_pf_conf
 }

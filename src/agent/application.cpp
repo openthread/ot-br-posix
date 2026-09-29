@@ -427,11 +427,15 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     SuccessOrDie(firewallError, "Failed to initialize the firewall manager!");
     firewallError = mFirewall->EnableIngressFilter();
     SuccessOrDie(firewallError, "Failed to install the Thread ingress filter!");
+#if OTBR_ENABLE_NAT64
+    // Only NAT64 produces IPv4 traffic from the Thread interface; the masquerade
+    // is for that traffic alone, as it was in the legacy setup scripts.
     if (!mBackboneInterfaceName.empty())
     {
         firewallError = mFirewall->EnableNat44Masquerade(mBackboneInterfaceName);
         SuccessOrDie(firewallError, "Failed to install NAT44 masquerade!");
     }
+#endif
     // Populate the ingress allow/deny sets from Thread network data, and keep
     // them in sync as it changes. This is the in-process replacement for the
     // OpenThread posix platform firewall's ipset producer.
