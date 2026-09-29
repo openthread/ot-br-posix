@@ -82,9 +82,20 @@ public:
     virtual bool IsOpen(void) const = 0;
 
     /**
+     * Joins a netlink multicast group, so the kernel's notifications for it
+     * arrive on this socket.
+     */
+    virtual otbrError Subscribe(uint32_t aGroup) = 0;
+
+    /**
      * Returns the port id assigned at bind time, used to match replies.
      */
     virtual uint32_t GetPortId(void) const = 0;
+
+    /**
+     * Returns the file descriptor for a main loop to wait on, -1 when not open.
+     */
+    virtual int GetFd(void) const = 0;
 
     virtual ssize_t Send(const void *aBuffer, size_t aLength) = 0;
     virtual ssize_t Recv(void *aBuffer, size_t aLength)       = 0;
@@ -119,7 +130,9 @@ public:
     otbrError Open(void) override;
     void      Close(void) override;
     bool      IsOpen(void) const override;
+    otbrError Subscribe(uint32_t aGroup) override;
     uint32_t  GetPortId(void) const override;
+    int       GetFd(void) const override;
     ssize_t   Send(const void *aBuffer, size_t aLength) override;
     ssize_t   Recv(void *aBuffer, size_t aLength) override;
     ssize_t   RecvNoWait(void *aBuffer, size_t aLength) override;

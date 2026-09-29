@@ -34,6 +34,7 @@ if(OTBR_NFTABLES)
     list(APPEND OTBR_FIREWALL_SOURCES
         netlink_socket.cpp
         nftables_impl.cpp
+        nftables_monitor.cpp
     )
 endif()
 

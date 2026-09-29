@@ -30,7 +30,9 @@
  * @file
  *   FirewallManager owns the OTBR-specific firewall policy and translates it
  *   into nftables primitives via INftables. It replaces the iptables/ipset
- *   shell scripts and the ip6tables call in nd_proxy.cpp.
+ *   shell scripts and the ip6tables call in nd_proxy.cpp. It keeps what it
+ *   was asked for, so the table can be reinstalled in one transaction when
+ *   something outside the agent deletes it.
  */
 
 #ifndef OTBR_FIREWALL_FIREWALL_MANAGER_HPP_
@@ -83,6 +85,17 @@ public:
      * their rules apart.
      */
     const std::string &GetTableName(void) const { return mTableName; }
+
+    /**
+     * Reinstalls everything this manager was asked for, in one transaction:
+     * the table is deleted and recreated with the ingress filter and its
+     * prefixes, the NAT44 masquerade and the ND-proxy redirect as last
+     * enabled. For a table deleted behind the agent's back (`nft flush
+     * ruleset`, OpenWrt's `fw4 flush`); the incremental operations call it
+     * themselves when the kernel reports ENOENT, which is what a missing
+     * table looks like to them.
+     */
+    otbrError Reinstall(void);
 
     /**
      * Install the static ingress filter chain (forward_ingress) and the
@@ -154,6 +167,18 @@ public:
     static constexpr uint32_t kNat44Mark = 0x1001;
 
 private:
+    // Add to the open batch what the enable calls install; Reinstall() puts
+    // them all in one.
+    otbrError AppendIngressFilter(void);
+    otbrError AppendIngressPrefixes(void);
+    otbrError AppendNat44Masquerade(void);
+    otbrError AppendNdProxyRedirect(uint64_t *aHandle);
+
+    // Commits the open batch, reinstalling everything instead when the kernel
+    // reports the table gone (ENOENT).
+    otbrError CommitOrReinstall(bool &aReinstalled);
+    otbrError CommitOrReinstall(void);
+
     INftables  &mNftables;
     std::string mThreadIfName;
     std::string mTableName;
@@ -162,6 +187,16 @@ private:
     bool        mNat44Enabled;
     bool        mDuaChainCreated; ///< True once the dua_prerouting chain has been created.
     uint64_t    mNdRuleHandle;    ///< Kernel handle of the active ND-proxy rule, 0 if none.
+
+    // What was asked for, kept so the table can be reinstalled when it is
+    // deleted behind the agent's back.
+    std::string            mNat44UpstreamIfName;
+    bool                   mNdRedirectEnabled;
+    Ip6Prefix              mNdDomainPrefix;
+    std::string            mNdBackboneIfName;
+    uint16_t               mNdQueueNum;
+    std::vector<Ip6Prefix> mDenySrc;
+    std::vector<Ip6Prefix> mAllowDst;
 };
 
 } // namespace Firewall

@@ -52,6 +52,7 @@
 #if OTBR_ENABLE_NFTABLES
 #include "firewall/firewall_manager.hpp"
 #include "firewall/nftables_impl.hpp"
+#include "firewall/nftables_monitor.hpp"
 #endif
 #if OTBR_ENABLE_PF
 #include "firewall/pf_firewall.hpp"
@@ -305,6 +306,7 @@ private:
 #if OTBR_ENABLE_NFTABLES
     std::unique_ptr<Firewall::Nftables>        mNftables;
     std::unique_ptr<Firewall::FirewallManager> mFirewall;
+    std::unique_ptr<Firewall::NftablesMonitor> mNftablesMonitor;
 #endif
 #if OTBR_ENABLE_PF
     std::unique_ptr<Firewall::PfctlProcess> mPfctl;

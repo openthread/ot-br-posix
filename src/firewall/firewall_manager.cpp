@@ -30,6 +30,7 @@
 
 #include "firewall/firewall_manager.hpp"
 
+#include <errno.h>
 #include <string.h>
 #include <vector>
 
@@ -105,6 +106,9 @@ FirewallManager::FirewallManager(INftables &aNftables, const std::string &aThrea
     , mNat44Enabled(false)
     , mDuaChainCreated(false)
     , mNdRuleHandle(0)
+    , mNdRedirectEnabled(false)
+    , mNdDomainPrefix()
+    , mNdQueueNum(0)
 {
 }
 
@@ -153,14 +157,87 @@ otbrError FirewallManager::Deinit(void)
     }
 
     mNdRuleHandle         = 0;
+    mNdRedirectEnabled    = false;
     mDuaChainCreated      = false;
     mIngressFilterEnabled = false;
     mNat44Enabled         = false;
     mInitialized          = false;
+    mNat44UpstreamIfName.clear();
+    mNdDomainPrefix = Ip6Prefix();
+    mNdBackboneIfName.clear();
+    mNdQueueNum = 0;
+    mDenySrc.clear();
+    mAllowDst.clear();
 
 exit:
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
+}
+
+otbrError FirewallManager::Reinstall(void)
+{
+    otbrError error     = OTBR_ERROR_NONE;
+    uint64_t  newHandle = 0;
+
+    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+
+    // One transaction: the table is never observably empty, and a failure
+    // leaves whatever was there.
+    SuccessOrExit(error = mNftables.BeginBatch());
+    SuccessOrExit(error = mNftables.DelTable(mTableName));
+    SuccessOrExit(error = mNftables.AddTable(mTableName));
+    if (mIngressFilterEnabled)
+    {
+        SuccessOrExit(error = AppendIngressFilter());
+        SuccessOrExit(error = AppendIngressPrefixes());
+    }
+    if (mNat44Enabled)
+    {
+        SuccessOrExit(error = AppendNat44Masquerade());
+    }
+    if (mNdRedirectEnabled)
+    {
+        SuccessOrExit(error = mNftables.AddChain(mTableName, kPreroutingChain, Hook::kPrerouting, ChainPriority::kRaw));
+        SuccessOrExit(error = AppendNdProxyRedirect(&newHandle));
+    }
+    SuccessOrExit(error = mNftables.CommitBatch());
+
+    mDuaChainCreated = mNdRedirectEnabled;
+    mNdRuleHandle    = mNdRedirectEnabled ? newHandle : 0;
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        mNftables.AbortBatch();
+    }
+    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
+    return error;
+}
+
+otbrError FirewallManager::CommitOrReinstall(bool &aReinstalled)
+{
+    otbrError error = mNftables.CommitBatch();
+
+    aReinstalled = false;
+
+    // ENOENT is what every operation gets once the table is gone -- deleted
+    // by `nft flush ruleset`, OpenWrt's `fw4 flush` -- so it is answered by
+    // putting back everything that was asked for, this operation included.
+    if (error == OTBR_ERROR_ERRNO && errno == ENOENT)
+    {
+        otbrLogWarning("FirewallManager: table %s is gone, reinstalling", mTableName.c_str());
+        error        = Reinstall();
+        aReinstalled = (error == OTBR_ERROR_NONE);
+    }
+
+    return error;
+}
+
+otbrError FirewallManager::CommitOrReinstall(void)
+{
+    bool reinstalled = false;
+
+    return CommitOrReinstall(reinstalled);
 }
 
 otbrError FirewallManager::EnableIngressFilter(void)
@@ -170,7 +247,26 @@ otbrError FirewallManager::EnableIngressFilter(void)
     VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(!mIngressFilterEnabled);
 
+    // Wanted from here on, which a reinstall reads; undone on failure.
+    mIngressFilterEnabled = true;
+
     SuccessOrExit(error = mNftables.BeginBatch());
+    SuccessOrExit(error = AppendIngressFilter());
+    SuccessOrExit(error = CommitOrReinstall());
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        mNftables.AbortBatch();
+        mIngressFilterEnabled = false;
+    }
+    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
+    return error;
+}
+
+otbrError FirewallManager::AppendIngressFilter(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
 
     SuccessOrExit(error = mNftables.AddIp6PrefixSet(mTableName, kIngressDenySrcSet));
     SuccessOrExit(error = mNftables.AddIp6PrefixSet(mTableName, kIngressAllowDstSet));
@@ -194,16 +290,24 @@ otbrError FirewallManager::EnableIngressFilter(void)
         error = mNftables.AddRulePkttypeVerdict(mTableName, kIngressChain, PktType::kUnicast, Verdict::kDrop, nullptr));
     SuccessOrExit(error = mNftables.AddRuleVerdict(mTableName, kIngressChain, Verdict::kAccept, nullptr));
 
-    SuccessOrExit(error = mNftables.CommitBatch());
+exit:
+    return error;
+}
 
-    mIngressFilterEnabled = true;
+otbrError FirewallManager::AppendIngressPrefixes(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    for (const Ip6Prefix &prefix : mDenySrc)
+    {
+        SuccessOrExit(error = mNftables.AddSetElement(mTableName, kIngressDenySrcSet, prefix));
+    }
+    for (const Ip6Prefix &prefix : mAllowDst)
+    {
+        SuccessOrExit(error = mNftables.AddSetElement(mTableName, kIngressAllowDstSet, prefix));
+    }
 
 exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        mNftables.AbortBatch();
-    }
-    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
 }
 
@@ -215,7 +319,27 @@ otbrError FirewallManager::EnableNat44Masquerade(const std::string &aUpstreamInt
     VerifyOrExit(!aUpstreamInterfaceName.empty(), error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(!mNat44Enabled);
 
+    mNat44Enabled        = true;
+    mNat44UpstreamIfName = aUpstreamInterfaceName;
+
     SuccessOrExit(error = mNftables.BeginBatch());
+    SuccessOrExit(error = AppendNat44Masquerade());
+    SuccessOrExit(error = CommitOrReinstall());
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        mNftables.AbortBatch();
+        mNat44Enabled = false;
+        mNat44UpstreamIfName.clear();
+    }
+    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
+    return error;
+}
+
+otbrError FirewallManager::AppendNat44Masquerade(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
 
     // Mangle-prerouting: tag packets coming from the Thread interface so the
     // postrouting chain can MASQUERADE them. Type filter, mangle priority.
@@ -235,21 +359,12 @@ otbrError FirewallManager::EnableNat44Masquerade(const std::string &aUpstreamInt
     // -- so forward_ingress leaves IPv4 alone by itself.
     SuccessOrExit(error = mNftables.AddChain(mTableName, kNatForwardChain, Hook::kForward, ChainPriority::kFilter,
                                              ChainType::kFilter));
-    SuccessOrExit(error = mNftables.AddRuleOifnameVerdict(mTableName, kNatForwardChain, aUpstreamInterfaceName,
+    SuccessOrExit(error = mNftables.AddRuleOifnameVerdict(mTableName, kNatForwardChain, mNat44UpstreamIfName,
                                                           Verdict::kAccept, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleIifnameVerdict(mTableName, kNatForwardChain, aUpstreamInterfaceName,
+    SuccessOrExit(error = mNftables.AddRuleIifnameVerdict(mTableName, kNatForwardChain, mNat44UpstreamIfName,
                                                           Verdict::kAccept, nullptr));
-
-    SuccessOrExit(error = mNftables.CommitBatch());
-
-    mNat44Enabled = true;
 
 exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        mNftables.AbortBatch();
-    }
-    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
 }
 
@@ -257,12 +372,23 @@ otbrError FirewallManager::EnableNdProxyRedirect(const Ip6Prefix   &aDomainPrefi
                                                  const std::string &aBackboneInterfaceName,
                                                  uint16_t           aQueueNum)
 {
-    otbrError error     = OTBR_ERROR_NONE;
-    uint64_t  newHandle = 0;
+    otbrError error       = OTBR_ERROR_NONE;
+    uint64_t  newHandle   = 0;
+    bool      reinstalled = false;
+    // What was wanted before, put back if this cannot be had.
+    bool        wasEnabled  = mNdRedirectEnabled;
+    Ip6Prefix   wasPrefix   = mNdDomainPrefix;
+    std::string wasBackbone = mNdBackboneIfName;
+    uint16_t    wasQueue    = mNdQueueNum;
 
     VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(aDomainPrefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(!aBackboneInterfaceName.empty(), error = OTBR_ERROR_INVALID_ARGS);
+
+    mNdRedirectEnabled = true;
+    mNdDomainPrefix    = aDomainPrefix;
+    mNdBackboneIfName  = aBackboneInterfaceName;
+    mNdQueueNum        = aQueueNum;
 
     SuccessOrExit(error = mNftables.BeginBatch());
 
@@ -276,21 +402,33 @@ otbrError FirewallManager::EnableNdProxyRedirect(const Ip6Prefix   &aDomainPrefi
         SuccessOrExit(error = mNftables.DelRule(mTableName, kPreroutingChain, mNdRuleHandle));
     }
 
-    SuccessOrExit(error = mNftables.AddRuleNdNsRedirect(mTableName, kPreroutingChain, aDomainPrefix,
-                                                        aBackboneInterfaceName, aQueueNum, &newHandle));
+    SuccessOrExit(error = AppendNdProxyRedirect(&newHandle));
+    SuccessOrExit(error = CommitOrReinstall(reinstalled));
 
-    SuccessOrExit(error = mNftables.CommitBatch());
-
-    mDuaChainCreated = true;
-    mNdRuleHandle    = newHandle;
+    // A reinstall installs the rule itself and records its handle.
+    if (!reinstalled)
+    {
+        mDuaChainCreated = true;
+        mNdRuleHandle    = newHandle;
+    }
 
 exit:
     if (error != OTBR_ERROR_NONE)
     {
         mNftables.AbortBatch();
+        mNdRedirectEnabled = wasEnabled;
+        mNdDomainPrefix    = wasPrefix;
+        mNdBackboneIfName  = wasBackbone;
+        mNdQueueNum        = wasQueue;
     }
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
+}
+
+otbrError FirewallManager::AppendNdProxyRedirect(uint64_t *aHandle)
+{
+    return mNftables.AddRuleNdNsRedirect(mTableName, kPreroutingChain, mNdDomainPrefix, mNdBackboneIfName, mNdQueueNum,
+                                         aHandle);
 }
 
 otbrError FirewallManager::DisableNdProxyRedirect(void)
@@ -300,9 +438,11 @@ otbrError FirewallManager::DisableNdProxyRedirect(void)
     VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(mNdRuleHandle != 0);
 
+    mNdRedirectEnabled = false;
+
     SuccessOrExit(error = mNftables.BeginBatch());
     SuccessOrExit(error = mNftables.DelRule(mTableName, kPreroutingChain, mNdRuleHandle));
-    SuccessOrExit(error = mNftables.CommitBatch());
+    SuccessOrExit(error = CommitOrReinstall());
 
     mNdRuleHandle = 0;
 
@@ -310,6 +450,7 @@ exit:
     if (error != OTBR_ERROR_NONE)
     {
         mNftables.AbortBatch();
+        mNdRedirectEnabled = true;
     }
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
@@ -318,13 +459,16 @@ exit:
 otbrError FirewallManager::ReplaceIngressPrefixes(const std::vector<Ip6Prefix> &aDenySrc,
                                                   const std::vector<Ip6Prefix> &aAllowDst)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    otbrError              error    = OTBR_ERROR_NONE;
+    bool                   replaced = false;
+    std::vector<Ip6Prefix> wasDenySrc;
+    std::vector<Ip6Prefix> wasAllowDst;
 
     VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
 
-    // Validated before a batch is opened, and before the covered prefixes are
-    // dropped: an invalid prefix longer than 128 bits that a shorter, valid
-    // one covers would otherwise be dropped unseen.
+    // Validated before anything is wanted or sent, and before the covered
+    // prefixes are dropped: an invalid prefix longer than 128 bits that a
+    // shorter, valid one covers would otherwise be dropped unseen.
     for (const Ip6Prefix &prefix : aDenySrc)
     {
         VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
@@ -334,24 +478,30 @@ otbrError FirewallManager::ReplaceIngressPrefixes(const std::vector<Ip6Prefix> &
         VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
     }
 
+    wasDenySrc.swap(mDenySrc);
+    wasAllowDst.swap(mAllowDst);
+    // What is wanted is what the sets will hold: each set on its own, since
+    // what one set covers says nothing about the other. A reinstall sends
+    // the same.
+    mDenySrc  = WithoutCoveredPrefixes(aDenySrc);
+    mAllowDst = WithoutCoveredPrefixes(aAllowDst);
+    replaced  = true;
+
     SuccessOrExit(error = mNftables.BeginBatch());
     SuccessOrExit(error = mNftables.FlushSet(mTableName, kIngressDenySrcSet));
     SuccessOrExit(error = mNftables.FlushSet(mTableName, kIngressAllowDstSet));
-    // Each set on its own: what one set covers says nothing about the other.
-    for (const Ip6Prefix &prefix : WithoutCoveredPrefixes(aDenySrc))
-    {
-        SuccessOrExit(error = mNftables.AddSetElement(mTableName, kIngressDenySrcSet, prefix));
-    }
-    for (const Ip6Prefix &prefix : WithoutCoveredPrefixes(aAllowDst))
-    {
-        SuccessOrExit(error = mNftables.AddSetElement(mTableName, kIngressAllowDstSet, prefix));
-    }
-    SuccessOrExit(error = mNftables.CommitBatch());
+    SuccessOrExit(error = AppendIngressPrefixes());
+    SuccessOrExit(error = CommitOrReinstall());
 
 exit:
     if (error != OTBR_ERROR_NONE)
     {
         mNftables.AbortBatch();
+        if (replaced)
+        {
+            mDenySrc.swap(wasDenySrc);
+            mAllowDst.swap(wasAllowDst);
+        }
     }
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
