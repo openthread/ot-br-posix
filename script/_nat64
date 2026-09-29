@@ -30,6 +30,7 @@
 #       This script manipulates nat64 configuration.
 #
 
+NAT64="${NAT64:-1}"
 NAT44_SERVICE=/etc/init.d/otbr-nat44
 WLAN_IFNAMES="${INFRA_IF_NAME:-eth0}"
 THREAD_IF="${THREAD_IF:-wpan0}"
@@ -51,6 +52,13 @@ if [ -z "${OTBR_NFTABLES:-}" ]; then
         OTBR_NFTABLES=1
     fi
 fi
+
+# NAT44 on macOS is the pf backend's, set up by _firewall; otbr-nat44 is a
+# Linux service, so the functions below do nothing there.
+nat64_is_macos()
+{
+    [[ ${PLATFORM:-} == "macOS" || ${OSTYPE:-} == darwin* ]]
+}
 
 nat44_install()
 {
@@ -177,12 +185,20 @@ nat64_install()
 {
     with NAT64 || return 0
 
+    if nat64_is_macos; then
+        return 0
+    fi
+
     nat44_install
 }
 
 nat64_uninstall()
 {
     with NAT64 || return 0
+
+    if nat64_is_macos; then
+        return 0
+    fi
 
     nat64_stop
     nat44_uninstall
@@ -192,12 +208,20 @@ nat64_start()
 {
     with NAT64 || return 0
 
+    if nat64_is_macos; then
+        return 0
+    fi
+
     nat44_start
 }
 
 nat64_stop()
 {
     with NAT64 || return 0
+
+    if nat64_is_macos; then
+        return 0
+    fi
 
     nat44_stop
 }

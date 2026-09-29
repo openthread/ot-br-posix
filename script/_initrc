@@ -58,15 +58,21 @@ with()
 {
     # This function verifies a flag is on.
     #
-    # NOTE environment settings takes higher priority than default files.
+    # NOTE environment settings take priority over the platform's default
+    # file, which takes priority over the scripts' own defaults (the shell
+    # variables set in script/_otbr and friends).
     #
 
     local value
     value=$(printenv "$1")
     if [[ -z $value ]]; then
         if [[ -f examples/platforms/$PLATFORM/default ]]; then
+            # The subshell inherits the scripts' shell variables; the file
+            # overrides them.
             # shellcheck source=examples/platforms/raspbian/default
-            value="$(. "examples/platforms/$PLATFORM/default" && eval echo "\${$1-}")"
+            value="$(. "examples/platforms/$PLATFORM/default" && echo "${!1-}")"
+        else
+            value="${!1-}"
         fi
     fi
 
