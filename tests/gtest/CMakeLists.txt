@@ -92,6 +92,9 @@ target_link_libraries(otbr-gtest-firewall
 )
 
 if(OTBR_NFTABLES)
+    target_sources(otbr-gtest-firewall PRIVATE
+        test_nftables_monitor.cpp
+    )
     target_include_directories(otbr-gtest-firewall PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )

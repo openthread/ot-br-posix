@@ -313,6 +313,14 @@ void Application::CreateRcpMode(void)
 #if OTBR_ENABLE_NFTABLES
     mNftables = MakeUnique<Firewall::Nftables>();
     mFirewall = MakeUnique<Firewall::FirewallManager>(*mNftables, mInterfaceName);
+    // A table deleted behind the agent's back (`nft flush ruleset`, OpenWrt's
+    // `fw4 flush`) is put back at once; one that cannot be is fatal, as at
+    // startup.
+    mNftablesMonitor = MakeUnique<Firewall::NftablesMonitor>(mFirewall->GetTableName(), [this](void) {
+        otbrError error = mFirewall->Reinstall();
+
+        SuccessOrDie(error, "Failed to reinstall the firewall!");
+    });
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent = MakeUnique<BackboneRouter::BackboneAgent>(rcpHost);
@@ -416,6 +424,10 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #if OTBR_ENABLE_NFTABLES
     firewallError = mNftables->Init();
     SuccessOrDie(firewallError, "Failed to initialize the nftables firewall!");
+    // Watched from before the table exists, so a flush during setup is not
+    // missed; the agent's own deletions carry its port id and are ignored.
+    firewallError = mNftablesMonitor->Init(mNftables->GetPortId());
+    SuccessOrDie(firewallError, "Failed to watch the firewall table!");
 #else
     // pf rules are scoped to the Thread interface by name, and on macOS the
     // kernel picks that name (utunN) when mHost.Init() creates the interface,
@@ -531,6 +543,12 @@ exit:
 void Application::DeinitRcpMode(void)
 {
 #if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
+#if OTBR_ENABLE_NFTABLES
+    if (mNftablesMonitor != nullptr)
+    {
+        mNftablesMonitor->Deinit();
+    }
+#endif
     // Tear down the OTBR firewall while its backend is still usable (the
     // backend outlives mFirewall by member declaration order).
     if (mFirewall != nullptr)

@@ -73,6 +73,13 @@ public:
     void     Close(void) override { mOpen = false; }
     bool     IsOpen(void) const override { return mOpen; }
     uint32_t GetPortId(void) const override { return kPortId; }
+    int      GetFd(void) const override { return -1; }
+
+    otbrError Subscribe(uint32_t aGroup) override
+    {
+        mSubscribedGroup = aGroup;
+        return OTBR_ERROR_NONE;
+    }
 
     ssize_t Send(const void *aBuffer, size_t aLength) override
     {
@@ -171,6 +178,14 @@ public:
     void QueueFailure(int aErrno) { mReplies.push_back(Reply{-1, aErrno, {}}); }
     void QueueZeroLengthReply(void) { mReplies.push_back(Reply{0, 0, {}}); }
 
+    /// Queues a datagram as the kernel delivers it, such as an event.
+    void QueueDatagram(const std::vector<uint8_t> &aData)
+    {
+        mReplies.push_back(Reply{static_cast<ssize_t>(aData.size()), 0, aData});
+    }
+
+    uint32_t SubscribedGroup(void) const { return mSubscribedGroup; }
+
     void FailNextSend(int aErrno)
     {
         mSendResult = -1;
@@ -189,10 +204,11 @@ public:
     static constexpr uint32_t kPortId = 4242;
 
 private:
-    bool                              mOpen       = false;
-    ssize_t                           mSendResult = 0;
-    int                               mSendErrno  = 0;
-    size_t                            mDrainCount = 0;
+    bool                              mOpen            = false;
+    uint32_t                          mSubscribedGroup = 0;
+    ssize_t                           mSendResult      = 0;
+    int                               mSendErrno       = 0;
+    size_t                            mDrainCount      = 0;
     std::deque<Reply>                 mReplies;
     std::vector<std::vector<uint8_t>> mSent;
     std::vector<size_t>               mDrainsBeforeThisSend;

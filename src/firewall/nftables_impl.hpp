@@ -81,6 +81,9 @@ public:
     otbrError Init(void) override;
     otbrError Deinit(void) override;
 
+    /// Port id of the socket the changes go through; notifications they cause carry it.
+    uint32_t GetPortId(void) const { return mSocket.GetPortId(); }
+
     otbrError BeginBatch(void) override;
     otbrError CommitBatch(void) override;
     void      AbortBatch(void) override;

@@ -161,5 +161,22 @@ exit:
     return;
 }
 
+otbrError MnlNetlinkSocket::Subscribe(uint32_t aGroup)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mSocket != nullptr, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mnl_socket_setsockopt(mSocket, NETLINK_ADD_MEMBERSHIP, &aGroup, sizeof(aGroup)) >= 0,
+                 error = OTBR_ERROR_ERRNO);
+
+exit:
+    return error;
+}
+
+int MnlNetlinkSocket::GetFd(void) const
+{
+    return (mSocket != nullptr) ? mnl_socket_get_fd(mSocket) : -1;
+}
+
 } // namespace Firewall
 } // namespace otbr
