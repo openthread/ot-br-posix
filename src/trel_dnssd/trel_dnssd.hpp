@@ -167,6 +167,8 @@ private:
     void        UnpublishTrelService(void);
     static void HandlePublishTrelServiceError(otbrError aError);
     static void HandleUnpublishTrelServiceError(otbrError aError);
+    void        SubscribeTrelService(void);
+    void        UnsubscribeTrelService(void);
     void        OnTrelServiceInstanceResolved(const std::string                             &aType,
                                               const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
     void        OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
@@ -181,8 +183,9 @@ private:
     Host::RcpHost   &mHost;
     TaskRunner       mTaskRunner;
     std::string      mTrelNetif;
-    uint32_t         mTrelNetifIndex = 0;
-    uint64_t         mSubscriberId   = 0;
+    uint32_t         mTrelNetifIndex       = 0;
+    uint32_t         mSubscribedNetifIndex = 0; // The interface of the active subscription, 0 if there is none.
+    uint64_t         mSubscriberId         = 0;
     RegisterInfo     mRegisterInfo;
     PeerMap          mPeers;
     bool             mMdnsPublisherReady = false;
