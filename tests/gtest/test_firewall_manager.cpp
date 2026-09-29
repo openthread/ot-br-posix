@@ -36,6 +36,15 @@
 #include "firewall/nftables.hpp"
 
 #if OTBR_ENABLE_NFTABLES
+#include <memory>
+
+#include <libmnl/libmnl.h>
+#include <libnftnl/expr.h>
+#include <libnftnl/rule.h>
+#include <linux/netfilter.h>
+#include <linux/netfilter/nf_tables.h>
+#include <linux/netfilter/nfnetlink.h>
+
 #include "fake_netlink_socket.hpp"
 #include "firewall/netlink_socket.hpp"
 #include "firewall/nftables_impl.hpp"
@@ -86,6 +95,10 @@ public:
     MOCK_METHOD(otbrError, AddSetElement, (const std::string &, const std::string &, const Ip6Prefix &), (override));
     MOCK_METHOD(otbrError, DelSetElement, (const std::string &, const std::string &, const Ip6Prefix &), (override));
     MOCK_METHOD(otbrError, FlushSet, (const std::string &, const std::string &), (override));
+    MOCK_METHOD(otbrError,
+                AddRuleNfprotoNeqIp6Return,
+                (const std::string &, const std::string &, uint64_t *),
+                (override));
     MOCK_METHOD(otbrError,
                 AddRuleOifnameNeqReturn,
                 (const std::string &, const std::string &, const std::string &, uint64_t *),
@@ -143,6 +156,7 @@ void SetSuccessfulDefaults(MockNftables &mock)
     ON_CALL(mock, CommitBatch).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, DelRule).WillByDefault(Return(OTBR_ERROR_NONE));
 
+    ON_CALL(mock, AddRuleNfprotoNeqIp6Return).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddRuleOifnameNeqReturn).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddRuleIifPkttypeVerdict).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddRulePkttypeVerdict).WillByDefault(Return(OTBR_ERROR_NONE));
@@ -173,6 +187,7 @@ TEST(FirewallManagerTest, InitOnlyCreatesTable)
     // Init must NOT touch any chains, sets, or rules — those are lazy.
     EXPECT_CALL(mock, AddChain(_, _, _, _, _)).Times(0);
     EXPECT_CALL(mock, AddIp6PrefixSet(_, _)).Times(0);
+    EXPECT_CALL(mock, AddRuleNfprotoNeqIp6Return(_, _, _)).Times(0);
     EXPECT_CALL(mock, AddRuleOifnameNeqReturn(_, _, _, _)).Times(0);
 
     FirewallManager fw(mock, "wpan0");
@@ -241,6 +256,11 @@ TEST(FirewallManagerTest, EnableIngressFilterInstallsChainAndRulesInOrder)
             .Times(1);
         EXPECT_CALL(mock, AddChain(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressChain),
                                    Hook::kForward, ChainPriority::kFilter, ChainType::kFilter))
+            .Times(1);
+        // First, so that nothing below it -- the unicast drop in particular --
+        // ever sees IPv4: NAT64 replies are forwarded to the Thread interface.
+        EXPECT_CALL(mock, AddRuleNfprotoNeqIp6Return(StrEq(FirewallManager::kTableName),
+                                                     StrEq(FirewallManager::kIngressChain), _))
             .Times(1);
         EXPECT_CALL(mock, AddRuleOifnameNeqReturn(StrEq(FirewallManager::kTableName),
                                                   StrEq(FirewallManager::kIngressChain), StrEq("wpan0"), _))
@@ -602,6 +622,54 @@ TEST(FirewallManagerTest, EnableNat44BeforeInitFails)
 // review found and that no test could previously have caught.
 // --------------------------------------------------------------------------
 
+namespace {
+
+// The rule a sent batch carries, or nullptr when it carries none. A batch is
+// batch-begin, the messages, batch-end, back to back in one datagram.
+using RulePtr = std::unique_ptr<struct nftnl_rule, void (*)(const struct nftnl_rule *)>;
+
+RulePtr ParseTheNewRule(const std::vector<uint8_t> &aBatch)
+{
+    RulePtr                rule(nullptr, nftnl_rule_free);
+    const struct nlmsghdr *nlh = reinterpret_cast<const struct nlmsghdr *>(aBatch.data());
+    int                    len = static_cast<int>(aBatch.size());
+
+    for (; mnl_nlmsg_ok(nlh, len); nlh = mnl_nlmsg_next(nlh, &len))
+    {
+        if (nlh->nlmsg_type != ((NFNL_SUBSYS_NFTABLES << 8) | NFT_MSG_NEWRULE))
+        {
+            continue;
+        }
+        rule.reset(nftnl_rule_alloc());
+        if (rule != nullptr && nftnl_rule_nlmsg_parse(nlh, rule.get()) < 0)
+        {
+            rule.reset();
+        }
+        break;
+    }
+
+    return rule;
+}
+
+std::vector<struct nftnl_expr *> ExpressionsOf(struct nftnl_rule *aRule)
+{
+    std::vector<struct nftnl_expr *> exprs;
+    struct nftnl_expr_iter          *iter = nftnl_expr_iter_create(aRule);
+
+    if (iter != nullptr)
+    {
+        for (struct nftnl_expr *e = nftnl_expr_iter_next(iter); e != nullptr; e = nftnl_expr_iter_next(iter))
+        {
+            exprs.push_back(e);
+        }
+        nftnl_expr_iter_destroy(iter);
+    }
+
+    return exprs;
+}
+
+} // namespace
+
 class NftablesBackendTest : public ::testing::Test
 {
 protected:
@@ -637,6 +705,53 @@ TEST_F(NftablesBackendTest, CommitRetriesWhenTheReceiveIsInterrupted)
 
     EXPECT_EQ(RunBatch(), OTBR_ERROR_NONE);
     EXPECT_EQ(mSocket.PendingReplies(), 0u);
+}
+
+TEST_F(NftablesBackendTest, NfprotoNeqIp6ReturnNeedsABatch)
+{
+    // Every rule reaches the kernel as part of a batch; outside one there is
+    // nothing to append it to, and nothing may be sent on its own.
+    EXPECT_EQ(mNftables.AddRuleNfprotoNeqIp6Return("otbr-test", "chain", nullptr), OTBR_ERROR_INVALID_STATE);
+    EXPECT_EQ(mSocket.SendCount(), 0u);
+}
+
+TEST_F(NftablesBackendTest, NfprotoNeqIp6ReturnBuildsTheRuleItNames)
+{
+    // The manager tests only see the mock being asked for this rule. This is
+    // what the backend puts on the wire for it: the protocol family loaded,
+    // compared for inequality with IPv6, and a return verdict -- in that
+    // order, since the verdict must not fire for IPv6.
+    mSocket.QueueAck(0);
+
+    ASSERT_EQ(mNftables.BeginBatch(), OTBR_ERROR_NONE);
+    ASSERT_EQ(mNftables.AddRuleNfprotoNeqIp6Return("otbr-test", "chain", nullptr), OTBR_ERROR_NONE);
+    ASSERT_EQ(mNftables.CommitBatch(), OTBR_ERROR_NONE);
+    ASSERT_EQ(mSocket.SendCount(), 1u);
+
+    RulePtr rule = ParseTheNewRule(mSocket.Sent(0));
+    ASSERT_NE(rule, nullptr);
+    EXPECT_STREQ(nftnl_rule_get_str(rule.get(), NFTNL_RULE_TABLE), "otbr-test");
+    EXPECT_STREQ(nftnl_rule_get_str(rule.get(), NFTNL_RULE_CHAIN), "chain");
+
+    std::vector<struct nftnl_expr *> exprs = ExpressionsOf(rule.get());
+    ASSERT_EQ(exprs.size(), 3u);
+
+    ASSERT_STREQ(nftnl_expr_get_str(exprs[0], NFTNL_EXPR_NAME), "meta");
+    EXPECT_EQ(nftnl_expr_get_u32(exprs[0], NFTNL_EXPR_META_KEY), static_cast<uint32_t>(NFT_META_NFPROTO));
+    EXPECT_EQ(nftnl_expr_get_u32(exprs[0], NFTNL_EXPR_META_DREG), static_cast<uint32_t>(NFT_REG_1));
+
+    // The comparison reads the register the load wrote.
+    ASSERT_STREQ(nftnl_expr_get_str(exprs[1], NFTNL_EXPR_NAME), "cmp");
+    EXPECT_EQ(nftnl_expr_get_u32(exprs[1], NFTNL_EXPR_CMP_SREG), static_cast<uint32_t>(NFT_REG_1));
+    EXPECT_EQ(nftnl_expr_get_u32(exprs[1], NFTNL_EXPR_CMP_OP), static_cast<uint32_t>(NFT_CMP_NEQ));
+    uint32_t       dataLen = 0;
+    const uint8_t *data    = static_cast<const uint8_t *>(nftnl_expr_get(exprs[1], NFTNL_EXPR_CMP_DATA, &dataLen));
+    ASSERT_NE(data, nullptr);
+    ASSERT_EQ(dataLen, 1u);
+    EXPECT_EQ(data[0], NFPROTO_IPV6);
+
+    ASSERT_STREQ(nftnl_expr_get_str(exprs[2], NFTNL_EXPR_NAME), "immediate");
+    EXPECT_EQ(nftnl_expr_get_u32(exprs[2], NFTNL_EXPR_IMM_VERDICT), static_cast<uint32_t>(NFT_RETURN));
 }
 
 TEST_F(NftablesBackendTest, RuleWithAnOversizedInterfaceNameIsRejected)
