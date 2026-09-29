@@ -113,7 +113,7 @@ EOF
     fi
     # The forwarding authorization is installed in both modes, the same way the
     # Docker run script does it. The in-process backend cannot provide it: its
-    # rules live in an isolated `inet otbr` table, where an accept is not
+    # rules live in an isolated `inet otbr_<thread-if>` table, where an accept is not
     # terminal for the hook, so a host with a DROP forward policy would still
     # drop the traffic the masquerade is there to translate (see #3515).
     for IFNAME in $WLAN_IFNAMES; do

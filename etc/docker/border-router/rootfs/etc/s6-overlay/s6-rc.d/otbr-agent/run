@@ -169,7 +169,7 @@ fi
 # looks perfectly healthy throughout.
 #
 # This authorization is needed in both firewall modes. The in-process nftables
-# backend cannot provide it: its rules live in an isolated `inet otbr` table,
+# backend cannot provide it: its rules live in an isolated `inet otbr_<thread-if>` table,
 # and an accept there is not terminal for the hook -- the host's `filter
 # FORWARD` policy still applies afterwards (see #3515). Only a rule in the
 # host's own table can authorize forwarding against a DROP policy there.

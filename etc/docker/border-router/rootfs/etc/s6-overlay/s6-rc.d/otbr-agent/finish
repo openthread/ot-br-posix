@@ -41,7 +41,7 @@ readonly OT_DOCKER_USER_CHAIN
 
 # Resolved the same way as in the run script: the build's marker decides,
 # an explicit OTBR_NFTABLES overrides. With OTBR_NFTABLES=1 most teardown is
-# unnecessary: FirewallManager owns the `inet otbr` table lifecycle, and stale
+# unnecessary: FirewallManager owns the `inet otbr_<thread-if>` table lifecycle, and stale
 # state from a crashed run is cleared by the next FirewallManager::Init()
 # (DelTable is idempotent). The authorization accepts in the host's own tables
 # are the exception and are removed in both modes below.

@@ -77,6 +77,9 @@ using otbr::Firewall::Verdict;
 
 namespace {
 
+// The table the manager under test names after its interface.
+const char *const kTableName = "otbr_wpan0";
+
 class MockNftables : public INftables
 {
 public:
@@ -180,8 +183,8 @@ TEST(FirewallManagerTest, InitOnlyCreatesTable)
         // change sent on its own with EINVAL.
         InSequence seq;
         EXPECT_CALL(mock, BeginBatch()).WillOnce(Return(OTBR_ERROR_NONE));
-        EXPECT_CALL(mock, DelTable(StrEq(FirewallManager::kTableName))).WillOnce(Return(OTBR_ERROR_NONE));
-        EXPECT_CALL(mock, AddTable(StrEq(FirewallManager::kTableName))).WillOnce(Return(OTBR_ERROR_NONE));
+        EXPECT_CALL(mock, DelTable(StrEq(kTableName))).WillOnce(Return(OTBR_ERROR_NONE));
+        EXPECT_CALL(mock, AddTable(StrEq(kTableName))).WillOnce(Return(OTBR_ERROR_NONE));
         EXPECT_CALL(mock, CommitBatch()).WillOnce(Return(OTBR_ERROR_NONE));
     }
     // Init must NOT touch any chains, sets, or rules — those are lazy.
@@ -194,6 +197,30 @@ TEST(FirewallManagerTest, InitOnlyCreatesTable)
     EXPECT_EQ(fw.Init(), OTBR_ERROR_NONE);
     EXPECT_TRUE(fw.IsInitialized());
     EXPECT_FALSE(fw.IsIngressFilterEnabled());
+}
+
+TEST(FirewallManagerTest, TableIsNamedAfterTheThreadInterface)
+{
+    // Two agents on one host must not share a table: each Init drops a
+    // leftover table of its own name, and would take the other's rules with it.
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+    EXPECT_CALL(mock, DelTable(StrEq(kTableName))).Times(1);
+    EXPECT_CALL(mock, AddTable(StrEq(kTableName))).Times(1);
+    EXPECT_CALL(mock, DelTable(StrEq("otbr_wpan1"))).Times(2);
+    EXPECT_CALL(mock, AddTable(StrEq("otbr_wpan1"))).Times(1);
+    EXPECT_CALL(mock, FlushSet(StrEq("otbr_wpan1"), _)).Times(2);
+    EXPECT_CALL(mock, FlushSet(StrEq(kTableName), _)).Times(0);
+
+    FirewallManager wpan0(mock, "wpan0");
+    FirewallManager wpan1(mock, "wpan1");
+    EXPECT_EQ(wpan0.GetTableName(), kTableName);
+    EXPECT_EQ(wpan1.GetTableName(), "otbr_wpan1");
+    ASSERT_EQ(wpan0.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(wpan1.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(wpan1.EnableIngressFilter(), OTBR_ERROR_NONE);
+    EXPECT_EQ(wpan1.ReplaceIngressPrefixes({}, {}), OTBR_ERROR_NONE);
+    EXPECT_EQ(wpan1.Deinit(), OTBR_ERROR_NONE);
 }
 
 TEST(FirewallManagerTest, InitTwiceFails)
@@ -221,7 +248,7 @@ TEST(FirewallManagerTest, DeinitDeletesTable)
 {
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
-    EXPECT_CALL(mock, DelTable(StrEq(FirewallManager::kTableName))).Times(2); // once in Init, once in Deinit
+    EXPECT_CALL(mock, DelTable(StrEq(kTableName))).Times(2); // once in Init, once in Deinit
 
     {
         // Deinit deletes the table in a batch of its own.
@@ -248,22 +275,17 @@ TEST(FirewallManagerTest, EnableIngressFilterInstallsChainAndRulesInOrder)
     // cross-couple unrelated expectations.
     {
         InSequence seq;
-        EXPECT_CALL(mock,
-                    AddIp6PrefixSet(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressDenySrcSet)))
-            .Times(1);
-        EXPECT_CALL(mock,
-                    AddIp6PrefixSet(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressAllowDstSet)))
-            .Times(1);
-        EXPECT_CALL(mock, AddChain(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kIngressChain),
-                                   Hook::kForward, ChainPriority::kFilter, ChainType::kFilter))
+        EXPECT_CALL(mock, AddIp6PrefixSet(StrEq(kTableName), StrEq(FirewallManager::kIngressDenySrcSet))).Times(1);
+        EXPECT_CALL(mock, AddIp6PrefixSet(StrEq(kTableName), StrEq(FirewallManager::kIngressAllowDstSet))).Times(1);
+        EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kIngressChain), Hook::kForward,
+                                   ChainPriority::kFilter, ChainType::kFilter))
             .Times(1);
         // First, so that nothing below it -- the unicast drop in particular --
         // ever sees IPv4: NAT64 replies are forwarded to the Thread interface.
-        EXPECT_CALL(mock, AddRuleNfprotoNeqIp6Return(StrEq(FirewallManager::kTableName),
-                                                     StrEq(FirewallManager::kIngressChain), _))
+        EXPECT_CALL(mock, AddRuleNfprotoNeqIp6Return(StrEq(kTableName), StrEq(FirewallManager::kIngressChain), _))
             .Times(1);
-        EXPECT_CALL(mock, AddRuleOifnameNeqReturn(StrEq(FirewallManager::kTableName),
-                                                  StrEq(FirewallManager::kIngressChain), StrEq("wpan0"), _))
+        EXPECT_CALL(
+            mock, AddRuleOifnameNeqReturn(StrEq(kTableName), StrEq(FirewallManager::kIngressChain), StrEq("wpan0"), _))
             .Times(1);
         EXPECT_CALL(mock, AddRuleIifPkttypeVerdict(_, StrEq(FirewallManager::kIngressChain), StrEq("wpan0"),
                                                    PktType::kUnicast, Verdict::kDrop, _))
@@ -305,11 +327,11 @@ TEST(FirewallManagerTest, EnableNdProxyLazilyCreatesPreroutingChainOnFirstCall)
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
 
-    EXPECT_CALL(mock, AddChain(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kPreroutingChain),
-                               Hook::kPrerouting, ChainPriority::kRaw, ChainType::kFilter))
+    EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kPreroutingChain), Hook::kPrerouting,
+                               ChainPriority::kRaw, ChainType::kFilter))
         .Times(1);
-    EXPECT_CALL(mock, AddRuleNdNsRedirect(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kPreroutingChain),
-                                          _, StrEq("eth0"), 88, _))
+    EXPECT_CALL(
+        mock, AddRuleNdNsRedirect(StrEq(kTableName), StrEq(FirewallManager::kPreroutingChain), _, StrEq("eth0"), 88, _))
         .Times(2)
         .WillOnce(DoAll(SetArgPointee<5>(42), Return(OTBR_ERROR_NONE)))
         .WillOnce(DoAll(SetArgPointee<5>(43), Return(OTBR_ERROR_NONE)));
@@ -331,8 +353,7 @@ TEST(FirewallManagerTest, DisableNdProxyDeletesRule)
 
     EXPECT_CALL(mock, AddRuleNdNsRedirect(_, _, _, _, _, _))
         .WillOnce(DoAll(SetArgPointee<5>(99), Return(OTBR_ERROR_NONE)));
-    EXPECT_CALL(mock, DelRule(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kPreroutingChain), 99))
-        .Times(1);
+    EXPECT_CALL(mock, DelRule(StrEq(kTableName), StrEq(FirewallManager::kPreroutingChain), 99)).Times(1);
 
     FirewallManager fw(mock, "wpan0");
     ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
@@ -541,30 +562,27 @@ TEST(FirewallManagerTest, EnableNat44InstallsThreeChainsAndFiveRules)
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
 
-    EXPECT_CALL(mock, AddChain(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kNatPreroutingChain),
-                               Hook::kPrerouting, ChainPriority::kMangle, ChainType::kFilter))
+    EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kNatPreroutingChain), Hook::kPrerouting,
+                               ChainPriority::kMangle, ChainType::kFilter))
         .Times(1);
-    EXPECT_CALL(mock, AddChain(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kNatPostroutingChain),
-                               Hook::kPostrouting, ChainPriority::kSrcNat, ChainType::kNat))
+    EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain), Hook::kPostrouting,
+                               ChainPriority::kSrcNat, ChainType::kNat))
         .Times(1);
-    EXPECT_CALL(mock, AddChain(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kNatForwardChain),
-                               Hook::kForward, ChainPriority::kFilter, ChainType::kFilter))
+    EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kNatForwardChain), Hook::kForward,
+                               ChainPriority::kFilter, ChainType::kFilter))
         .Times(1);
 
-    EXPECT_CALL(mock, AddRuleIifMark(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kNatPreroutingChain),
-                                     StrEq("wpan0"), FirewallManager::kNat44Mark, _))
+    EXPECT_CALL(mock, AddRuleIifMark(StrEq(kTableName), StrEq(FirewallManager::kNatPreroutingChain), StrEq("wpan0"),
+                                     FirewallManager::kNat44Mark, _))
         .Times(1);
-    EXPECT_CALL(mock,
-                AddRuleMarkMasquerade(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kNatPostroutingChain),
-                                      FirewallManager::kNat44Mark, _))
+    EXPECT_CALL(mock, AddRuleMarkMasquerade(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain),
+                                            FirewallManager::kNat44Mark, _))
         .Times(1);
-    EXPECT_CALL(mock,
-                AddRuleOifnameVerdict(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kNatForwardChain),
-                                      StrEq("eth0"), Verdict::kAccept, _))
+    EXPECT_CALL(mock, AddRuleOifnameVerdict(StrEq(kTableName), StrEq(FirewallManager::kNatForwardChain), StrEq("eth0"),
+                                            Verdict::kAccept, _))
         .Times(1);
-    EXPECT_CALL(mock,
-                AddRuleIifnameVerdict(StrEq(FirewallManager::kTableName), StrEq(FirewallManager::kNatForwardChain),
-                                      StrEq("eth0"), Verdict::kAccept, _))
+    EXPECT_CALL(mock, AddRuleIifnameVerdict(StrEq(kTableName), StrEq(FirewallManager::kNatForwardChain), StrEq("eth0"),
+                                            Verdict::kAccept, _))
         .Times(1);
 
     FirewallManager fw(mock, "wpan0");
