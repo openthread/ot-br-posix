@@ -293,19 +293,29 @@ public:
     virtual void UnpublishKey(const std::string &aName, ResultCallback &&aCallback) = 0;
 
     /**
+     * The network interface index that stands for every network interface.
+     */
+    static constexpr uint32_t kNetifIndexAny = 0;
+
+    /**
      * This method subscribes a given service or service instance.
      *
      * If @p aInstanceName is not empty, this method subscribes the service instance. Otherwise, this method subscribes
      * the service. mDNS implementations should use the `DiscoveredServiceInstanceCallback` function to notify
      * discovered service instances.
      *
+     * The subscription reports only what is discovered on the network interface @p aNetifIndex, and its
+     * notifications carry that network interface index. With `kNetifIndexAny`, it reports what is discovered on
+     * every network interface.
+     *
      * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
-     * instance.
+     * instance on the same network interface.
      *
      * @param[in] aType          The service type, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aInstanceName  The service instance to subscribe, or empty to subscribe the service.
+     * @param[in] aNetifIndex    The index of the network interface to report, or `kNetifIndexAny`.
      */
-    virtual void SubscribeService(const std::string &aType, const std::string &aInstanceName) = 0;
+    virtual void SubscribeService(const std::string &aType, const std::string &aInstanceName, uint32_t aNetifIndex) = 0;
 
     /**
      * This method unsubscribes a given service or service instance.
@@ -313,32 +323,48 @@ public:
      * If @p aInstanceName is not empty, this method unsubscribes the service instance. Otherwise, this method
      * unsubscribes the service.
      *
+     * A subscription is identified by @p aType, @p aInstanceName and @p aNetifIndex: all three MUST be the ones the
+     * subscription was made with.
+     *
      * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
      *
      * @param[in] aType          The service type, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
+     * @param[in] aNetifIndex    The index of the network interface the subscription reports, or `kNetifIndexAny`.
      */
-    virtual void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) = 0;
+    virtual void UnsubscribeService(const std::string &aType,
+                                    const std::string &aInstanceName,
+                                    uint32_t           aNetifIndex) = 0;
 
     /**
      * This method subscribes a given host.
      *
      * mDNS implementations should use the `DiscoveredHostCallback` function to notify discovered hosts.
      *
-     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
+     * The subscription reports only what is discovered on the network interface @p aNetifIndex, and its
+     * notifications carry that network interface index. With `kNetifIndexAny`, it reports what is discovered on
+     * every network interface.
      *
-     * @param[in] aHostName  The host name (without domain).
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host on the same
+     * network interface.
+     *
+     * @param[in] aHostName    The host name (without domain).
+     * @param[in] aNetifIndex  The index of the network interface to report, or `kNetifIndexAny`.
      */
-    virtual void SubscribeHost(const std::string &aHostName) = 0;
+    virtual void SubscribeHost(const std::string &aHostName, uint32_t aNetifIndex) = 0;
 
     /**
      * This method unsubscribes a given host.
      *
+     * A subscription is identified by @p aHostName and @p aNetifIndex: both MUST be the ones the subscription was
+     * made with.
+     *
      * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
      *
-     * @param[in] aHostName  The host name (without domain).
+     * @param[in] aHostName    The host name (without domain).
+     * @param[in] aNetifIndex  The index of the network interface the subscription reports, or `kNetifIndexAny`.
      */
-    virtual void UnsubscribeHost(const std::string &aHostName) = 0;
+    virtual void UnsubscribeHost(const std::string &aHostName, uint32_t aNetifIndex) = 0;
 
     /**
      * This method sets the callbacks for subscriptions.

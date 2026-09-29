@@ -34,78 +34,15 @@
 #include "host/posix/dnssd.hpp"
 #include "mdns/mdns.hpp"
 
+#include "mock_mdns_publisher.hpp"
+
 #if OTBR_ENABLE_DNSSD_PLAT
 
 using ::testing::_;
+using ::testing::Mock;
 using ::testing::MockFunction;
 using ::testing::SaveArg;
 using ::testing::StrEq;
-
-class MockMdnsPublisher : public otbr::Mdns::Publisher
-{
-public:
-    MockMdnsPublisher(void)           = default;
-    ~MockMdnsPublisher(void) override = default;
-
-    MOCK_METHOD(otbrError,
-                PublishServiceImpl,
-                (const std::string &aHostName,
-                 const std::string &aName,
-                 const std::string &aType,
-                 const SubTypeList &aSubTypeList,
-                 uint16_t           aPort,
-                 const TxtData     &aTxtData,
-                 ResultCallback   &&aCallback),
-                (override));
-    MOCK_METHOD(void,
-                UnpublishService,
-                (const std::string &aName, const std::string &aType, ResultCallback &&aCallback),
-                (override));
-    MOCK_METHOD(otbrError,
-                PublishHostImpl,
-                (const std::string &aName, const AddressList &aAddresses, ResultCallback &&aCallback),
-                (override));
-    MOCK_METHOD(void, UnpublishHost, (const std::string &aName, ResultCallback &&aCallback), (override));
-    MOCK_METHOD(otbrError,
-                PublishKeyImpl,
-                (const std::string &aName, const KeyData &aKey, ResultCallback &&aCallback),
-                (override));
-    MOCK_METHOD(void, UnpublishKey, (const std::string &aName, ResultCallback &&aCallback), (override));
-    MOCK_METHOD(void, SubscribeService, (const std::string &aType, const std::string &aInstanceName), (override));
-    MOCK_METHOD(void, UnsubscribeService, (const std::string &aType, const std::string &aInstanceName), (override));
-    MOCK_METHOD(void, SubscribeHost, (const std::string &aHostName), (override));
-    MOCK_METHOD(void, UnsubscribeHost, (const std::string &aHostName), (override));
-
-    otbrError Start(void) override { return OTBR_ERROR_NONE; }
-    void      Stop(void) override {}
-    bool      IsStarted(void) const override { return true; }
-
-    void OnServiceResolveFailedImpl(const std::string &aType,
-                                    const std::string &aInstanceName,
-                                    int32_t            aErrorCode) override
-    {
-        OTBR_UNUSED_VARIABLE(aType);
-        OTBR_UNUSED_VARIABLE(aInstanceName);
-        OTBR_UNUSED_VARIABLE(aErrorCode);
-    }
-
-    void OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) override
-    {
-        OTBR_UNUSED_VARIABLE(aHostName);
-        OTBR_UNUSED_VARIABLE(aErrorCode);
-    }
-
-    otbrError DnsErrorToOtbrError(int32_t aError) override
-    {
-        OTBR_UNUSED_VARIABLE(aError);
-        return OTBR_ERROR_NONE;
-    }
-
-    void TestOnServiceResolved(std::string aType, otbr::Mdns::Publisher::DiscoveredInstanceInfo aInstanceInfo)
-    {
-        OnServiceResolved(std::move(aType), std::move(aInstanceInfo));
-    }
-};
 
 class DnssdTest : public ::testing::Test
 {
@@ -148,7 +85,7 @@ void ProcessMainloop(void)
 
 TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
 {
-    constexpr uint8_t kInfraIfIndex = 1;
+    constexpr uint32_t kInfraIfIndex = 1;
 
     otbr::DnssdPlatform::Browser                                  browser;
     otbr::Mdns::Publisher::DiscoveredInstanceInfo                 discoveredInstanceInfo;
@@ -161,7 +98,7 @@ TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
     browser.mCallback     = nullptr;
 
     // 1. A service is resovled and expect the callback is invoked.
-    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq("")));
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(""), kInfraIfIndex));
 
     mDnssdPlatform->StartServiceBrowser(
         browser, std::make_unique<otbr::DnssdPlatform::StdBrowseCallback>(mockCallback.AsStdFunction(), 1));
@@ -184,7 +121,7 @@ TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
     ProcessMainloop();
 
     // 2. Another service is resovled but the callback shouldn't be invoked again.
-    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq("")));
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(""), kInfraIfIndex));
 
     mDnssdPlatform->StopServiceBrowser(browser, otbr::DnssdPlatform::StdBrowseCallback(nullptr, 1));
     ProcessMainloop();
@@ -200,7 +137,7 @@ TEST_F(DnssdTest, TestServiceBrowserCallbackIsCorrectlyInvoked)
 
 TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
 {
-    constexpr uint8_t kInfraIfIndex = 1;
+    constexpr uint32_t kInfraIfIndex = 1;
 
     otbr::DnssdPlatform::SrvResolver              resolver1;
     otbr::DnssdPlatform::SrvResolver              resolver2;
@@ -222,9 +159,12 @@ TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
     resolver2.mCallback        = nullptr;
 
     // 1. Start 2 services resolver. Stop the resolvers in the callbacks.
-    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(resolver1.mServiceInstance))).Times(1);
-    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(resolver1.mServiceInstance))).Times(1);
-    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(resolver2.mServiceInstance))).Times(1);
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(resolver1.mServiceInstance), kInfraIfIndex))
+        .Times(1);
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(resolver1.mServiceInstance), kInfraIfIndex))
+        .Times(1);
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(resolver2.mServiceInstance), kInfraIfIndex))
+        .Times(1);
 
     auto callbackPtr = std::make_unique<otbr::DnssdPlatform::StdSrvCallback>(
         [this, id1, &resolver1, &discoveredInstanceInfo1, &invoked](const otbr::DnssdPlatform::SrvResult &aResult) {
@@ -292,6 +232,409 @@ TEST_F(DnssdTest, TestServiceResolverStoppedInCallbackOfStartWorksCorrectly)
     ProcessMainloop();
 
     EXPECT_FALSE(invoked);
+}
+
+// The infrastructure interface indexes of the requests in the tests below.
+constexpr uint32_t kInfraIfIndex1 = 11;
+constexpr uint32_t kInfraIfIndex2 = 12;
+
+TEST_F(DnssdTest, TestServiceBrowsersOfTwoInfraIfsHaveTheirOwnSubscriptionAndResults)
+{
+    otbr::DnssdPlatform::Browser                                  browser1;
+    otbr::DnssdPlatform::Browser                                  browser2;
+    otbr::Mdns::Publisher::DiscoveredInstanceInfo                 discoveredInstanceInfo;
+    const char                                                   *serviceType = "_plant._tcp";
+    MockFunction<void(const otbr::DnssdPlatform::BrowseResult &)> mockCallback1;
+    MockFunction<void(const otbr::DnssdPlatform::BrowseResult &)> mockCallback2;
+    uint64_t                                                      id1 = 1;
+    uint64_t                                                      id2 = 2;
+
+    browser1.mServiceType  = serviceType;
+    browser1.mSubTypeLabel = nullptr;
+    browser1.mInfraIfIndex = kInfraIfIndex1;
+    browser1.mCallback     = nullptr;
+
+    browser2               = browser1;
+    browser2.mInfraIfIndex = kInfraIfIndex2;
+
+    // 1. Two browsers for the same service type on two interfaces lead to one subscription per interface.
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(""), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(""), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StartServiceBrowser(
+        browser1, std::make_unique<otbr::DnssdPlatform::StdBrowseCallback>(mockCallback1.AsStdFunction(), id1));
+    mDnssdPlatform->StartServiceBrowser(
+        browser2, std::make_unique<otbr::DnssdPlatform::StdBrowseCallback>(mockCallback2.AsStdFunction(), id2));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    // 2. Each browser gets the results reported on its own interface only.
+    discoveredInstanceInfo.mRemoved  = false;
+    discoveredInstanceInfo.mHostName = "Minerva.local.";
+    discoveredInstanceInfo.mTtl      = 10;
+
+    EXPECT_CALL(mockCallback1, Call(_)).WillOnce([&](const otbr::DnssdPlatform::BrowseResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex1);
+        EXPECT_EQ(aResult.mTtl, 10);
+        EXPECT_STREQ(aResult.mServiceInstance, "ZGMF-X56S #1");
+    });
+    EXPECT_CALL(mockCallback2, Call(_)).Times(0);
+
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex1;
+    discoveredInstanceInfo.mName       = "ZGMF-X56S #1";
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    EXPECT_CALL(mockCallback1, Call(_)).Times(0);
+    EXPECT_CALL(mockCallback2, Call(_)).WillOnce([&](const otbr::DnssdPlatform::BrowseResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex2);
+        EXPECT_EQ(aResult.mTtl, 10);
+        EXPECT_STREQ(aResult.mServiceInstance, "ZGMF-X56S #2");
+    });
+
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex2;
+    discoveredInstanceInfo.mName       = "ZGMF-X56S #2";
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    // 3. A removal reported on the first interface reaches the browser of that interface only.
+    EXPECT_CALL(mockCallback1, Call(_)).WillOnce([&](const otbr::DnssdPlatform::BrowseResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex1);
+        EXPECT_EQ(aResult.mTtl, 0);
+        EXPECT_STREQ(aResult.mServiceInstance, "ZGMF-X56S #1");
+    });
+    EXPECT_CALL(mockCallback2, Call(_)).Times(0);
+
+    discoveredInstanceInfo             = {};
+    discoveredInstanceInfo.mRemoved    = true;
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex1;
+    discoveredInstanceInfo.mName       = "ZGMF-X56S #1";
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    // 4. Stopping the browser of the first interface removes the subscription of that interface only.
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(""), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(""), kInfraIfIndex2)).Times(0);
+
+    mDnssdPlatform->StopServiceBrowser(browser1, otbr::DnssdPlatform::StdBrowseCallback(nullptr, id1));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    // 5. The browser of the second interface still gets the results reported on its interface.
+    EXPECT_CALL(mockCallback1, Call(_)).Times(0);
+    EXPECT_CALL(mockCallback2, Call(_)).WillOnce([&](const otbr::DnssdPlatform::BrowseResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex2);
+        EXPECT_STREQ(aResult.mServiceInstance, "ZGMF-X56S #3");
+    });
+
+    discoveredInstanceInfo.mRemoved    = false;
+    discoveredInstanceInfo.mHostName   = "Minerva.local.";
+    discoveredInstanceInfo.mTtl        = 10;
+    discoveredInstanceInfo.mName       = "ZGMF-X56S #3";
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex1;
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex2;
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(""), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StopServiceBrowser(browser2, otbr::DnssdPlatform::StdBrowseCallback(nullptr, id2));
+    ProcessMainloop();
+}
+
+TEST_F(DnssdTest, TestServiceResolversOfTwoInfraIfsHaveTheirOwnSubscriptionAndResults)
+{
+    otbr::DnssdPlatform::SrvResolver                           resolver1;
+    otbr::DnssdPlatform::SrvResolver                           resolver2;
+    otbr::Mdns::Publisher::DiscoveredInstanceInfo              discoveredInstanceInfo;
+    const char                                                *serviceType     = "_plant._tcp";
+    const char                                                *serviceInstance = "ZGMF-X20A #1";
+    MockFunction<void(const otbr::DnssdPlatform::SrvResult &)> mockCallback1;
+    MockFunction<void(const otbr::DnssdPlatform::SrvResult &)> mockCallback2;
+    uint64_t                                                   id1 = 1;
+    uint64_t                                                   id2 = 2;
+
+    resolver1.mServiceType     = serviceType;
+    resolver1.mServiceInstance = serviceInstance;
+    resolver1.mInfraIfIndex    = kInfraIfIndex1;
+    resolver1.mCallback        = nullptr;
+
+    resolver2               = resolver1;
+    resolver2.mInfraIfIndex = kInfraIfIndex2;
+
+    // 1. Two resolvers for the same service instance on two interfaces lead to one subscription per interface.
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StartServiceResolver(
+        resolver1, std::make_unique<otbr::DnssdPlatform::StdSrvCallback>(mockCallback1.AsStdFunction(), id1));
+    mDnssdPlatform->StartServiceResolver(
+        resolver2, std::make_unique<otbr::DnssdPlatform::StdSrvCallback>(mockCallback2.AsStdFunction(), id2));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    // 2. Each resolver gets the results reported on its own interface only.
+    discoveredInstanceInfo.mRemoved  = false;
+    discoveredInstanceInfo.mName     = serviceInstance;
+    discoveredInstanceInfo.mHostName = "Eternal.";
+    discoveredInstanceInfo.mTtl      = 10;
+
+    EXPECT_CALL(mockCallback1, Call(_)).WillOnce([&](const otbr::DnssdPlatform::SrvResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex1);
+        EXPECT_EQ(aResult.mPort, 11);
+    });
+    EXPECT_CALL(mockCallback2, Call(_)).Times(0);
+
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex1;
+    discoveredInstanceInfo.mPort       = 11;
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    EXPECT_CALL(mockCallback1, Call(_)).Times(0);
+    EXPECT_CALL(mockCallback2, Call(_)).WillOnce([&](const otbr::DnssdPlatform::SrvResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex2);
+        EXPECT_EQ(aResult.mPort, 12);
+    });
+
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex2;
+    discoveredInstanceInfo.mPort       = 12;
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    // 3. Stopping the resolver of the first interface removes the subscription of that interface only.
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex2)).Times(0);
+
+    mDnssdPlatform->StopServiceResolver(resolver1, otbr::DnssdPlatform::StdSrvCallback(nullptr, id1));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    // 4. The resolver of the second interface still gets the results reported on its interface.
+    EXPECT_CALL(mockCallback1, Call(_)).Times(0);
+    EXPECT_CALL(mockCallback2, Call(_)).WillOnce([&](const otbr::DnssdPlatform::SrvResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex2);
+        EXPECT_EQ(aResult.mPort, 13);
+    });
+
+    discoveredInstanceInfo.mPort       = 13;
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex1;
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex2;
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StopServiceResolver(resolver2, otbr::DnssdPlatform::StdSrvCallback(nullptr, id2));
+    ProcessMainloop();
+}
+
+TEST_F(DnssdTest, TestSrvAndTxtResolversOfTheSameInfraIfShareOneSubscription)
+{
+    otbr::DnssdPlatform::SrvResolver                           srvResolver;
+    otbr::DnssdPlatform::TxtResolver                           txtResolver1;
+    otbr::DnssdPlatform::TxtResolver                           txtResolver2;
+    otbr::Mdns::Publisher::DiscoveredInstanceInfo              discoveredInstanceInfo;
+    const char                                                *serviceType     = "_plant._tcp";
+    const char                                                *serviceInstance = "ZGMF-X09A #1";
+    MockFunction<void(const otbr::DnssdPlatform::SrvResult &)> mockSrvCallback;
+    MockFunction<void(const otbr::DnssdPlatform::TxtResult &)> mockTxtCallback1;
+    MockFunction<void(const otbr::DnssdPlatform::TxtResult &)> mockTxtCallback2;
+    uint64_t                                                   srvId  = 1;
+    uint64_t                                                   txtId1 = 2;
+    uint64_t                                                   txtId2 = 3;
+
+    srvResolver.mServiceType     = serviceType;
+    srvResolver.mServiceInstance = serviceInstance;
+    srvResolver.mInfraIfIndex    = kInfraIfIndex1;
+    srvResolver.mCallback        = nullptr;
+
+    txtResolver1.mServiceType     = serviceType;
+    txtResolver1.mServiceInstance = serviceInstance;
+    txtResolver1.mInfraIfIndex    = kInfraIfIndex1;
+    txtResolver1.mCallback        = nullptr;
+
+    txtResolver2               = txtResolver1;
+    txtResolver2.mInfraIfIndex = kInfraIfIndex2;
+
+    // 1. The SRV and the TXT resolver of the first interface share a subscription. The TXT resolver of the second
+    //    interface has its own.
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, SubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StartServiceResolver(
+        srvResolver, std::make_unique<otbr::DnssdPlatform::StdSrvCallback>(mockSrvCallback.AsStdFunction(), srvId));
+    mDnssdPlatform->StartTxtResolver(
+        txtResolver1, std::make_unique<otbr::DnssdPlatform::StdTxtCallback>(mockTxtCallback1.AsStdFunction(), txtId1));
+    mDnssdPlatform->StartTxtResolver(
+        txtResolver2, std::make_unique<otbr::DnssdPlatform::StdTxtCallback>(mockTxtCallback2.AsStdFunction(), txtId2));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    // 2. A result reported on the second interface reaches the TXT resolver of that interface only.
+    discoveredInstanceInfo.mRemoved  = false;
+    discoveredInstanceInfo.mName     = serviceInstance;
+    discoveredInstanceInfo.mHostName = "Eternal.";
+    discoveredInstanceInfo.mTtl      = 10;
+
+    EXPECT_CALL(mockSrvCallback, Call(_)).Times(0);
+    EXPECT_CALL(mockTxtCallback1, Call(_)).Times(0);
+    EXPECT_CALL(mockTxtCallback2, Call(_)).WillOnce([&](const otbr::DnssdPlatform::TxtResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex2);
+        EXPECT_EQ(aResult.mTxtDataLength, 2);
+    });
+
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex2;
+    discoveredInstanceInfo.mTxtData    = {1, 'b'};
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockSrvCallback);
+    Mock::VerifyAndClearExpectations(&mockTxtCallback1);
+    Mock::VerifyAndClearExpectations(&mockTxtCallback2);
+
+    // 3. A result reported on the first interface reaches the SRV and the TXT resolver of that interface only.
+    EXPECT_CALL(mockSrvCallback, Call(_)).WillOnce([&](const otbr::DnssdPlatform::SrvResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex1);
+        EXPECT_EQ(aResult.mPort, 11);
+    });
+    EXPECT_CALL(mockTxtCallback1, Call(_)).WillOnce([&](const otbr::DnssdPlatform::TxtResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex1);
+        EXPECT_EQ(aResult.mTxtDataLength, 4);
+    });
+    EXPECT_CALL(mockTxtCallback2, Call(_)).Times(0);
+
+    discoveredInstanceInfo.mNetifIndex = kInfraIfIndex1;
+    discoveredInstanceInfo.mPort       = 11;
+    discoveredInstanceInfo.mTxtData    = {3, 'a', '=', '1'};
+    mPublisher->TestOnServiceResolved(serviceType, discoveredInstanceInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockSrvCallback);
+    Mock::VerifyAndClearExpectations(&mockTxtCallback1);
+    Mock::VerifyAndClearExpectations(&mockTxtCallback2);
+
+    // 4. The subscription of the first interface stays as long as one of its resolvers does.
+    EXPECT_CALL(*mPublisher, UnsubscribeService(_, _, _)).Times(0);
+
+    mDnssdPlatform->StopServiceResolver(srvResolver, otbr::DnssdPlatform::StdSrvCallback(nullptr, srvId));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex2)).Times(0);
+
+    mDnssdPlatform->StopTxtResolver(txtResolver1, otbr::DnssdPlatform::StdTxtCallback(nullptr, txtId1));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    EXPECT_CALL(*mPublisher, UnsubscribeService(StrEq(serviceType), StrEq(serviceInstance), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StopTxtResolver(txtResolver2, otbr::DnssdPlatform::StdTxtCallback(nullptr, txtId2));
+    ProcessMainloop();
+}
+
+TEST_F(DnssdTest, TestAddressResolversOfTwoInfraIfsHaveTheirOwnSubscriptionAndResults)
+{
+    otbr::DnssdPlatform::AddressResolver                           resolver1;
+    otbr::DnssdPlatform::AddressResolver                           resolver2;
+    otbr::Mdns::Publisher::DiscoveredHostInfo                      discoveredHostInfo;
+    const char                                                    *hostName = "Eternal";
+    MockFunction<void(const otbr::DnssdPlatform::AddressResult &)> mockCallback1;
+    MockFunction<void(const otbr::DnssdPlatform::AddressResult &)> mockCallback2;
+    uint64_t                                                       id1 = 1;
+    uint64_t                                                       id2 = 2;
+
+    resolver1.mHostName     = hostName;
+    resolver1.mInfraIfIndex = kInfraIfIndex1;
+    resolver1.mCallback     = nullptr;
+
+    resolver2               = resolver1;
+    resolver2.mInfraIfIndex = kInfraIfIndex2;
+
+    // 1. Two resolvers for the same host on two interfaces lead to one subscription per interface.
+    EXPECT_CALL(*mPublisher, SubscribeHost(StrEq(hostName), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, SubscribeHost(StrEq(hostName), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StartIp6AddressResolver(
+        resolver1, std::make_unique<otbr::DnssdPlatform::StdAddressCallback>(mockCallback1.AsStdFunction(), id1));
+    mDnssdPlatform->StartIp6AddressResolver(
+        resolver2, std::make_unique<otbr::DnssdPlatform::StdAddressCallback>(mockCallback2.AsStdFunction(), id2));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    // 2. Each resolver gets the results reported on its own interface only.
+    discoveredHostInfo.mHostName = "Eternal.local.";
+    discoveredHostInfo.mTtl      = 10;
+
+    EXPECT_CALL(mockCallback1, Call(_)).WillOnce([&](const otbr::DnssdPlatform::AddressResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex1);
+        EXPECT_EQ(aResult.mAddressesLength, 1);
+    });
+    EXPECT_CALL(mockCallback2, Call(_)).Times(0);
+
+    discoveredHostInfo.mNetifIndex = kInfraIfIndex1;
+    discoveredHostInfo.mAddresses  = {otbr::Ip6Address("2002::1")};
+    mPublisher->TestOnHostResolved(hostName, discoveredHostInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    EXPECT_CALL(mockCallback1, Call(_)).Times(0);
+    EXPECT_CALL(mockCallback2, Call(_)).WillOnce([&](const otbr::DnssdPlatform::AddressResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex2);
+        EXPECT_EQ(aResult.mAddressesLength, 2);
+    });
+
+    discoveredHostInfo.mNetifIndex = kInfraIfIndex2;
+    discoveredHostInfo.mAddresses  = {otbr::Ip6Address("2002::1"), otbr::Ip6Address("2002::2")};
+    mPublisher->TestOnHostResolved(hostName, discoveredHostInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    // 3. Stopping the resolver of the first interface removes the subscription of that interface only.
+    EXPECT_CALL(*mPublisher, UnsubscribeHost(StrEq(hostName), kInfraIfIndex1)).Times(1);
+    EXPECT_CALL(*mPublisher, UnsubscribeHost(StrEq(hostName), kInfraIfIndex2)).Times(0);
+
+    mDnssdPlatform->StopIp6AddressResolver(resolver1, otbr::DnssdPlatform::StdAddressCallback(nullptr, id1));
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(mPublisher.get());
+
+    // 4. The resolver of the second interface still gets the results reported on its interface.
+    EXPECT_CALL(mockCallback1, Call(_)).Times(0);
+    EXPECT_CALL(mockCallback2, Call(_)).WillOnce([&](const otbr::DnssdPlatform::AddressResult &aResult) {
+        EXPECT_EQ(aResult.mInfraIfIndex, kInfraIfIndex2);
+        EXPECT_EQ(aResult.mAddressesLength, 3);
+    });
+
+    discoveredHostInfo.mAddresses  = {otbr::Ip6Address("2002::1"), otbr::Ip6Address("2002::2"),
+                                      otbr::Ip6Address("2002::3")};
+    discoveredHostInfo.mNetifIndex = kInfraIfIndex1;
+    mPublisher->TestOnHostResolved(hostName, discoveredHostInfo);
+    discoveredHostInfo.mNetifIndex = kInfraIfIndex2;
+    mPublisher->TestOnHostResolved(hostName, discoveredHostInfo);
+    ProcessMainloop();
+    Mock::VerifyAndClearExpectations(&mockCallback1);
+    Mock::VerifyAndClearExpectations(&mockCallback2);
+
+    EXPECT_CALL(*mPublisher, UnsubscribeHost(StrEq(hostName), kInfraIfIndex2)).Times(1);
+
+    mDnssdPlatform->StopIp6AddressResolver(resolver2, otbr::DnssdPlatform::StdAddressCallback(nullptr, id2));
+    ProcessMainloop();
 }
 
 #endif // OTBR_ENABLE_DNSSD_PLAT
