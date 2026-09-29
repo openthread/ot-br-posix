@@ -31,9 +31,6 @@
 
 #include "rest/rest_web_server.hpp"
 
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include <algorithm>
 #include <chrono>
 #include <future>
@@ -45,7 +42,9 @@
 #include <fcntl.h>
 #include <httplib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <openthread/commissioner.h>
 
@@ -222,6 +221,10 @@ RestWebServer::~RestWebServer(void)
     if (mServerThread.joinable())
     {
         mServerThread.join();
+    }
+    if (!mUnixSocketPath.empty() && unlink(mUnixSocketPath.c_str()) != 0 && errno != ENOENT)
+    {
+        otbrLogWarning("Failed to unlink unix socket %s: %s", mUnixSocketPath.c_str(), strerror(errno));
     }
 }
 
@@ -2365,41 +2368,49 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
     mServerThread                         = std::thread([aRestListenAddress, aRestListenPort, weakSelf]() {
         if (auto self = weakSelf.lock())
         {
-            if (IsUnixSocketPath(aRestListenAddress))
-            {
-                otbrLogInfo("RestWebServer listening on unix socket %s", aRestListenAddress.c_str());
-            }
-            else
-            {
-                otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
-            }
-            self->mServer.set_ipv6_v6only(false);
-            self->mServer.set_socket_options([](socket_t aSock) {
-                int opt = 1;
-                // cpp-httplib defaults to SO_REUSEPORT instead of SO_REUSEADDR
-                if (setsockopt(aSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0)
-                {
-                    otbrLogWarning("Failed to set SO_REUSEADDR: %s", strerror(errno));
-                }
-            });
             const httplib::Headers defaultHeaders = {
                 {"Access-Control-Allow-Origin", OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN},
                 {"Access-Control-Allow-Methods", OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS},
                 {"Access-Control-Allow-Headers", OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS}};
             self->mServer.set_default_headers(defaultHeaders);
+
             if (IsUnixSocketPath(aRestListenAddress))
             {
                 struct stat st;
 
+                otbrLogInfo("RestWebServer listening on unix socket %s", aRestListenAddress.c_str());
                 self->mServer.set_address_family(AF_UNIX);
-                if (lstat(aRestListenAddress.c_str(), &st) == 0 && (S_ISSOCK(st.st_mode) || S_ISLNK(st.st_mode)))
+                if (lstat(aRestListenAddress.c_str(), &st) == 0 && S_ISSOCK(st.st_mode))
                 {
-                    unlink(aRestListenAddress.c_str());
+                    if (unlink(aRestListenAddress.c_str()) != 0)
+                    {
+                        otbrLogWarning("Failed to unlink unix socket %s: %s", aRestListenAddress.c_str(),
+                                       strerror(errno));
+                    }
+                }
+                self->mUnixSocketPath = aRestListenAddress;
+                if (!self->mServer.listen(aRestListenAddress, 1))
+                {
+                    otbrLogWarning("REST server failed to start on unix socket %s", aRestListenAddress.c_str());
                 }
             }
-            if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
+            else
             {
-                otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(), aRestListenPort);
+                otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
+                self->mServer.set_ipv6_v6only(false);
+                self->mServer.set_socket_options([](socket_t aSock) {
+                    int opt = 1;
+                    // cpp-httplib defaults to SO_REUSEPORT instead of SO_REUSEADDR
+                    if (setsockopt(aSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0)
+                    {
+                        otbrLogWarning("Failed to set SO_REUSEADDR: %s", strerror(errno));
+                    }
+                });
+                if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
+                {
+                    otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(),
+                                   aRestListenPort);
+                }
             }
         }
     });
