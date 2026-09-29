@@ -248,31 +248,11 @@ public:
 
     /**
      * `meta mark <mark> masquerade` — used in srcnat-postrouting to source-NAT
-     * marked packets out the upstream interface.
+     * marked packets on egress.
      */
     virtual otbrError AddRuleMarkMasquerade(const std::string &aTable,
                                             const std::string &aChain,
                                             uint32_t           aMark,
-                                            uint64_t          *aHandleOut) = 0;
-
-    /**
-     * `oifname <ifname> <verdict>` — used in NAT forward to allow traffic out
-     * the upstream interface.
-     */
-    virtual otbrError AddRuleOifnameVerdict(const std::string &aTable,
-                                            const std::string &aChain,
-                                            const std::string &aOifname,
-                                            Verdict            aVerdict,
-                                            uint64_t          *aHandleOut) = 0;
-
-    /**
-     * `iifname <ifname> <verdict>` — used in NAT forward to allow return
-     * traffic from the upstream interface.
-     */
-    virtual otbrError AddRuleIifnameVerdict(const std::string &aTable,
-                                            const std::string &aChain,
-                                            const std::string &aIifname,
-                                            Verdict            aVerdict,
                                             uint64_t          *aHandleOut) = 0;
 
     virtual otbrError DelRule(const std::string &aTable, const std::string &aChain, uint64_t aHandle) = 0;

@@ -133,14 +133,6 @@ public:
                 AddRuleMarkMasquerade,
                 (const std::string &, const std::string &, uint32_t, uint64_t *),
                 (override));
-    MOCK_METHOD(otbrError,
-                AddRuleOifnameVerdict,
-                (const std::string &, const std::string &, const std::string &, Verdict, uint64_t *),
-                (override));
-    MOCK_METHOD(otbrError,
-                AddRuleIifnameVerdict,
-                (const std::string &, const std::string &, const std::string &, Verdict, uint64_t *),
-                (override));
     MOCK_METHOD(otbrError, DelRule, (const std::string &, const std::string &, uint64_t), (override));
 };
 
@@ -168,8 +160,6 @@ void SetSuccessfulDefaults(MockNftables &mock)
     ON_CALL(mock, AddRuleNdNsRedirect).WillByDefault(DoAll(SetArgPointee<5>(200), Return(OTBR_ERROR_NONE)));
     ON_CALL(mock, AddRuleIifMark).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddRuleMarkMasquerade).WillByDefault(Return(OTBR_ERROR_NONE));
-    ON_CALL(mock, AddRuleOifnameVerdict).WillByDefault(Return(OTBR_ERROR_NONE));
-    ON_CALL(mock, AddRuleIifnameVerdict).WillByDefault(Return(OTBR_ERROR_NONE));
 }
 
 } // namespace
@@ -625,7 +615,7 @@ TEST(FirewallManagerTest, ReplaceIngressPrefixesBeforeInitFails)
     EXPECT_EQ(fw.ReplaceIngressPrefixes({Ip6Prefix("2001:db8::", 64)}, {}), OTBR_ERROR_INVALID_STATE);
 }
 
-TEST(FirewallManagerTest, EnableNat44InstallsThreeChainsAndFiveRules)
+TEST(FirewallManagerTest, EnableNat44InstallsTheMarkAndMasqueradeChains)
 {
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
@@ -636,21 +626,15 @@ TEST(FirewallManagerTest, EnableNat44InstallsThreeChainsAndFiveRules)
     EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain), Hook::kPostrouting,
                                ChainPriority::kSrcNat, ChainType::kNat))
         .Times(1);
-    EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kNatForwardChain), Hook::kForward,
-                               ChainPriority::kFilter, ChainType::kFilter))
-        .Times(1);
+    // No forward chain: an accept there ends that chain only and changes
+    // nothing for the packet.
+    EXPECT_CALL(mock, AddChain(_, _, Hook::kForward, _, _)).Times(0);
 
     EXPECT_CALL(mock, AddRuleIifMark(StrEq(kTableName), StrEq(FirewallManager::kNatPreroutingChain), StrEq("wpan0"),
                                      FirewallManager::kNat44Mark, _))
         .Times(1);
     EXPECT_CALL(mock, AddRuleMarkMasquerade(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain),
                                             FirewallManager::kNat44Mark, _))
-        .Times(1);
-    EXPECT_CALL(mock, AddRuleOifnameVerdict(StrEq(kTableName), StrEq(FirewallManager::kNatForwardChain), StrEq("eth0"),
-                                            Verdict::kAccept, _))
-        .Times(1);
-    EXPECT_CALL(mock, AddRuleIifnameVerdict(StrEq(kTableName), StrEq(FirewallManager::kNatForwardChain), StrEq("eth0"),
-                                            Verdict::kAccept, _))
         .Times(1);
 
     FirewallManager fw(mock, "wpan0");
@@ -663,10 +647,9 @@ TEST(FirewallManagerTest, EnableNat44TwiceIsNoOp)
 {
     NiceMock<MockNftables> mock;
     SetSuccessfulDefaults(mock);
-    // Three chains created on the first call (mangle-prerouting, nat-
-    // postrouting, nat-forward); the second call must make zero additional
-    // AddChain calls.
-    EXPECT_CALL(mock, AddChain(_, _, _, _, _)).Times(3);
+    // Two chains created on the first call (mangle-prerouting, nat-
+    // postrouting); the second call must make zero additional AddChain calls.
+    EXPECT_CALL(mock, AddChain(_, _, _, _, _)).Times(2);
 
     FirewallManager fw(mock, "wpan0");
     ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
@@ -700,7 +683,7 @@ TEST(FirewallManagerTest, EnableNat44BeforeInitFails)
 namespace {
 
 // Everything the manager can be asked for, so a reinstall has it all to
-// reproduce: the filter with a prefix in each set, NAT44 out eth0, an
+// reproduce: the filter with a prefix in each set, NAT44, an
 // ND-proxy rule the kernel handed handle 4242 for.
 void InstallEverything(NiceMock<MockNftables> &aMock, FirewallManager &aFw)
 {
@@ -756,9 +739,9 @@ TEST(FirewallManagerTest, ReinstallRebuildsEverythingInOneBatch)
                                         Ip6Prefix("fd11::", 48)));
         EXPECT_CALL(mock, AddSetElement(StrEq(kTableName), StrEq(FirewallManager::kIngressAllowDstSet),
                                         Ip6Prefix("fd22::", 64)));
+        EXPECT_CALL(mock, AddRuleIifMark(StrEq(kTableName), StrEq(FirewallManager::kNatPreroutingChain), StrEq("wpan0"),
+                                         FirewallManager::kNat44Mark, _));
         EXPECT_CALL(mock, AddRuleMarkMasquerade(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain), _, _));
-        EXPECT_CALL(mock, AddRuleOifnameVerdict(StrEq(kTableName), StrEq(FirewallManager::kNatForwardChain),
-                                                StrEq("eth0"), Verdict::kAccept, _));
         EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kPreroutingChain), Hook::kPrerouting,
                                    ChainPriority::kRaw, _));
         EXPECT_CALL(mock, AddRuleNdNsRedirect(StrEq(kTableName), StrEq(FirewallManager::kPreroutingChain),
