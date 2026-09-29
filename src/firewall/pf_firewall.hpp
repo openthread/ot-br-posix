@@ -100,6 +100,11 @@ public:
     otbrError EnableNat44Masquerade(const std::string &aUpstreamInterfaceName);
 
     /**
+     * Removes the masquerade again. No-op if not enabled.
+     */
+    otbrError DisableNat44Masquerade(void);
+
+    /**
      * Replaces the contents of both ingress tables. Each table is replaced
      * atomically; pfctl cannot batch the two, so the window between them is
      * one process run.

@@ -238,6 +238,46 @@ TEST(PfFirewall, Nat44RequiresNatAnchorAndPrecedesFilterRules)
     }
 }
 
+TEST(PfFirewall, DisableNat44ReloadsTheRulesetWithoutTheNatRules)
+{
+    FakePfctl  pfctl;
+    PfFirewall firewall(pfctl, "utun5");
+
+    EXPECT_EQ(firewall.DisableNat44Masquerade(), OTBR_ERROR_INVALID_STATE);
+
+    ASSERT_EQ(firewall.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(firewall.EnableIngressFilter(), OTBR_ERROR_NONE);
+    ASSERT_EQ(firewall.EnableNat44Masquerade("en0"), OTBR_ERROR_NONE);
+
+    ASSERT_EQ(firewall.DisableNat44Masquerade(), OTBR_ERROR_NONE);
+    EXPECT_FALSE(firewall.IsNat44Enabled());
+    EXPECT_EQ(pfctl.Last().Command(), "pfctl -a otbr -f -");
+    EXPECT_EQ(pfctl.Last().mInput, kIngressRuleset);
+
+    // Not enabled: nothing to reload.
+    size_t calls = pfctl.mCalls.size();
+    EXPECT_EQ(firewall.DisableNat44Masquerade(), OTBR_ERROR_NONE);
+    EXPECT_EQ(pfctl.mCalls.size(), calls);
+}
+
+TEST(PfFirewall, FailedRulesetLoadKeepsNat44Enabled)
+{
+    FakePfctl  pfctl;
+    PfFirewall firewall(pfctl, "utun5");
+
+    ASSERT_EQ(firewall.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(firewall.EnableNat44Masquerade("en0"), OTBR_ERROR_NONE);
+
+    pfctl.mFailRulesetLoad = true;
+    EXPECT_NE(firewall.DisableNat44Masquerade(), OTBR_ERROR_NONE);
+    EXPECT_TRUE(firewall.IsNat44Enabled());
+
+    // The next load still carries the nat rule.
+    pfctl.mFailRulesetLoad = false;
+    ASSERT_EQ(firewall.EnableIngressFilter(), OTBR_ERROR_NONE);
+    EXPECT_NE(pfctl.Last().mInput.find("nat pass on en0"), std::string::npos);
+}
+
 TEST(PfFirewall, ReplaceIngressPrefixesReplacesTablesSortedAndDeduplicated)
 {
     FakePfctl  pfctl;

@@ -158,6 +158,12 @@ public:
                                ChainType          aType = ChainType::kFilter) = 0;
 
     /**
+     * Delete a chain, and with it the rules it holds. A chain that is not
+     * there fails the transaction with ENOENT, like everything else.
+     */
+    virtual otbrError DelChain(const std::string &aTable, const std::string &aChain) = 0;
+
+    /**
      * Create a named set of `ipv6_addr` with the `interval` flag,
      * giving prefix-match semantics equivalent to `ipset hash:net family inet6`.
      */
