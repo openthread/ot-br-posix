@@ -29,6 +29,7 @@
 
 set -euxo pipefail
 
+: "${BUILD_TARGET:="common"}"
 TOOLS_HOME="$HOME"/.cache/tools
 [[ -d $TOOLS_HOME ]] || mkdir -p "$TOOLS_HOME"
 
