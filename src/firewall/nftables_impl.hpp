@@ -96,6 +96,7 @@ public:
                        Hook               aHook,
                        ChainPriority      aPriority,
                        ChainType          aType) override;
+    otbrError DelChain(const std::string &aTable, const std::string &aChain) override;
     otbrError AddIp6PrefixSet(const std::string &aTable, const std::string &aSet) override;
 
     otbrError AddSetElement(const std::string &aTable, const std::string &aSet, const Ip6Prefix &aPrefix) override;

@@ -56,6 +56,9 @@
 #include <string.h>
 #include <vector>
 
+#if OTBR_ENABLE_NAT64
+#include <openthread/nat64.h>
+#endif
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
 #endif
@@ -439,18 +442,12 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
     SuccessOrDie(firewallError, "Failed to initialize the firewall manager!");
     firewallError = mFirewall->EnableIngressFilter();
     SuccessOrDie(firewallError, "Failed to install the Thread ingress filter!");
-#if OTBR_ENABLE_NAT64
-    // Only NAT64 produces IPv4 traffic from the Thread interface; the masquerade
-    // is for that traffic alone, as it was in the legacy setup scripts.
-    if (!mBackboneInterfaceName.empty())
-    {
-        firewallError = mFirewall->EnableNat44Masquerade(mBackboneInterfaceName);
-        SuccessOrDie(firewallError, "Failed to install NAT44 masquerade!");
-    }
-#endif
     // Populate the ingress allow/deny sets from Thread network data, and keep
     // them in sync as it changes. This is the in-process replacement for the
-    // OpenThread posix platform firewall's ipset producer.
+    // OpenThread posix platform firewall's ipset producer. The NAT44
+    // masquerade follows the NAT64 translator the same way: only an active
+    // translator produces IPv4 traffic from the Thread interface, and a build
+    // with NAT64 can still have it switched off at runtime.
     rcpHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) {
         // Network data carries the on-mesh prefixes; the active dataset carries
         // the mesh-local prefix, which the deny set also covers.
@@ -458,8 +455,17 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
         {
             UpdateIngressPrefixes();
         }
+#if OTBR_ENABLE_NAT64
+        if (aFlags & OT_CHANGED_NAT64_TRANSLATOR_STATE)
+        {
+            UpdateNat44Masquerade();
+        }
+#endif
     });
     UpdateIngressPrefixes();
+#if OTBR_ENABLE_NAT64
+    UpdateNat44Masquerade();
+#endif
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent->Init();
@@ -538,6 +544,35 @@ void Application::UpdateIngressPrefixes(void)
 exit:
     return;
 }
+
+#if OTBR_ENABLE_NAT64
+void Application::UpdateNat44Masquerade(void)
+{
+    otInstance *instance;
+    bool        active;
+    otbrError   error;
+
+    VerifyOrExit(mFirewall != nullptr && !mBackboneInterfaceName.empty());
+
+    instance = static_cast<otbr::Host::RcpHost &>(mHost).GetInstance();
+    VerifyOrExit(instance != nullptr);
+
+    // Installed while the translator translates, removed once it stops. Not
+    // fatal like the ingress filter at startup: without the masquerade NAT64
+    // traffic goes untranslated, nothing goes unfiltered.
+    active = (otNat64GetTranslatorState(instance) == OT_NAT64_STATE_ACTIVE);
+    VerifyOrExit(active != mFirewall->IsNat44Enabled());
+
+    error = active ? mFirewall->EnableNat44Masquerade(mBackboneInterfaceName) : mFirewall->DisableNat44Masquerade();
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Firewall: failed to %s the NAT44 masquerade", active ? "install" : "remove");
+    }
+
+exit:
+    return;
+}
+#endif
 #endif
 
 void Application::DeinitRcpMode(void)

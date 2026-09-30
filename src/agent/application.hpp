@@ -269,6 +269,9 @@ private:
 
 #if OTBR_ENABLE_NFTABLES || OTBR_ENABLE_PF
     void UpdateIngressPrefixes(void);
+#if OTBR_ENABLE_NAT64
+    void UpdateNat44Masquerade(void);
+#endif
 #endif
 
     void CreateNcpMode(void);

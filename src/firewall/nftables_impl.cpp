@@ -410,6 +410,35 @@ exit:
     return error;
 }
 
+otbrError Nftables::DelChain(const std::string &aTable, const std::string &aChain)
+{
+    otbrError           error = OTBR_ERROR_NONE;
+    struct nftnl_chain *c     = nullptr;
+
+    VerifyOrExit(mInBatch, error = OTBR_ERROR_INVALID_STATE);
+
+    c = nftnl_chain_alloc();
+    VerifyOrExit(c != nullptr, error = OTBR_ERROR_ERRNO);
+
+    nftnl_chain_set_str(c, NFTNL_CHAIN_TABLE, aTable.c_str());
+    nftnl_chain_set_str(c, NFTNL_CHAIN_NAME, aChain.c_str());
+    nftnl_chain_set_u32(c, NFTNL_CHAIN_FAMILY, NFPROTO_INET);
+
+    {
+        struct nlmsghdr *nlh = nftnl_chain_nlmsg_build_hdr(reinterpret_cast<char *>(mnl_nlmsg_batch_current(mBatch)),
+                                                           NFT_MSG_DELCHAIN, NFPROTO_INET, NLM_F_ACK, mSeq++);
+        nftnl_chain_nlmsg_build_payload(nlh, c);
+        SuccessOrExit(error = AdvanceBatch());
+    }
+
+exit:
+    if (c != nullptr)
+    {
+        nftnl_chain_free(c);
+    }
+    return error;
+}
+
 otbrError Nftables::AddIp6PrefixSet(const std::string &aTable, const std::string &aSet)
 {
     otbrError         error = OTBR_ERROR_NONE;

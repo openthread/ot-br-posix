@@ -313,6 +313,28 @@ exit:
     return error;
 }
 
+otbrError PfFirewall::DisableNat44Masquerade(void)
+{
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string upstream;
+
+    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mNat44Enabled);
+
+    upstream.swap(mUpstreamIfName);
+    mNat44Enabled = false;
+    error         = LoadRuleset();
+    if (error != OTBR_ERROR_NONE)
+    {
+        mNat44Enabled = true;
+        mUpstreamIfName.swap(upstream);
+    }
+
+exit:
+    otbrLogResult(error, "PfFirewall: %s", __FUNCTION__);
+    return error;
+}
+
 otbrError PfFirewall::ReplaceTable(const char *aTable, const std::vector<Ip6Prefix> &aPrefixes)
 {
     std::vector<std::string> args = {"-a", kAnchorName, "-t", aTable, "-T"};

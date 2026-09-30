@@ -118,6 +118,11 @@ public:
     otbrError EnableNat44Masquerade(const std::string &aUpstreamInterfaceName);
 
     /**
+     * Remove the IPv4 masquerade again. No-op if not enabled.
+     */
+    otbrError DisableNat44Masquerade(void);
+
+    /**
      * Install the ND-proxy NFQUEUE redirect rule for the given Domain prefix
      * on the given backbone interface. Lazily creates the dua_prerouting
      * chain on first call. Subsequent calls without an intervening Disable

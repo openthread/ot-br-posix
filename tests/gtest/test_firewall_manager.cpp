@@ -40,6 +40,7 @@
 #include <memory>
 
 #include <libmnl/libmnl.h>
+#include <libnftnl/chain.h>
 #include <libnftnl/expr.h>
 #include <libnftnl/rule.h>
 #include <linux/netfilter.h>
@@ -96,6 +97,7 @@ public:
                 AddChain,
                 (const std::string &, const std::string &, Hook, ChainPriority, ChainType),
                 (override));
+    MOCK_METHOD(otbrError, DelChain, (const std::string &, const std::string &), (override));
     MOCK_METHOD(otbrError, AddIp6PrefixSet, (const std::string &, const std::string &), (override));
     MOCK_METHOD(otbrError, AddSetElement, (const std::string &, const std::string &, const Ip6Prefix &), (override));
     MOCK_METHOD(otbrError, FlushSet, (const std::string &, const std::string &), (override));
@@ -144,6 +146,7 @@ void SetSuccessfulDefaults(MockNftables &mock)
     ON_CALL(mock, DelTable).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddTable).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddChain).WillByDefault(Return(OTBR_ERROR_NONE));
+    ON_CALL(mock, DelChain).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddIp6PrefixSet).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, AddSetElement).WillByDefault(Return(OTBR_ERROR_NONE));
     ON_CALL(mock, FlushSet).WillByDefault(Return(OTBR_ERROR_NONE));
@@ -937,6 +940,110 @@ TEST(FirewallManagerTest, AReinstallLeavesOutPrefixesAnotherOneCovers)
     EXPECT_EQ(fw.Reinstall(), OTBR_ERROR_NONE);
 }
 
+TEST(FirewallManagerTest, DisableNat44DeletesBothChains)
+{
+    NiceMock<MockNftables> mock;
+    FirewallManager        fw(mock, "wpan0");
+
+    InstallEverything(mock, fw);
+
+    {
+        InSequence seq;
+        EXPECT_CALL(mock, BeginBatch());
+        EXPECT_CALL(mock, DelChain(StrEq(kTableName), StrEq(FirewallManager::kNatPreroutingChain)));
+        EXPECT_CALL(mock, DelChain(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain)));
+        EXPECT_CALL(mock, CommitBatch());
+    }
+    EXPECT_CALL(mock, DelTable(_)).Times(0);
+
+    EXPECT_EQ(fw.DisableNat44Masquerade(), OTBR_ERROR_NONE);
+    EXPECT_FALSE(fw.IsNat44Enabled());
+    ::testing::Mock::VerifyAndClearExpectations(&mock);
+
+    // Gone from what a reinstall carries, too.
+    AllowTheRest(mock);
+    EXPECT_CALL(mock, AddChain(_, StrEq(FirewallManager::kNatPreroutingChain), _, _, _)).Times(0);
+    EXPECT_CALL(mock, AddRuleMarkMasquerade(_, _, _, _)).Times(0);
+    EXPECT_EQ(fw.Reinstall(), OTBR_ERROR_NONE);
+}
+
+TEST(FirewallManagerTest, DisableNat44WhenNotEnabledIsNoOp)
+{
+    NiceMock<MockNftables> mock;
+    SetSuccessfulDefaults(mock);
+    FirewallManager fw(mock, "wpan0");
+
+    ASSERT_EQ(fw.Init(), OTBR_ERROR_NONE);
+
+    EXPECT_CALL(mock, BeginBatch()).Times(0);
+    EXPECT_EQ(fw.DisableNat44Masquerade(), OTBR_ERROR_NONE);
+}
+
+TEST(FirewallManagerTest, DisableNat44BeforeInitFails)
+{
+    NiceMock<MockNftables> mock;
+    FirewallManager        fw(mock, "wpan0");
+
+    EXPECT_CALL(mock, BeginBatch()).Times(0);
+    EXPECT_EQ(fw.DisableNat44Masquerade(), OTBR_ERROR_INVALID_STATE);
+}
+
+TEST(FirewallManagerTest, DisableNat44OnAMissingTableReinstallsWithoutIt)
+{
+    // The chains went with the table; what comes back has no masquerade.
+    NiceMock<MockNftables> mock;
+    FirewallManager        fw(mock, "wpan0");
+
+    InstallEverything(mock, fw);
+
+    AllowTheRest(mock);
+    {
+        InSequence seq;
+        EXPECT_CALL(mock, CommitBatch()).WillOnce([]() { return CommitFailsWith(ENOENT); });
+        EXPECT_CALL(mock, DelTable(StrEq(kTableName)));
+        EXPECT_CALL(mock, AddTable(StrEq(kTableName)));
+        EXPECT_CALL(mock, CommitBatch()).WillOnce(Return(OTBR_ERROR_NONE));
+    }
+    EXPECT_CALL(mock, AddRuleMarkMasquerade(_, _, _, _)).Times(0);
+
+    EXPECT_EQ(fw.DisableNat44Masquerade(), OTBR_ERROR_NONE);
+    EXPECT_FALSE(fw.IsNat44Enabled());
+}
+
+TEST(FirewallManagerTest, AFailedDisableKeepsNat44Wanted)
+{
+    // A failed batch changed nothing in the kernel: the masquerade is still
+    // installed, and still what a reinstall must carry.
+    NiceMock<MockNftables> mock;
+    FirewallManager        fw(mock, "wpan0");
+
+    InstallEverything(mock, fw);
+
+    EXPECT_CALL(mock, CommitBatch()).WillOnce([]() { return CommitFailsWith(EINVAL); });
+    EXPECT_EQ(fw.DisableNat44Masquerade(), OTBR_ERROR_ERRNO);
+    EXPECT_TRUE(fw.IsNat44Enabled());
+    ::testing::Mock::VerifyAndClearExpectations(&mock);
+
+    AllowTheRest(mock);
+    EXPECT_CALL(mock, AddRuleMarkMasquerade(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain), _, _));
+    EXPECT_EQ(fw.Reinstall(), OTBR_ERROR_NONE);
+}
+
+TEST(FirewallManagerTest, Nat44CanBeEnabledAgainAfterDisable)
+{
+    NiceMock<MockNftables> mock;
+    FirewallManager        fw(mock, "wpan0");
+
+    InstallEverything(mock, fw);
+    ASSERT_EQ(fw.DisableNat44Masquerade(), OTBR_ERROR_NONE);
+
+    EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kNatPreroutingChain), _, _, _));
+    EXPECT_CALL(mock, AddChain(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain), _, _, _));
+    EXPECT_CALL(mock, AddRuleMarkMasquerade(StrEq(kTableName), StrEq(FirewallManager::kNatPostroutingChain), _, _));
+    EXPECT_EQ(fw.EnableNat44Masquerade("eth0"), OTBR_ERROR_NONE);
+    EXPECT_TRUE(fw.IsNat44Enabled());
+}
+
 #if OTBR_ENABLE_NFTABLES
 
 // --------------------------------------------------------------------------
@@ -1078,6 +1185,44 @@ TEST_F(NftablesBackendTest, NfprotoNeqIp6ReturnBuildsTheRuleItNames)
 
     ASSERT_STREQ(nftnl_expr_get_str(exprs[2], NFTNL_EXPR_NAME), "immediate");
     EXPECT_EQ(nftnl_expr_get_u32(exprs[2], NFTNL_EXPR_IMM_VERDICT), static_cast<uint32_t>(NFT_RETURN));
+}
+
+TEST_F(NftablesBackendTest, DelChainNamesTheChainItDeletes)
+{
+    // What the backend puts on the wire for a chain delete: one NFT_MSG_DELCHAIN
+    // naming the table, the chain and the inet family.
+    mSocket.QueueAck(0);
+
+    EXPECT_EQ(mNftables.DelChain("otbr-test", "chain"), OTBR_ERROR_INVALID_STATE);
+
+    ASSERT_EQ(mNftables.BeginBatch(), OTBR_ERROR_NONE);
+    ASSERT_EQ(mNftables.DelChain("otbr-test", "chain"), OTBR_ERROR_NONE);
+    ASSERT_EQ(mNftables.CommitBatch(), OTBR_ERROR_NONE);
+    ASSERT_EQ(mSocket.SendCount(), 1u);
+
+    const std::vector<uint8_t> &batch = mSocket.Sent(0);
+    const struct nlmsghdr      *nlh   = reinterpret_cast<const struct nlmsghdr *>(batch.data());
+    int                         len   = static_cast<int>(batch.size());
+    int                         found = 0;
+
+    for (; mnl_nlmsg_ok(nlh, len); nlh = mnl_nlmsg_next(nlh, &len))
+    {
+        struct nftnl_chain *chain;
+
+        if (nlh->nlmsg_type != ((NFNL_SUBSYS_NFTABLES << 8) | NFT_MSG_DELCHAIN))
+        {
+            continue;
+        }
+        found++;
+        chain = nftnl_chain_alloc();
+        ASSERT_NE(chain, nullptr);
+        ASSERT_GE(nftnl_chain_nlmsg_parse(nlh, chain), 0);
+        EXPECT_STREQ(nftnl_chain_get_str(chain, NFTNL_CHAIN_TABLE), "otbr-test");
+        EXPECT_STREQ(nftnl_chain_get_str(chain, NFTNL_CHAIN_NAME), "chain");
+        EXPECT_EQ(nftnl_chain_get_u32(chain, NFTNL_CHAIN_FAMILY), static_cast<uint32_t>(NFPROTO_INET));
+        nftnl_chain_free(chain);
+    }
+    EXPECT_EQ(found, 1);
 }
 
 TEST_F(NftablesBackendTest, RuleWithAnOversizedInterfaceNameIsRejected)

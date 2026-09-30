@@ -332,6 +332,37 @@ exit:
     return error;
 }
 
+otbrError FirewallManager::DisableNat44Masquerade(void)
+{
+    otbrError error    = OTBR_ERROR_NONE;
+    bool      disabled = false;
+
+    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mNat44Enabled);
+
+    // Not wanted from here on: a reinstall answering ENOENT below leaves it out.
+    mNat44Enabled = false;
+    disabled      = true;
+
+    // Deleting a chain deletes the rules in it.
+    SuccessOrExit(error = mNftables.BeginBatch());
+    SuccessOrExit(error = mNftables.DelChain(mTableName, kNatPreroutingChain));
+    SuccessOrExit(error = mNftables.DelChain(mTableName, kNatPostroutingChain));
+    SuccessOrExit(error = CommitOrReinstall());
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        mNftables.AbortBatch();
+        if (disabled)
+        {
+            mNat44Enabled = true;
+        }
+    }
+    otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
+    return error;
+}
+
 otbrError FirewallManager::AppendNat44Masquerade(void)
 {
     otbrError error = OTBR_ERROR_NONE;
