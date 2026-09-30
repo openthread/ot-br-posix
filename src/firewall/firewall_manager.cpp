@@ -92,7 +92,6 @@ const char *const  FirewallManager::kIngressChain        = "forward_ingress";
 const char *const  FirewallManager::kPreroutingChain     = "dua_prerouting";
 const char *const  FirewallManager::kNatPreroutingChain  = "nat_prerouting";
 const char *const  FirewallManager::kNatPostroutingChain = "nat_postrouting";
-const char *const  FirewallManager::kNatForwardChain     = "nat_forward";
 const char *const  FirewallManager::kIngressDenySrcSet   = "ingress_deny_src";
 const char *const  FirewallManager::kIngressAllowDstSet  = "ingress_allow_dst";
 constexpr uint32_t FirewallManager::kNat44Mark;
@@ -162,8 +161,7 @@ otbrError FirewallManager::Deinit(void)
     mIngressFilterEnabled = false;
     mNat44Enabled         = false;
     mInitialized          = false;
-    mNat44UpstreamIfName.clear();
-    mNdDomainPrefix = Ip6Prefix();
+    mNdDomainPrefix       = Ip6Prefix();
     mNdBackboneIfName.clear();
     mNdQueueNum = 0;
     mDenySrc.clear();
@@ -276,8 +274,7 @@ otbrError FirewallManager::AppendIngressFilter(void)
     // This chain filters IPv6 and nothing else, as the ip6tables rules it
     // replaces did. The table is inet, though, so without this the unicast
     // drop below also catches IPv4 forwarded to the Thread interface -- the
-    // replies NAT64 depends on. nat_forward accepting them does not help:
-    // an accept ends that base chain only, and this one still runs.
+    // replies NAT64 depends on.
     SuccessOrExit(error = mNftables.AddRuleNfprotoNeqIp6Return(mTableName, kIngressChain, nullptr));
     SuccessOrExit(error = mNftables.AddRuleOifnameNeqReturn(mTableName, kIngressChain, mThreadIfName, nullptr));
     SuccessOrExit(error = mNftables.AddRuleIifPkttypeVerdict(mTableName, kIngressChain, mThreadIfName,
@@ -319,8 +316,7 @@ otbrError FirewallManager::EnableNat44Masquerade(const std::string &aUpstreamInt
     VerifyOrExit(!aUpstreamInterfaceName.empty(), error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(!mNat44Enabled);
 
-    mNat44Enabled        = true;
-    mNat44UpstreamIfName = aUpstreamInterfaceName;
+    mNat44Enabled = true;
 
     SuccessOrExit(error = mNftables.BeginBatch());
     SuccessOrExit(error = AppendNat44Masquerade());
@@ -331,7 +327,6 @@ exit:
     {
         mNftables.AbortBatch();
         mNat44Enabled = false;
-        mNat44UpstreamIfName.clear();
     }
     otbrLogResult(error, "FirewallManager: %s", __FUNCTION__);
     return error;
@@ -352,17 +347,6 @@ otbrError FirewallManager::AppendNat44Masquerade(void)
     SuccessOrExit(error = mNftables.AddChain(mTableName, kNatPostroutingChain, Hook::kPostrouting,
                                              ChainPriority::kSrcNat, ChainType::kNat));
     SuccessOrExit(error = mNftables.AddRuleMarkMasquerade(mTableName, kNatPostroutingChain, kNat44Mark, nullptr));
-
-    // Forward: accept traffic in either direction on the upstream interface.
-    // Hooked at FORWARD/filter alongside forward_ingress. Accepting here does
-    // not exempt a packet from that chain -- every base chain on a hook runs
-    // -- so forward_ingress leaves IPv4 alone by itself.
-    SuccessOrExit(error = mNftables.AddChain(mTableName, kNatForwardChain, Hook::kForward, ChainPriority::kFilter,
-                                             ChainType::kFilter));
-    SuccessOrExit(error = mNftables.AddRuleOifnameVerdict(mTableName, kNatForwardChain, mNat44UpstreamIfName,
-                                                          Verdict::kAccept, nullptr));
-    SuccessOrExit(error = mNftables.AddRuleIifnameVerdict(mTableName, kNatForwardChain, mNat44UpstreamIfName,
-                                                          Verdict::kAccept, nullptr));
 
 exit:
     return error;

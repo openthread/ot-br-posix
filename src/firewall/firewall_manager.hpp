@@ -105,12 +105,15 @@ public:
     otbrError EnableIngressFilter(void);
 
     /**
-     * Install IPv4 masquerade NAT44 for traffic from the Thread interface
-     * out the upstream interface, plus FORWARD ACCEPTs in both directions.
-     * Replaces the legacy iptables-based NAT64 setup that used to live in
-     * the Docker entrypoint. No-op if already enabled.
+     * Install the IPv4 masquerade for traffic from the Thread interface: a
+     * mark set on ingress, source NAT on egress. Replaces the legacy
+     * iptables-based NAT64 setup that used to live in the Docker entrypoint.
+     * No-op if already enabled.
      *
-     * @param[in] aUpstreamInterfaceName  Upstream interface (e.g. "eth0").
+     * @param[in] aUpstreamInterfaceName  Upstream interface (e.g. "eth0"), as
+     *                                    the pf backend takes it. The nftables
+     *                                    masquerade is not bound to one, but
+     *                                    an empty name is still refused.
      */
     otbrError EnableNat44Masquerade(const std::string &aUpstreamInterfaceName);
 
@@ -159,7 +162,6 @@ public:
     static const char *const kPreroutingChain;
     static const char *const kNatPreroutingChain;
     static const char *const kNatPostroutingChain;
-    static const char *const kNatForwardChain;
     static const char *const kIngressDenySrcSet;
     static const char *const kIngressAllowDstSet;
 
@@ -190,7 +192,6 @@ private:
 
     // What was asked for, kept so the table can be reinstalled when it is
     // deleted behind the agent's back.
-    std::string            mNat44UpstreamIfName;
     bool                   mNdRedirectEnabled;
     Ip6Prefix              mNdDomainPrefix;
     std::string            mNdBackboneIfName;

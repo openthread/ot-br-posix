@@ -145,16 +145,6 @@ public:
                                     const std::string &aChain,
                                     uint32_t           aMark,
                                     uint64_t          *aHandleOut) override;
-    otbrError AddRuleOifnameVerdict(const std::string &aTable,
-                                    const std::string &aChain,
-                                    const std::string &aOifname,
-                                    Verdict            aVerdict,
-                                    uint64_t          *aHandleOut) override;
-    otbrError AddRuleIifnameVerdict(const std::string &aTable,
-                                    const std::string &aChain,
-                                    const std::string &aIifname,
-                                    Verdict            aVerdict,
-                                    uint64_t          *aHandleOut) override;
 
     otbrError DelRule(const std::string &aTable, const std::string &aChain, uint64_t aHandle) override;
 
