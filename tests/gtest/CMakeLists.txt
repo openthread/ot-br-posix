@@ -150,6 +150,7 @@ if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     target_link_libraries(otbr-gtest-mdns-subscribe
         otbr-common
         otbr-mdns
+        otbr-posix
         GTest::gmock_main
     )
     gtest_discover_tests(otbr-gtest-mdns-subscribe)
@@ -198,6 +199,31 @@ target_link_libraries(otbr-gtest-host-api
     GTest::gmock_main
 )
 gtest_discover_tests(otbr-gtest-host-api)
+
+if(OTBR_TREL_DNSSD)
+    add_executable(otbr-gtest-trel-dnssd
+        ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
+        fake_posix_platform.cpp
+        test_trel_dnssd.cpp
+    )
+    target_include_directories(otbr-gtest-trel-dnssd
+        PRIVATE
+            ${OTBR_PROJECT_DIRECTORY}/src
+            ${OPENTHREAD_PROJECT_DIRECTORY}/src/core
+            ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest
+    )
+    target_link_libraries(otbr-gtest-trel-dnssd
+        mbedtls
+        otbr-common
+        otbr-utils
+        otbr-posix
+        otbr-host
+        otbr-mdns
+        otbr-trel-dnssd
+        GTest::gmock_main
+    )
+    gtest_discover_tests(otbr-gtest-trel-dnssd)
+endif()
 
 if(OTBR_TELEMETRY_DATA_API)
     add_executable(otbr-gtest-telemetry

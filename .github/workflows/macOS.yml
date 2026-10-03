@@ -87,8 +87,11 @@ jobs:
                       -DOT_FIREWALL=OFF \
                       -DOTBR_DBUS=OFF" ./script/test build
     # `script/test check` installs into /usr and runs the Linux-only suites;
-    # run the firewall unit tests directly (the pf tests only exist with
-    # OTBR_PF=ON, the FirewallManager tests in every configuration).
+    # run the firewall unit tests, the DnssdPlatform unit tests and the mDNS
+    # subscription tests directly (the pf tests only exist with OTBR_PF=ON,
+    # the mDNS tests only with OTBR_MDNS=mDNSResponder, the FirewallManager
+    # and the DnssdPlatform tests in every configuration). The mDNS tests
+    # use the mDNSResponder of the runner.
     - name: Test
       run: |
-        cd build/otbr && CTEST_OUTPUT_ON_FAILURE=1 ctest -R 'FirewallManagerTest|PfFirewall'
+        cd build/otbr && CTEST_OUTPUT_ON_FAILURE=1 ctest -R 'FirewallManagerTest|PfFirewall|MdnsTest|DnssdTest'
