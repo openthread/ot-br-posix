@@ -92,3 +92,55 @@ jobs:
     - name: Test
       run: |
         cd build/otbr && CTEST_OUTPUT_ON_FAILURE=1 ctest -R 'FirewallManagerTest|PfFirewall'
+
+  # Runs the agent (the "Native" configuration above) in RCP mode against a
+  # simulated radio, forms a network with a second simulated node and checks
+  # the tunnel interface and the data path through it; see
+  # tests/scripts/rcp-simulation. It needs root (sudo) for the tunnel.
+  simulation:
+    name: simulation (RCP, mDNSResponder, Border Agent ON)
+    runs-on: macos-14
+    # ot-ctl waits for its answer without a timeout: a stuck agent would hang
+    # the script's polls forever.
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        submodules: recursive
+        persist-credentials: false
+    - name: Bootstrap
+      run: |
+        brew update
+        brew reinstall jsoncpp ninja protobuf@21 googletest
+    # The radio (ot-rcp) and the second node (ot-cli-mtd) are the OpenThread
+    # submodule built for its simulation platform. OT_TCP is off: the MTD
+    # CLI's TCP example needs TLS pieces this configuration does not build.
+    - name: Build the simulated radio and node
+      run: |
+        cmake -S third_party/openthread/repo -B build/simulation -GNinja \
+              -DOT_PLATFORM=simulation -DOT_TCP=OFF -DBUILD_TESTING=OFF
+        ninja -C build/simulation ot-rcp ot-cli-mtd
+    - name: Build
+      run: |
+        OTBR_OPTIONS="-DOTBR_MDNS=mDNSResponder \
+                      -DOTBR_BORDER_AGENT=ON \
+                      -DOTBR_PF=OFF \
+                      -DOTBR_BACKBONE_ROUTER=OFF \
+                      -DOTBR_TREL=OFF \
+                      -DOTBR_NAT64=OFF \
+                      -DOTBR_DNS_UPSTREAM_QUERY=OFF \
+                      -DOT_FIREWALL=OFF \
+                      -DOTBR_DBUS=OFF" ./script/test build
+    # The agent does not yet exit cleanly on macOS: OpenThread's netif ignores
+    # the EINVAL it gets when joining ff02::1 on a fresh utun, but the leave at
+    # shutdown fails with EADDRNOTAVAIL, which it does not ignore, so
+    # UpdateMulticast() dies and SIGTERM ends the agent with status 1. The
+    # script knows that failure's signature, expects exactly it, and fails
+    # once it no longer happens; drop OTBR_KNOWN_EXIT_FAILURE with the
+    # OpenThread fix.
+    - name: Run
+      run: |
+        OT_RCP="${PWD}/build/simulation/examples/apps/ncp/ot-rcp" \
+        OT_CLI_MTD="${PWD}/build/simulation/examples/apps/cli/ot-cli-mtd" \
+        OTBR_KNOWN_EXIT_FAILURE=ff02::1-leave \
+          tests/scripts/rcp-simulation
