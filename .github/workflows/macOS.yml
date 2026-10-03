@@ -47,6 +47,9 @@ jobs:
   build-check:
     name: build-check (${{ matrix.name }})
     runs-on: macos-14
+    # The simulation steps poll the agent with ot-ctl, which waits for its
+    # answer without a timeout: a stuck agent would hang them forever.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -55,17 +58,22 @@ jobs:
             mdns: "OFF"
             border_agent: "OFF"
             pf: "OFF"
+            simulation: "OFF"
           # The border router configuration used on macOS hosts: native
           # mDNSResponder with the border agent (and border routing) on.
+          # This one also runs the agent against a simulated radio (the
+          # simulation steps below).
           - name: "Native (mDNSResponder, Border Agent ON)"
             mdns: "mDNSResponder"
             border_agent: "ON"
             pf: "OFF"
+            simulation: "ON"
           # The same, with the in-process pf firewall backend.
           - name: "Native + pf firewall (mDNSResponder, Border Agent ON, OTBR_PF ON)"
             mdns: "mDNSResponder"
             border_agent: "ON"
             pf: "ON"
+            simulation: "OFF"
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -96,3 +104,19 @@ jobs:
       run: |
         ctest --test-dir build/otbr --output-on-failure --no-tests=error -LE sudo
         sudo ctest --test-dir build/otbr --output-on-failure --no-tests=error -L sudo
+    # Runs the agent just built in RCP mode against a simulated radio, forms
+    # a network with a second simulated node and checks the tunnel interface
+    # and the data path through it; see tests/scripts/rcp-simulation. The
+    # radio (ot-rcp) and the node (ot-cli-mtd) are the OpenThread submodule
+    # built for its simulation platform; OT_TCP is off because the MTD CLI's
+    # TCP example needs TLS pieces this configuration does not build. The
+    # script needs root (sudo) for the tunnel.
+    - name: Build the simulated radio and node
+      if: matrix.simulation == 'ON'
+      run: |
+        cmake -S third_party/openthread/repo -B build/simulation -GNinja \
+              -DOT_PLATFORM=simulation -DOT_TCP=OFF -DBUILD_TESTING=OFF
+        ninja -C build/simulation ot-rcp ot-cli-mtd
+    - name: Run the agent against the simulated radio
+      if: matrix.simulation == 'ON'
+      run: tests/scripts/rcp-simulation
