@@ -1,0 +1,567 @@
+#!/bin/bash
+#
+#  Copyright (c) 2026, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  Runs otbr-agent in RCP mode against a simulated radio (ot-rcp built for
+#  the OpenThread simulation platform), forms a Thread network with it and
+#  checks the Thread tunnel interface and the data path through it:
+#
+#    - the Thread interface appears and ot-ctl reaches the agent through it;
+#    - the network forms and the agent becomes leader;
+#    - the mesh-local EID is configured on the tunnel interface;
+#    - a second simulated node (ot-cli-mtd) attaches as a child and the host
+#      pings its mesh-local EID: the echo request leaves the host through the
+#      tunnel, the agent forwards it over the (simulated) radio and the reply
+#      comes back the same way, so kernel <-> agent <-> OpenThread works;
+#    - "netdata show" answers; the REST API, when built, reports the leader;
+#    - SIGTERM stops the agent, with exit status 0 unless a known failure is
+#      declared (OTBR_KNOWN_EXIT_FAILURE), its ot-rcp goes with it and the
+#      interface goes away.
+#
+#  The agent needs root (sudo) for the tunnel. Everything runs without D-Bus
+#  or systemd, and only the processes started here are stopped, by PID, never
+#  by name: another agent on the host is left alone. What is shared with the
+#  host is the mDNS registration of the border agent and, with any other
+#  OpenThread simulation at the default port offset, the simulated radio.
+#
+#  On macOS the kernel names the tunnel (utunN) and ignores the name given
+#  with -I. otbr-agent logs "Thread interface: wpan0", the requested name,
+#  and OpenThread's own "Tunnel device name = ..." line is logged before the
+#  instance exists, when only critical messages pass, so it is not in the
+#  agent's log even at -d 6. The script therefore finds the interface by
+#  comparing the interface list before and after the start; on Linux that
+#  gives the name passed with -I.
+#
+#  The Linux branches are written but have not been run yet: the CI job that
+#  runs this script is macOS only.
+#
+#  Environment (all optional):
+#    top_builddir     the agent's build directory (default: build/otbr)
+#    OTBR_AGENT       otbr-agent binary
+#    OT_CTL           ot-ctl binary
+#    OT_RCP           simulation ot-rcp binary
+#                     (default: build/simulation/examples/apps/ncp/ot-rcp)
+#    OT_CLI_MTD       simulation ot-cli-mtd binary, the second node
+#                     (default: build/simulation/examples/apps/cli/ot-cli-mtd)
+#    OTBR_INFRA_IF    infrastructure interface (default: lo on Linux, lo0 on macOS)
+#    OTBR_REST_PORT   port for the REST API (default: 18081; set empty to skip)
+#    OTBR_KNOWN_EXIT_FAILURE
+#                     name of a failure the agent is known to die of at exit.
+#                     The exit is then checked against that failure's exact
+#                     signature, and a clean exit fails the check, so the
+#                     exception has to go once the failure is fixed. Known:
+#                       ff02::1-leave  OpenThread's netif tolerates the EINVAL
+#                                      from joining ff02::1 on a fresh utun but
+#                                      not the EADDRNOTAVAIL from leaving it in
+#                                      otInstanceFinalize: UpdateMulticast()
+#                                      dies, the agent exits with status 1
+#
+
+set -euxo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+readonly SCRIPT_DIR
+
+ABS_TOP_SRCDIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+readonly ABS_TOP_SRCDIR
+
+ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${ABS_TOP_SRCDIR}/build/otbr"}" && pwd)"
+readonly ABS_TOP_BUILDDIR
+
+OTBR_AGENT="${OTBR_AGENT:-${ABS_TOP_BUILDDIR}/src/agent/otbr-agent}"
+readonly OTBR_AGENT
+
+OT_CTL="${OT_CTL:-${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl}"
+readonly OT_CTL
+
+OT_RCP="${OT_RCP:-${ABS_TOP_SRCDIR}/build/simulation/examples/apps/ncp/ot-rcp}"
+readonly OT_RCP
+
+OT_CLI_MTD="${OT_CLI_MTD:-${ABS_TOP_SRCDIR}/build/simulation/examples/apps/cli/ot-cli-mtd}"
+readonly OT_CLI_MTD
+
+OTBR_REST_PORT="${OTBR_REST_PORT-18081}"
+readonly OTBR_REST_PORT
+
+OTBR_KNOWN_EXIT_FAILURE="${OTBR_KNOWN_EXIT_FAILURE-}"
+readonly OTBR_KNOWN_EXIT_FAILURE
+
+UNAME="$(uname)"
+readonly UNAME
+
+case "${UNAME}" in
+    Darwin)
+        OTBR_INFRA_IF="${OTBR_INFRA_IF:-lo0}"
+        ;;
+    Linux)
+        OTBR_INFRA_IF="${OTBR_INFRA_IF:-lo}"
+        ;;
+    *)
+        echo "Unsupported platform: ${UNAME}"
+        exit 1
+        ;;
+esac
+readonly OTBR_INFRA_IF
+
+WORKDIR="$(mktemp -d)"
+readonly WORKDIR
+
+AGENT_LOG="${WORKDIR}/otbr-agent.log"
+readonly AGENT_LOG
+
+NODE_LOG="${WORKDIR}/node2.log"
+readonly NODE_LOG
+
+NODE_IN="${WORKDIR}/node2.in"
+readonly NODE_IN
+
+# The simulated radio is node 1 (forkpty-arg=1); the second node is node 2.
+NODE_ID=2
+readonly NODE_ID
+
+SUDO_PID=  # the sudo that runs the agent
+AGENT_PID= # the agent itself, a child of that sudo
+RCP_PID=   # the ot-rcp the agent forks
+NODE_PID=
+THREAD_NETIF=
+
+die()
+{
+    echo >&2 " *** ERROR: $*"
+    exit 1
+}
+
+is_running()
+{
+    local state
+
+    # kill -0 cannot be used: the agent runs as root. A zombie is not running.
+    state="$(ps -o stat= -p "$1" 2>/dev/null | tr -d ' ')"
+    [[ -n ${state} && ${state} != Z* ]]
+}
+
+print_logs()
+{
+    echo "===== otbr-agent log ====="
+    cat "${AGENT_LOG}" 2>/dev/null
+    echo "===== node ${NODE_ID} log ====="
+    cat "${NODE_LOG}" 2>/dev/null
+    echo "=========================="
+}
+
+at_exit()
+{
+    local exit_code=$?
+
+    trap - INT TERM EXIT
+    set +e
+    set +x
+
+    # Always show the logs: plainly on failure, folded on success so a passing
+    # run still shows how the agent ended.
+    if [[ ${exit_code} != 0 ]]; then
+        print_logs
+    else
+        echo "::group::otbr-agent and node ${NODE_ID} logs"
+        print_logs
+        echo "::endgroup::"
+    fi
+
+    exec 3>&-
+
+    if [[ -n ${NODE_PID} ]] && is_running "${NODE_PID}"; then
+        kill "${NODE_PID}"
+    fi
+
+    # Stop only the processes started by this script, by PID; never killall
+    # or pkill by name, there may be another agent on the host. The agent is
+    # signalled directly, not through its sudo: a KILL of sudo would leave
+    # the agent and its ot-rcp running as root.
+    if [[ -n ${AGENT_PID} ]] && is_running "${AGENT_PID}"; then
+        sudo kill -TERM "${AGENT_PID}"
+        wait_for 10 agent_has_exited || sudo kill -KILL "${AGENT_PID}"
+    elif [[ -n ${SUDO_PID} ]] && is_running "${SUDO_PID}"; then
+        # The agent's PID was never found; sudo relays the TERM to it.
+        sudo kill -TERM "${SUDO_PID}"
+    fi
+    if [[ -n ${RCP_PID} ]] && is_running "${RCP_PID}"; then
+        sudo kill -KILL "${RCP_PID}"
+    fi
+
+    # The agent (as root) wrote its data there.
+    sudo rm -rf "${WORKDIR}"
+
+    exit "${exit_code}"
+}
+
+# wait_for <seconds> <command...>: retries the command once a second until it
+# succeeds or the time is up.
+wait_for()
+{
+    local timeout=$1
+    local deadline=$((SECONDS + timeout))
+
+    shift
+
+    until "$@"; do
+        if ((SECONDS >= deadline)); then
+            return 1
+        fi
+        sleep 1
+    done
+}
+
+# child_of <pid> <name>: the PID of the child of <pid> whose command is <name>.
+child_of()
+{
+    local pid
+
+    for pid in $(pgrep -P "$1"); do
+        if [[ $(ps -o comm= -p "${pid}") == *"$2" ]]; then
+            echo "${pid}"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# sudo runs the command as its child, or as a grandchild through a monitor
+# process when it uses a pty.
+find_agent_pid()
+{
+    local pid=${SUDO_PID}
+    local child
+
+    is_running "${pid}" || die "sudo exited before otbr-agent started"
+
+    for _ in 1 2; do
+        if child="$(child_of "${pid}" otbr-agent)"; then
+            AGENT_PID=${child}
+            return 0
+        fi
+        child="$(child_of "${pid}" sudo)" || return 1
+        pid=${child}
+    done
+
+    return 1
+}
+
+find_rcp_pid()
+{
+    RCP_PID="$(child_of "${AGENT_PID}" ot-rcp)"
+}
+
+agent_has_exited()
+{
+    ! is_running "${AGENT_PID}"
+}
+
+rcp_has_exited()
+{
+    ! is_running "${RCP_PID}"
+}
+
+list_netifs()
+{
+    if [[ ${UNAME} == Darwin ]]; then
+        ifconfig -l | tr ' ' '\n'
+    else
+        ls /sys/class/net
+    fi
+}
+
+# netif_ip6_addrs <netif>: the IPv6 addresses configured on the interface.
+netif_ip6_addrs()
+{
+    if [[ ${UNAME} == Darwin ]]; then
+        ifconfig "$1" | awk '/inet6/ { sub(/%.*/, "", $2); print $2 }'
+    else
+        ip -6 -o addr show dev "$1" | awk '{ sub(/\/.*/, "", $4); print $4 }'
+    fi
+}
+
+# expand_ip6 <address>: prints the address as eight hex words without
+# leading zeros, the form the OpenThread CLI prints, so addresses printed
+# by ifconfig/ip (which compress zero runs with "::") can be compared.
+expand_ip6()
+{
+    awk -v addr="$1" 'BEGIN {
+        n = split(addr, halves, "::")
+        if (n == 2) {
+            left = (halves[1] == "") ? 0 : split(halves[1], l, ":")
+            right = (halves[2] == "") ? 0 : split(halves[2], r, ":")
+            for (i = 1; i <= left; i++) words[++count] = l[i]
+            for (i = 0; i < 8 - left - right; i++) words[++count] = "0"
+            for (i = 1; i <= right; i++) words[++count] = r[i]
+        } else {
+            count = split(addr, words, ":")
+        }
+        for (i = 1; i <= count; i++) {
+            sub(/^0+/, "", words[i])
+            if (words[i] == "") words[i] = "0"
+            printf "%s%s", words[i], (i < count) ? ":" : "\n"
+        }
+    }'
+}
+
+ping6_host()
+{
+    if [[ ${UNAME} == Darwin ]]; then
+        ping6 -c 3 "$1"
+    else
+        ping -6 -c 3 "$1"
+    fi
+}
+
+ot_ctl()
+{
+    sudo "${OT_CTL}" -I "${THREAD_NETIF}" "$@" | tr -d '\r'
+}
+
+# ot_ctl_done <command...>: runs the command and requires it to end with
+# "Done" (ot-ctl exits 0 for "Error ..." as well).
+ot_ctl_done()
+{
+    local output
+
+    output="$(ot_ctl "$@")"
+    echo "${output}"
+    [[ $(tail -n1 <<<"${output}") == Done ]] || die "ot-ctl $*: ${output}"
+}
+
+ot_ctl_answers()
+{
+    [[ $(ot_ctl state 2>/dev/null | tail -n1) == Done ]]
+}
+
+agent_is_leader()
+{
+    [[ $(ot_ctl state | sed -n 1p) == leader ]]
+}
+
+# Finds the interface the agent created: the one that is in the interface
+# list now and was not before the agent started.
+find_thread_netif()
+{
+    local added
+
+    is_running "${AGENT_PID}" || die "otbr-agent exited"
+
+    added="$(comm -13 <(echo "${NETIFS_BEFORE}") <(list_netifs | sort))"
+    [[ -n ${added} ]] || return 1
+    [[ $(wc -l <<<"${added}") -eq 1 ]] || die "more than one interface appeared: ${added}"
+
+    THREAD_NETIF="${added}"
+}
+
+thread_netif_is_gone()
+{
+    ! list_netifs | grep -qx "${THREAD_NETIF}"
+}
+
+node_cmd()
+{
+    is_running "${NODE_PID}" || die "node ${NODE_ID} exited"
+    echo "$*" >&3
+}
+
+child_registered_address()
+{
+    # childip: "<rloc16>: <address>" per registered child address, then Done.
+    # An MTD child registers its mesh-local EID first.
+    ot_ctl childip | awk '/^[0-9a-f]+: / { print $2; exit }'
+}
+
+child_has_address()
+{
+    CHILD_ADDR="$(child_registered_address)"
+    [[ -n ${CHILD_ADDR} ]]
+}
+
+rest_answers()
+{
+    curl -sS --fail --max-time 5 "http://127.0.0.1:${OTBR_REST_PORT}/node" >"${WORKDIR}/node.json"
+}
+
+# Checks the agent's exit against the signature of the declared known
+# failure; anything else is a failure of its own.
+check_known_exit_failure()
+{
+    local last
+    local pattern
+
+    case "${OTBR_KNOWN_EXIT_FAILURE}" in
+        ff02::1-leave)
+            # SuccessOrDie exits with OT_EXIT_FAILURE, 1. The leave's own
+            # warning is not in the log: otInstanceFinalize clears the
+            # initialised flag before it, after which OpenThread logs only
+            # critical messages and shows the uptime as zero. What is there:
+            # the tolerated join at the start, and the SuccessOrDie line of
+            # UpdateMulticast() as the agent's last line. A leave of another
+            # group dying in the same place would look the same; ff02::1 is
+            # the only group whose join was not accepted by the kernel.
+            [[ ${AGENT_STATUS} == 1 ]] \
+                || die "otbr-agent exited with status ${AGENT_STATUS}; ${OTBR_KNOWN_EXIT_FAILURE} exits with 1"
+            grep -qF 'Ignoring IPV6_JOIN_GROUP failure (EINVAL) for MC LINKLOCAL address (ff02::1)' "${AGENT_LOG}" \
+                || die "the tolerated join of ff02::1 is not in the agent log, this is not ${OTBR_KNOWN_EXIT_FAILURE}"
+            # Any other tolerated join would make the dying leave ambiguous.
+            [[ $(grep -c 'Ignoring IPV6_JOIN_GROUP failure' "${AGENT_LOG}") == 1 ]] \
+                || die "more than one tolerated join in the agent log, this is not ${OTBR_KNOWN_EXIT_FAILURE}"
+            last="$(tail -n1 "${AGENT_LOG}")"
+            pattern='^00:00:00\.000 \[C\] Platform-+: UpdateMulticast\(\) at netif\.cpp:[0-9]+: Failure$'
+            grep -Eq "${pattern}" <<<"${last}" \
+                || die "the agent's last log line is not the UpdateMulticast() death of ${OTBR_KNOWN_EXIT_FAILURE}: ${last}"
+            ;;
+    esac
+}
+
+trap at_exit INT TERM EXIT
+
+case "${OTBR_KNOWN_EXIT_FAILURE}" in
+    "" | ff02::1-leave) ;;
+    *) die "unknown OTBR_KNOWN_EXIT_FAILURE: ${OTBR_KNOWN_EXIT_FAILURE}" ;;
+esac
+
+for binary in "${OTBR_AGENT}" "${OT_CTL}" "${OT_RCP}" "${OT_CLI_MTD}"; do
+    [[ -x ${binary} ]] || die "${binary} is not an executable"
+done
+
+mkdir -p "${WORKDIR}/data"
+
+NETIFS_BEFORE="$(list_netifs | sort)"
+readonly NETIFS_BEFORE
+
+# The simulation apps keep their flash in tmp/ under the working directory;
+# run everything from a fresh one so no earlier network is restored.
+cd "${WORKDIR}"
+
+agent_args=(
+    -I wpan0
+    -B "${OTBR_INFRA_IF}"
+    -v -d 6 -s
+    --data-path "${WORKDIR}/data"
+)
+if [[ -n ${OTBR_REST_PORT} ]]; then
+    agent_args+=(--rest-listen-port "${OTBR_REST_PORT}")
+fi
+
+# The log file is opened by this shell on purpose: it stays readable here.
+# shellcheck disable=SC2024
+sudo "${OTBR_AGENT}" "${agent_args[@]}" "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" >"${AGENT_LOG}" 2>&1 &
+SUDO_PID=$!
+
+wait_for 10 find_agent_pid || die "otbr-agent is not a child of sudo"
+echo "otbr-agent PID: ${AGENT_PID}"
+
+echo "Waiting for the Thread interface"
+wait_for 30 find_thread_netif || die "no Thread interface appeared"
+echo "Thread interface: ${THREAD_NETIF}"
+
+wait_for 10 find_rcp_pid || die "no ot-rcp child of otbr-agent"
+echo "ot-rcp PID: ${RCP_PID}"
+
+echo "Waiting for ot-ctl to reach the agent"
+wait_for 30 ot_ctl_answers || die "ot-ctl -I ${THREAD_NETIF} does not answer"
+
+ot_ctl_done dataset init new
+ot_ctl_done dataset commit active
+ot_ctl_done ifconfig up
+ot_ctl_done thread start
+
+echo "Waiting for the agent to become leader"
+wait_for 60 agent_is_leader || die "the agent did not become leader"
+
+# The mesh-local EID is configured on the tunnel interface.
+MLEID="$(ot_ctl ipaddr mleid | sed -n 1p)"
+[[ ${MLEID} =~ ^[0-9a-f:]+$ ]] || die "no mesh-local EID: ${MLEID}"
+NETIF_ADDRS="$(netif_ip6_addrs "${THREAD_NETIF}")"
+NETIF_ADDRS_EXPANDED="$(
+    while read -r addr; do
+        expand_ip6 "${addr}"
+    done <<<"${NETIF_ADDRS}"
+)"
+grep -qxF "${MLEID}" <<<"${NETIF_ADDRS_EXPANDED}" \
+    || die "mesh-local EID ${MLEID} is not on ${THREAD_NETIF}: ${NETIF_ADDRS}"
+
+# A second simulated node joins and the host pings it through the tunnel.
+# The node is an MTD so it stays a child and registers its addresses with
+# the agent, which is where its mesh-local EID is read from.
+mkfifo "${NODE_IN}"
+"${OT_CLI_MTD}" "${NODE_ID}" <"${NODE_IN}" >"${NODE_LOG}" 2>&1 &
+NODE_PID=$!
+exec 3>"${NODE_IN}"
+
+DATASET_HEX="$(ot_ctl dataset active -x | sed -n 1p)"
+[[ ${DATASET_HEX} =~ ^[0-9a-f]+$ ]] || die "no active dataset: ${DATASET_HEX}"
+node_cmd "dataset set active ${DATASET_HEX}"
+node_cmd "ifconfig up"
+node_cmd "thread start"
+
+echo "Waiting for node ${NODE_ID} to attach and register its addresses"
+CHILD_ADDR=
+wait_for 60 child_has_address || die "node ${NODE_ID} did not register an address with the agent"
+echo "Node ${NODE_ID} address: ${CHILD_ADDR}"
+
+ping6_host "${CHILD_ADDR}" || die "cannot ping node ${NODE_ID} at ${CHILD_ADDR} from the host through ${THREAD_NETIF}"
+
+ot_ctl_done netdata show
+
+# The REST API, when built and asked for, reports the leader.
+if [[ -n ${OTBR_REST_PORT} ]]; then
+    if grep -qF "RestWebServer listening on 127.0.0.1:${OTBR_REST_PORT}" "${AGENT_LOG}"; then
+        wait_for 10 rest_answers || die "the REST API does not answer on port ${OTBR_REST_PORT}"
+        grep -Eq '"state":[[:space:]]*"leader"' "${WORKDIR}/node.json" \
+            || die "the REST API does not report the leader: $(cat "${WORKDIR}/node.json")"
+    else
+        echo "REST API not built in, skipping"
+    fi
+fi
+
+# SIGTERM stops the agent and takes ot-rcp and the interface with it. The
+# signal goes to the agent once: its handler is installed with SA_RESETHAND,
+# a second SIGTERM would kill it.
+sudo kill -TERM "${AGENT_PID}"
+wait_for 10 agent_has_exited || die "otbr-agent did not exit within 10 s of SIGTERM"
+AGENT_STATUS=0
+wait "${SUDO_PID}" || AGENT_STATUS=$?
+AGENT_PID=
+if [[ -z ${OTBR_KNOWN_EXIT_FAILURE} ]]; then
+    [[ ${AGENT_STATUS} == 0 ]] || die "otbr-agent exited with status ${AGENT_STATUS}"
+elif [[ ${AGENT_STATUS} == 0 ]]; then
+    die "otbr-agent exited with status 0: ${OTBR_KNOWN_EXIT_FAILURE} did not happen, drop the exception"
+else
+    check_known_exit_failure
+    echo "otbr-agent exited with status ${AGENT_STATUS}: ${OTBR_KNOWN_EXIT_FAILURE}, the known failure"
+fi
+
+wait_for 10 rcp_has_exited || die "ot-rcp (PID ${RCP_PID}) is still running after the agent exited"
+RCP_PID=
+
+wait_for 10 thread_netif_is_gone || die "${THREAD_NETIF} is still there after the agent exited"
+
+echo "PASS"
