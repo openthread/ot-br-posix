@@ -935,6 +935,120 @@ def node_dataset_pending_put_test():
     print(" /node/dataset/pending PUT : OK")
 
 
+def api_network_diagnostic_task_test():
+    actions_url = rest_api_addr + "/api/actions"
+    jsonapi_headers = {
+        'Content-Type': 'application/vnd.api+json',
+        'Accept': 'application/vnd.api+json',
+    }
+
+    def post_action(task_obj):
+        req = urllib.request.Request(actions_url,
+                                     data=json.dumps({"data": [task_obj]}).encode(),
+                                     method='POST',
+                                     headers=jsonapi_headers)
+        with urllib.request.urlopen(req) as response:
+            assert response.status == 200
+            return json.loads(response.read())["data"][0]["id"]
+
+    def wait_for_action(action_id, timeout_sec=10):
+        deadline = time.time() + timeout_sec
+        url = "{}/{}".format(actions_url, action_id)
+        while time.time() < deadline:
+            req = urllib.request.Request(url, headers={'Accept': 'application/vnd.api+json'})
+            with urllib.request.urlopen(req) as response:
+                assert response.status == 200
+                item = json.loads(response.read())["data"]
+                status = item["attributes"]["status"]
+                if status not in ("pending", "active"):
+                    return item
+            time.sleep(0.1)
+        raise AssertionError("action {} timed out".format(action_id))
+
+    # Ensure the devices collection is populated with this node's attached attributes.
+    discover_id = post_action({
+        "type": "updateNetworkDevicesTask",
+        "attributes": {"maxAge": 0, "maxRetries": 1, "timeout": 5},
+    })
+    discover_item = wait_for_action(discover_id, timeout_sec=10)
+    assert discover_item["attributes"]["status"] == "completed"
+
+    with urllib.request.urlopen(urllib.request.Request(rest_api_addr + "/api/node",
+                                                       headers={'Accept': 'application/vnd.api+json'})) as resp:
+        node_data = json.loads(resp.read())["data"]
+    ext_addr = node_data["id"].lower()
+    ml_eid_iid = node_data["attributes"]["mlEidIid"].lower()
+
+    with urllib.request.urlopen(urllib.request.Request(rest_api_addr + "/node/rloc16",
+                                                       headers={'Accept': 'application/json'})) as resp:
+        rloc16 = json.loads(resp.read())
+
+    # 1. Valid extended, rloc (0xXXXX and 00XXXX), and mleid tasks complete with non-empty result IDs.
+    for dest_type, dest in (
+        ("extended", ext_addr),
+        ("rloc", "0x{:04x}".format(rloc16)),
+        ("rloc", "00{:04x}".format(rloc16)),
+        ("mleid", ml_eid_iid),
+    ):
+        action_id = post_action({
+            "type": "getNetworkDiagnosticTask",
+            "attributes": {
+                "destination": dest,
+                "destinationType": dest_type,
+                "types": ["extAddress", "rloc16"],
+                "timeout": 5,
+            },
+        })
+        item = wait_for_action(action_id, timeout_sec=10)
+        assert item["attributes"]["status"] == "completed", "expected completed for {}={}, got {}".format(
+            dest_type, dest, item)
+        result_id = item.get("relationships", {}).get("result", {}).get("data", {}).get("id", "")
+        assert result_id != "", "empty result id for {}={}".format(dest_type, dest)
+
+        diag_url = "{}/api/diagnostics/{}".format(rest_api_addr, result_id)
+        with urllib.request.urlopen(urllib.request.Request(diag_url,
+                                                           headers={'Accept': 'application/vnd.api+json'})) as resp:
+            assert resp.status == 200
+            diag_data = json.loads(resp.read())["data"]
+            assert diag_data["attributes"]["extAddress"].lower() == ext_addr
+
+    # 2. Invalid destination strings are rejected with HTTP 422.
+    for dest_type, invalid_dest in (
+        ("extended", "0123456789abcdeg"),
+        ("rloc", "011234"),
+        ("rloc", "0x123g"),
+        ("mleid", "0123456789abcdeg"),
+    ):
+        expect_http_error(
+            422,
+            lambda dt=dest_type, d=invalid_dest: post_action({
+                "type": "getNetworkDiagnosticTask",
+                "attributes": {
+                    "destination": d,
+                    "destinationType": dt,
+                    "types": ["extAddress", "rloc16"],
+                    "timeout": 2,
+                },
+            }))
+
+    # 3. Unreachable target must not complete with an empty result ID.
+    unreachable_rloc = "0x{:04x}".format(rloc16 ^ 0x0400)
+    action_id = post_action({
+        "type": "getNetworkDiagnosticTask",
+        "attributes": {
+            "destination": unreachable_rloc,
+            "destinationType": "rloc",
+            "types": ["extAddress", "rloc16"],
+            "timeout": 1,
+        },
+    })
+    item = wait_for_action(action_id, timeout_sec=10)
+    assert item["attributes"]["status"] in ("failed", "stopped")
+    assert "relationships" not in item
+
+    print(" /api/actions getNetworkDiagnosticTask : OK")
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
@@ -964,6 +1078,7 @@ def main():
     # before it, while the attached state is deterministic.
     node_dataset_if_none_match_test()
     node_dataset_pending_put_test()
+    api_network_diagnostic_task_test()
     epskc_test()
 
     return 0

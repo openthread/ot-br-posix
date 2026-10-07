@@ -48,6 +48,9 @@ namespace actions {
 
 NetworkDiagnostic::NetworkDiagnostic(const cJSON &aJson, Services &aServices)
     : BasicActions(aJson, aServices)
+    , mDestination(nullptr)
+    , mDestinationType(kAddressTypeExt)
+    , mTypeCount(0)
 {
     cJSON            *item;
     uint8_t           id;
@@ -86,17 +89,29 @@ std::string NetworkDiagnostic::GetTypeName() const
 
 void NetworkDiagnostic::Update(void)
 {
-    std::string results(UUID_STR_LEN, '\0'); // An empty Uuid string for obtaining the created actionId
+    std::string results;
 
     if (mStatus == kActionStatusPending)
     {
         otIp6Address address;
-        SuccessOrExit(mServices.LookupAddress(mDestination, mDestinationType, address));
+        otError      error = mServices.LookupAddress(mDestination, mDestinationType, address);
 
-        if (mServices.GetNetworkDiagHandler().StartDiagnosticsRequest(address, mTypeList, mTypeCount, mTimeout) ==
-            OT_ERROR_NONE)
+        if (error != OT_ERROR_NONE && error != OT_ERROR_NOT_FOUND)
+        {
+            mStatus = kActionStatusFailed;
+            ExitNow();
+        }
+        SuccessOrExit(error);
+
+        error = mServices.GetNetworkDiagHandler().StartDiagnosticsRequest(address, mTypeList, mTypeCount, mTimeout);
+        if (error == OT_ERROR_NONE)
         {
             mStatus = kActionStatusActive;
+        }
+        else if (error != OT_ERROR_ALREADY)
+        {
+            mStatus = kActionStatusFailed;
+            ExitNow();
         }
     }
 
@@ -107,8 +122,15 @@ void NetworkDiagnostic::Update(void)
             results)) // TODO: add parameter for diagnostic types (mTypeList, mTypeCount)
         {
         case OT_ERROR_NONE:
-            SetResult(mServices.GetDiagnosticsCollection().GetCollectionName(), results);
-            mStatus = kActionStatusCompleted;
+            if (!results.empty())
+            {
+                SetResult(mServices.GetDiagnosticsCollection().GetCollectionName(), results);
+                mStatus = kActionStatusCompleted;
+            }
+            else
+            {
+                mStatus = kActionStatusFailed;
+            }
             break;
 
         case OT_ERROR_PENDING:
@@ -150,20 +172,25 @@ void NetworkDiagnostic::Stop(void)
 cJSON *NetworkDiagnostic::Jsonify(std::set<std::string> aFieldset)
 {
     cJSON *attributes = cJSON_CreateObject();
-    cJSON *types      = cJSON_CreateArray();
 
-    if (hasKey(aFieldset, KEY_DESTINATION))
+    if (hasKey(aFieldset, KEY_DESTINATION) && mDestination != nullptr)
     {
         cJSON_AddItemToObject(attributes, KEY_DESTINATION, cJSON_CreateString(mDestination));
     }
     if (hasKey(aFieldset, KEY_DESTINATION_TYPE))
     {
-        cJSON_AddItemToObject(attributes, KEY_DESTINATION_TYPE,
-                              cJSON_CreateString(AddressTypeToString(mDestinationType)));
+        const char *typeStr = AddressTypeToString(mDestinationType);
+
+        if (typeStr != nullptr)
+        {
+            cJSON_AddItemToObject(attributes, KEY_DESTINATION_TYPE, cJSON_CreateString(typeStr));
+        }
     }
 
     if (hasKey(aFieldset, KEY_TYPES))
     {
+        cJSON *types = cJSON_CreateArray();
+
         for (uint32_t i = 0; i < mTypeCount; i++)
         {
             cJSON_AddItemToArray(types, cJSON_CreateString(DiagnosticTypes::GetJsonKey(mTypeList[i])));

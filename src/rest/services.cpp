@@ -35,6 +35,7 @@
 #include "rest_diagnostics_coll.hpp"
 #include "rest_server_common.hpp"
 #include "common/code_utils.hpp"
+#include "utils/string_utils.hpp"
 
 namespace otbr {
 namespace rest {
@@ -101,7 +102,8 @@ otError Services::LookupAddress(const char *aAddressString, AddressType aType, o
 {
     otError                  error = OT_ERROR_NONE;
     otIp6InterfaceIdentifier mlEidIid;
-    const otMeshLocalPrefix *prefix = otThreadGetMeshLocalPrefix(mInstance);
+    otExtAddress             extAddr;
+    const otMeshLocalPrefix *prefix = (mInstance != nullptr) ? otThreadGetMeshLocalPrefix(mInstance) : nullptr;
     const ThreadDevice      *device;
     uint16_t                 rloc = 0xfffe;
 
@@ -110,29 +112,38 @@ otError Services::LookupAddress(const char *aAddressString, AddressType aType, o
     switch (aType)
     {
     case kAddressTypeExt:
-        VerifyOrExit(strlen(aAddressString) == 16, error = OT_ERROR_PARSE);
+        VerifyOrExit(str_to_m8(extAddr.m8, aAddressString, OT_EXT_ADDRESS_SIZE) == OT_ERROR_NONE,
+                     error = OT_ERROR_PARSE);
 
-        device = dynamic_cast<const ThreadDevice *>(mServices->mDevicesCollection.GetItem(std::string(aAddressString)));
+        device = dynamic_cast<const ThreadDevice *>(
+            mServices->mDevicesCollection.GetItem(StringUtils::ToLowercase(std::string(aAddressString))));
+        if (device == nullptr)
+        {
+            device =
+                dynamic_cast<const ThreadDevice *>(mServices->mDevicesCollection.GetItem(std::string(aAddressString)));
+        }
         VerifyOrExit(device != nullptr, error = OT_ERROR_NOT_FOUND);
+        VerifyOrExit(prefix != nullptr, error = OT_ERROR_INVALID_STATE);
 
         memcpy(mlEidIid.mFields.m8, device->mDeviceInfo.mMlEidIid.m8, OT_IP6_IID_SIZE);
         combineMeshLocalPrefixAndIID(prefix, &mlEidIid, &aAddress);
         break;
 
     case kAddressTypeMleid:
-        VerifyOrExit(strlen(aAddressString) == 16, error = OT_ERROR_PARSE);
-
         SuccessOrExit(str_to_m8(mlEidIid.mFields.m8, aAddressString, OT_IP6_IID_SIZE), error = OT_ERROR_PARSE);
+        VerifyOrExit(prefix != nullptr, error = OT_ERROR_INVALID_STATE);
         combineMeshLocalPrefixAndIID(prefix, &mlEidIid, &aAddress);
         break;
 
     case kAddressTypeRloc:
-        VerifyOrExit(strlen(aAddressString) == 6, error = OT_ERROR_PARSE);
-
-        sscanf(aAddressString, "%hx", &rloc);
+        SuccessOrExit(str_to_rloc16(rloc, aAddressString), error = OT_ERROR_PARSE);
+        VerifyOrExit(mInstance != nullptr && otThreadGetRloc(mInstance) != nullptr, error = OT_ERROR_INVALID_STATE);
         memcpy(&aAddress, otThreadGetRloc(mInstance), OT_IP6_ADDRESS_SIZE);
         aAddress.mFields.m16[7] = htons(rloc);
         break;
+
+    default:
+        ExitNow(error = OT_ERROR_INVALID_ARGS);
     }
 
 exit:
