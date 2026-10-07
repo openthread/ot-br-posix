@@ -1394,15 +1394,16 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleResolveResult(DNSServiceR
 {
     OTBR_UNUSED_VARIABLE(aServiceRef);
 
-    std::string instanceName, type, domain;
-    otbrError   error = OTBR_ERROR_NONE;
+    std::string         instanceName, type, domain;
+    DNSServiceErrorType dnsError = aErrorCode;
 
     otbrLogInfo("DNSServiceResolve reply: %s host %s:%d, TXT=%dB inf %u, flags=%u", aFullName, aHostTarget, aPort,
                 aTxtLen, aInterfaceIndex, aFlags);
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
 
-    SuccessOrExit(error = DnsUtils::SplitFullServiceInstanceName(aFullName, instanceName, type, domain));
+    VerifyOrExit(DnsUtils::SplitFullServiceInstanceName(aFullName, instanceName, type, domain) == OTBR_ERROR_NONE,
+                 dnsError = kDNSServiceErr_Invalid);
 
     mInstanceInfo.mNetifIndex = aInterfaceIndex;
     mInstanceInfo.mName       = instanceName;
@@ -1414,10 +1415,10 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleResolveResult(DNSServiceR
     mInstanceInfo.mWeight   = 0;
 
     DeallocateServiceRef();
-    error = GetAddrInfo(aInterfaceIndex);
+    dnsError = GetAddrInfo();
 
 exit:
-    if (error != OTBR_ERROR_NONE)
+    if (aErrorCode == kDNSServiceErr_NoError && dnsError != kDNSServiceErr_NoError)
     {
         otbrLogWarning("Failed to resolve service instance %s", aFullName);
     }
@@ -1431,22 +1432,22 @@ exit:
             aInstance->Resolve();
         });
     }
-    else if (aErrorCode != kDNSServiceErr_NoError || error != OTBR_ERROR_NONE)
+    else if (dnsError != kDNSServiceErr_NoError)
     {
-        mSubscription->mPublisher.OnServiceResolveFailed(mSubscription->mType, mInstanceName, aErrorCode);
+        mPublisher.OnServiceResolveFailed(mSubscription->mType, mInstanceName, dnsError);
         FinishResolution();
     }
 }
 
-otbrError PublisherMDnsSd::ServiceInstanceResolution::GetAddrInfo(uint32_t aInterfaceIndex)
+DNSServiceErrorType PublisherMDnsSd::ServiceInstanceResolution::GetAddrInfo(void)
 {
     DNSServiceErrorType dnsError;
 
     assert(mServiceRef == nullptr);
 
-    otbrLogInfo("DNSServiceGetAddrInfo %s inf %d", mInstanceInfo.mHostName.c_str(), aInterfaceIndex);
+    otbrLogInfo("DNSServiceGetAddrInfo %s inf %d", mInstanceInfo.mHostName.c_str(), mInstanceInfo.mNetifIndex);
 
-    dnsError = DNSServiceGetAddrInfo(&mServiceRef, /* flags */ 0, aInterfaceIndex,
+    dnsError = DNSServiceGetAddrInfo(&mServiceRef, /* flags */ 0, mInstanceInfo.mNetifIndex,
                                      kDNSServiceProtocol_IPv6 | kDNSServiceProtocol_IPv4,
                                      mInstanceInfo.mHostName.c_str(), HandleGetAddrInfoResult, this);
 
@@ -1455,7 +1456,7 @@ otbrError PublisherMDnsSd::ServiceInstanceResolution::GetAddrInfo(uint32_t aInte
         otbrLogWarning("DNSServiceGetAddrInfo failed: %s", DNSErrorToString(dnsError));
     }
 
-    return dnsError == kDNSServiceErr_NoError ? OTBR_ERROR_NONE : OTBR_ERROR_MDNS;
+    return dnsError;
 }
 
 void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServiceRef          aServiceRef,
@@ -1521,14 +1522,26 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
 exit:
     if (IsRetryableError(aErrorCode))
     {
-        otbrLogInfo("Will re-resolve service instance %s on the retryable error: %s", mInstanceInfo.mName.c_str(),
-                    DNSErrorToString(aErrorCode));
+        otbrLogInfo("Will retry the address lookup of service instance %s on the retryable error: %s",
+                    mInstanceInfo.mName.c_str(), DNSErrorToString(aErrorCode));
 
-        mPublisher.ScheduleRetry<ServiceInstanceResolution>(this,
-                                                            [aInterfaceIndex](ServiceInstanceResolution *aInstance) {
-                                                                aInstance->Release();
-                                                                aInstance->GetAddrInfo(aInterfaceIndex);
-                                                            });
+        // Release the service reference and the addresses now rather than when the retry runs: the lookup is for
+        // IPv4 and IPv6, so a second reply could arrive on the reference meanwhile and schedule a second retry.
+        // Only the address lookup is retried; `Release()` would also discard the resolved service (host name, port,
+        // TXT data), leaving nothing to look up or to report.
+        DeallocateServiceRef();
+        mInstanceInfo.mAddresses.clear();
+
+        mPublisher.ScheduleRetry<ServiceInstanceResolution>(this, [](ServiceInstanceResolution *aInstance) {
+            DNSServiceErrorType error = aInstance->GetAddrInfo();
+
+            if (error != kDNSServiceErr_NoError)
+            {
+                aInstance->mPublisher.OnServiceResolveFailed(aInstance->mSubscription->mType, aInstance->mInstanceName,
+                                                             error);
+                aInstance->FinishResolution();
+            }
+        });
     }
     else if ((!mInstanceInfo.mAddresses.empty() && !moreComing) || aErrorCode != kDNSServiceErr_NoError)
     {
