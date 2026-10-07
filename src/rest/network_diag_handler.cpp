@@ -1755,8 +1755,6 @@ void NetworkDiagHandler::SetServiceRoleFlags(otbr::rest::NetworkDiagnostics *aDe
             diagTlvExt.mData.mServiceRoleFlags.mIsBorderRouter = true;
             break; // we can stop here, we found the Border Router
         }
-
-        ++iterator;
     }
 
     aDeviceDiag->mDeviceTlvSetExtension.push_back(diagTlvExt);
