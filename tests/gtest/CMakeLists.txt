@@ -223,3 +223,37 @@ if(OTBR_TELEMETRY_DATA_API)
     )
     gtest_discover_tests(otbr-gtest-telemetry)
 endif()
+
+if(OTBR_REST)
+    if (CJSON_FOUND)
+        set(CJSON_LIB_TARGETS ${CJSON_LINK_LIBRARIES})
+    else()
+        set(CJSON_LIB_TARGETS cjson)
+    endif()
+
+    add_executable(otbr-gtest-rest
+        ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
+        fake_posix_platform.cpp
+        test_rest.cpp
+    )
+    target_include_directories(otbr-gtest-rest
+        PRIVATE
+            ${OTBR_PROJECT_DIRECTORY}/src
+            ${OPENTHREAD_PROJECT_DIRECTORY}/src/core
+            ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest
+            ${CJSON_INCLUDE_DIRS}
+    )
+    target_link_libraries(otbr-gtest-rest
+        ${CJSON_LIB_TARGETS}
+        mbedtls
+        otbr-common
+        otbr-utils
+        otbr-posix
+        otbr-host
+        otbr-rest
+        openthread-ftd
+        openthread-posix
+        GTest::gmock_main
+    )
+    gtest_discover_tests(otbr-gtest-rest)
+endif()

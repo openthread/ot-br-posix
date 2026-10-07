@@ -60,6 +60,17 @@ void combineMeshLocalPrefixAndIID(const otMeshLocalPrefix        *meshLocalPrefi
  */
 otError str_to_m8(uint8_t *m8, const char *str, uint8_t size);
 
+/**
+ * @brief   Converts a 6-character RLOC16 hex string ("0xXXXX" or "00XXXX") into a uint16_t.
+ *
+ * @param[out] aRloc16  Reference to store the parsed RLOC16 value.
+ * @param[in]  aStr     Pointer to the 6-character hex string.
+ *
+ * @retval OT_ERROR_NONE    Successfully parsed the RLOC16 string.
+ * @retval OT_ERROR_FAILED  Input string is null or does not match expected RLOC16 format.
+ */
+otError str_to_rloc16(uint16_t &aRloc16, const char *aStr);
+
 } // namespace rest
 } // namespace otbr
 

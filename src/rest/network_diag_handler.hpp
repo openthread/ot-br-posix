@@ -147,6 +147,8 @@ public:
     void SetDeviceItemAttributes(std::string aExtAddr, DeviceInfo &aDevice);
 
 private:
+    friend class RestNetworkDiagTest;
+
     enum class RequestState : uint8_t
     {
         kIdle,
@@ -191,6 +193,7 @@ private:
 
     // oldest timestamp of previous diagnostic responses considered still valid
     steady_clock::time_point mMaxAge;
+    steady_clock::time_point mRequestStartTime;
     steady_clock::time_point mTimeout;
     steady_clock::time_point mTimeLastAttempt; // time of last attempt
 
@@ -267,10 +270,11 @@ private:
     /**
      * @brief Add or update existing item in mDiagSet with new responses
      *
-     * @param aKey  a rloc16
-     * @param aDiag a vector of TLVs received from rloc16
+     * @param aKey      a rloc16
+     * @param aDiag     a vector of TLVs received from rloc16
+     * @param aPeerAddr optional pointer to the responder's IPv6 address
      */
-    void UpdateDiag(uint16_t aKey, std::vector<otNetworkDiagTlv> &aDiag);
+    void UpdateDiag(uint16_t aKey, std::vector<otNetworkDiagTlv> &aDiag, const otIp6Address *aPeerAddr = nullptr);
 
     /**
      * @brief Reset entries in mChildTables buffer.
@@ -356,7 +360,7 @@ private:
     void SetDiagQueryTlvs(otbr::rest::NetworkDiagnostics *aDeviceDiag, const uint16_t &aParentRloc16);
 
     // transfer responses in mDiagSet buffer into diagnostic collection
-    void FillDiagnosticCollection(otExtAddress aExtAddr);
+    otError FillDiagnosticCollection(const char *aAddressString, AddressType aType);
 
     /**
      * @brief Send Diagnostic Query to get the child table TLV 'OT_NETWORK_DIAGNOSTIC_TLV_CHILD'.

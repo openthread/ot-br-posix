@@ -74,7 +74,7 @@ static int hex_char_to_int(char c)
 
 otError str_to_m8(uint8_t *m8, const char *str, uint8_t size)
 {
-    if (strlen(str) != size * 2)
+    if (m8 == nullptr || str == nullptr || strlen(str) != size * 2)
     {
         return OT_ERROR_FAILED;
     }
@@ -90,6 +90,29 @@ otError str_to_m8(uint8_t *m8, const char *str, uint8_t size)
         m8[i] = (uint8_t)(hex_int_1 * 16 + hex_int_2);
     }
 
+    return OT_ERROR_NONE;
+}
+
+otError str_to_rloc16(uint16_t &aRloc16, const char *aStr)
+{
+    uint8_t bytes[2];
+
+    if (aStr == nullptr || strlen(aStr) != 6)
+    {
+        return OT_ERROR_FAILED;
+    }
+
+    if (aStr[0] != '0' || (aStr[1] != 'x' && aStr[1] != 'X' && aStr[1] != '0'))
+    {
+        return OT_ERROR_FAILED;
+    }
+
+    if (str_to_m8(bytes, aStr + 2, sizeof(bytes)) != OT_ERROR_NONE)
+    {
+        return OT_ERROR_FAILED;
+    }
+
+    aRloc16 = static_cast<uint16_t>((static_cast<uint16_t>(bytes[0]) << 8) | bytes[1]);
     return OT_ERROR_NONE;
 }
 
