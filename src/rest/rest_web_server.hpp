@@ -282,6 +282,7 @@ private:
 
     httplib::Server mServer;
     std::thread     mServerThread;
+    std::string     mUnixSocketPath;
 
     RouteRegistry mRouteRegistry;
 
