@@ -283,6 +283,44 @@ private:
 
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 
+    /**
+     * Represents the host configuration preserved across a host reset.
+     *
+     * A reset re-creates the OpenThread instance, which clears all volatile state. A reset is meant to clear the
+     * Thread network state, not the configuration of the host, so the latter is saved before and restored after
+     * the instance is re-created.
+     */
+    struct HostConfig
+    {
+#ifndef OTBR_VENDOR_NAME
+        std::string mVendorName;
+#endif
+#ifndef OTBR_PRODUCT_NAME
+        std::string mVendorModel;
+#endif
+#if OTBR_ENABLE_MDNS_OPENTHREAD
+        bool        mMdnsEnabled = false; ///< Whether mDNS was enabled explicitly (not by the auto-enable mode).
+        std::string mMdnsLocalHostName;   ///< Explicitly set mDNS local host name, empty when auto-generated.
+#endif
+#if OTBR_ENABLE_NAT64
+        bool mNat64Enabled = false;
+#endif
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+        bool mDnsUpstreamQueryEnabled = false;
+#endif
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+        bool mDhcp6PdEnabled = false;
+#endif
+#if OTBR_ENABLE_TREL
+        bool mTrelEnabled = false;
+#endif
+        bool   mTxPowerValid = false; ///< Whether the transmit power could be read from the radio.
+        int8_t mTxPower      = 0;     ///< The transmit power (dBm).
+    };
+
+    void SaveHostConfig(HostConfig &aHostConfig) const;
+    void RestoreHostConfig(const HostConfig &aHostConfig);
+
     otInstance *mInstance;
 
     otPlatformConfig                       mConfig;
