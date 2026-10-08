@@ -263,6 +263,7 @@ if(OTBR_REST)
         ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
         fake_posix_platform.cpp
         test_rest.cpp
+        test_rest_diag.cpp
     )
     target_include_directories(otbr-gtest-rest
         PRIVATE
