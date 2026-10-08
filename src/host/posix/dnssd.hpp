@@ -211,10 +211,10 @@ public:
     typedef std::shared_ptr<SrvCallback>            SrvCallbackPtr;
     typedef std::shared_ptr<TxtCallback>            TxtCallbackPtr;
     typedef std::shared_ptr<AddressCallback>        AddressCallbackPtr;
-    typedef std::pair<uint64_t, BrowseCallbackPtr>  BrowseEntry;
-    typedef std::pair<uint64_t, SrvCallbackPtr>     SrvEntry;
-    typedef std::pair<uint64_t, TxtCallbackPtr>     TxtEntry;
-    typedef std::pair<uint64_t, AddressCallbackPtr> AddressEntry;
+    typedef std::pair<uint32_t, BrowseCallbackPtr>  BrowseEntry;
+    typedef std::pair<uint32_t, SrvCallbackPtr>     SrvEntry;
+    typedef std::pair<uint32_t, TxtCallbackPtr>     TxtEntry;
+    typedef std::pair<uint32_t, AddressCallbackPtr> AddressEntry;
 
     State GetState(void) const { return mState; }
     void  RegisterService(const Service &aService, RequestId aRequestId, RegisterCallback aCallback);
@@ -315,7 +315,7 @@ private:
         DnsName mType;
     };
 
-    // RequestType MUST be a std::pair<uint64_t, std::shared_ptr<CallbackType>>
+    // RequestType MUST be a std::pair<uint32_t, std::shared_ptr<CallbackType>>
     template <typename RequestType> class EntryList
     {
     public:
@@ -323,7 +323,7 @@ private:
         using CallbackPtrType    = std::shared_ptr<CallbackType>;
         using CallbackResultType = typename CallbackType::ResultType;
 
-        void AddIfAbsent(uint64_t aInfraIfIndex, CallbackPtrType &&aCallbackPtr)
+        void AddIfAbsent(uint32_t aInfraIfIndex, CallbackPtrType &&aCallbackPtr)
         {
             auto iter = FindEntry(aInfraIfIndex, *aCallbackPtr);
             if (iter == mEntries.end())
@@ -332,7 +332,7 @@ private:
             }
         }
 
-        void Delete(uint64_t aInfraIfIndex, const CallbackType &aCallback)
+        void Delete(uint32_t aInfraIfIndex, const CallbackType &aCallback)
         {
             auto iter = FindEntry(aInfraIfIndex, aCallback);
             if (iter != mEntries.end())
@@ -343,7 +343,19 @@ private:
 
         bool IsEmpty(void) { return mEntries.empty(); }
 
-        void InvokeAllCallbacks(uint64_t aInfraIfIndex, CallbackResultType &aResult)
+        std::set<uint32_t> GetInfraIfIndexes(void) const
+        {
+            std::set<uint32_t> infraIfIndexes;
+
+            for (const RequestType &entry : mEntries)
+            {
+                infraIfIndexes.insert(entry.first);
+            }
+
+            return infraIfIndexes;
+        }
+
+        void InvokeAllCallbacks(uint32_t aInfraIfIndex, CallbackResultType &aResult)
         {
             std::vector<CallbackPtrType> copyCallbacks;
 
@@ -364,7 +376,7 @@ private:
     private:
         using IteratorType = typename std::vector<RequestType>::iterator;
 
-        IteratorType FindEntry(uint64_t aInfraIfIndex, const CallbackType &aCallback)
+        IteratorType FindEntry(uint32_t aInfraIfIndex, const CallbackType &aCallback)
         {
             return std::find_if(mEntries.begin(), mEntries.end(),
                                 [aInfraIfIndex, &aCallback](const RequestType &entry) {
@@ -392,10 +404,30 @@ private:
     void StartAddressResolver(const AddressResolver &aAddressResolver, AddressCallbackPtr aCallbackPtr);
     void StopAddressResolver(const AddressResolver &aAddressResolver, const AddressCallback &aCallback);
 
+    // Adds to `aSubscriptions` a subscription for every name of `aRequestsMap` and every distinct infrastructure
+    // interface index of the requests for that name.
+    template <typename NameType, typename RequestType>
+    static void AddSubscriptions(const std::map<NameType, EntryList<RequestType>> &aRequestsMap,
+                                 std::set<std::pair<NameType, uint32_t>>          &aSubscriptions)
+    {
+        for (const auto &entry : aRequestsMap)
+        {
+            for (uint32_t infraIfIndex : entry.second.GetInfraIfIndexes())
+            {
+                aSubscriptions.emplace(entry.first, infraIfIndex);
+            }
+        }
+    }
+
     void ExecuteServiceSubscriptionUpdate(void);
     void PostServiceSubscriptionUpdateTask(void);
     void ExecuteHostSubscriptionUpdate(void);
     void PostHostSubscriptionUpdateTask(void);
+
+    // A subscription is a name and the index of the infrastructure interface to look on.
+    typedef std::pair<DnsServiceType, uint32_t> ServiceTypeSubscription;
+    typedef std::pair<DnsServiceName, uint32_t> ServiceNameSubscription;
+    typedef std::pair<DnsName, uint32_t>        HostSubscription;
 
     static DnssdPlatform *sDnssdPlatform;
 
@@ -413,9 +445,9 @@ private:
     std::map<DnsServiceName, EntryList<TxtEntry>>    mTxtResolversMap;
     std::map<DnsName, EntryList<AddressEntry>>       mIpAddrResolversMap;
 
-    std::set<DnsServiceType> mServiceTypeSubscriptions;
-    std::set<DnsServiceName> mServiceNameSubscriptions;
-    std::set<DnsName>        mHostSubscriptions;
+    std::set<ServiceTypeSubscription> mServiceTypeSubscriptions;
+    std::set<ServiceNameSubscription> mServiceNameSubscriptions;
+    std::set<HostSubscription>        mHostSubscriptions;
 };
 
 } // namespace otbr

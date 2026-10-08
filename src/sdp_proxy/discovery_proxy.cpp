@@ -135,11 +135,12 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
     {
         if (nameInfo.mHostName.empty())
         {
-            mMdnsPublisher.SubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
+            mMdnsPublisher.SubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName,
+                                            Mdns::Publisher::kNetifIndexAny);
         }
         else
         {
-            mMdnsPublisher.SubscribeHost(nameInfo.mHostName);
+            mMdnsPublisher.SubscribeHost(nameInfo.mHostName, Mdns::Publisher::kNetifIndexAny);
         }
     }
 }
@@ -160,11 +161,12 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
     {
         if (nameInfo.mHostName.empty())
         {
-            mMdnsPublisher.UnsubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
+            mMdnsPublisher.UnsubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName,
+                                              Mdns::Publisher::kNetifIndexAny);
         }
         else
         {
-            mMdnsPublisher.UnsubscribeHost(nameInfo.mHostName);
+            mMdnsPublisher.UnsubscribeHost(nameInfo.mHostName, Mdns::Publisher::kNetifIndexAny);
         }
     }
 }

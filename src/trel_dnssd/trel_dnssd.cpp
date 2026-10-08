@@ -90,6 +90,9 @@ TrelDnssd::TrelDnssd(Host::RcpHost &aHost, Mdns::Publisher &aPublisher)
 
 void TrelDnssd::Initialize(std::string aTrelNetif)
 {
+    // Remove the subscription of the previous interface.
+    UnsubscribeTrelService();
+
     mTrelNetif = std::move(aTrelNetif);
     // Reset mTrelNetifIndex to 0 so that when this function is called with a different aTrelNetif
     // than the current mTrelNetif, CheckTrelNetifReady() will update mTrelNetifIndex accordingly.
@@ -121,7 +124,7 @@ void TrelDnssd::StartBrowse(void)
 
     if (IsReady())
     {
-        mPublisher.SubscribeService(kTrelServiceName, /* aInstanceName */ "");
+        SubscribeTrelService();
     }
 
 exit:
@@ -138,10 +141,7 @@ void TrelDnssd::StopBrowse(void)
     mPublisher.RemoveSubscriptionCallbacks(mSubscriberId);
     mSubscriberId = 0;
 
-    if (IsReady())
-    {
-        mPublisher.UnsubscribeService(kTrelServiceName, "");
-    }
+    UnsubscribeTrelService();
 
 exit:
     return;
@@ -204,8 +204,31 @@ void TrelDnssd::HandleMdnsState(Mdns::Publisher::State aState)
         mRegisterInfo.mInstanceName = "";
     }
 
+    // A publisher that becomes ready has no subscription: there is none to remove.
+    mSubscribedNetifIndex = 0;
+
     VerifyOrExit(IsInitialized());
     OnBecomeReady();
+
+exit:
+    return;
+}
+
+void TrelDnssd::SubscribeTrelService(void)
+{
+    assert(mTrelNetifIndex > 0);
+    assert(mSubscribedNetifIndex == 0);
+
+    mSubscribedNetifIndex = mTrelNetifIndex;
+    mPublisher.SubscribeService(kTrelServiceName, /* aInstanceName */ "", mSubscribedNetifIndex);
+}
+
+void TrelDnssd::UnsubscribeTrelService(void)
+{
+    VerifyOrExit(mSubscribedNetifIndex != 0);
+
+    mPublisher.UnsubscribeService(kTrelServiceName, /* aInstanceName */ "", mSubscribedNetifIndex);
+    mSubscribedNetifIndex = 0;
 
 exit:
     return;
@@ -215,6 +238,7 @@ void TrelDnssd::OnTrelServiceInstanceResolved(const std::string                 
                                               const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)
 {
     VerifyOrExit(StringUtils::EqualCaseInsensitive(aType, kTrelServiceName));
+    // The callbacks get the results of every subscription, also those of other subscribers.
     VerifyOrExit(aInstanceInfo.mNetifIndex == mTrelNetifIndex);
 
     if (aInstanceInfo.mRemoved)
@@ -465,7 +489,7 @@ void TrelDnssd::OnBecomeReady(void)
 
         if (mSubscriberId > 0)
         {
-            mPublisher.SubscribeService(kTrelServiceName, /* aInstanceName */ "");
+            SubscribeTrelService();
         }
 
         if (mRegisterInfo.IsValid())
