@@ -935,6 +935,89 @@ def node_dataset_pending_put_test():
     print(" /node/dataset/pending PUT : OK")
 
 
+def network_diagnostic_enhanced_route_test():
+    actions_url = rest_api_addr + "/api/actions"
+    jsonapi_headers = {
+        'Accept': 'application/vnd.api+json',
+        'Content-Type': 'application/vnd.api+json',
+    }
+
+    def post_action(payload):
+        req = urllib.request.Request(actions_url,
+                                     data=json.dumps(payload).encode(),
+                                     method='POST',
+                                     headers=jsonapi_headers)
+        with urllib.request.urlopen(req) as response:
+            assert response.status == 200
+            return json.loads(response.read())
+
+    def wait_action(action_id, timeout=15):
+        url = actions_url + "/" + action_id
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            req = urllib.request.Request(url, headers={'Accept': 'application/vnd.api+json'})
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read())
+                status = data["data"]["attributes"]["status"]
+                if status == "completed":
+                    return data
+                assert status in ("pending", "active"), f"unexpected action status: {status}"
+            time.sleep(0.2)
+        raise AssertionError(f"action {action_id} timed out")
+
+    ext_addr = json.loads(urllib.request.urlopen(rest_api_addr + "/node/ext-address").read()).lower()
+    leader_data = json.loads(urllib.request.urlopen(rest_api_addr + "/node/leader-data").read())
+
+    discover_resp = post_action({
+        "data": [{
+            "type": "updateDeviceCollectionTask",
+            "attributes": {
+                "maxAge": 1,
+                "maxRetries": 1,
+                "deviceCount": 1,
+                "timeout": 10,
+            },
+        }]
+    })
+    wait_action(discover_resp["data"][0]["id"])
+
+    diag_resp = post_action({
+        "data": [{
+            "type": "getNetworkDiagnosticTask",
+            "attributes": {
+                "destination": ext_addr,
+                "types": ["enhancedRoute"],
+                "timeout": 10,
+            },
+        }]
+    })
+    completed_action = wait_action(diag_resp["data"][0]["id"])
+    diag_id = completed_action["data"]["relationships"]["result"]["data"]["id"]
+
+    diag_url = rest_api_addr + "/api/diagnostics/" + diag_id
+    req = urllib.request.Request(diag_url, headers={'Accept': 'application/vnd.api+json'})
+    with urllib.request.urlopen(req) as response:
+        assert response.status == 200
+        diag_item = json.loads(response.read())
+
+    attrs = diag_item["data"]["attributes"]
+    assert "enhancedRoute" in attrs
+    enhanced_route = attrs["enhancedRoute"]
+    assert isinstance(enhanced_route, list) and len(enhanced_route) >= 1
+
+    self_entries = [entry for entry in enhanced_route if entry.get("isSelf") is True]
+    assert len(self_entries) == 1
+    assert self_entries[0] == {
+        "routeId": leader_data["leaderRouterId"],
+        "isSelf": True,
+    }
+
+    urllib.request.urlopen(urllib.request.Request(rest_api_addr + "/api/diagnostics", method='DELETE'))
+    urllib.request.urlopen(urllib.request.Request(actions_url, method='DELETE'))
+
+    print(" /api/diagnostics enhancedRoute : OK")
+
+
 def main():
     node_test(200)
     node_rloc_test(200)
@@ -964,6 +1047,7 @@ def main():
     # before it, while the attached state is deterministic.
     node_dataset_if_none_match_test()
     node_dataset_pending_put_test()
+    network_diagnostic_enhanced_route_test()
     epskc_test()
 
     return 0

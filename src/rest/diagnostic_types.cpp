@@ -126,6 +126,7 @@ const std::unordered_map<std::string, uint8_t> DiagnosticTypes::kKeyMap = {
     MAP_ENTRY(30), //
     MAP_ENTRY(31), //
     MAP_ENTRY(34), //
+    MAP_ENTRY(37), //
 };
 
 } // namespace rest
