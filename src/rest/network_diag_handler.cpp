@@ -188,8 +188,18 @@ void filterIpv6(DeviceInfo &aDeviceInfo, const otIp6Address &aIpv6Addr, const ot
 NetworkDiagHandler::NetworkDiagHandler(Services &aServices, otInstance *aInstance)
     : mInstance{aInstance}
     , mServices{aServices}
+    , mMaxRetries{0}
+    , mRetries{0}
     , mRequestState{RequestState::kIdle}
+    , mIp6address{}
+    , mIsDiscoveryRequest{false}
+    , mDiagReqTlvs{}
+    , mDiagReqTlvsCount{0}
+    , mDiagReqTlvsOmitableCount{0}
+    , mDiagQueryTlvs{}
+    , mDiagQueryTlvsCount{0}
     , mDiagQueryRequestState{RequestState::kIdle}
+    , mDiagQueryRequestRloc{0}
 {
 }
 
@@ -406,7 +416,8 @@ void NetworkDiagHandler::SetDefaultTlvs(void)
     mDiagReqTlvs[1] = OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS;
     mDiagReqTlvs[2] = OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST;
     // mDiagReqTlvs[3] = OT_NETWORK_DIAGNOSTIC_TLV_VERSION;
-    mDiagReqTlvsCount = 3;
+    mDiagReqTlvsCount         = 3;
+    mDiagReqTlvsOmitableCount = 0;
 
     // pre-defined DiagQuery TLVs
     mDiagQueryTlvs[0]   = OT_NETWORK_DIAGNOSTIC_TLV_CHILD;
@@ -855,9 +866,9 @@ void NetworkDiagHandler::UpdateDiag(uint16_t aKey, std::vector<otNetworkDiagTlv>
 
 bool NetworkDiagHandler::HandleNextDiagQuery()
 {
-    for (auto &query_tlv : mDiagQueryTlvs)
+    for (uint32_t i = 0; i < mDiagQueryTlvsCount; ++i)
     {
-        switch (query_tlv)
+        switch (mDiagQueryTlvs[i])
         {
         case OT_NETWORK_DIAGNOSTIC_TLV_CHILD:
             for (auto &item : mChildTables)

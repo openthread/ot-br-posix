@@ -1929,6 +1929,7 @@ components:
                       - childIpv6Addresses # TLV 30: Child IPv6 Address List
                       - routerNeighbors    # TLV 31: Router Neighbor
                       - mleCounters        # TLV 34: MLE Counters
+                      - enhancedRoute      # TLV 37: Enhanced Route
               uniqueItems: true
               minItems: 1
             timeout:
