@@ -36,6 +36,9 @@
 
 #include "common/logging.hpp"
 
+// The tests read the message back from /var/log/syslog, which only Linux has.
+#ifdef __linux__
+
 TEST(Logging, TestLoggingHigherLevel)
 {
     char ident[20];
@@ -128,3 +131,5 @@ TEST(Logging, TestLoggingDump)
     snprintf(cmd, sizeof(cmd), "grep '%s.*: foobar: 0020: 6f 66 20 74 65 78 74 00' /var/log/syslog", ident);
     EXPECT_EQ(system(cmd), 0);
 }
+
+#endif // __linux__
