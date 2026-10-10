@@ -39,6 +39,9 @@
 
 #include "common/logging.hpp"
 
+// The tests read the message back from /var/log/syslog, which only Linux has.
+#ifdef __linux__
+
 static std::string GetUniqueIdent(void)
 {
     long long nowUs =
@@ -135,3 +138,5 @@ TEST(Logging, TestLoggingDump)
     cmd = "grep '" + ident + ".*: foobar: 0020: 6f 66 20 74 65 78 74 00' /var/log/syslog";
     EXPECT_EQ(system(cmd.c_str()), 0);
 }
+
+#endif // __linux__
