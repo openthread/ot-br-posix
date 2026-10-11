@@ -48,8 +48,10 @@
 #include <openthread/ip6.h>
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
+#include <openthread/mesh_diag.h>
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
+#include "common/task_runner.hpp"
 #include "mdns/mdns.hpp"
 
 namespace otbr {
@@ -73,6 +75,7 @@ public:
 #if OTBR_ENABLE_DHCP6_PD
     using Dhcp6PdStateCallback = std::function<void(otBorderRoutingDhcp6PdState)>;
 #endif
+    using MeshDiagTopologyHandler = std::function<void(otError, otMeshDiagRouterInfo *)>;
 
     /**
      * The constructor of a Thread helper.
@@ -225,6 +228,16 @@ public:
      */
     void StateChangedCallback(otChangedFlags aFlags);
 
+    /**
+     * This method collects mesh diagnostic information of the Thread network
+     *
+     * @param[in] aDiscoverChildren   Whether to discover children of each router.
+     * @param[in] aDiscoverIp6Addrs   Whether to discover IPv6 addresses for each router.
+     * @param[in] aHandler            The MeshDiag topology result handler.
+     *
+     */
+    void GetMeshDiagTopology(bool aDiscoverChildren, bool aDiscoverIp6Addrs, MeshDiagTopologyHandler aHandler);
+
     void DetachGracefully(ResultHandler aHandler);
 
     /**
@@ -280,6 +293,14 @@ private:
     static void BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState, void *aThreadHelper);
     void        BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState);
 #endif
+    struct MeshDiagQuery
+    {
+        ThreadHelper *mHelper;
+        uint32_t      mQueryId;
+    };
+
+    static void MeshDiagTopologyCallback(otError aError, otMeshDiagRouterInfo *aRouterInfo, void *aContext);
+    void        MeshDiagTopologyCallback(otError aError, otMeshDiagRouterInfo *aRouterInfo);
 
     otInstance *mInstance;
 
@@ -288,6 +309,9 @@ private:
     ScanHandler                     mScanHandler;
     std::vector<otActiveScanResult> mScanResults;
     EnergyScanHandler               mEnergyScanHandler;
+    MeshDiagTopologyHandler         mMeshDiagTopologyHandler;
+    TaskRunner::TaskId              mMeshDiagTimeoutTask = 0;
+    uint32_t                        mMeshDiagQueryId     = 0;
     std::vector<otEnergyScanResult> mEnergyScanResults;
 
     std::vector<DeviceRoleHandler>    mDeviceRoleHandlers;
