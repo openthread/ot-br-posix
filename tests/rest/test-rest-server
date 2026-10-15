@@ -108,6 +108,7 @@ expect {
 send_user "Testing REST API on a unix socket...\r\n"
 exec kill -TERM [exp_pid -i \$otbr_agent]
 expect -i \$otbr_agent eof
+exec rm -f /tmp/otbr-rest.sock
 
 spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 -B lo --rest-listen-address /tmp/otbr-rest.sock "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
 set otbr_agent \$spawn_id
@@ -119,6 +120,7 @@ expect {
     timeout { error "REST API did not respond on the unix socket" }
     eof { error "curl failed" }
 }
+exec rm -f /tmp/otbr-rest.sock
 
 exit 0
 EOF
