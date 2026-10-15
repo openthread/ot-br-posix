@@ -160,14 +160,24 @@ void CliDaemon::InitializeSessionSocket(void)
     flag |= FD_CLOEXEC;
     VerifyOrExit((flag = fcntl(newSessionSocket, F_SETFD, flag)) != -1, close(newSessionSocket));
 
+    // BSD sockets inherit the file status flags of the listening socket on accept(), Linux sockets do not, and
+    // accept(2) asks portable programs to set the flags of the new socket explicitly. Serve the session blocking
+    // on every platform, as on Linux.
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_GETFL, 0)) != -1, close(newSessionSocket));
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_SETFL, flag & ~O_NONBLOCK)) != -1, close(newSessionSocket));
+
 #ifndef __linux__
     // some platforms (macOS, Solaris) don't have MSG_NOSIGNAL
     // SOME of those (macOS, but NOT Solaris) support SO_NOSIGPIPE
     // if we have SO_NOSIGPIPE, then set it. Otherwise, we're going
     // to simply ignore it.
 #if defined(SO_NOSIGPIPE)
-    VerifyOrExit((flag = setsockopt(newSessionSocket, SOL_SOCKET, SO_NOSIGPIPE, &flag, sizeof(flag))) != -1,
-                 close(newSessionSocket));
+    {
+        const int on = 1;
+
+        VerifyOrExit((flag = setsockopt(newSessionSocket, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on))) != -1,
+                     close(newSessionSocket));
+    }
 #else
 #warning "no support for MSG_NOSIGNAL or SO_NOSIGPIPE"
 #endif
