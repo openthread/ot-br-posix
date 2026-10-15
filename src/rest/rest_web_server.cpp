@@ -212,6 +212,24 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     RegisterGet(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
 }
 
+static bool IsUnixSocketPath(const std::string &aAddress)
+{
+    return !aAddress.empty() && aAddress.front() == '/';
+}
+
+static void UnlinkUnixSocket(const std::string &aPath)
+{
+    struct stat st;
+
+    if (lstat(aPath.c_str(), &st) == 0 && S_ISSOCK(st.st_mode))
+    {
+        if (unlink(aPath.c_str()) != 0 && errno != ENOENT)
+        {
+            otbrLogWarning("Failed to unlink unix socket %s: %s", aPath.c_str(), strerror(errno));
+        }
+    }
+}
+
 RestWebServer::~RestWebServer(void)
 {
     if (mServer.is_running())
@@ -222,9 +240,9 @@ RestWebServer::~RestWebServer(void)
     {
         mServerThread.join();
     }
-    if (!mUnixSocketPath.empty() && unlink(mUnixSocketPath.c_str()) != 0 && errno != ENOENT)
+    if (!mUnixSocketPath.empty())
     {
-        otbrLogWarning("Failed to unlink unix socket %s: %s", mUnixSocketPath.c_str(), strerror(errno));
+        UnlinkUnixSocket(mUnixSocketPath);
     }
 }
 
@@ -2332,11 +2350,6 @@ void RestWebServer::WellKnownThreadGetHandler(const Request &aRequest, Response 
     aResponse.status = StatusCode::OK_200;
 }
 
-static bool IsUnixSocketPath(const std::string &aAddress)
-{
-    return !aAddress.empty() && aAddress.front() == '/';
-}
-
 /**
  * @brief Initializes the REST web server and starts the server thread.
  *
@@ -2376,21 +2389,13 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
 
             if (IsUnixSocketPath(aRestListenAddress))
             {
-                struct stat st;
-
                 otbrLogInfo("RestWebServer listening on unix socket %s", aRestListenAddress.c_str());
                 self->mServer.set_address_family(AF_UNIX);
-                if (lstat(aRestListenAddress.c_str(), &st) == 0 && S_ISSOCK(st.st_mode))
-                {
-                    if (unlink(aRestListenAddress.c_str()) != 0)
-                    {
-                        otbrLogWarning("Failed to unlink unix socket %s: %s", aRestListenAddress.c_str(),
-                                       strerror(errno));
-                    }
-                }
+                UnlinkUnixSocket(aRestListenAddress);
                 self->mUnixSocketPath = aRestListenAddress;
                 if (!self->mServer.listen(aRestListenAddress, 1))
                 {
+                    self->mUnixSocketPath.clear();
                     otbrLogWarning("REST server failed to start on unix socket %s", aRestListenAddress.c_str());
                 }
             }
