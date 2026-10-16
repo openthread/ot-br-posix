@@ -61,7 +61,7 @@ std::string WpanService::HandleGetQRCodeRequest()
     std::string                 response;
     int                         ret = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
-    char                       *rval;
+    char                       *rval = nullptr;
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
@@ -102,7 +102,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     bool                              defaultRoute;
     int                               ret = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient       client(mIfName);
-    char                             *rval;
+    char                             *rval = nullptr;
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
@@ -346,7 +346,7 @@ std::string WpanService::HandleStatusRequest()
     std::string                 response, networkName, extPanId, propertyValue;
     int                         ret = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
-    char                       *rval;
+    char                       *rval = nullptr;
 
     networkInfo["WPAN service"] = "uninitialized";
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
@@ -521,7 +521,7 @@ int WpanService::GetWpanServiceStatus(std::string &aNetworkName, std::string &aE
 {
     int                         status = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
-    const char                 *rval;
+    const char                 *rval = nullptr;
 
     VerifyOrExit(client.Connect(), status = kWpanStatus_Uninitialized);
     rval = client.Execute("state");
@@ -559,7 +559,7 @@ std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
     int                               ret = kWpanStatus_Ok;
     std::string                       pskd;
     std::string                       response;
-    const char                       *rval;
+    const char                       *rval = nullptr;
 
     VerifyOrExit(reader->parse(aCommissionRequest.c_str(), aCommissionRequest.c_str() + aCommissionRequest.size(),
                                &root, nullptr),
@@ -628,9 +628,10 @@ std::string WpanService::HandleGetEpskcStatusRequest(void)
     Json::StreamWriterBuilder   writerBuilder;
     std::string                 response;
     std::string                 state;
-    int                         ret = kWpanStatus_Ok;
+    uint16_t                    port = 0;
+    int                         ret  = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
-    char                       *rval;
+    const char                 *rval = nullptr;
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
 
@@ -638,6 +639,7 @@ std::string WpanService::HandleGetEpskcStatusRequest(void)
     state = toLower(rval);
 
     VerifyOrExit((rval = client.Execute("ba ephemeralkey port")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    port = static_cast<uint16_t>(atoi(rval));
 
 exit:
     root.clear();
@@ -649,7 +651,7 @@ exit:
         root["enabled"] = (state != "disabled");
         root["active"]  = (state == "started" || state == "connected" || state == "accepted");
         root["state"]   = state;
-        root["port"]    = atoi(rval);
+        root["port"]    = port;
     }
     else
     {
@@ -709,7 +711,7 @@ std::string WpanService::HandleActivateEpskcRequest(const std::string &aActivate
     uint16_t                          port     = 0; // 0 == let the router use its own default UDP port
     int                               ret      = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient       client(mIfName);
-    char                             *rval;
+    char                             *rval = nullptr;
 
     // Both "lifetime" and "port" are optional, so an empty body (e.g. `curl -X POST` with no data) is valid and
     // simply falls back to the router's defaults.
