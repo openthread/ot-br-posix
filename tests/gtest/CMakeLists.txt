@@ -56,6 +56,35 @@ target_link_libraries(otbr-gtest-unit
 )
 gtest_discover_tests(otbr-gtest-unit)
 
+if(OTBR_REST)
+    if (CJSON_FOUND)
+        set(CJSON_LIB_TARGETS ${CJSON_LINK_LIBRARIES})
+    else()
+        set(CJSON_LIB_TARGETS cjson)
+    endif()
+
+    add_executable(otbr-gtest-rest
+        test_rest_diag.cpp
+    )
+    target_include_directories(otbr-gtest-rest
+        PRIVATE
+            ${OTBR_PROJECT_DIRECTORY}/include
+            ${OTBR_PROJECT_DIRECTORY}/src
+            ${OPENTHREAD_PROJECT_DIRECTORY}/include
+            ${OPENTHREAD_PROJECT_DIRECTORY}/src
+            ${OPENTHREAD_PROJECT_DIRECTORY}/src/posix/platform/include
+            ${CJSON_INCLUDE_DIRS}
+    )
+    target_link_libraries(otbr-gtest-rest
+        ${CJSON_LIB_TARGETS}
+        otbr-rest
+        otbr-common
+        otbr-utils
+        GTest::gmock_main
+    )
+    gtest_discover_tests(otbr-gtest-rest)
+endif()
+
 if(OTBR_WEB)
     pkg_check_modules(JSONCPP_GTEST jsoncpp REQUIRED)
 

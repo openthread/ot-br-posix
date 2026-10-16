@@ -42,7 +42,7 @@ namespace rest {
 class DiagnosticTypes
 {
 public:
-    static constexpr uint32_t kMaxTotalCount      = 27; ///< Total number of recognized types
+    static constexpr uint32_t kMaxTotalCount      = 28; ///< Total number of recognized types
     static constexpr uint32_t kMaxQueryCount      = 3;  ///< Number of types that require a diag query
     static constexpr uint32_t kMaxResettableCount = 2;  ///< Number of types that can be reset
 
@@ -81,7 +81,7 @@ public:
     static otError FindId(const char *aJsonKey, uint8_t &aTypeId);
 
 private:
-    static constexpr uint32_t kTypeListSize = 35;
+    static constexpr uint32_t kTypeListSize = 38;
 
     enum PropertyFlags
     {
@@ -131,7 +131,10 @@ private:
         {KEY_ROUTERNEIGHBORS, kPropertyQuery},    // 31
         {nullptr, 0},
         {nullptr, 0},
-        {KEY_MLECOUNTERS, kPropertyCanReset} // 34
+        {KEY_MLECOUNTERS, kPropertyCanReset}, // 34
+        {nullptr, 0},
+        {nullptr, 0},
+        {KEY_ENHANCEDROUTE, kPropertyOmittable} // 37
     };
 
     static const std::unordered_map<std::string, uint8_t> kKeyMap;

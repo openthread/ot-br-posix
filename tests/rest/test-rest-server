@@ -67,15 +67,21 @@ expect eof
 
 spawn python3 "${CMAKE_CURRENT_SOURCE_DIR}/test_rest.py"
 expect {
+    -timeout 60
     eof {
         lassign [wait] _ _ error status
     }
+    timeout { error "timed out waiting for test_rest.py" }
     -i \$otbr_agent eof { error "unexpected exit" }
 }
 
 if {\$error != 0} {
     system errno \$status
     error "failed to run the test"
+}
+
+if {\$status != 0} {
+    exit \$status
 }
 
 # Stop the agent that ran the functional tests gracefully (SIGTERM) so that
