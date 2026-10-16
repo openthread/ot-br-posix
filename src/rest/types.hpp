@@ -99,6 +99,7 @@ typedef struct EnergyScanReport
 struct DiagInfo
 {
     steady_clock::time_point      mStartTime;
+    otIp6Address                  mPeerAddr = {{{0}}};
     std::vector<otNetworkDiagTlv> mDiagContent;
 };
 
