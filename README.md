@@ -27,6 +27,14 @@ The quickest way to set up a Thread-compliant Border Router is to follow the [Ra
 
 > Note: For users in China, end-user documentation is available at [openthread.google.cn](https://openthread.google.cn/guides/border-router).
 
+On macOS, `./script/bootstrap` installs the build dependencies with Homebrew and
+
+```sh
+INFRA_IF_NAME=en0 RADIO_URL='spinel+hdlc+uart:///dev/cu.usbserial-XXXX?uart-baudrate=460800' ./script/setup
+```
+
+builds the border router, installs it under `/usr/local`, adds its `pf` anchors and IP forwarding, and loads it as the launchd job `io.openthread.otbr-agent`, which starts at boot. The agent's options live in `/usr/local/etc/default/otbr-agent`. Its log is in the unified log (`log show --predicate 'process == "otbr-agent"' --last 10m`); `/var/log/otbr-agent.log` receives what it writes to stderr. The Thread interface is a utun, named by the agent's socket (`ls /tmp/openthread-utun*.sock`), and `sudo /usr/local/sbin/ot-ctl -I utunN state` talks to it.
+
 # Contributing
 
 We would love for you to contribute to OpenThread Border Router and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/ot-br-posix/blob/main/CONTRIBUTING.md) for more information.
