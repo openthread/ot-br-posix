@@ -2413,8 +2413,7 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
                 });
                 if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
                 {
-                    otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(),
-                                   aRestListenPort);
+                    otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(), aRestListenPort);
                 }
             }
         }
