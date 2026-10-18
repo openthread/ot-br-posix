@@ -33,7 +33,7 @@ On macOS, `./script/bootstrap` installs the build dependencies with Homebrew and
 INFRA_IF_NAME=en0 RADIO_URL='spinel+hdlc+uart:///dev/cu.usbserial-XXXX?uart-baudrate=460800' ./script/setup
 ```
 
-builds the border router, installs it under `/usr/local`, adds its `pf` anchors and IP forwarding, and loads it as the launchd job `io.openthread.otbr-agent`, which starts at boot. The agent's options live in `/usr/local/etc/default/otbr-agent`. Its log is in the unified log (`log show --predicate 'process == "otbr-agent"' --last 10m`); `/var/log/otbr-agent.log` receives what it writes to stderr. The Thread interface is a utun, named by the agent's socket (`ls /tmp/openthread-utun*.sock`), and `sudo /usr/local/sbin/ot-ctl -I utunN state` talks to it.
+builds the border router, installs it under `/usr/local`, adds its `pf` anchors and IP forwarding, and loads it as the launchd job `io.openthread.otbr-agent`, which starts at boot. The agent's options live in `/usr/local/etc/default/otbr-agent`. Its log is in the unified log (`log show --predicate 'process == "otbr-agent"' --last 10m`); `/var/log/otbr-agent.log` receives what it writes to stderr. The Thread interface is a utun, named by the agent's socket (`ls /tmp/openthread-utun*.sock`), and `sudo /usr/local/sbin/ot-ctl -I utunN state` talks to it. The web GUI (`WEB_GUI=1`, the default here as on Raspbian) is the launchd job `io.openthread.otbr-web` at <http://127.0.0.1/>; its options live in `/usr/local/etc/default/otbr-web`, and `/var/log/otbr-web.log` receives its output. Until the agent takes the utun the service asks for (openthread#13742), put the utun it got in that file's `-I` and `sudo launchctl kickstart -k system/io.openthread.otbr-web`.
 
 # Contributing
 

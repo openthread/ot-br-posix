@@ -84,10 +84,20 @@ readonly RADIO_URL
 
 OTBR_LAUNCHD_LABEL=io.openthread.otbr-agent
 readonly OTBR_LAUNCHD_LABEL
+OTBR_LAUNCHD_WEB_LABEL=io.openthread.otbr-web
+readonly OTBR_LAUNCHD_WEB_LABEL
 OTBR_LAUNCHD_PLIST_DIR=/Library/LaunchDaemons
 readonly OTBR_LAUNCHD_PLIST_DIR
-OTBR_LAUNCHD_PLIST=${OTBR_LAUNCHD_PLIST_DIR}/${OTBR_LAUNCHD_LABEL}.plist
-readonly OTBR_LAUNCHD_PLIST
+
+launchd_load()
+{
+    # A job disabled on this host (launchctl disable, a legacy unload -w) cannot be
+    # bootstrapped, so enable it first, as script/_ipforward does.
+    sudo launchctl bootout "system/$1" 2>/dev/null || true
+    sudo launchctl enable "system/$1" 2>/dev/null || true
+    sudo launchctl bootstrap system "${OTBR_LAUNCHD_PLIST_DIR}/$1.plist" || die "Failed to load $1!"
+    sudo launchctl print "system/$1" >/dev/null || die "$1 is not loaded!"
+}
 
 otbr_uninstall()
 {
@@ -99,8 +109,9 @@ otbr_uninstall()
         ! sudo systemctl is-enabled otbr-web
         ! sudo systemctl is-enabled otbr-agent
     elif is_macos; then
+        sudo launchctl bootout "system/${OTBR_LAUNCHD_WEB_LABEL}" 2>/dev/null || true
         sudo launchctl bootout "system/${OTBR_LAUNCHD_LABEL}" 2>/dev/null || true
-        sudo rm -f "${OTBR_LAUNCHD_PLIST}"
+        sudo rm -f "${OTBR_LAUNCHD_PLIST_DIR}/${OTBR_LAUNCHD_WEB_LABEL}.plist" "${OTBR_LAUNCHD_PLIST_DIR}/${OTBR_LAUNCHD_LABEL}.plist"
     fi
     sudo killall otbr-web otbr-agent || true
 
@@ -149,10 +160,11 @@ otbr_install()
     )
 
     if is_macos; then
-        # The build installs the launchd job where this script loads it from.
+        # The build installs the launchd jobs where this script loads them from.
         otbr_options+=(
             "-DOTBR_LAUNCHD_PLIST_DIR=${OTBR_LAUNCHD_PLIST_DIR}"
             "-DOTBR_LAUNCHD_LABEL=${OTBR_LAUNCHD_LABEL}"
+            "-DOTBR_LAUNCHD_WEB_LABEL=${OTBR_LAUNCHD_WEB_LABEL}"
         )
     fi
 
@@ -173,8 +185,11 @@ otbr_install()
         )
     fi
 
+    # Said either way: a build directory configured with the web GUI on would otherwise keep it on.
     if with WEB_GUI; then
         otbr_options+=("-DOTBR_WEB=ON")
+    else
+        otbr_options+=("-DOTBR_WEB=OFF")
     fi
 
     if [[ ${OTBR_DHCP6_PD_CLIENT} == "openthread" || ${OTBR_DHCP6_PD_CLIENT} == "dhcpcd" ]]; then
@@ -247,12 +262,8 @@ otbr_install()
             sudo systemctl is-enabled testharness-discovery || die 'Failed to enable otbr-agent!'
         fi
     elif is_macos; then
-        # A job disabled on this host (launchctl disable, a legacy unload -w) cannot be
-        # bootstrapped, so enable it first, as script/_ipforward does.
-        sudo launchctl bootout "system/${OTBR_LAUNCHD_LABEL}" 2>/dev/null || true
-        sudo launchctl enable "system/${OTBR_LAUNCHD_LABEL}" 2>/dev/null || true
-        sudo launchctl bootstrap system "${OTBR_LAUNCHD_PLIST}" || die 'Failed to load otbr-agent!'
-        sudo launchctl print "system/${OTBR_LAUNCHD_LABEL}" >/dev/null || die 'otbr-agent is not loaded!'
+        launchd_load "${OTBR_LAUNCHD_LABEL}"
+        without WEB_GUI || launchd_load "${OTBR_LAUNCHD_WEB_LABEL}"
     else
         echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi

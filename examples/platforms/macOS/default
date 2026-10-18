@@ -34,6 +34,9 @@
 # (OTBR_PF=1), which also carries NAT44. FIREWALL stays on so that
 # script/_firewall installs the pf anchors the agent needs; it does not turn
 # on OpenThread's own posix firewall, which the pf backend switches off and
-# which is Linux code anyway.
+# which is Linux code anyway. The web GUI is a launchd job next to the agent's,
+# as it is a systemd service on Linux; its topology tab reads the REST API.
 BACKBONE_ROUTER=0
 OTBR_PF=1
+WEB_GUI=1
+REST_API=1

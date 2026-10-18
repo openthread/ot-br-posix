@@ -137,8 +137,9 @@ if(SYSTEMD_FOUND AND (NOT DEFINED INSTALL_SYSTEMD_UNIT OR INSTALL_SYSTEMD_UNIT))
 endif()
 
 if(APPLE)
-    set(OTBR_LAUNCHD_PLIST_DIR "/Library/LaunchDaemons" CACHE PATH "Where the launchd job of otbr-agent is installed; empty for none")
+    set(OTBR_LAUNCHD_PLIST_DIR "/Library/LaunchDaemons" CACHE PATH "Where the launchd jobs of otbr-agent and otbr-web are installed; empty for none")
     set(OTBR_LAUNCHD_LABEL "io.openthread.otbr-agent" CACHE STRING "The label of the launchd job of otbr-agent")
+    set(OTBR_LAUNCHD_WEB_LABEL "io.openthread.otbr-web" CACHE STRING "The label of the launchd job of otbr-web")
 endif()
 
 set(OPENTHREAD_PROJECT_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/openthread/repo)

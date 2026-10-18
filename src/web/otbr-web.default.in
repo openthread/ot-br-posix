@@ -1,0 +1,5 @@
+# Default settings for otbr-web. This file is sourced by the service: systemd's
+# EnvironmentFile, or the shell of the launchd job on macOS.
+
+# Options to pass to otbr-web
+OTBR_WEB_OPTS="-I @OTBR_THREAD_IF_NAME@"

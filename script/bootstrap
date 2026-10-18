@@ -171,7 +171,9 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    brew install cmake dbus jsoncpp ninja googletest
+    brew install cmake dbus jsoncpp ninja googletest pkgconf
+    # The web GUI's frontend is assembled with npm.
+    without WEB_GUI || command -v npm || brew install node
 }
 
 install_packages_source()

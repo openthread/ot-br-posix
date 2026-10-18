@@ -99,7 +99,7 @@ jobs:
 
   # The installation path of a fresh Mac: script/setup builds, installs into
   # /usr/local, writes the pf anchors and the IP forwarding job, and loads the
-  # otbr-agent launchd service, here against a simulated radio on a pty.
+  # otbr-agent and otbr-web launchd jobs, here against a simulated radio on a pty.
   setup:
     name: script/setup
     runs-on: macos-14
@@ -140,6 +140,7 @@ jobs:
         netif=$(basename "${sock}" .sock)
         netif=${netif#openthread-}
         echo "Thread interface: ${netif}"
+        echo "NETIF=${netif}" >>"${GITHUB_ENV}"
         sudo /usr/local/sbin/ot-ctl -I "${netif}" state
         sudo /usr/local/sbin/ot-ctl -I "${netif}" ifconfig up
         sudo /usr/local/sbin/ot-ctl -I "${netif}" ifconfig
@@ -147,9 +148,30 @@ jobs:
         rules=$(sudo pfctl -a otbr -s rules)
         echo "${rules}"
         grep -q "on ${netif}" <<<"${rules}"
-    - name: Agent log
+    - name: Check the web GUI
+      run: |
+        sudo launchctl print system/io.openthread.otbr-web | grep -E 'state|pid|exit|runs|path'
+        sudo launchctl print system/io.openthread.otbr-web | grep -q 'state = running'
+        cat /usr/local/etc/default/otbr-web
+        curl -fsS http://127.0.0.1/ | grep -q '<title>OpenThread Border Router</title>'
+        # The agent takes the utun the service asks for once the submodule carries
+        # openthread#13742; until then the job is pointed at the utun it got, as ot-ctl was.
+        test -n "${NETIF}"
+        echo "OTBR_WEB_OPTS=\"-I ${NETIF}\"" | sudo tee /usr/local/etc/default/otbr-web
+        sudo launchctl kickstart -k system/io.openthread.otbr-web
+        for _ in $(seq 1 10); do
+          curl -fsS http://127.0.0.1/get_properties >/tmp/otbr-web-properties 2>/dev/null && break
+          sleep 1
+        done
+        cat /tmp/otbr-web-properties
+        grep -q '"RCP:State"' /tmp/otbr-web-properties
+        # The GUI's topology tab reads the agent's REST API, on since REST_API=1 is in the platform defaults.
+        curl -fsS http://127.0.0.1:8081/node | grep -q '"state"'
+    - name: Service logs
       if: always()
       run: |
         sudo cat /var/log/otbr-agent.log || true
         sudo launchctl print system/io.openthread.otbr-agent || true
-        log show --last 10m --predicate 'process == "otbr-agent"' --style compact 2>/dev/null | tail -n 60 || true
+        sudo cat /var/log/otbr-web.log || true
+        sudo launchctl print system/io.openthread.otbr-web || true
+        log show --last 10m --predicate 'process == "otbr-agent" OR process == "otbr-web"' --style compact 2>/dev/null | tail -n 60 || true
