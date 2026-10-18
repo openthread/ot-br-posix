@@ -45,6 +45,7 @@ add_executable(otbr-gtest-unit
     test_logging.cpp
     test_once_callback.cpp
     test_pskc.cpp
+    test_socket_utils.cpp
     test_task_runner.cpp
 )
 target_link_libraries(otbr-gtest-unit
