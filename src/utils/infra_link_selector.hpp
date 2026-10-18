@@ -36,8 +36,6 @@
 
 #include "openthread-br/config.h"
 
-#if __linux__
-
 #include <assert.h>
 #include <map>
 #include <utility>
@@ -73,8 +71,10 @@ public:
      * This constructor initializes the InfraLinkSelector instance.
      *
      * @param[in]  aInfraLinkNames  A list of infrastructure link candidates to select from.
+     * @param[in]  aSelectionDelay  How long a link that stopped running is kept before another one is chosen.
      */
-    explicit InfraLinkSelector(std::vector<const char *> aInfraLinkNames);
+    explicit InfraLinkSelector(std::vector<const char *> aInfraLinkNames,
+                               Milliseconds              aSelectionDelay = kInfraLinkSelectionDelay);
 
     /**
      * This destructor destroys the InfraLinkSelector instance.
@@ -91,7 +91,7 @@ public:
      * Once an interface is selected, it's preferred if either is true:
      *      The interface is still `up and running`
      *      No other interface is `up and running`
-     *      The interface has been `up and running` within last 10 seconds
+     *      The interface has been `up and running` within the selection delay (10 seconds by default)
      *
      * @returns  The selected infrastructure link.
      */
@@ -128,12 +128,14 @@ private:
     static LinkState   QueryInfraLinkState(const char *aInfraLinkName);
     void               Update(MainloopContext &aMainloop) override;
     void               Process(const MainloopContext &aMainloop) override;
-    void               ReceiveNetLinkMessage(void);
+    void               ReceiveLinkEvent(void);
     void               HandleInfraLinkStateChange(uint32_t aInfraLinkIndex);
+    void               HandleInfraLinkStateChange(const char *aInfraLinkName);
 
     std::vector<const char *>        mInfraLinkNames;
     std::map<const char *, LinkInfo> mInfraLinkInfos;
-    int                              mNetlinkSocket    = -1;
+    int                              mLinkEventSocket = -1; ///< Netlink, kernel events (macOS) or the routing socket.
+    Milliseconds                     mSelectionDelay;
     const char                      *mCurrentInfraLink = nullptr;
     TaskRunner                       mTaskRunner;
     bool                             mRequireReselect = true;
@@ -141,7 +143,5 @@ private:
 
 } // namespace Utils
 } // namespace otbr
-
-#endif // __linux__
 
 #endif // INFRA_LINK_SELECTOR_HPP_

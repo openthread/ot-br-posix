@@ -163,6 +163,7 @@ add_executable(otbr-posix-gtest-unit
     test_backbone_multicast_routing.cpp
     test_cli_daemon.cpp
     test_infra_if.cpp
+    test_infra_link_selector.cpp
     test_netif.cpp
     test_udp_proxy.cpp
 )
