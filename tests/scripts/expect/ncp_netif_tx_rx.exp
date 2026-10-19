@@ -55,6 +55,7 @@ dbus_join $dataset_dbus
 wait_for_device_role {router|child}
 
 # Step 4. Verify pinging from otbr-agent NCP to the cli node
+set timeout 20
 spawn ping6 -c 10 ${dest_addr}
 expect "10 packets transmitted, 10 received, 0% packet loss"
 expect eof

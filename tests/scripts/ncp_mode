@@ -239,9 +239,6 @@ test_setup()
     sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d
     sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
     sudo systemctl reload dbus
-    if [[ ${OTBR_MDNS} == "mDNSResponder" ]]; then
-        sudo systemctl restart mdns
-    fi
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
@@ -283,6 +280,16 @@ restart_avahi_daemon()
     sleep 1
 }
 
+restart_mdns_daemon()
+{
+    if [[ ${OTBR_MDNS} == "mDNSResponder" ]]; then
+        # Forcefully terminate mdnsd first as /etc/init.d/mdns only sends SIGTERM, which a hung mdnsd ignores.
+        sudo killall -9 mdnsd 2>/dev/null || true
+        sudo service mdns restart
+        sleep 1
+    fi
+}
+
 otbr_exec_expect_script()
 {
     local log_file="tmp/log_expect"
@@ -300,6 +307,7 @@ otbr_exec_expect_script()
         mkdir tmp
         # avahi-browser is used to discover the service and verify in the test cases no matter what OTBR_MDNS is.
         restart_avahi_daemon
+        restart_mdns_daemon
         {
             sudo -E expect -df "${script}" 2>"${log_file}"
         } || {
