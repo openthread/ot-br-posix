@@ -144,6 +144,40 @@ target_link_libraries(otbr-gtest-unit-dnssd
 )
 gtest_discover_tests(otbr-gtest-unit-dnssd)
 
+add_executable(otbr-gtest-advertising-proxy
+    ${OTBR_PROJECT_DIRECTORY}/src/common/logging.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/mainloop.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/mainloop_manager.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/task_runner.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/types.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/mdns/mdns.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/sdp_proxy/advertising_proxy.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/utils/dns_utils.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/utils/string_utils.cpp
+    test_advertising_proxy.cpp
+)
+target_compile_options(otbr-gtest-advertising-proxy
+    PRIVATE
+        -DOTBR_ENABLE_SRP_ADVERTISING_PROXY=1
+        -DOTBR_ENABLE_MDNS_MDNSSD=1
+)
+target_include_directories(otbr-gtest-advertising-proxy
+    PRIVATE
+        ${OTBR_PROJECT_DIRECTORY}/include
+        ${OTBR_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/include
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src/posix/platform/include
+)
+target_link_libraries(otbr-gtest-advertising-proxy
+    GTest::gmock_main
+)
+if(OTBR_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(otbr-gtest-advertising-proxy PRIVATE -g -O0 --coverage)
+    target_link_libraries(otbr-gtest-advertising-proxy --coverage)
+endif()
+gtest_discover_tests(otbr-gtest-advertising-proxy)
+
 if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
     add_executable(otbr-gtest-mdns-subscribe
         test_mdns_subscribe.cpp
