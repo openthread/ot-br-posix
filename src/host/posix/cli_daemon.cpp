@@ -90,7 +90,7 @@ void CliDaemon::HandleCommandOutput(const char *aOutput)
         memcpy(buf + kCliMaxLineLength - sizeof(kTruncatedMsg), kTruncatedMsg, sizeof(kTruncatedMsg));
     }
 
-#ifdef __linux__
+#ifdef MSG_NOSIGNAL
     // MSG_NOSIGNAL prevents read() from sending a SIGPIPE in the case of a broken pipe.
     ret = send(mSessionSocket, buf, length, MSG_NOSIGNAL);
 #else
@@ -155,18 +155,16 @@ void CliDaemon::InitializeSessionSocket(void)
     // The `accept()` call uses `nullptr` for `addr` and `addrlen` arguments as we don't need the client address
     // information.
     VerifyOrExit((newSessionSocket = accept(mListenSocket, nullptr, nullptr)) != -1);
-    VerifyOrExit((flag = fcntl(newSessionSocket, F_GETFD, 0)) != -1, close(newSessionSocket));
-
-    flag |= FD_CLOEXEC;
-    VerifyOrExit((flag = fcntl(newSessionSocket, F_SETFD, flag)) != -1, close(newSessionSocket));
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_GETFD, 0)) != -1);
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_SETFD, flag | FD_CLOEXEC)) != -1);
 
     // BSD sockets inherit the file status flags of the listening socket on accept(), Linux sockets do not, and
     // accept(2) asks portable programs to set the flags of the new socket explicitly. Serve the session blocking
     // on every platform, as on Linux.
-    VerifyOrExit((flag = fcntl(newSessionSocket, F_GETFL, 0)) != -1, close(newSessionSocket));
-    VerifyOrExit((flag = fcntl(newSessionSocket, F_SETFL, flag & ~O_NONBLOCK)) != -1, close(newSessionSocket));
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_GETFL, 0)) != -1);
+    VerifyOrExit((flag = fcntl(newSessionSocket, F_SETFL, flag & ~O_NONBLOCK)) != -1);
 
-#ifndef __linux__
+#ifndef MSG_NOSIGNAL
     // some platforms (macOS, Solaris) don't have MSG_NOSIGNAL
     // SOME of those (macOS, but NOT Solaris) support SO_NOSIGPIPE
     // if we have SO_NOSIGPIPE, then set it. Otherwise, we're going
@@ -175,13 +173,12 @@ void CliDaemon::InitializeSessionSocket(void)
     {
         const int on = 1;
 
-        VerifyOrExit((flag = setsockopt(newSessionSocket, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on))) != -1,
-                     close(newSessionSocket));
+        VerifyOrExit((flag = setsockopt(newSessionSocket, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on))) != -1);
     }
 #else
 #warning "no support for MSG_NOSIGNAL or SO_NOSIGPIPE"
 #endif
-#endif // __linux__
+#endif // MSG_NOSIGNAL
 
     Clear();
 
@@ -192,7 +189,10 @@ exit:
     if (flag == -1)
     {
         otbrLogWarning("Failed to initialize session socket: %s", strerror(errno));
-        Clear();
+        if (newSessionSocket != -1)
+        {
+            close(newSessionSocket);
+        }
     }
 }
 
