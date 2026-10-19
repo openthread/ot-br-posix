@@ -28,12 +28,15 @@
 
 version: 2
 updates:
-  - package-ecosystem: "gitsubmodule"
+  - package-ecosystem: "gitsubmodule" # zizmor: ignore[dependabot-cooldown]
     directory: "/"
     schedule:
       interval: "daily"
     allow:
       - dependency-name: "third_party/openthread/repo"
+    ignore:
+      - dependency-name: "third_party/openthread/repo"
+        versions: ["> 0.0.0"]
     commit-message:
       prefix: "submodule"
     rebase-strategy: "disabled"
@@ -42,6 +45,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "github-actions"
     rebase-strategy: "disabled"
