@@ -105,6 +105,28 @@ expect {
     eof { error "curl failed" }
 }
 
+send_user "Testing REST API on a unix socket...\r\n"
+exec kill -TERM [exp_pid -i \$otbr_agent]
+expect -i \$otbr_agent eof
+
+set sock_path /tmp/otbr-rest.sock
+exec rm -f \$sock_path
+
+spawn "${CMAKE_BINARY_DIR}/src/agent/otbr-agent" -d 7 -v -I wpan0 -B lo --rest-listen-address \$sock_path "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
+set otbr_agent \$spawn_id
+expect "RestWebServer listening on unix socket"
+
+spawn curl -i --max-time 5 --retry 5 --retry-delay 1 --retry-all-errors --unix-socket \$sock_path http://localhost/node/ba-id
+expect {
+    "200 OK" { send_user "Unix socket test passed\r\n" }
+    timeout { error "REST API did not respond on the unix socket" }
+    eof { error "curl failed" }
+}
+
+exec kill -TERM [exp_pid -i \$otbr_agent]
+expect -i \$otbr_agent eof
+exec rm -f \$sock_path
+
 exit 0
 EOF
 }

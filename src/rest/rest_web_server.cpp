@@ -42,7 +42,9 @@
 #include <fcntl.h>
 #include <httplib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <openthread/commissioner.h>
 
@@ -210,15 +212,35 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     RegisterGet(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
 }
 
+static bool IsUnixSocketPath(const std::string &aAddress)
+{
+    return !aAddress.empty() && aAddress.front() == '/';
+}
+
+static void UnlinkUnixSocket(const std::string &aPath)
+{
+    struct stat st;
+
+    if (lstat(aPath.c_str(), &st) == 0 && S_ISSOCK(st.st_mode))
+    {
+        if (unlink(aPath.c_str()) != 0 && errno != ENOENT)
+        {
+            otbrLogWarning("Failed to unlink unix socket %s: %s", aPath.c_str(), strerror(errno));
+        }
+    }
+}
+
 RestWebServer::~RestWebServer(void)
 {
-    if (mServer.is_running())
-    {
-        mServer.stop();
-    }
+    mServer.stop();
+    mServer.decommission();
     if (mServerThread.joinable())
     {
         mServerThread.join();
+    }
+    if (!mUnixSocketPath.empty())
+    {
+        UnlinkUnixSocket(mUnixSocketPath);
     }
 }
 
@@ -2355,24 +2377,57 @@ void RestWebServer::Init(const std::string &aRestListenAddress, int aRestListenP
     // to avoid undefined behavior if the RestWebServer object is destroyed while the thread is running.
     std::weak_ptr<RestWebServer> weakSelf = shared_from_this();
     mServerThread                         = std::thread([aRestListenAddress, aRestListenPort, weakSelf]() {
+        const bool       isUnixSocket = IsUnixSocketPath(aRestListenAddress);
+        httplib::Server *server       = nullptr;
+
         if (auto self = weakSelf.lock())
         {
-            otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
-            self->mServer.set_ipv6_v6only(false);
-            self->mServer.set_socket_options([](socket_t aSock) {
-                int opt = 1;
-                // cpp-httplib defaults to SO_REUSEPORT instead of SO_REUSEADDR
-                if (setsockopt(aSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0)
-                {
-                    otbrLogWarning("Failed to set SO_REUSEADDR: %s", strerror(errno));
-                }
-            });
             const httplib::Headers defaultHeaders = {
                 {"Access-Control-Allow-Origin", OTBR_REST_ACCESS_CONTROL_ALLOW_ORIGIN},
                 {"Access-Control-Allow-Methods", OTBR_REST_ACCESS_CONTROL_ALLOW_METHODS},
                 {"Access-Control-Allow-Headers", OTBR_REST_ACCESS_CONTROL_ALLOW_HEADERS}};
             self->mServer.set_default_headers(defaultHeaders);
-            if (!self->mServer.listen(aRestListenAddress, aRestListenPort))
+
+            if (isUnixSocket)
+            {
+                otbrLogInfo("RestWebServer listening on unix socket %s", aRestListenAddress.c_str());
+                self->mServer.set_address_family(AF_UNIX);
+                UnlinkUnixSocket(aRestListenAddress);
+                self->mUnixSocketPath = aRestListenAddress;
+            }
+            else
+            {
+                otbrLogInfo("RestWebServer listening on %s:%u", aRestListenAddress.c_str(), aRestListenPort);
+                self->mServer.set_ipv6_v6only(false);
+                self->mServer.set_socket_options([](socket_t aSock) {
+                    int opt = 1;
+                    // cpp-httplib defaults to SO_REUSEPORT instead of SO_REUSEADDR
+                    if (setsockopt(aSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) != 0)
+                    {
+                        otbrLogWarning("Failed to set SO_REUSEADDR: %s", strerror(errno));
+                    }
+                });
+            }
+
+            server = &self->mServer;
+        }
+
+        if (server == nullptr)
+        {
+            return;
+        }
+
+        if (!server->listen(aRestListenAddress, isUnixSocket ? 1 : aRestListenPort))
+        {
+            if (isUnixSocket)
+            {
+                if (auto self = weakSelf.lock())
+                {
+                    self->mUnixSocketPath.clear();
+                }
+                otbrLogWarning("REST server failed to start on unix socket %s", aRestListenAddress.c_str());
+            }
+            else
             {
                 otbrLogWarning("REST server failed to start on %s:%d", aRestListenAddress.c_str(), aRestListenPort);
             }
