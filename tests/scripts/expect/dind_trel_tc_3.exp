@@ -183,6 +183,18 @@ if {!$discovered} {
     fail "Router did not discover BR Leader as TREL peer."
 }
 
+set discovered false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container1 ot-ctl trel peers} trel_peers] && [string match -nocase "*$r_extaddr*" $trel_peers]} {
+        set discovered true
+        break
+    }
+    sleep 2
+}
+if {!$discovered} {
+    fail "BR Leader did not discover Router as TREL peer."
+}
+
 # Get Router's ML-EID address for pinging
 set r_mleid [exec docker exec -i $container2 ot-ctl ipaddr mleid]
 set r_mleid [string trim [lindex [split $r_mleid "\n"] 0]]
@@ -196,16 +208,20 @@ exec docker exec -i $container2 ot-ctl trel counters reset
 send_user -- "--- ED pings Router (10 times) ---\n"
 switch_node 4
 for {set i 0} {$i < 10} {incr i} {
-    send "ping $r_mleid 500 1\n"
+    send "ping $r_mleid 8 1\n"
     expect {
         -re "bytes from" {
             # success
         }
+        "Done" {
+            fail "Ping from ED to Router ($i) failed (received Done without bytes from)."
+        }
         timeout {
-            fail "Ping from ED to Router timed out."
+            fail "Ping from ED to Router ($i) timed out."
         }
     }
     expect_line "Done"
+    after 100
 }
 
 # Check TREL preferred on Router for DUT
@@ -245,16 +261,19 @@ if {![string match "*Enabled*" $filter_status]} {
 send_user -- "--- Step 4: Trigger TREL disconnect detection (ED pings Router, Router pings DUT) ---\n"
 switch_node 4
 for {set i 0} {$i < 25} {incr i} {
-    send "ping $r_mleid 500 1\n"
+    send "ping $r_mleid 8 1\n"
     expect {
         -re "bytes from" {
             send_user "Ping from ED succeeded (unexpected or fallback)\n"
+            expect_line "Done"
+        }
+        "Done" {
+            send_user "Ping from ED timed out (expected)\n"
         }
         timeout {
             send_user "Ping from ED timed out (expected)\n"
         }
     }
-    expect_line "Done"
     sleep 0.2
 }
 
@@ -265,7 +284,7 @@ send_user "BR Leader ML-EID: $br_mleid\n"
 
 # Router pings DUT 25 times (expecting timeout/success mix)
 for {set i 0} {$i < 25} {incr i} {
-    catch { exec docker exec -i $container2 ot-ctl ping $br_mleid 500 1 } ping_res
+    catch { exec docker exec -i $container2 ot-ctl ping $br_mleid 8 1 } ping_res
     send_user "Router ping response: $ping_res\n"
 }
 
@@ -308,16 +327,20 @@ exec docker exec -i $container2 ot-ctl trel counters reset
 
 switch_node 4
 for {set i 0} {$i < 5} {incr i} {
-    send "ping $r_mleid 500 1\n"
+    send "ping $r_mleid 8 1\n"
     expect {
         -re "bytes from" {
             # success
         }
+        "Done" {
+            fail "Ping from ED to Router ($i) failed during 15.4 fallback!"
+        }
         timeout {
-            fail "Ping from ED to Router timed out during 15.4 fallback!"
+            fail "Ping from ED to Router ($i) timed out during 15.4 fallback!"
         }
     }
     expect_line "Done"
+    after 100
 }
 
 # Verify no TREL traffic occurred during 15.4 fallback
