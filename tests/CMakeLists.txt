@@ -30,11 +30,13 @@ if(OTBR_DBUS)
     add_subdirectory(dbus)
 endif()
 
-if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread")
+# tests/mdns/test_init starts the mdnsd of the Linux build of mDNSResponder or avahi-daemon.
+if(OTBR_MDNS AND NOT OTBR_MDNS STREQUAL "openthread" AND NOT APPLE)
     add_subdirectory(mdns)
 endif()
 
-if(OTBR_REST)
+# tests/rest/test-rest-server starts otbr-agent on wpan0 against an installed ot-rcp.
+if(OTBR_REST AND NOT APPLE)
     add_subdirectory(rest)
 endif()
 

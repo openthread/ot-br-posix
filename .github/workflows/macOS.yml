@@ -87,12 +87,12 @@ jobs:
                       -DOT_FIREWALL=OFF \
                       -DOTBR_DBUS=OFF" ./script/test build
     # `script/test check` installs into /usr and runs the Linux-only suites;
-    # run the firewall unit tests, the DnssdPlatform unit tests, the mDNS
-    # subscription tests and the socket utils tests directly (the pf tests
-    # only exist with OTBR_PF=ON, the mDNS tests only with
-    # OTBR_MDNS=mDNSResponder, the FirewallManager, DnssdPlatform and
-    # SocketUtils tests in every configuration). The mDNS tests use the
-    # mDNSResponder of the runner.
+    # run ctest directly instead, on every test the build registered, as
+    # script/test does: the tests labelled sudo in their own run under sudo.
+    # (rest-server, Logging.* and mdns-* are not registered on macOS: they
+    # need otbr-agent on wpan0 with an installed ot-rcp, /var/log/syslog,
+    # and the mdnsd of the Linux build of mDNSResponder.)
     - name: Test
       run: |
-        cd build/otbr && CTEST_OUTPUT_ON_FAILURE=1 ctest -R 'FirewallManagerTest|PfFirewall|MdnsTest|DnssdTest|SocketUtils'
+        ctest --test-dir build/otbr --output-on-failure --no-tests=error -LE sudo
+        sudo ctest --test-dir build/otbr --output-on-failure --no-tests=error -L sudo
