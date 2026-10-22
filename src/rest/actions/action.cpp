@@ -33,6 +33,7 @@
 #include <array>
 #include <cJSON.h>
 #include "rest/json.hpp"
+#include "rest/rest_server_common.hpp"
 
 namespace otbr {
 namespace rest {
@@ -123,6 +124,8 @@ const char *BasicActions::ReadDestination(const cJSON &aJson, AddressType &aType
     cJSON      *address;
     cJSON      *type;
 
+    aType = kAddressTypeExt;
+
     VerifyOrExit(cJSON_IsObject(&aJson));
 
     address = cJSON_GetObjectItemCaseSensitive(&aJson, "destination");
@@ -171,6 +174,25 @@ const char *BasicActions::ReadDestination(const cJSON &aJson, AddressType &aType
         {
             ExitNow();
         }
+    }
+
+    if (aType == kAddressTypeExt)
+    {
+        uint8_t bytes[OT_EXT_ADDRESS_SIZE];
+
+        VerifyOrExit(str_to_m8(bytes, address->valuestring, sizeof(bytes)) == OT_ERROR_NONE);
+    }
+    else if (aType == kAddressTypeMleid)
+    {
+        uint8_t bytes[OT_IP6_IID_SIZE];
+
+        VerifyOrExit(str_to_m8(bytes, address->valuestring, sizeof(bytes)) == OT_ERROR_NONE);
+    }
+    else if (aType == kAddressTypeRloc)
+    {
+        uint16_t rloc16;
+
+        VerifyOrExit(str_to_rloc16(rloc16, address->valuestring) == OT_ERROR_NONE);
     }
 
     str = address->valuestring;

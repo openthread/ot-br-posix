@@ -236,8 +236,9 @@ otError NetworkDiagHandler::StartDiagnosticsRequest(const otIp6Address &aDestina
     mResultUuid         = "";
     mRetries            = 0;
     mMaxRetries         = kDiagMaxRetries;
-    mMaxAge             = steady_clock::now() - milliseconds(kDiagMaxAge);
-    mTimeout            = steady_clock::now() + aTimeout;
+    mRequestStartTime   = steady_clock::now();
+    mMaxAge             = mRequestStartTime - milliseconds(kDiagMaxAge);
+    mTimeout            = mRequestStartTime + aTimeout;
 
     mDiagReqTlvsCount         = 0;
     mDiagReqTlvsOmitableCount = 0;
@@ -283,12 +284,10 @@ otError NetworkDiagHandler::StartDiagnosticsRequest(const otIp6Address &aDestina
     memcpy(&mIp6address, &aDestination, sizeof(otIp6Address));
 
     // remove all previous entries
-    ResetRouterDiag(false);
-    ResetChildDiag(steady_clock::now());
-
-    ResetChildTables(false);
-    ResetChildIp6Addrs(false);
-    ResetRouterNeighbors(false);
+    mDiagSet.clear();
+    mChildTables.clear();
+    mChildIps.clear();
+    mRouterNeighbors.clear();
 
     if (mDiagQueryTlvsCount > 0)
     {
@@ -346,8 +345,9 @@ otError NetworkDiagHandler::GetDiagnosticsStatus(const char  *aAddressString,
                                                  AddressType  aType,
                                                  std::string &aResultsUuid) // TODO: add parameter for diagnostic types
 {
-    otError      error = OT_ERROR_NONE;
-    otExtAddress extAddr;
+    otError error = OT_ERROR_NONE;
+
+    aResultsUuid.clear();
 
     switch (mRequestState)
     {
@@ -365,19 +365,13 @@ otError NetworkDiagHandler::GetDiagnosticsStatus(const char  *aAddressString,
         break;
 
     case RequestState::kDone:
-        switch (aType)
-        {
-        case kAddressTypeExt:
-            IgnoreError(str_to_m8(extAddr.m8, aAddressString, OT_EXT_ADDRESS_SIZE));
-        default:
-            break;
-        }
-        FillDiagnosticCollection(extAddr);
+        SuccessOrExit(error = FillDiagnosticCollection(aAddressString, aType));
+        VerifyOrExit(!mResultUuid.empty(), error = OT_ERROR_NOT_FOUND);
         aResultsUuid = mResultUuid;
-        error        = OT_ERROR_NONE;
         break;
     }
 
+exit:
     return error;
 }
 
@@ -630,6 +624,12 @@ exit:
                 mRequestState          = RequestState::kDone;
                 mDiagQueryRequestState = RequestState::kDone;
             }
+            else if (timeout && mDiagSet.empty())
+            {
+                otbrLogWarning("%s:%d - %s - timeout.", __FILE__, __LINE__, __func__);
+                mRequestState          = RequestState::kFailed;
+                mDiagQueryRequestState = RequestState::kFailed;
+            }
             else
             {
                 if (timeout)
@@ -803,7 +803,7 @@ void NetworkDiagHandler::ResetRouterNeighbors(bool aLearnRloc16)
     }
 }
 
-void NetworkDiagHandler::UpdateDiag(uint16_t aKey, std::vector<otNetworkDiagTlv> &aDiag)
+void NetworkDiagHandler::UpdateDiag(uint16_t aKey, std::vector<otNetworkDiagTlv> &aDiag, const otIp6Address *aPeerAddr)
 {
     DiagInfo value;
     value.mStartTime = steady_clock::now();
@@ -813,6 +813,14 @@ void NetworkDiagHandler::UpdateDiag(uint16_t aKey, std::vector<otNetworkDiagTlv>
 
     // Check if mDiagSet contains aKey and if mDiagContent is not empty
     auto it = mDiagSet.find(aKey);
+    if (aPeerAddr != nullptr)
+    {
+        value.mPeerAddr = *aPeerAddr;
+    }
+    else if (it != mDiagSet.end())
+    {
+        value.mPeerAddr = it->second.mPeerAddr;
+    }
     if (it != mDiagSet.end() && !it->second.mDiagContent.empty())
     {
         auto &existingDiag = mDiagSet[aKey].mDiagContent;
@@ -904,9 +912,9 @@ void NetworkDiagHandler::DiagnosticResponseHandler(otError              aError,
     otError                       error;
     uint16_t                      keyRloc = 0xfffe;
 
+    VerifyOrExit(mRequestState == RequestState::kWaiting || mRequestState == RequestState::kPending);
     SuccessOrExit(aError);
-
-    OTBR_UNUSED_VARIABLE(aMessageInfo);
+    VerifyOrExit(aMessage != nullptr, aError = OT_ERROR_INVALID_ARGS);
 
     while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
     {
@@ -919,6 +927,7 @@ void NetworkDiagHandler::DiagnosticResponseHandler(otError              aError,
     VerifyOrExit(keyRloc != 0xfffe, aError = OT_ERROR_FAILED);
     if (!mIsDiscoveryRequest)
     {
+        VerifyOrExit(aMessageInfo != nullptr, aError = OT_ERROR_INVALID_ARGS);
         // we only expect a single unicast response
         VerifyOrExit(mIp6address.mFields.m32[2] == aMessageInfo->mPeerAddr.mFields.m32[2] &&
                          mIp6address.mFields.m32[3] == aMessageInfo->mPeerAddr.mFields.m32[3],
@@ -926,7 +935,7 @@ void NetworkDiagHandler::DiagnosticResponseHandler(otError              aError,
     }
     otbrLogDebug("%s:%d - %s - received DiagSet from 0x%04x with %zu TLVs.", __FILE__, __LINE__, __func__, keyRloc,
                  diagSet.size());
-    UpdateDiag(keyRloc, diagSet);
+    UpdateDiag(keyRloc, diagSet, (aMessageInfo != nullptr) ? &aMessageInfo->mPeerAddr : nullptr);
 
 exit:
     if (aError != OT_ERROR_NONE)
@@ -1564,10 +1573,37 @@ void NetworkDiagHandler::FillDeviceCollection(void)
     }
 }
 
-void NetworkDiagHandler::FillDiagnosticCollection(otExtAddress aExtAddr) // TODO: use mDiagReqTlvs and mDiagQueryTlvs
+otError NetworkDiagHandler::FillDiagnosticCollection(const char *aAddressString, AddressType aType)
 {
-    bool                match = false;
-    const otExtAddress *thisExtAddr;
+    otError                  error    = OT_ERROR_NONE;
+    otExtAddress             extAddr  = {{0}};
+    otIp6InterfaceIdentifier mlEidIid = {{{0}}};
+    uint16_t                 rloc16   = 0xfffe;
+    const otExtAddress      *thisExtAddr;
+
+    mResultUuid.clear();
+    VerifyOrExit(aAddressString != nullptr, error = OT_ERROR_PARSE);
+
+    switch (aType)
+    {
+    case kAddressTypeExt:
+        VerifyOrExit(str_to_m8(extAddr.m8, aAddressString, OT_EXT_ADDRESS_SIZE) == OT_ERROR_NONE,
+                     error = OT_ERROR_PARSE);
+        break;
+
+    case kAddressTypeMleid:
+        VerifyOrExit(str_to_m8(mlEidIid.mFields.m8, aAddressString, OT_IP6_IID_SIZE) == OT_ERROR_NONE,
+                     error = OT_ERROR_PARSE);
+        break;
+
+    case kAddressTypeRloc:
+        VerifyOrExit(str_to_rloc16(rloc16, aAddressString) == OT_ERROR_NONE, error = OT_ERROR_PARSE);
+        break;
+
+    default:
+        ExitNow(error = OT_ERROR_INVALID_ARGS);
+    }
+
     if (mDiagSet.empty())
     {
         otbrLogWarning("%s:%d error : Diag set is empty", __FILE__, __LINE__);
@@ -1575,34 +1611,103 @@ void NetworkDiagHandler::FillDiagnosticCollection(otExtAddress aExtAddr) // TODO
 
     for (auto &diag : mDiagSet)
     {
+        bool match = false;
+
         if (diag.second.mDiagContent.empty())
         {
             otbrLogWarning("%s:%d error : no response from 0x%04x", __FILE__, __LINE__, diag.first);
             continue;
         }
+
+        if (diag.second.mStartTime < mRequestStartTime)
+        {
+            continue;
+        }
+
         otbrLogWarning("%s:%d Have data from 0x%04x", __FILE__, __LINE__, diag.first);
 
-        // check we have desired extAddr corresponding to requested extAddr
-        // this should be the case for unicast requests
-        // and we should skip the item if it does not match
-        // this is a workaround to keep request-response a 1-1 mapping
-        for (const auto &diagTlv : diag.second.mDiagContent)
+        switch (aType)
         {
-            if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS &&
-                std::memcmp(diagTlv.mData.mExtAddress.m8, aExtAddr.m8, OT_EXT_ADDRESS_SIZE) == 0)
+        case kAddressTypeExt:
+            for (const auto &diagTlv : diag.second.mDiagContent)
             {
-                otbrLogWarning("%s:%d - %s - extAddr match to request", __FILE__, __LINE__, __func__);
-                match = true;
-                break;
+                if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS &&
+                    std::memcmp(diagTlv.mData.mExtAddress.m8, extAddr.m8, OT_EXT_ADDRESS_SIZE) == 0)
+                {
+                    otbrLogWarning("%s:%d - %s - extAddr match to request", __FILE__, __LINE__, __func__);
+                    match = true;
+                    break;
+                }
             }
+            break;
+
+        case kAddressTypeRloc:
+            if (diag.first == rloc16)
+            {
+                for (const auto &diagTlv : diag.second.mDiagContent)
+                {
+                    if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS && diagTlv.mData.mAddr16 == rloc16)
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+            break;
+
+        case kAddressTypeMleid:
+            if (!isOtIp6AddrEmpty(diag.second.mPeerAddr) &&
+                std::memcmp(diag.second.mPeerAddr.mFields.mComponents.mIid.mFields.m8, mlEidIid.mFields.m8,
+                            OT_IP6_IID_SIZE) == 0)
+            {
+                match = true;
+            }
+            else
+            {
+                const otIp6NetworkPrefix *mlPrefix =
+                    (mInstance != nullptr) ? otThreadGetMeshLocalPrefix(mInstance) : nullptr;
+
+                for (const auto &diagTlv : diag.second.mDiagContent)
+                {
+                    if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST)
+                    {
+                        for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
+                        {
+                            const otIp6Address &ip6Addr = diagTlv.mData.mIp6AddrList.mList[i];
+
+                            if (ntohs(ip6Addr.mFields.m16[4]) == 0x0000 && ntohs(ip6Addr.mFields.m16[5]) == 0x00ff &&
+                                ntohs(ip6Addr.mFields.m16[6]) == 0xfe00)
+                            {
+                                continue;
+                            }
+                            if (mlPrefix != nullptr && std::memcmp(ip6Addr.mFields.mComponents.mNetworkPrefix.m8,
+                                                                   mlPrefix->m8, sizeof(otIp6NetworkPrefix)) != 0)
+                            {
+                                continue;
+                            }
+                            if (std::memcmp(ip6Addr.mFields.mComponents.mIid.mFields.m8, mlEidIid.mFields.m8,
+                                            OT_IP6_IID_SIZE) == 0)
+                            {
+                                match = true;
+                                break;
+                            }
+                        }
+                        if (match)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
         }
+
         if (!match)
         {
             continue;
         }
 
         // create a new diagnostic item
-        // otbr::rest::NetworkDiagnostics *deviceDiag = new NetworkDiagnostics(); // TODO
         std::unique_ptr<otbr::rest::NetworkDiagnostics> deviceDiag =
             std::unique_ptr<otbr::rest::NetworkDiagnostics>(new otbr::rest::NetworkDiagnostics());
 
@@ -1613,8 +1718,9 @@ void NetworkDiagHandler::FillDiagnosticCollection(otExtAddress aExtAddr) // TODO
             {
             case OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS:
                 // if we have `this` node
-                thisExtAddr = otLinkGetExtendedAddress(mInstance);
-                if (std::memcmp(diagTlv.mData.mExtAddress.m8, thisExtAddr->m8, OT_EXT_ADDRESS_SIZE) == 0)
+                thisExtAddr = (mInstance != nullptr) ? otLinkGetExtendedAddress(mInstance) : nullptr;
+                if (thisExtAddr != nullptr &&
+                    std::memcmp(diagTlv.mData.mExtAddress.m8, thisExtAddr->m8, OT_EXT_ADDRESS_SIZE) == 0)
                 {
                     // add BrCounters
                     GetLocalCounters(deviceDiag.get());
@@ -1650,6 +1756,9 @@ void NetworkDiagHandler::FillDiagnosticCollection(otExtAddress aExtAddr) // TODO
         // store diagnostic item in the collection
         mServices.GetDiagnosticsCollection().AddItem(std::move(deviceDiag));
     }
+
+exit:
+    return error;
 }
 
 void NetworkDiagHandler::GetHostName(DeviceInfo &aDeviceInfo)
