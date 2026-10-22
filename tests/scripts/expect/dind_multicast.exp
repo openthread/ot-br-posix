@@ -81,7 +81,6 @@ for {set i 0} {$i < 20} {incr i} {
     sleep 2
 }
 if {!$leader} {
-    catch {send_user [exec docker exec -i $container cat /var/log/otbr-agent.log]}
     fail "OTBR did not become leader."
 }
 

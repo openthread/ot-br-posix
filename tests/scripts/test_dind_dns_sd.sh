@@ -85,11 +85,6 @@ test_teardown()
     ip -6 route del 2002:1234::1234 || true
     ip route del 38.106.217.165 || true
 
-    echo "Agent logs:"
-    for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web"; do
-        docker exec -i "$c" cat /var/log/otbr-agent.log || true
-    done
-
     for c in "${CONTAINER_NAME}" "otbr-test-container-1" "otbr-test-container-2" "otbr-test-container-3" "otbr-test-container-web" "test-client" "dhcp6-server"; do
         docker stop "$c" || true
         docker rm "$c" || true
