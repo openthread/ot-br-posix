@@ -49,7 +49,7 @@ for {set i 0} {$i < 10} {incr i} {
     sleep 2
 }
 if {!$socket_ready} {
-    send_user "Error: ot-ctl failed to communicate with otbr-agent\n"; exit 1
+    fail "ot-ctl failed to communicate with otbr-agent"
 }
 
 # Setup active dataset on OTBR via ot-ctl
@@ -78,9 +78,7 @@ for {set i 0} {$i < 20} {incr i} {
     sleep 2
 }
 if {!$leader} {
-    send_user "Error: OTBR did not become leader. Agent logs:\n"
-    catch {send_user [exec docker exec -i $container cat /var/log/otbr-agent.log]}
-    exit 1
+    fail "OTBR did not become leader"
 }
 
 # Enable SRP server explicitly
