@@ -277,10 +277,23 @@ test_run()
 
 main()
 {
+    local do_setup=1
+    local do_run=1
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             --mdnsresponder)
                 OTBR_MDNS="mDNSResponder"
+                shift
+                ;;
+            --setup-only)
+                do_setup=1
+                do_run=0
+                shift
+                ;;
+            --run-only)
+                do_setup=0
+                do_run=1
                 shift
                 ;;
             *)
@@ -289,8 +302,13 @@ main()
         esac
     done
 
-    test_setup
-    test_run
+    if [[ ${do_setup} -eq 1 ]]; then
+        test_setup
+    fi
+
+    if [[ ${do_run} -eq 1 ]]; then
+        test_run
+    fi
 }
 
 main "$@"
