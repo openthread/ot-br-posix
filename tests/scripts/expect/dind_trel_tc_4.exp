@@ -174,6 +174,31 @@ if {!$found_leader} {
 }
 
 # --- Step 2: Router pings ED (10 times) ---
+send_user -- "--- Step 2: Verifying multi-radio peer discovery ---\n"
+set discovered false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container2 ot-ctl trel peers} trel_peers] && [string match -nocase "*$br_extaddr*" $trel_peers]} {
+        set discovered true
+        break
+    }
+    sleep 2
+}
+if {!$discovered} {
+    fail "Router did not discover BR Leader as TREL peer."
+}
+
+set discovered false
+for {set i 0} {$i < 10} {incr i} {
+    if {![catch {exec docker exec -i $container1 ot-ctl trel peers} trel_peers] && [string match -nocase "*$r_extaddr*" $trel_peers]} {
+        set discovered true
+        break
+    }
+    sleep 2
+}
+if {!$discovered} {
+    fail "BR Leader did not discover Router as TREL peer."
+}
+
 send_user -- "--- Step 2: Router pings ED (10 times) ---\n"
 switch_node 4
 set ed_mleid [string trim [get_ipaddr mleid]]
@@ -184,7 +209,7 @@ exec docker exec -i $container1 ot-ctl trel counters reset
 exec docker exec -i $container2 ot-ctl trel counters reset
 
 for {set i 0} {$i < 10} {incr i} {
-    catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 500 1 } ping_output
+    catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 8 1 } ping_output
     send_user "Ping Router -> ED ($i): $ping_output\n"
     if {![regexp "bytes from" $ping_output]} {
         fail "Ping Router -> ED ($i) failed: $ping_output"
@@ -229,7 +254,7 @@ send_user -- "--- Step 4: Trigger TREL disconnect detection (Router pings ED) --
 # To guarantee detection of disconnect, we will ping and check preference.
 # Router tries to send over TREL to DUT, but it fails.
 for {set i 0} {$i < 50} {incr i} {
-    catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 500 1 } ping_res
+    catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 8 1 } ping_res
     send_user "Router ping response ($i): $ping_res\n"
     after 100
 }
@@ -264,7 +289,7 @@ exec docker exec -i $container1 ot-ctl trel counters reset
 exec docker exec -i $container2 ot-ctl trel counters reset
 
 for {set i 0} {$i < 5} {incr i} {
-    catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 500 1 } ping_output
+    catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 8 1 } ping_output
     send_user "Ping Router -> ED ($i) via 15.4: $ping_output\n"
     if {![regexp "bytes from" $ping_output]} {
         fail "Ping Router -> ED ($i) via 15.4 failed: $ping_output"
@@ -406,7 +431,7 @@ send_user "Router ML-EID: $r_mleid\n"
 
 switch_node 4
 for {set i 0} {$i < 10} {incr i} {
-    send "ping $r_mleid 500 1\n"
+    send "ping $r_mleid 8 1\n"
     expect {
         -re "bytes from" {
             # success
