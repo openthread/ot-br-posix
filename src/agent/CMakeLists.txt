@@ -47,7 +47,6 @@ target_link_libraries(otbr-agent PRIVATE
     otbr-host
     otbr-common
     otbr-utils
-    openthread-cli-ftd
     openthread-ftd
     openthread-spinel-rcp
     openthread-radio-spinel
@@ -55,7 +54,7 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-posix
 )
 
-add_dependencies(otbr-agent ot-ctl print-ot-config otbr-utils otbr-host)
+add_dependencies(otbr-agent print-ot-config otbr-utils otbr-host)
 if (OTBR_BORDER_AGENT)
     add_dependencies(otbr-agent otbr-border-agent)
 endif()
@@ -65,10 +64,27 @@ endif()
 
 install(TARGETS otbr-agent DESTINATION sbin)
 
-if(CMAKE_VERSION VERSION_LESS 3.13)
-    install(PROGRAMS $<TARGET_FILE:ot-ctl> DESTINATION sbin)
-else()
-    install(TARGETS ot-ctl DESTINATION sbin)
+if(OTBR_DAEMON)
+    add_executable(ot-ctl
+        otctl.cpp
+    )
+
+    target_include_directories(ot-ctl PRIVATE
+        ${PROJECT_SOURCE_DIR}/src
+        ${PROJECT_SOURCE_DIR}/third_party/openthread/repo/include
+        ${PROJECT_SOURCE_DIR}/third_party/openthread/repo/src
+    )
+
+    target_link_libraries(ot-ctl PRIVATE
+        otbr-config
+        ${OTBR_READLINE_LIBS}
+    )
+
+    if(CMAKE_VERSION VERSION_LESS 3.13)
+        install(PROGRAMS $<TARGET_FILE:ot-ctl> DESTINATION sbin)
+    else()
+        install(TARGETS ot-ctl DESTINATION sbin)
+    endif()
 endif()
 
 set(OTBR_AGENT_USER "root" CACHE STRING "set the username running otbr-agent service")

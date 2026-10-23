@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
+#include <functional>
 #include <ifaddrs.h>
 #include <iostream>
 #include <net/if.h>
@@ -151,7 +152,7 @@ TEST(CliDaemon, InputCommandLineCorrectly_AfterReveivingOnSessionSocket)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        cliDaemon.UpdateFdSet(context);
+        cliDaemon.Update(context);
         int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
                           &context.mTimeout);
         ASSERT_GE(rval, 0) << "select failed, error: " << strerror(errno);
@@ -177,7 +178,7 @@ public:
 
         if (mCliDaemonInstance != nullptr)
         {
-            mCliDaemonInstance->HandleCommandOutput(mOutputToSend);
+            mCliDaemonInstance->OutputFormat("%s", mOutputToSend);
         }
         return OTBR_ERROR_NONE;
     }
@@ -185,7 +186,7 @@ public:
 
 TEST(CliDaemon, HandleCommandOutputCorrectly_AfterReveivingOnSessionSocket)
 {
-    const char *command    = "test command";
+    const char *command    = "test command\n";
     const char *netIfName  = "tun0";
     const char *socketFile = "/run/openthread-tun0.sock";
 
@@ -224,7 +225,7 @@ TEST(CliDaemon, HandleCommandOutputCorrectly_AfterReveivingOnSessionSocket)
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        cliDaemon.UpdateFdSet(context);
+        cliDaemon.Update(context);
 
         context.AddFdToReadSet(clientSocket);
 
@@ -251,7 +252,7 @@ TEST(CliDaemon, HandleCommandOutputCorrectly_AfterReveivingOnSessionSocket)
 
 TEST(CliDaemon, HandleCommandOutputTruncatedCorrectly_AfterReceivingOnSessionSocket)
 {
-    const char *command    = "test command";
+    const char *command    = "test command\n";
     const char *netIfName  = "tun0";
     const char *socketFile = "/run/openthread-tun0.sock";
 
@@ -293,7 +294,7 @@ TEST(CliDaemon, HandleCommandOutputTruncatedCorrectly_AfterReceivingOnSessionSoc
         FD_ZERO(&context.mWriteFdSet);
         FD_ZERO(&context.mErrorFdSet);
 
-        cliDaemon.UpdateFdSet(context);
+        cliDaemon.Update(context);
 
         context.AddFdToReadSet(clientSocket);
 
@@ -316,6 +317,115 @@ TEST(CliDaemon, HandleCommandOutputTruncatedCorrectly_AfterReceivingOnSessionSoc
     EXPECT_EQ(strncmp(recvBuf, longTestOutput.c_str(), kCliMaxLineLength - sizeof(kTruncatedMsg)), 0);
     EXPECT_STREQ(recvBuf + kCliMaxLineLength - sizeof(kTruncatedMsg), kTruncatedMsg);
 
+    cliDaemon.Deinit();
+}
+
+class CliDaemonTestMultiLineInput : public otbr::CliDaemon::Dependencies
+{
+public:
+    otbrError InputCommandLine(const char *aLine) override
+    {
+        mCommands.emplace_back(aLine);
+        return OTBR_ERROR_NONE;
+    }
+
+    std::vector<std::string> mCommands;
+};
+
+static int ConnectCliDaemonClient(const char *aSocketFile)
+{
+    int                clientSocket;
+    struct sockaddr_un serverAddr;
+
+    clientSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+    VerifyOrExit(clientSocket >= 0);
+
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sun_family = AF_UNIX;
+    strncpy(serverAddr.sun_path, aSocketFile, sizeof(serverAddr.sun_path) - 1);
+
+    if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) != 0)
+    {
+        close(clientSocket);
+        clientSocket = -1;
+    }
+
+exit:
+    return clientSocket;
+}
+
+static void ProcessCliDaemonUntil(CliDaemon &aCliDaemon, std::function<bool(void)> aCondition)
+{
+    otbr::MainloopContext context;
+
+    for (int i = 0; i < 100 && !aCondition(); i++)
+    {
+        context.mMaxFd   = -1;
+        context.mTimeout = {0, 100000};
+        FD_ZERO(&context.mReadFdSet);
+        FD_ZERO(&context.mWriteFdSet);
+        FD_ZERO(&context.mErrorFdSet);
+
+        aCliDaemon.Update(context);
+        ASSERT_GE(select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
+                         &context.mTimeout),
+                  0)
+            << "select failed, error: " << strerror(errno);
+        aCliDaemon.Process(context);
+    }
+}
+
+TEST(CliDaemon, InputCommandLineSplitsLines_AfterReceivingOnSessionSocket)
+{
+    CliDaemonTestMultiLineInput cliDependency;
+    CliDaemon                   cliDaemon(cliDependency);
+    int                         clientSocket;
+
+    ASSERT_EQ(cliDaemon.Init("tun0"), OTBR_ERROR_NONE);
+    clientSocket = ConnectCliDaemonClient("/run/openthread-tun0.sock");
+    ASSERT_GE(clientSocket, 0) << "connect failed: " << strerror(errno);
+
+    // Two complete lines and a partial one in a single write, with an empty line before and between them (such as the
+    // leading '\n' sent by OpenThreadClient::Execute()).
+    ASSERT_GE(send(clientSocket, "\nstate\r\n  \r\nversion\nifcon", 25, 0), 0);
+    ProcessCliDaemonUntil(cliDaemon, [&]() { return cliDependency.mCommands.size() >= 2; });
+    ASSERT_EQ(cliDependency.mCommands, (std::vector<std::string>{"state", "version"}));
+
+    // The partial line is completed by the next write.
+    ASSERT_GE(send(clientSocket, "fig\n", 4, 0), 0);
+    ProcessCliDaemonUntil(cliDaemon, [&]() { return cliDependency.mCommands.size() >= 3; });
+    EXPECT_EQ(cliDependency.mCommands, (std::vector<std::string>{"state", "version", "ifconfig"}));
+
+    close(clientSocket);
+    cliDaemon.Deinit();
+}
+
+TEST(CliDaemon, InputCommandLineDropsTooLongLine_AfterReceivingOnSessionSocket)
+{
+    CliDaemonTestMultiLineInput cliDependency;
+    CliDaemon                   cliDaemon(cliDependency);
+    int                         clientSocket;
+    std::string                 input(kCliMaxLineLength * 2, 'a');
+    char                        recvBuf[kCliMaxLineLength];
+    ssize_t                     received;
+
+    ASSERT_EQ(cliDaemon.Init("tun0"), OTBR_ERROR_NONE);
+    clientSocket = ConnectCliDaemonClient("/run/openthread-tun0.sock");
+    ASSERT_GE(clientSocket, 0) << "connect failed: " << strerror(errno);
+
+    input += "\nstate\n";
+    ASSERT_EQ(send(clientSocket, input.data(), input.size(), 0), static_cast<ssize_t>(input.size()));
+    ProcessCliDaemonUntil(cliDaemon, [&]() { return !cliDependency.mCommands.empty(); });
+
+    // The too long line is rejected as a whole, and the next line is still processed.
+    EXPECT_EQ(cliDependency.mCommands, (std::vector<std::string>{"state"}));
+
+    received = recv(clientSocket, recvBuf, sizeof(recvBuf) - 1, MSG_DONTWAIT);
+    ASSERT_GT(received, 0);
+    recvBuf[received] = '\0';
+    EXPECT_STREQ(recvBuf, "Error 7: InvalidArgs\r\n");
+
+    close(clientSocket);
     cliDaemon.Deinit();
 }
 

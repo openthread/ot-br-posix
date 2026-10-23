@@ -64,7 +64,7 @@ readonly ABS_TOP_OT_SRCDIR
 ABS_TOP_OT_BUILDDIR="${ABS_TOP_BUILDDIR}/../simulation"
 readonly ABS_TOP_BUILDDIR
 
-OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
+OT_CTL="${ABS_TOP_BUILDDIR}/src/agent/ot-ctl"
 readonly OT_CTL
 
 OTBR_COLOR_PASS='\033[0;32m'
