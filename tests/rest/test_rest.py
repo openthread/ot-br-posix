@@ -967,10 +967,10 @@ def api_network_diagnostic_task_test():
 
     # Ensure the devices collection is populated with this node's attached attributes.
     discover_id = post_action({
-        "type": "updateNetworkDevicesTask",
-        "attributes": {"maxAge": 0, "maxRetries": 1, "timeout": 5},
+        "type": "updateDeviceCollectionTask",
+        "attributes": {"maxAge": 1, "maxRetries": 1, "deviceCount": 1, "timeout": 10},
     })
-    discover_item = wait_for_action(discover_id, timeout_sec=10)
+    discover_item = wait_for_action(discover_id, timeout_sec=15)
     assert discover_item["attributes"]["status"] == "completed"
 
     with urllib.request.urlopen(urllib.request.Request(rest_api_addr + "/api/node",
