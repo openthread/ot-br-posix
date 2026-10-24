@@ -67,4 +67,26 @@ int SocketWithCloseExec(int aDomain, int aType, int aProtocol, SocketBlockOption
  */
 int CreateNetLinkRouteSocket(uint32_t aNlGroups);
 
+#if !__linux__
+/**
+ * This function creates a routing socket (PF_ROUTE) for receiving routing and link updates on the BSDs, which
+ * have no netlink.
+ *
+ * @retval  -1  Failed to create the routing socket.
+ * @retval ...  The file descriptor of the created routing socket.
+ */
+int CreateRouteSocket(void);
+#endif
+
+#ifdef __APPLE__
+/**
+ * This function creates a kernel event socket (PF_SYSTEM) subscribed to the data link events, which on macOS
+ * report the flags and the carrier of an interface; its routing socket does not report the carrier.
+ *
+ * @retval  -1  Failed to create the kernel event socket.
+ * @retval ...  The file descriptor of the created kernel event socket.
+ */
+int CreateKernelEventSocket(void);
+#endif
+
 #endif // OTBR_UTILS_SOCKET_UTILS_HPP_

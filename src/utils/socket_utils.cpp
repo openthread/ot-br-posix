@@ -35,6 +35,13 @@
 
 #include "common/code_utils.hpp"
 
+#ifdef __APPLE__
+#include <net/net_kev.h>
+#include <sys/ioctl.h>
+#include <sys/kern_event.h>
+#include <sys/sys_domain.h>
+#endif
+
 int SocketWithCloseExec(int aDomain, int aType, int aProtocol, SocketBlockOption aBlockOption)
 {
     int rval = 0;
@@ -83,6 +90,39 @@ int CreateNetLinkRouteSocket(uint32_t aNlGroups)
     addr.nl_groups = aNlGroups; // e.g. RTMGRP_LINK | RTMGRP_IPV6_IFADDR;
 
     rval = bind(sock, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
+
+exit:
+    if (rval != 0)
+    {
+        close(sock);
+        sock = -1;
+    }
+
+    return sock;
+}
+#else
+int CreateRouteSocket(void)
+{
+    return SocketWithCloseExec(PF_ROUTE, SOCK_RAW, AF_UNSPEC, kSocketBlock);
+}
+#endif
+
+#ifdef __APPLE__
+int CreateKernelEventSocket(void)
+{
+    int                sock;
+    int                rval = 0;
+    struct kev_request request;
+
+    sock = SocketWithCloseExec(PF_SYSTEM, SOCK_RAW, SYSPROTO_EVENT, kSocketBlock);
+    VerifyOrExit(sock != -1);
+
+    memset(&request, 0, sizeof(request));
+    request.vendor_code  = KEV_VENDOR_APPLE;
+    request.kev_class    = KEV_NETWORK_CLASS;
+    request.kev_subclass = KEV_DL_SUBCLASS;
+
+    rval = ioctl(sock, SIOCSKEVFILT, &request);
 
 exit:
     if (rval != 0)
