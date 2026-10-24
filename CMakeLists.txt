@@ -39,7 +39,26 @@ else()
     set(OTBR_NAME "OpenThread_BorderRouter" CACHE STRING "The package name")
 endif()
 
-set(OTBR_INFRA_IF_NAME "wlan0" CACHE STRING "The infrastructure interface name")
+# On macOS the first interface is en0 and the Thread interface is a utun; utun100 is the
+# one the service asks for.
+if(APPLE)
+    set(OTBR_INFRA_IF_NAME_DEFAULT "en0")
+    set(OTBR_THREAD_IF_NAME_DEFAULT "utun100")
+else()
+    set(OTBR_INFRA_IF_NAME_DEFAULT "wlan0")
+    set(OTBR_THREAD_IF_NAME_DEFAULT "wpan0")
+endif()
+set(OTBR_INFRA_IF_NAME "${OTBR_INFRA_IF_NAME_DEFAULT}" CACHE STRING "The infrastructure interface name")
+set(OTBR_THREAD_IF_NAME "${OTBR_THREAD_IF_NAME_DEFAULT}" CACHE STRING "The Thread interface name the service starts the agent with")
+
+# The TREL radio URL the installed service starts with. TREL does not work on macOS
+# yet, so the service there starts without it; the defaults file is where to add it.
+# Not cached, so that it follows OTBR_INFRA_IF_NAME on every configure.
+if(APPLE)
+    set(OTBR_SERVICE_TREL_URL "")
+else()
+    set(OTBR_SERVICE_TREL_URL "trel://${OTBR_INFRA_IF_NAME}")
+endif()
 set(OTBR_MDNS "openthread" CACHE STRING "mDNS publisher provider")
 set(OTBR_SYSLOG_FACILITY_ID LOG_USER CACHE STRING "Syslog logging facility")
 set(OTBR_RADIO_URL "spinel+hdlc+uart:///dev/ttyACM0" CACHE STRING "The radio URL")
@@ -115,6 +134,11 @@ pkg_check_modules(SYSTEMD systemd)
 
 if(SYSTEMD_FOUND AND (NOT DEFINED INSTALL_SYSTEMD_UNIT OR INSTALL_SYSTEMD_UNIT))
     pkg_get_variable(OTBR_SYSTEMD_UNIT_DIR systemd systemdsystemunitdir)
+endif()
+
+if(APPLE)
+    set(OTBR_LAUNCHD_PLIST_DIR "/Library/LaunchDaemons" CACHE PATH "Where the launchd job of otbr-agent is installed; empty for none")
+    set(OTBR_LAUNCHD_LABEL "io.openthread.otbr-agent" CACHE STRING "The label of the launchd job of otbr-agent")
 endif()
 
 set(OPENTHREAD_PROJECT_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/openthread/repo)
