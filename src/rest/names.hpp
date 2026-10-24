@@ -80,12 +80,14 @@
 #define KEY_DETAIL "detail"
 #define KEY_DEVICE_COUNT "deviceCount"
 #define KEY_DISCERNER "discerner"
-#define KEY_EUI "eui"               // EUI-64 address
-#define KEY_EXTADDRESS "extAddress" // 64-bit MAC address
+#define KEY_ENHANCEDROUTE "enhancedRoute" // Enhanced Route TLV name
+#define KEY_EUI "eui"                     // EUI-64 address
+#define KEY_EXTADDRESS "extAddress"       // 64-bit MAC address
 #define KEY_EXTERNALCOMMISSIONING "externalCommissioning"
 #define KEY_EXTPANID "extPanId"
 #define KEY_FRAMEERRORRATE "frameErrorRate"
 #define KEY_FULLNETWORKDATA "fullNetworkData"
+#define KEY_HASLINK "hasLink"
 #define KEY_HOSTNAME "hostname"
 #define KEY_ID "id"
 #define KEY_IDEVIDCERT "iDevIdCert" // IDevID certificate
@@ -104,6 +106,7 @@
 #define KEY_ISFTD "fullThreadDevice"
 #define KEY_ISLEADER "isLeader"
 #define KEY_ISPBBR "isPrimaryBBR"
+#define KEY_ISSELF "isSelf"
 #define KEY_JOINERID "joinerId"
 #define KEY_LASTRSSI "lastRssi"
 #define KEY_LDEVIDSUBJECT "lDevIdSubject" // LDevID subject public key info
@@ -138,6 +141,8 @@
 #define KEY_NETWORKKEYPROVISIONING "networkKeyProvisioning"
 #define KEY_NETWORKNAME "networkName"
 #define KEY_NEWPARENTCOUNT "newParentCount"
+#define KEY_NEXTHOP "nextHop"
+#define KEY_NEXTHOPCOST "nextHopCost"
 #define KEY_NONCCMROUTERS "nonCcmRouters"
 #define KEY_OBTAINNETWORKKEY "obtainNetworkKey"
 #define KEY_OFFSET "offset"
