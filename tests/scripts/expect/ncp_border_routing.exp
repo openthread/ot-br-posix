@@ -64,6 +64,6 @@ set timeout 20
 spawn ping6 -c 10 $omr_addr
 expect -re {10 packets transmitted, 10 received, 0\% packet loss}
 
-exec sudo docker stop $container
-exec sudo docker rm $container
+exec docker stop $container
+exec docker rm $container
 dispose_all

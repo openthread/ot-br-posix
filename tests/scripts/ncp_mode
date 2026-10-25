@@ -61,8 +61,8 @@ readonly ABS_TOP_SRCDIR
 ABS_TOP_OT_SRCDIR="${ABS_TOP_SRCDIR}/third_party/openthread/repo"
 readonly ABS_TOP_OT_SRCDIR
 
-ABS_TOP_OT_BUILDDIR="${ABS_TOP_BUILDDIR}/../simulation"
-readonly ABS_TOP_BUILDDIR
+ABS_TOP_OT_BUILDDIR="${ABS_TOP_OT_BUILDDIR:-"${ABS_TOP_BUILDDIR}/../simulation"}"
+readonly ABS_TOP_OT_BUILDDIR
 
 OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
 readonly OT_CTL
@@ -81,6 +81,32 @@ readonly OTBR_VERBOSE="${OTBR_VERBOSE:-0}"
 #----------------------------------------
 # Helper functions
 #----------------------------------------
+if [[ $EUID -ne 0 ]] && ! command sudo -n true 2>/dev/null; then
+    sudo()
+    {
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                -E)
+                    shift
+                    ;;
+                --)
+                    shift
+                    break
+                    ;;
+                -*)
+                    echo "Error: unsupported mock sudo option: $1" >&2
+                    return 1
+                    ;;
+                *)
+                    break
+                    ;;
+            esac
+        done
+
+        "$@"
+    }
+fi
+
 die()
 {
     exit_message="$*"
@@ -100,7 +126,7 @@ executable_or_die()
 
 write_syslog()
 {
-    logger -s -p syslog.alert "OTBR_TEST: $*"
+    logger -s -p syslog.alert "OTBR_TEST: $*" 2>/dev/null || true
 }
 
 #----------------------------------------
@@ -141,8 +167,8 @@ readonly TUN_NAME
 #----------------------------------------
 do_build_ot_simulation()
 {
-    sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/ncp"
-    sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/cli"
+    rm -rf "${ABS_TOP_OT_BUILDDIR}/ncp" 2>/dev/null || sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/ncp"
+    rm -rf "${ABS_TOP_OT_BUILDDIR}/cli" 2>/dev/null || sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/cli"
     OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation \
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF \
         -DOT_BORDER_ROUTING=ON -DOT_NCP_INFRA_IF=ON -DOT_SIMULATION_INFRA_IF=OFF \
@@ -198,12 +224,16 @@ setup_infraif()
 {
     if ! ip link show backbone1 >/dev/null 2>&1; then
         echo "Creating backbone1 with Docker..."
-        docker network create --driver bridge --ipv6 --subnet 9101::/64 -o "com.docker.network.bridge.name"="backbone1" backbone1
+        docker network create --driver bridge --ipv6 --subnet 9101::/64 -o "com.docker.network.bridge.name"="backbone1" backbone1 || true
     else
         echo "backbone1 already exists."
     fi
-    sudo sysctl -w net.ipv6.conf.backbone1.accept_ra=2
-    sudo sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
+    if ! ip link show backbone1 >/dev/null 2>&1; then
+        sudo ip link add backbone1 type dummy 2>/dev/null || true
+        sudo ip link set backbone1 up 2>/dev/null || true
+    fi
+    sudo sysctl -w net.ipv6.conf.backbone1.accept_ra=2 || true
+    sudo sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64 || true
     # Delete the 9101::1/ address to ensure ping through backbone1 use an on-link address.
     sudo ip addr del 9101::1/64 dev backbone1 || true
 }
@@ -236,9 +266,9 @@ test_setup()
 
     # Preparation for otbr-agent
     exists_or_die "${OTBR_DBUS_CONF}"
-    sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d
-    sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
-    sudo systemctl reload dbus
+    sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d 2>/dev/null || true
+    sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf 2>/dev/null || true
+    sudo systemctl reload dbus 2>/dev/null || true
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
@@ -264,7 +294,7 @@ test_teardown()
     wait
 
     echo 'clearing all'
-    sudo rm /etc/dbus-1/system.d/otbr-agent.conf || true
+    sudo rm -f /etc/dbus-1/system.d/otbr-agent.conf 2>/dev/null || true
     sudo rm -rf "${STAGE_DIR}" || true
     sudo rm -rf "${BUILD_DIR}" || true
 
@@ -275,19 +305,58 @@ test_teardown()
 
 restart_avahi_daemon()
 {
-    # Restart the avahi-daemon on the host to remove stale records from previous test runs.
-    sudo service avahi-daemon restart
-    sleep 1
+    if [[ $EUID -eq 0 ]] || command sudo -n true 2>/dev/null; then
+        # Restart the avahi-daemon on the host to remove stale records from previous test runs.
+        sudo service avahi-daemon restart || true
+        sleep 1
+    fi
 }
 
 restart_mdns_daemon()
 {
     if [[ ${OTBR_MDNS} == "mDNSResponder" ]]; then
-        # Forcefully terminate mdnsd first as /etc/init.d/mdns only sends SIGTERM, which a hung mdnsd ignores.
-        sudo killall -9 mdnsd 2>/dev/null || true
-        sudo service mdns restart
-        sleep 1
+        if [[ $EUID -eq 0 ]] || command sudo -n true 2>/dev/null; then
+            # Forcefully terminate mdnsd first as /etc/init.d/mdns only sends SIGTERM, which a hung mdnsd ignores.
+            sudo killall -9 mdnsd 2>/dev/null || true
+            sudo service mdns restart || true
+            sleep 1
+        fi
     fi
+}
+
+do_expect_isolated()
+{
+    # shellcheck source=/dev/null
+    source "${ABS_TOP_OT_SRCDIR}/script/_maybe_isolate" expect_isolated "$1"
+
+    if [[ -n ${OT_ISOLATED_REEXEC:-} ]]; then
+        mkdir -p /run/dbus
+        cat >/run/dbus/system-local.conf <<EOF
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+  <type>system</type>
+  <listen>unix:path=/run/dbus/system_bus_socket</listen>
+  <auth>EXTERNAL</auth>
+  <policy context="default">
+    <allow user="*"/>
+    <allow own="*"/>
+    <allow send_type="method_call"/>
+    <allow send_type="signal"/>
+    <allow send_type="method_return"/>
+    <allow send_type="error"/>
+    <allow receive_type="method_call"/>
+    <allow receive_type="signal"/>
+    <allow receive_type="method_return"/>
+    <allow receive_type="error"/>
+  </policy>
+</busconfig>
+EOF
+        dbus-daemon --config-file=/run/dbus/system-local.conf --fork
+    fi
+
+    expect -df "$1"
+    exit 0
 }
 
 otbr_exec_expect_script()
@@ -309,7 +378,11 @@ otbr_exec_expect_script()
         restart_avahi_daemon
         restart_mdns_daemon
         {
-            sudo -E expect -df "${script}" 2>"${log_file}"
+            if grep -q start_otbr_docker "${script}"; then
+                expect -df "${script}" 2>"${log_file}"
+            else
+                "$0" expect_isolated "${script}" 2>"${log_file}"
+            fi
         } || {
             local EXIT_CODE=$?
 
@@ -326,6 +399,8 @@ otbr_exec_expect_script()
 
 do_expect()
 {
+    test_setup
+
     if [[ $# != 0 ]]; then
         otbr_exec_expect_script "$@"
     else
@@ -377,8 +452,11 @@ main()
                 ;;
             expect)
                 shift
-                test_setup
                 do_expect "$@"
+                ;;
+            expect_isolated)
+                shift
+                do_expect_isolated "$@"
                 ;;
             help)
                 print_usage
