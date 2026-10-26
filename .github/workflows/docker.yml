@@ -46,7 +46,7 @@ permissions:
 jobs:
 
   docker-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       OTBR_COVERAGE: 1
       VERBOSE: 1

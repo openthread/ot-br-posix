@@ -182,7 +182,7 @@ jobs:
       run: script/test package
 
   simulation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       BUILD_TARGET: check
     steps:
