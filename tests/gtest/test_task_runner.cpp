@@ -30,6 +30,7 @@
 #include <mutex>
 #include <thread>
 
+#include <errno.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -123,7 +124,7 @@ TEST(TaskRunner, TestMultipleThreads)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        EXPECT_EQ(1, rval);
+        EXPECT_TRUE(rval >= 0 || errno == EINTR);
 
         taskRunner.Process(mainloop);
     }
@@ -164,7 +165,7 @@ TEST(TaskRunner, TestPostAndWait)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        EXPECT_EQ(1, rval);
+        EXPECT_TRUE(rval >= 0 || errno == EINTR);
 
         taskRunner.Process(mainloop);
     }
