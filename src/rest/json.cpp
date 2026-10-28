@@ -466,6 +466,45 @@ static cJSON *Route2Json(const otNetworkDiagRoute &aRoute)
     return route;
 }
 
+static cJSON *EnhRouteData2Json(const otNetworkDiagEnhRouteData &aEnhRouteData)
+{
+    cJSON *routeData = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(routeData, KEY_ROUTEID, cJSON_CreateNumber(aEnhRouteData.mRouterId));
+    cJSON_AddItemToObject(routeData, KEY_ISSELF, cJSON_CreateBool(aEnhRouteData.mIsSelf));
+
+    if (!aEnhRouteData.mIsSelf)
+    {
+        cJSON_AddItemToObject(routeData, KEY_HASLINK, cJSON_CreateBool(aEnhRouteData.mHasLink));
+
+        if (aEnhRouteData.mHasLink)
+        {
+            cJSON_AddItemToObject(routeData, KEY_LINKQUALITYOUT, cJSON_CreateNumber(aEnhRouteData.mLinkQualityOut));
+            cJSON_AddItemToObject(routeData, KEY_LINKQUALITYIN, cJSON_CreateNumber(aEnhRouteData.mLinkQualityIn));
+        }
+
+        if (aEnhRouteData.mNextHop <= OT_NETWORK_MAX_ROUTER_ID)
+        {
+            cJSON_AddItemToObject(routeData, KEY_NEXTHOP, cJSON_CreateNumber(aEnhRouteData.mNextHop));
+            cJSON_AddItemToObject(routeData, KEY_NEXTHOPCOST, cJSON_CreateNumber(aEnhRouteData.mNextHopCost));
+        }
+    }
+
+    return routeData;
+}
+
+static cJSON *EnhRoute2Json(const otNetworkDiagEnhRoute &aEnhRoute)
+{
+    cJSON *enhRoute = cJSON_CreateArray();
+
+    for (uint16_t i = 0; i < aEnhRoute.mRouteCount; ++i)
+    {
+        cJSON_AddItemToArray(enhRoute, EnhRouteData2Json(aEnhRoute.mRouteData[i]));
+    }
+
+    return enhRoute;
+}
+
 static cJSON *LeaderData2Json(const otLeaderData &aLeaderData)
 {
     cJSON *leaderData = cJSON_CreateObject();
@@ -772,6 +811,12 @@ static cJSON *Diag2cJSON(const std::vector<otNetworkDiagTlv> &aDiagSet, std::set
                 cJSON_AddItemToObject(diagInfoOfOneNode, KEY_MLECOUNTERS, MleCounters2Json(diagTlv.mData.mMleCounters));
             }
             break;
+        case OT_NETWORK_DIAGNOSTIC_TLV_ENHANCED_ROUTE:
+            if (hasKey(aFieldset, KEY_ENHANCEDROUTE))
+            {
+                cJSON_AddItemToObject(diagInfoOfOneNode, KEY_ENHANCEDROUTE, EnhRoute2Json(diagTlv.mData.mEnhRoute));
+            }
+            break;
         default:
             // unknown TLV type
             break;
@@ -1047,6 +1092,26 @@ std::string Route2JsonString(const otNetworkDiagRoute &aRoute)
     std::string ret   = Json2String(route);
 
     cJSON_Delete(route);
+
+    return ret;
+}
+
+std::string EnhRouteData2JsonString(const otNetworkDiagEnhRouteData &aEnhRouteData)
+{
+    cJSON      *routeData = EnhRouteData2Json(aEnhRouteData);
+    std::string ret       = Json2String(routeData);
+
+    cJSON_Delete(routeData);
+
+    return ret;
+}
+
+std::string EnhRoute2JsonString(const otNetworkDiagEnhRoute &aEnhRoute)
+{
+    cJSON      *enhRoute = EnhRoute2Json(aEnhRoute);
+    std::string ret      = Json2String(enhRoute);
+
+    cJSON_Delete(enhRoute);
 
     return ret;
 }

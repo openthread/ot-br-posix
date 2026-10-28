@@ -415,6 +415,7 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | 32 | Answer | - | Identifies a partial answer to a diagnostic Query. Defined in Section 10.11.4.13, Answer TLV (32). | N |
 | 33 | Query ID | - | Identifies a diagnostic Query, and subsequent Answer(s) to this query. Defined in Section 10.11.4.14, Query ID TLV (33). | N |
 | 34 | MLE Counters | mleCounters | Contains MLE protocol related counters and timers. Defined in Section 10.11.4.15, MLE Counters TLV (34). | Y |
+| 37 | Enhanced Route | enhancedRoute | Contains active Router IDs, direct link qualities, and next-hop routing information. Defined in Section 10.11.4.17, Enhanced Route TLV (37). | N |
 
 ### Attribute names
 
@@ -445,13 +446,14 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | Extended Address | extAddress | FTD, v1.3.1 | 0, 29, 31 |
 | Frame Error Rate | frameErrorRate | FTD, v1.3.1 | 29, 31 |
 | Incoming Link Quality (ILQ) | linkQuality | FTD, v1.1 | 16 |
-| Incoming Link Quality | linkQualityIn | FTD, v1.3.1 | 5 |
+| Incoming Link Quality | linkQualityIn | FTD, v1.3.1 | 5, 37 |
 | Inbound Broadcast Packet Counter | ifInBroadcastPkts | v1.1 | 9 |
 | Inbound Packet Discarded Counter | ifInDiscards | v1.1 | 9 |
 | Inbound Packet Error Counter | ifInErrors | v1.1 | 9 |
 | Inbound Packet of Unknown Protocol Counter | ifInUnknownProtos | v1.1 | 9 |
 | Inbound Unicast Packet Counter | ifInUcastPkts | v1.1 | 9 |
 | Ipv6 Address(es) | ipv6Addresses | FTD, v1.1, FTD, v1.3.1 | 8, 30 |
+| L (Link Flag) | hasLink | FTD, v1.4.1 | 37 |
 | Last RSSI | lastRssi | FTD, v1.3.1 | 29, 31 |
 | Leader Cost | leaderCost | v1.1 | 4 |
 | Leader Role Counter | leaderRoleCount | v1.3.1 | 34 |
@@ -464,11 +466,13 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | N | fullNetworkData | v1.1 | 2 |
 | N | fullNetworkData | FTD, v1.3.1 | 29 |
 | New Parent Counter | newParentCount | v1.3.1 | 34 |
+| Next Hop | nextHop | FTD, v1.4.1 | 37 |
+| Next Hop Cost | nextHopCost | FTD, v1.4.1 | 37 |
 | Outbound Broadcast Packet Counter | ifOutBroadcastPkts | v1.1 | 9 |
 | Outbound Packet Discarded Counter | ifOutDiscards | v1.1 | 9 |
 | Outbound Packet Error Counter | ifOutErrors | v1.1 | 9 |
 | Outbound Unicast Packet Counter | ifOutUcastPkts | v1.1 | 9 |
-| Outgoing Link Quality | linkQualityOut | FTD, v1.3.1 | 5 |
+| Outgoing Link Quality | linkQualityOut | FTD, v1.3.1 | 5, 37 |
 | Partition ID Changes Counter | partIdChangesCount | v1.3.1 | 34 |
 | Queued Message Count | queuedMessageCount | FTD, v1.3.1 | 29 |
 | R | rxOnWhenIdle | v1.1 | 2 |
@@ -476,10 +480,12 @@ The table below is derived from the Thread Specification. The column **Short Nam
 | Radio Disabled Counter | radioDisabledCount | v1.3.1 | 34 |
 | Radio Disabled Time | radioDisabledTime | v1.3.1 | 34 |
 | RLOC16 | rloc16 | FTD, v1.3.1 | 1, 29, 30, 31 |
+| Route ID | routeId | FTD, v1.1 | 5, 37 |
 | Router Role Counter | routerRoleCount | v1.3.1 | 34 |
 | Router Role Time | routerRoleTime | v1.3.1 | 34 |
 | Rx-off Child Buffer Size | sedBufferSize | v1.1 | 4 |
 | Rx-off Child Datagram Count | sedDatagramCount | v1.1 | 4 |
+| S (Self Flag) | isSelf | FTD, v1.4.1 | 37 |
 | Supervision Interval | supervisionInterval | FTD, v1.3.1 | 29 |
 | Thread Extended PanId | extPanId | v1.1 | - |
 | Thread Network Name | networkName | v1.1 | - |

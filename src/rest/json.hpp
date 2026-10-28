@@ -298,6 +298,24 @@ std::string Route2JsonString(const otNetworkDiagRoute &aRoute);
 std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
 
 /**
+ * This method formats an Enhanced Route object to a Json array and serializes it to a string.
+ *
+ * @param[in] aEnhRoute  An Enhanced Route object.
+ *
+ * @returns A string of serialized Json array.
+ */
+std::string EnhRoute2JsonString(const otNetworkDiagEnhRoute &aEnhRoute);
+
+/**
+ * This method formats an Enhanced Route Data object to a Json object and serializes it to a string.
+ *
+ * @param[in] aEnhRouteData  An Enhanced Route Data object.
+ *
+ * @returns A string of serialized Json object.
+ */
+std::string EnhRouteData2JsonString(const otNetworkDiagEnhRouteData &aEnhRouteData);
+
+/**
  * This method formats a LeaderData object to a Json object and serialize it to a string.
  *
  * @param[in] aLeaderData  A LeaderData object.
