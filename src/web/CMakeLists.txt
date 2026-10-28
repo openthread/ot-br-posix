@@ -42,6 +42,8 @@ target_compile_definitions(otbr-web PRIVATE
 target_include_directories(otbr-web PRIVATE
     ${JSONCPP_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/third_party/cpp-httplib/repo
+    # for posix/platform/openthread-posix-daemon-config.h, the daemon's socket path
+    ${OPENTHREAD_PROJECT_DIRECTORY}/src
 )
 target_link_libraries(otbr-web PRIVATE
     $<$<BOOL:${JSONCPP_LIBRARY_DIRS}>:-L$<JOIN:${JSONCPP_LIBRARY_DIRS}," -L">>
@@ -62,7 +64,15 @@ add_subdirectory(web-service/frontend)
 
 add_dependencies(otbr-web otbr-web-frontend)
 
-if(OTBR_SYSTEMD_UNIT_DIR)
+if(APPLE)
+    if(OTBR_LAUNCHD_PLIST_DIR)
+        configure_file(otbr-web.plist.in otbr-web.plist @ONLY)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-web.plist
+            DESTINATION ${OTBR_LAUNCHD_PLIST_DIR}
+            RENAME ${OTBR_LAUNCHD_WEB_LABEL}.plist
+        )
+    endif()
+elseif(OTBR_SYSTEMD_UNIT_DIR)
     configure_file(otbr-web.service.in otbr-web.service)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-web.service
         DESTINATION ${OTBR_SYSTEMD_UNIT_DIR}
@@ -73,3 +83,10 @@ else()
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
         RENAME otbr-web)
 endif()
+
+# The service reads its options here; the Thread interface is the agent's.
+configure_file(otbr-web.default.in otbr-web.default)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-web.default
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/default
+    RENAME otbr-web
+)

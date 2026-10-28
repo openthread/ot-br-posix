@@ -90,7 +90,15 @@ if(OTBR_DBUS)
         DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/dbus-1/system.d)
 endif()
 
-if(OTBR_SYSTEMD_UNIT_DIR)
+if(APPLE)
+    if(OTBR_LAUNCHD_PLIST_DIR)
+        configure_file(otbr-agent.plist.in otbr-agent.plist @ONLY)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.plist
+            DESTINATION ${OTBR_LAUNCHD_PLIST_DIR}
+            RENAME ${OTBR_LAUNCHD_LABEL}.plist
+        )
+    endif()
+elseif(OTBR_SYSTEMD_UNIT_DIR)
     configure_file(otbr-agent.service.in otbr-agent.service)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.service
         DESTINATION ${OTBR_SYSTEMD_UNIT_DIR}
@@ -128,16 +136,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nftables-backend
     DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/otbr
 )
 
-# Same arrangement for the pf backend on macOS.
-if(OTBR_PF)
-    set(OTBR_PF_MARKER_VALUE 1)
-else()
-    set(OTBR_PF_MARKER_VALUE 0)
-endif()
-configure_file(pf-backend.in pf-backend @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pf-backend
-    DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/otbr
-)
 
 pkg_check_modules(LIBSYSTEMD libsystemd)
 if(LIBSYSTEMD_FOUND)
