@@ -224,6 +224,12 @@ private:
     void ApiDiagnosticsDeleteHandler(const Request &aRequest, Response &aResponse);
     void ApiDiagnosticsItemDeleteHandler(const Request &aRequest, Response &aResponse);
 
+    void ApiTrafficStatsHandler(const Request &aRequest, Response &aResponse);
+    void ApiTrafficStatsGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiTrafficStatsItemGetHandler(const Request &aRequest, Response &aResponse);
+    void ApiTrafficStatsDeleteHandler(const Request &aRequest, Response &aResponse);
+    void ApiTrafficStatsItemDeleteHandler(const Request &aRequest, Response &aResponse);
+
     void WellKnownThreadHandler(const Request &aRequest, Response &aResponse) const;
     void WellKnownThreadGetHandler(const Request &aRequest, Response &aResponse) const;
 
