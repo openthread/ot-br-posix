@@ -30,6 +30,13 @@
 # shellcheck disable=SC2034
 # The backbone router does not build on macOS, and its rt_tables setup is
 # Linux. Border routing and NAT64 stay on: their Linux-only setup steps are
-# skipped on macOS by the helpers, and NAT44 comes with the pf firewall
-# backend (OTBR_PF=1).
+# skipped on macOS by the helpers. The firewall on macOS is the pf backend
+# (OTBR_PF=1), which also carries NAT44. FIREWALL stays on so that
+# script/_firewall installs the pf anchors the agent needs; it does not turn
+# on OpenThread's own posix firewall, which the pf backend switches off and
+# which is Linux code anyway. The web GUI is a launchd job next to the agent's,
+# as it is a systemd service on Linux; its topology tab reads the REST API.
 BACKBONE_ROUTER=0
+OTBR_PF=1
+WEB_GUI=1
+REST_API=1

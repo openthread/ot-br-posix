@@ -38,14 +38,9 @@ SYSCTL_IP_FORWARD=/etc/sysctl.d/60-otbr-ip-forward.conf
 LAUNCHD_IP_FORWARD_LABEL=io.openthread.otbr-ipforward
 LAUNCHD_IP_FORWARD_PLIST=/Library/LaunchDaemons/${LAUNCHD_IP_FORWARD_LABEL}.plist
 
-ipforward_is_macos()
-{
-    [[ ${PLATFORM:-} == "macOS" || ${OSTYPE:-} == darwin* ]]
-}
-
 ipforward_install()
 {
-    if ipforward_is_macos; then
+    if is_macos; then
         ipforward_install_macos
         return
     fi
@@ -95,7 +90,7 @@ EOF
 
 ipforward_uninstall()
 {
-    if ipforward_is_macos; then
+    if is_macos; then
         sudo launchctl bootout "system/${LAUNCHD_IP_FORWARD_LABEL}" 2>/dev/null || true
         test ! -f "$LAUNCHD_IP_FORWARD_PLIST" || sudo rm -v "$LAUNCHD_IP_FORWARD_PLIST"
         return
@@ -106,7 +101,7 @@ ipforward_uninstall()
 
 ipforward_enable()
 {
-    if ipforward_is_macos; then
+    if is_macos; then
         sudo sysctl net.inet6.ip6.forwarding=1 net.inet.ip.forwarding=1 || die 'Failed to enable IP forwarding!'
         return
     fi
