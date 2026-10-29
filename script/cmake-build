@@ -46,6 +46,10 @@
 #
 #      OTBR_BUILD_DIR="./build/temp" script/cmake-build
 #
+#  Compile the ot-extcap Wireshark sniffer (tools/extcap) instead of otbr-agent:
+#
+#      script/cmake-build extcap
+#
 #  Examples:
 #
 #      script/cmake-build
@@ -61,21 +65,25 @@
 OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_TOP_SRCDIR
 
-OTBR_TOP_BUILD_DIR="${BUILD_DIR}/otbr"
-readonly OTBR_TOP_BUILD_DIR
-
 OTBR_TARGET=${OTBR_TARGET-}
 
 main()
 {
-    local builddir="${OTBR_BUILD_DIR:-${OTBR_TOP_BUILD_DIR}}"
+    local srcdir="${OTBR_TOP_SRCDIR}"
+    local builddir="${OTBR_BUILD_DIR:-${BUILD_DIR}/otbr}"
+
+    if [[ ${1-} == extcap ]]; then
+        shift
+        srcdir="${OTBR_TOP_SRCDIR}/tools/extcap"
+        builddir="${OTBR_BUILD_DIR:-${BUILD_DIR}/extcap}"
+    fi
 
     mkdir -p "${builddir}"
 
     (
         cd "${builddir}" || die "Failed to enter ${builddir}"
 
-        cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${OTBR_TOP_SRCDIR}" "$@"
+        cmake -GNinja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${srcdir}" "$@"
 
         if [[ -n ${OTBR_TARGET[*]} ]]; then
             ninja "${OTBR_TARGET[@]}"
