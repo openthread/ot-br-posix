@@ -40,6 +40,7 @@ class ActionsList;
 class CommissionerManager;
 class DevicesCollection;
 class DiagnosticsCollection;
+class TrafficStatsCollection;
 class NetworkDiagHandler;
 
 struct ServiceList;
@@ -89,6 +90,9 @@ public:
     DevicesCollection &GetDevicesCollection(void);
 
     DiagnosticsCollection &GetDiagnosticsCollection(void);
+
+    /** Returns the collection of saved traffic statistics. */
+    TrafficStatsCollection &GetTrafficStatsCollection(void);
 
     NetworkDiagHandler &GetNetworkDiagHandler(void);
 
