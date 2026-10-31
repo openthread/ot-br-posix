@@ -47,15 +47,10 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
-// Temporary solution before posix platform header files are cleaned up.
-#ifndef OPENTHREAD_POSIX_DAEMON_SOCKET_NAME
-#ifdef __linux__
-#define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/run/openthread-%s"
-#else
-#define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/tmp/openthread-%s"
-#endif
+// The daemon's socket is where OpenThread's posix platform puts it.
+#include "posix/platform/openthread-posix-daemon-config.h"
+
 #define OPENTHREAD_POSIX_DAEMON_SOCKET_NAME OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME ".sock"
-#endif
 
 namespace otbr {
 namespace Web {

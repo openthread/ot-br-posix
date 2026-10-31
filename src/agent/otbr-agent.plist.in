@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd service of the OpenThread Border Router agent, the counterpart of
+  otbr-agent.service. The options come from the defaults file, as they do
+  from EnvironmentFile there, and its variables reach the agent's
+  environment the same way (set -a).
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>@OTBR_LAUNCHD_LABEL@</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>-c</string>
+        <string>set -af; [ -r @CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-agent ] &amp;&amp; . @CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-agent; exec @CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent $OTBR_AGENT_OPTS</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+    <key>StandardOutPath</key>
+    <string>/var/log/otbr-agent.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/otbr-agent.log</string>
+</dict>
+</plist>

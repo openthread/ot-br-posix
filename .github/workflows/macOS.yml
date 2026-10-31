@@ -96,3 +96,82 @@ jobs:
       run: |
         ctest --test-dir build/otbr --output-on-failure --no-tests=error -LE sudo
         sudo ctest --test-dir build/otbr --output-on-failure --no-tests=error -L sudo
+
+  # The installation path of a fresh Mac: script/setup builds, installs into
+  # /usr/local, writes the pf anchors and the IP forwarding job, and loads the
+  # otbr-agent and otbr-web launchd jobs, here against a simulated radio on a pty.
+  setup:
+    name: script/setup
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        submodules: recursive
+        persist-credentials: false
+    - name: Bootstrap
+      run: |
+        brew update
+        ./script/bootstrap
+        brew install socat
+    - name: Build the simulated radio
+      run: |
+        cmake -S third_party/openthread/repo -B build/simulation -GNinja \
+              -DOT_PLATFORM=simulation -DOT_TCP=OFF -DBUILD_TESTING=OFF
+        ninja -C build/simulation ot-rcp
+        socat pty,raw,echo=0,link=/tmp/otbr-rcp exec:'build/simulation/examples/apps/ncp/ot-rcp 1' &
+        for _ in $(seq 1 10); do test -c /tmp/otbr-rcp && break; sleep 1; done
+        test -c /tmp/otbr-rcp
+    - name: Install
+      run: INFRA_IF_NAME=en0 RADIO_URL='spinel+hdlc+uart:///tmp/otbr-rcp' ./script/setup
+    - name: Check the installed service
+      run: |
+        sudo launchctl print system/io.openthread.otbr-agent | grep -E 'state|pid|exit|runs|path'
+        sudo launchctl print system/io.openthread.otbr-agent | grep -q 'state = running'
+        grep -c 'anchor "otbr"' /etc/pf.conf
+        test "$(sysctl -n net.inet6.ip6.forwarding)" = 1
+        # The agent names its socket after the utun it got; on macOS the daemon's socket is in /tmp.
+        for _ in $(seq 1 30); do
+          sock=$(ls /tmp/openthread-utun*.sock 2>/dev/null | head -n 1)
+          [[ -n ${sock} ]] && break
+          sleep 1
+        done
+        pgrep -fl otbr-agent || true
+        test -n "${sock}"
+        netif=$(basename "${sock}" .sock)
+        netif=${netif#openthread-}
+        echo "Thread interface: ${netif}"
+        echo "NETIF=${netif}" >>"${GITHUB_ENV}"
+        sudo /usr/local/sbin/ot-ctl -I "${netif}" state
+        sudo /usr/local/sbin/ot-ctl -I "${netif}" ifconfig up
+        sudo /usr/local/sbin/ot-ctl -I "${netif}" ifconfig
+        ifconfig "${netif}"
+        rules=$(sudo pfctl -a otbr -s rules)
+        echo "${rules}"
+        grep -q "on ${netif}" <<<"${rules}"
+    - name: Check the web GUI
+      run: |
+        sudo launchctl print system/io.openthread.otbr-web | grep -E 'state|pid|exit|runs|path'
+        sudo launchctl print system/io.openthread.otbr-web | grep -q 'state = running'
+        cat /usr/local/etc/default/otbr-web
+        curl -fsS http://127.0.0.1/ | grep -q '<title>OpenThread Border Router</title>'
+        # The agent takes the utun the service asks for once the submodule carries
+        # openthread#13742; until then the job is pointed at the utun it got, as ot-ctl was.
+        test -n "${NETIF}"
+        echo "OTBR_WEB_OPTS=\"-I ${NETIF}\"" | sudo tee /usr/local/etc/default/otbr-web
+        sudo launchctl kickstart -k system/io.openthread.otbr-web
+        for _ in $(seq 1 10); do
+          curl -fsS http://127.0.0.1/get_properties >/tmp/otbr-web-properties 2>/dev/null && break
+          sleep 1
+        done
+        cat /tmp/otbr-web-properties
+        grep -q '"RCP:State"' /tmp/otbr-web-properties
+        # The GUI's topology tab reads the agent's REST API, on since REST_API=1 is in the platform defaults.
+        curl -fsS http://127.0.0.1:8081/node | grep -q '"state"'
+    - name: Service logs
+      if: always()
+      run: |
+        sudo cat /var/log/otbr-agent.log || true
+        sudo launchctl print system/io.openthread.otbr-agent || true
+        sudo cat /var/log/otbr-web.log || true
+        sudo launchctl print system/io.openthread.otbr-web || true
+        log show --last 10m --predicate 'process == "otbr-agent" OR process == "otbr-web"' --style compact 2>/dev/null | tail -n 60 || true
