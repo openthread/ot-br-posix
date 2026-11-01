@@ -112,36 +112,8 @@ expect_line "Done"
 sleep 5
 
 # Set up the test-client container on the infrastructure link
-exec docker run -d \
-    --name $test_client \
-    --network infrastructure-link \
-    --cap-add=NET_ADMIN \
-    --privileged \
-    --sysctl net.ipv6.conf.all.disable_ipv6=0 \
-    --entrypoint /bin/bash \
-    $::env(EXP_TEST_CLIENT_IMAGE) \
-    -c "echo 0 > /proc/sys/net/ipv6/conf/all/autoconf && echo 0 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
-
-# Check if the host kernel supports Route Information Option (RIO) / accept_ra_rt_info_max_plen processing
-set has_rio [expr {[catch {exec docker exec -i $test_client test -f /proc/sys/net/ipv6/conf/all/accept_ra_rt_info_max_plen}] == 0}]
-
-if {$has_rio} {
-    send_user "Host kernel supports RIO processing. Enabling accept_ra_rt_info_max_plen.\n"
-    exec docker exec -i $test_client sysctl -w net.ipv6.conf.all.accept_ra_rt_info_max_plen=64
-    exec docker exec -i $test_client sysctl -w net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64
-    # Trigger a Router Solicitation to fetch RAs immediately and let kernel auto-install the OMR route
-    exec docker exec -i $test_client rdisc6 eth0
-} else {
-    send_user "Warning: Host kernel does NOT support RIO processing (CONFIG_IPV6_ROUTE_INFO is disabled). Falling back to static route.\n"
-
-    # Retrieve the global IPv6 address of the OTBR container on the bridge network
-    set format "\{\{range .NetworkSettings.Networks\}\}\{\{.GlobalIPv6Address\}\}\{\{end\}\}"
-    set otbr_ip [exec docker inspect otbr-test-container -f $format]
-    send_user "OTBR Infrastructure IPv6 Address: $otbr_ip\n"
-
-    # Manually install static route to Thread ULA subnet (fc00::/7) via the OTBR, bypassing host kernel RIO limitation
-    exec docker exec -i $test_client ip -6 route add fc00::/7 via $otbr_ip dev eth0
-}
+start_test_client $test_client $::env(EXP_TEST_CLIENT_IMAGE)
+configure_test_client_routes $test_client $container
 send_user "Test Client routing table:\n"
 send_user [exec docker exec -i $test_client ip -6 route]
 

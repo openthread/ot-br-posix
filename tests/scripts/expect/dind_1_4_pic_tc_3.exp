@@ -106,6 +106,10 @@ exec docker run -d \
     --cap-add=NET_ADMIN \
     --privileged \
     --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+    --sysctl net.ipv6.conf.all.autoconf=1 \
+    --sysctl net.ipv6.conf.default.autoconf=1 \
+    --sysctl net.ipv6.conf.all.accept_ra=2 \
+    --sysctl net.ipv6.conf.default.accept_ra=2 \
     --entrypoint /bin/bash \
     $::env(EXP_TEST_CLIENT_IMAGE) \
     -c "echo 1 > /proc/sys/net/ipv6/conf/all/autoconf && echo 1 > /proc/sys/net/ipv6/conf/default/autoconf && echo 1 > /proc/sys/net/ipv6/conf/eth0/autoconf && echo 2 > /proc/sys/net/ipv6/conf/all/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/default/accept_ra && echo 2 > /proc/sys/net/ipv6/conf/eth0/accept_ra && sleep infinity"
