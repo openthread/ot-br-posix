@@ -37,6 +37,8 @@ tags:
     description: Collection of discovered Thread devices, updated via `updateDeviceCollectionTask` in `/api/actions`.
   - name: Diagnostics
     description: Collection of Thread network diagnostic responses triggered via tasks in `/api/actions`.
+  - name: TrafficStats
+    description: Immutable snapshots of the local POSIX traffic counters.
 paths:
 
   ### Well-Known ##############################################################
@@ -194,6 +196,7 @@ paths:
         - `resetNetworkDiagCounterTask`
         - `getEnergyScanTask`
         - `updateDeviceCollectionTask`
+        - `getTrafficStatsTask`
 
         The items contain all the attributes as given by a client in a POST request (values are not changed, except for timeout which counts down).
         The items contain at least two additional server-added attributes (`id` and `status`); while the `id` must not change once assigned, the other server-added attributes may change according to the *Task* state.
@@ -323,6 +326,18 @@ paths:
             schema:
               $ref: "#/components/schemas/ActionsClient"
             examples:
+              getTrafficStatsTask:
+                summary: Capture local traffic counters
+                description: |
+                  Copies the local cumulative counters once and stores an immutable result in `/api/traffic-stats`.
+                  The task requires empty attributes. It does not send a diagnostic request, start a measurement
+                  interval, or reset counters. On success it transitions directly from `pending` to `completed`
+                  and sets `relationships.result.data` to the result ID and collection type `traffic-stats`.
+                  If the statistics cannot be obtained or stored, the task becomes `failed`.
+                value:
+                  data:
+                    - type: getTrafficStatsTask
+                      attributes: {}
               addThreadDeviceTask:
                 summary: Add new Thread Device to the Network
                 description: |
@@ -613,6 +628,20 @@ paths:
                         pskd: J01NME
                         timeout: 42
                         status: completed
+                getTrafficStatsTaskCompleted:
+                  summary: Completed local traffic snapshot
+                  value:
+                    data:
+                      id: 59127322-41da-42e2-ab0a-206dfaeebff0
+                      type: getTrafficStatsTask
+                      attributes:
+                        status: completed
+                        created: '2026-10-28T11:25:24+09:00'
+                      relationships:
+                        result:
+                          data:
+                            type: traffic-stats
+                            id: 59127322-41da-42e2-ab0a-206dfaeebff4
                 getEnergyScanTaskActive:
                   summary: e8e6a4c4-ee9c-4c84-a2cf-45f02d90501a (Get Thread Energy Scan - active)
                   value:
@@ -1242,6 +1271,139 @@ paths:
           $ref: "#/components/responses/BadRequestError"
         "404":
           $ref: "#/components/responses/NotFoundError"
+
+  ### Traffic statistics ######################################################
+  #############################################################################
+  /api/traffic-stats:
+    get:
+      operationId: listTrafficStats
+      tags: [TrafficStats]
+      summary: List saved traffic snapshots.
+      description: |
+        Results are created by `getTrafficStatsTask`. Up to ten snapshots are retained in memory;
+        adding another evicts the oldest. GET serializes saved copies without reading the live counters.
+        Restarting the process loses all snapshots. JSON:API supports `fields[trafficStats]`;
+        the plain JSON collection returns all counter attributes without IDs or timestamps.
+      parameters:
+        - $ref: "#/components/parameters/SparseFieldset"
+      responses:
+        "200":
+          description: Saved snapshots, or an empty collection.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/TrafficStatsCollection"
+              example:
+                data: []
+                meta:
+                  collection: {offset: 0, limit: 10, total: 0}
+            application/json:
+              schema:
+                type: array
+                maxItems: 10
+                items:
+                  $ref: "#/components/schemas/TrafficStatsCounters"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "406":
+          $ref: "#/components/responses/NotAcceptableError"
+    delete:
+      operationId: deleteTrafficStats
+      tags: [TrafficStats]
+      summary: Delete all saved traffic snapshots.
+      description: Does not delete tasks or reset the live cumulative counters.
+      responses:
+        "204":
+          description: All saved snapshots deleted.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+    options:
+      operationId: optionsTrafficStats
+      tags: [TrafficStats]
+      summary: List allowed operations.
+      responses:
+        "204":
+          description: Allowed operations.
+          headers:
+            Allow:
+              schema:
+                type: string
+                example: "GET, DELETE, OPTIONS"
+
+  /api/traffic-stats/{resultId}:
+    parameters:
+      - name: resultId
+        in: path
+        required: true
+        description: UUID of a saved traffic snapshot.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getTrafficStats
+      tags: [TrafficStats]
+      summary: Read a saved traffic snapshot.
+      description: |
+        The same result ID returns the same captured counters while the snapshot is retained.
+        Deleted, evicted, and unknown results return 404. JSON:API includes the capture timestamp;
+        plain JSON contains only counter attributes. With no Accept header or `*/*`, JSON:API is returned.
+      parameters:
+        - $ref: "#/components/parameters/SparseFieldset"
+      responses:
+        "200":
+          description: The saved traffic snapshot.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/TrafficStatsDocument"
+              example:
+                data:
+                  id: 59127322-41da-42e2-ab0a-206dfaeebff4
+                  type: trafficStats
+                  attributes:
+                    created: '2026-10-28T11:25:24+09:00'
+                    flowCapacityPerDirection: 64
+                    threadToExternal:
+                      total: {packets: 1, bytes: 104}
+                      flows:
+                        - srcIpv6: 'fd00::1'
+                          dstIpv6: '2001:db8::1'
+                          packets: 1
+                          bytes: 104
+                    externalToThread:
+                      total: {packets: 0, bytes: 0}
+                      flows: []
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrafficStatsCounters"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "406":
+          $ref: "#/components/responses/NotAcceptableError"
+    delete:
+      operationId: deleteTrafficStatsItem
+      tags: [TrafficStats]
+      summary: Delete a saved traffic snapshot.
+      description: Does not delete the originating task or reset the live counters.
+      responses:
+        "204":
+          description: Snapshot deleted.
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    options:
+      operationId: optionsTrafficStatsItem
+      tags: [TrafficStats]
+      summary: List allowed operations.
+      responses:
+        "204":
+          description: Allowed operations.
+          headers:
+            Allow:
+              schema:
+                type: string
+                example: "GET, DELETE, OPTIONS"
 
   /node:
     get:
@@ -2067,6 +2229,119 @@ components:
               default: 93
               description: Timeout in seconds for the update device collection task.
 
+    Actions_getTrafficStatsTask:
+      type: object
+      required: [type, attributes]
+      properties:
+        type:
+          type: string
+          enum: [getTrafficStatsTask]
+        attributes:
+          type: object
+          additionalProperties: false
+          maxProperties: 0
+
+    ### Traffic statistics ######################################################
+    TrafficCounter:
+      type: integer
+      minimum: 0
+      description: |
+        Cumulative unsigned 64-bit counter, serialized as a JSON number. The current server converts
+        counters to double, so integers above 2^53 may lose precision. This is not a rate or interval count.
+    TrafficTotals:
+      type: object
+      required: [packets, bytes]
+      properties:
+        packets:
+          $ref: "#/components/schemas/TrafficCounter"
+        bytes:
+          $ref: "#/components/schemas/TrafficCounter"
+    TrafficFlow:
+      allOf:
+        - $ref: "#/components/schemas/TrafficTotals"
+        - type: object
+          required: [srcIpv6, dstIpv6]
+          properties:
+            srcIpv6:
+              type: string
+              format: ipv6
+            dstIpv6:
+              type: string
+              format: ipv6
+    TrafficDirection:
+      type: object
+      required: [total, flows]
+      description: |
+        Source/destination pairs are tracked independently in each direction, with no transport-port distinction.
+        Once the table is full, existing pairs are updated but new pairs are not added. Total counters still
+        increase for untracked pairs, so flow sums can differ from totals. Flow order has no defined meaning.
+      properties:
+        total:
+          $ref: "#/components/schemas/TrafficTotals"
+        flows:
+          type: array
+          maxItems: 64
+          items:
+            $ref: "#/components/schemas/TrafficFlow"
+    TrafficStatsCounters:
+      type: object
+      description: |
+        Cumulative observations at the POSIX virtual interface between the host and OpenThread stack.
+        Counts can include local control traffic and multicast loopback, and do not prove delivery over Thread
+        or an external interface. Counters reset on process restart, not when results are captured or deleted.
+        The IPv6-only implementation excludes IPv4 packets, including the IPv4 side of NAT64 traffic.
+        Byte counts include the IPv6 header and payload, excluding tunnel and link-layer headers.
+      properties:
+        flowCapacityPerDirection:
+          type: integer
+          minimum: 1
+          example: 64
+        threadToExternal:
+          description: Packets passed from the OpenThread stack to the host.
+          allOf:
+            - $ref: "#/components/schemas/TrafficDirection"
+        externalToThread:
+          description: Packets read from the host virtual interface for the OpenThread stack.
+          allOf:
+            - $ref: "#/components/schemas/TrafficDirection"
+    TrafficStatsItem:
+      type: object
+      required: [id, type, attributes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [trafficStats]
+        attributes:
+          allOf:
+            - $ref: "#/components/schemas/TrafficStatsCounters"
+            - type: object
+              required: [created]
+              properties:
+                created:
+                  type: string
+                  format: date-time
+                  description: Capture time of this snapshot, distinct from the task creation time.
+    TrafficStatsDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/TrafficStatsItem"
+    TrafficStatsCollection:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/TrafficStatsItem"
+        meta:
+          $ref: "#/components/schemas/Meta"
+
     ### Actions Requests ########################################################
     ActionsClientItem:
       type: object
@@ -2082,6 +2357,7 @@ components:
             - resetNetworkDiagCounterTask
             - getEnergyScanTask
             - updateDeviceCollectionTask
+            - getTrafficStatsTask
         attributes:
           type: object
       additionalProperties: false
@@ -2103,6 +2379,7 @@ components:
                 - $ref: "#/components/schemas/Actions_resetNetworkDiagCounterTask"
                 - $ref: "#/components/schemas/Actions_getEnergyScanTask"
                 - $ref: "#/components/schemas/Actions_updateDeviceCollectionTask"
+                - $ref: "#/components/schemas/Actions_getTrafficStatsTask"
       additionalProperties: false
 
     ### Actions Responses #######################################################
@@ -2656,6 +2933,10 @@ components:
                   - application/vnd.api+json
               - href: /api/diagnostics
                 rel: diagnostic
+                type:
+                  - application/vnd.api+json
+              - href: /api/traffic-stats
+                rel: traffic-stats
                 type:
                   - application/vnd.api+json
 
