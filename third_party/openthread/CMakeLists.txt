@@ -171,3 +171,14 @@ if (OTBR_MDNS STREQUAL "openthread")
         "-DOPENTHREAD_CONFIG_MULTICAST_DNS_PUBLIC_API_ENABLE=1"
     )
 endif()
+
+# The upstream DNS resolver binds its socket to the infrastructure interface with
+# SO_BINDTODEVICE, which the macOS 14 SDK does not declare; leave the socket unbound
+# on Apple until OpenThread binds with IPV6_BOUND_IF there as it does elsewhere.
+# TODO(openthread#13743): remove with the submodule update that brings that binding,
+# which this override would otherwise disable.
+if (APPLE)
+    target_compile_definitions(ot-config INTERFACE
+        "-DOPENTHREAD_POSIX_CONFIG_UPSTREAM_DNS_BIND_TO_INFRA_NETIF=0"
+    )
+endif()

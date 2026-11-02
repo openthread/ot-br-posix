@@ -39,7 +39,17 @@ else()
     set(OTBR_NAME "OpenThread_BorderRouter" CACHE STRING "The package name")
 endif()
 
-set(OTBR_INFRA_IF_NAME "wlan0" CACHE STRING "The infrastructure interface name")
+# On macOS the first interface is en0 and the Thread interface is a utun; utun100 is the
+# one the service asks for.
+if(APPLE)
+    set(OTBR_INFRA_IF_NAME_DEFAULT "en0")
+    set(OTBR_THREAD_IF_NAME_DEFAULT "utun100")
+else()
+    set(OTBR_INFRA_IF_NAME_DEFAULT "wlan0")
+    set(OTBR_THREAD_IF_NAME_DEFAULT "wpan0")
+endif()
+set(OTBR_INFRA_IF_NAME "${OTBR_INFRA_IF_NAME_DEFAULT}" CACHE STRING "The infrastructure interface name")
+set(OTBR_THREAD_IF_NAME "${OTBR_THREAD_IF_NAME_DEFAULT}" CACHE STRING "The Thread interface name the service starts the agent with")
 set(OTBR_MDNS "openthread" CACHE STRING "mDNS publisher provider")
 set(OTBR_SYSLOG_FACILITY_ID LOG_USER CACHE STRING "Syslog logging facility")
 set(OTBR_RADIO_URL "spinel+hdlc+uart:///dev/ttyACM0" CACHE STRING "The radio URL")
@@ -47,6 +57,17 @@ set(OTBR_RADIO_URL "spinel+hdlc+uart:///dev/ttyACM0" CACHE STRING "The radio URL
 set_property(CACHE OTBR_MDNS PROPERTY STRINGS "mDNSResponder" "openthread")
 
 include("${PROJECT_SOURCE_DIR}/etc/cmake/options.cmake")
+
+# The TREL radio URL the installed service starts with, with the space that separates it from the
+# radio URL, so that the defaults file has no trailing space when there is none. TREL does not work on
+# macOS yet (TODO(openthread#13749): enable it there once the agent reaches its peers), so the service
+# there starts without it; the defaults file is where to add it. Not cached, so that it follows
+# OTBR_TREL and OTBR_INFRA_IF_NAME on every configure.
+if(OTBR_TREL AND NOT APPLE)
+    set(OTBR_SERVICE_TREL_URL " trel://${OTBR_INFRA_IF_NAME}")
+else()
+    set(OTBR_SERVICE_TREL_URL "")
+endif()
 
 if(NOT CMAKE_C_STANDARD)
     set(CMAKE_C_STANDARD 99)
@@ -115,6 +136,12 @@ pkg_check_modules(SYSTEMD systemd)
 
 if(SYSTEMD_FOUND AND (NOT DEFINED INSTALL_SYSTEMD_UNIT OR INSTALL_SYSTEMD_UNIT))
     pkg_get_variable(OTBR_SYSTEMD_UNIT_DIR systemd systemdsystemunitdir)
+endif()
+
+if(APPLE)
+    set(OTBR_LAUNCHD_PLIST_DIR "/Library/LaunchDaemons" CACHE PATH "Where the launchd jobs of otbr-agent and otbr-web are installed; empty for none")
+    set(OTBR_LAUNCHD_LABEL "io.openthread.otbr-agent" CACHE STRING "The label of the launchd job of otbr-agent")
+    set(OTBR_LAUNCHD_WEB_LABEL "io.openthread.otbr-web" CACHE STRING "The label of the launchd job of otbr-web")
 endif()
 
 set(OPENTHREAD_PROJECT_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/openthread/repo)

@@ -45,6 +45,14 @@ have()
     command -v "$1" >/dev/null 2>/dev/null
 }
 
+is_macos()
+{
+    # This function checks whether the scripts run on macOS.
+    #
+
+    [[ ${PLATFORM:-} == "macOS" || ${OSTYPE:-} == darwin* ]]
+}
+
 have_or_die()
 {
     # This function verifies a tool is available and dies with proper

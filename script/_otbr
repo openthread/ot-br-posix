@@ -78,6 +78,27 @@ readonly OTBR_VENDOR_NAME
 OTBR_PRODUCT_NAME="${OTBR_PRODUCT_NAME:-BorderRouter}"
 readonly OTBR_PRODUCT_NAME
 
+# The radio URL the installed service starts the agent with; the build's default otherwise.
+RADIO_URL="${RADIO_URL-}"
+readonly RADIO_URL
+
+OTBR_LAUNCHD_LABEL=io.openthread.otbr-agent
+readonly OTBR_LAUNCHD_LABEL
+OTBR_LAUNCHD_WEB_LABEL=io.openthread.otbr-web
+readonly OTBR_LAUNCHD_WEB_LABEL
+OTBR_LAUNCHD_PLIST_DIR=/Library/LaunchDaemons
+readonly OTBR_LAUNCHD_PLIST_DIR
+
+launchd_load()
+{
+    # A job disabled on this host (launchctl disable, a legacy unload -w) cannot be
+    # bootstrapped, so enable it first, as script/_ipforward does.
+    sudo launchctl bootout "system/$1" 2>/dev/null || true
+    sudo launchctl enable "system/$1" 2>/dev/null || true
+    sudo launchctl bootstrap system "${OTBR_LAUNCHD_PLIST_DIR}/$1.plist" || die "Failed to load $1!"
+    sudo launchctl print "system/$1" >/dev/null || die "$1 is not loaded!"
+}
+
 otbr_uninstall()
 {
     if have systemctl; then
@@ -87,12 +108,18 @@ otbr_uninstall()
         sudo systemctl disable otbr-agent || true
         ! sudo systemctl is-enabled otbr-web
         ! sudo systemctl is-enabled otbr-agent
+    elif is_macos; then
+        sudo launchctl bootout "system/${OTBR_LAUNCHD_WEB_LABEL}" 2>/dev/null || true
+        sudo launchctl bootout "system/${OTBR_LAUNCHD_LABEL}" 2>/dev/null || true
+        sudo rm -f "${OTBR_LAUNCHD_PLIST_DIR}/${OTBR_LAUNCHD_WEB_LABEL}.plist" "${OTBR_LAUNCHD_PLIST_DIR}/${OTBR_LAUNCHD_LABEL}.plist"
     fi
     sudo killall otbr-web otbr-agent || true
 
     (
         if cd "${OTBR_TOP_BUILDDIR}" 2>/dev/null && [ -f install_manifest.txt ]; then
-            sudo xargs -a install_manifest.txt -r rm -f || true
+            # The manifest is the build's own file; only the removal needs root.
+            # shellcheck disable=SC2024
+            sudo xargs rm -f <install_manifest.txt || true
             rm -f install_manifest.txt
         fi
     )
@@ -103,10 +130,19 @@ otbr_uninstall()
 
 otbr_install()
 {
+    # macOS: /usr is read-only and there is no D-Bus; the service is a launchd job.
+    local install_prefix=/usr
+    local dbus=ON
+
+    if is_macos; then
+        install_prefix=/usr/local
+        dbus=OFF
+    fi
+
     local otbr_options=(
         "-DBUILD_TESTING=OFF"
-        "-DCMAKE_INSTALL_PREFIX=/usr"
-        "-DOTBR_DBUS=ON"
+        "-DCMAKE_INSTALL_PREFIX=${install_prefix}"
+        "-DOTBR_DBUS=${dbus}"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "-DOTBR_DHCP6_PD_CLIENT=${OTBR_DHCP6_PD_CLIENT}"
         "-DOTBR_MDNS=${OTBR_MDNS}"
@@ -118,12 +154,28 @@ otbr_install()
         # does and the marker this build writes is not there yet at that point,
         # so the shell variable, not the file, is what keeps them agreeing.
         "-DOTBR_NFTABLES=$([ "${OTBR_NFTABLES:-0}" = "1" ] && echo ON || echo OFF)"
-        # Likewise for the pf backend on macOS.
-        "-DOTBR_PF=$([ "${OTBR_PF:-0}" = "1" ] && echo ON || echo OFF)"
+        # Likewise for the pf backend on macOS, where the platform default file turns it on.
+        "-DOTBR_PF=$(with OTBR_PF && echo ON || echo OFF)"
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="
     )
+
+    if is_macos; then
+        # The build installs the launchd jobs where this script loads them from.
+        otbr_options+=(
+            "-DOTBR_LAUNCHD_PLIST_DIR=${OTBR_LAUNCHD_PLIST_DIR}"
+            "-DOTBR_LAUNCHD_LABEL=${OTBR_LAUNCHD_LABEL}"
+            "-DOTBR_LAUNCHD_WEB_LABEL=${OTBR_LAUNCHD_WEB_LABEL}"
+        )
+    fi
+
+    if [[ -n ${RADIO_URL} ]]; then
+        otbr_options+=("-DOTBR_RADIO_URL=${RADIO_URL}")
+    else
+        # Back to the build's default, not a RADIO_URL cached by an earlier setup.
+        otbr_options+=("-UOTBR_RADIO_URL")
+    fi
 
     # If the user provided custom options, append them
     if [[ -n ${OTBR_OPTIONS:-} ]]; then
@@ -138,8 +190,11 @@ otbr_install()
         )
     fi
 
+    # Said either way: a build directory configured with the web GUI on would otherwise keep it on.
     if with WEB_GUI; then
         otbr_options+=("-DOTBR_WEB=ON")
+    else
+        otbr_options+=("-DOTBR_WEB=OFF")
     fi
 
     if [[ ${OTBR_DHCP6_PD_CLIENT} == "openthread" || ${OTBR_DHCP6_PD_CLIENT} == "dhcpcd" ]]; then
@@ -211,6 +266,9 @@ otbr_install()
             sudo systemctl enable testharness-discovery || true
             sudo systemctl is-enabled testharness-discovery || die 'Failed to enable otbr-agent!'
         fi
+    elif is_macos; then
+        launchd_load "${OTBR_LAUNCHD_LABEL}"
+        without WEB_GUI || launchd_load "${OTBR_LAUNCHD_WEB_LABEL}"
     else
         echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi

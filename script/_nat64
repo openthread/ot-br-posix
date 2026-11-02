@@ -55,11 +55,6 @@ fi
 
 # NAT44 on macOS is the pf backend's, set up by _firewall; otbr-nat44 is a
 # Linux service, so the functions below do nothing there.
-nat64_is_macos()
-{
-    [[ ${PLATFORM:-} == "macOS" || ${OSTYPE:-} == darwin* ]]
-}
-
 nat44_install()
 {
     if [ "${OTBR_NFTABLES}" = "1" ]; then
@@ -185,7 +180,7 @@ nat64_install()
 {
     with NAT64 || return 0
 
-    if nat64_is_macos; then
+    if is_macos; then
         return 0
     fi
 
@@ -196,7 +191,7 @@ nat64_uninstall()
 {
     with NAT64 || return 0
 
-    if nat64_is_macos; then
+    if is_macos; then
         return 0
     fi
 
@@ -208,7 +203,7 @@ nat64_start()
 {
     with NAT64 || return 0
 
-    if nat64_is_macos; then
+    if is_macos; then
         return 0
     fi
 
@@ -219,7 +214,7 @@ nat64_stop()
 {
     with NAT64 || return 0
 
-    if nat64_is_macos; then
+    if is_macos; then
         return 0
     fi
 

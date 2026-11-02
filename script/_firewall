@@ -60,25 +60,11 @@ fi
 # so uninstall can find them again. pf wants translation rules before filter
 # rules, so the nat-anchor goes next to the system's own nat-anchor and only
 # the filter anchor is appended. The nat-anchor carries the NAT44 masquerade,
-# which the agent only installs with NAT64, so it is added only then.
-# /usr/share sits on the SIP-protected system volume on macOS, so installs
-# there use another prefix; look in the usual ones.
-OTBR_PF_MARKER="/usr/share/otbr/pf-backend"
-[ -r "${OTBR_PF_MARKER}" ] || OTBR_PF_MARKER="/usr/local/share/otbr/pf-backend"
-[ -r "${OTBR_PF_MARKER}" ] || OTBR_PF_MARKER="/opt/homebrew/share/otbr/pf-backend"
-if [ -z "${OTBR_PF:-}" ]; then
-    OTBR_PF=0
-    if [ -r "${OTBR_PF_MARKER}" ] && grep -qx '1' "${OTBR_PF_MARKER}"; then
-        OTBR_PF=1
-    fi
-fi
+# which the agent only installs with NAT64, so it is added only then. Whether
+# the agent has the backend is OTBR_PF: the environment, else the platform's
+# default file (macOS turns it on), the same decision script/_otbr builds with.
 PF_CONF=/etc/pf.conf
 PF_ANCHOR_TAG="# otbr-agent (managed by script/_firewall)"
-
-firewall_is_macos()
-{
-    [[ ${PLATFORM:-} == "macOS" || ${OSTYPE:-} == darwin* ]]
-}
 
 # Replaces the main ruleset with the rewritten copy at "${PF_CONF}.otbr",
 # but only once pfctl has parsed it: a broken /etc/pf.conf would otherwise
@@ -107,7 +93,9 @@ firewall_uninstall_macos()
 
 firewall_install_macos()
 {
-    if [ "${OTBR_PF}" != "1" ]; then
+    # The same decision the build makes in script/_otbr: environment, then the platform's
+    # default file.
+    if ! with OTBR_PF; then
         echo "OTBR_PF=0: otbr-agent was built without the pf backend; no firewall to install on macOS."
         return 0
     fi
@@ -129,7 +117,7 @@ firewall_uninstall()
 {
     with FIREWALL || return 0
 
-    if firewall_is_macos; then
+    if is_macos; then
         firewall_uninstall_macos
         return 0
     fi
@@ -149,7 +137,7 @@ firewall_install()
 {
     with FIREWALL || return 0
 
-    if firewall_is_macos; then
+    if is_macos; then
         firewall_install_macos
         return 0
     fi
@@ -170,7 +158,7 @@ firewall_install()
 firewall_start()
 {
     # On macOS the agent installs the firewall itself; nothing to start.
-    if firewall_is_macos; then
+    if is_macos; then
         return 0
     fi
 
@@ -194,7 +182,7 @@ firewall_stop()
 {
     with FIREWALL || return 0
 
-    if firewall_is_macos; then
+    if is_macos; then
         return 0
     fi
 
