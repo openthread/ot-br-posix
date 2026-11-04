@@ -541,6 +541,34 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     EXPECT_EQ(memcmp(activeDataset.mExtendedPanId.m8, newDataset.mExtendedPanId.m8, sizeof(newDataset.mExtendedPanId)),
               0);
 
+    // 8. Call Leave right after Join while attached as leader. The pending Join must be
+    // aborted and the stack must end up disabled.
+    error           = OT_ERROR_NONE;
+    resultReceived  = false;
+    error_          = OT_ERROR_NONE;
+    resultReceived_ = false;
+    host.Join(datasetTlvs, receiver_);
+    host.Leave(/* aEraseDataset */ true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
+    EXPECT_EQ(error_, OT_ERROR_ABORT);
+    EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    // 9. Call Join with an invalid dataset when Thread is enabled.
+    resultReceived = false;
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+
+    otOperationalDatasetTlvs invalidDatasetTlvs{};
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(invalidDatasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+    EXPECT_STREQ(errorMsg.c_str(), "Active Operational Dataset is not valid");
+
     host.Deinit();
 }
 
