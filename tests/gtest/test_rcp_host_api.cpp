@@ -1014,6 +1014,50 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     EXPECT_EQ(memcmp(activeDataset.mExtendedPanId.m8, newDataset.mExtendedPanId.m8, sizeof(newDataset.mExtendedPanId)),
               0);
 
+    // 8. Call Leave right after Join while attached as leader. The pending Join must be
+    // aborted and the stack must end up disabled.
+    error           = OT_ERROR_NONE;
+    resultReceived  = false;
+    error_          = OT_ERROR_NONE;
+    resultReceived_ = false;
+    host.Join(datasetTlvs, receiver_);
+    host.Leave(/* aEraseDataset */ true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
+    EXPECT_EQ(error_, OT_ERROR_ABORT);
+    EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    // 9. Call Join with an invalid dataset when Thread is enabled (both disabled and attached).
+    resultReceived = false;
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+
+    otOperationalDatasetTlvs invalidDatasetTlvs{};
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(invalidDatasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+    EXPECT_STREQ(errorMsg.c_str(), "Active Operational Dataset is not valid");
+
+    // Re-attach and verify Join with an invalid dataset does not tear down the active network.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(datasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    ASSERT_EQ(error, OT_ERROR_NONE);
+    ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(invalidDatasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+    EXPECT_STREQ(errorMsg.c_str(), "Active Operational Dataset is not valid");
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
     host.Deinit();
 }
 
@@ -1730,4 +1774,150 @@ TEST(RcpHostApi, EnergyScanHandlerReleasedAfterCompletion)
     EXPECT_TRUE(weakToken.expired());
 
     host.Deinit();
+}
+
+TEST(RcpHostApi, AutoAttachAndResetRespectThreadEnabledState)
+{
+    otbr::MainloopContext mainloop;
+
+    // 1. With auto-attach enabled and no saved dataset, mThreadEnabledState starts kStateEnabled
+    //    (matching SetThreadEnabled(true) without a dataset) so Join() works directly while the
+    //    role stays disabled until a dataset is provided.
+    {
+        otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                 /* aDryRun */ false,
+                                 /* aEnableAutoAttach */ true);
+
+        host.Init();
+
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, []() { return false; });
+        EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+        otOperationalDataset     dataset{};
+        otOperationalDatasetTlvs datasetTlvs{};
+        ASSERT_EQ(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &dataset), OT_ERROR_NONE);
+        otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+        otError     migError    = OT_ERROR_NONE;
+        bool        migReceived = false;
+        std::string migErrorMsg;
+        host.ScheduleMigration(datasetTlvs,
+                               [&migError, &migErrorMsg, &migReceived](otError aError, const std::string &aErrorMsg) {
+                                   migError    = aError;
+                                   migErrorMsg = aErrorMsg;
+                                   migReceived = true;
+                               });
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&migReceived]() { return migReceived; });
+        EXPECT_TRUE(migReceived);
+        EXPECT_EQ(migError, OT_ERROR_INVALID_STATE);
+        EXPECT_STREQ(migErrorMsg.c_str(), "Device is detached");
+
+        otError joinError    = OT_ERROR_FAILED;
+        bool    joinReceived = false;
+        host.Join(datasetTlvs, [&joinError, &joinReceived](otError aError, const std::string &) {
+            joinError    = aError;
+            joinReceived = true;
+        });
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&joinReceived]() { return joinReceived; });
+        EXPECT_TRUE(joinReceived);
+        EXPECT_EQ(joinError, OT_ERROR_NONE);
+        EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+        host.Deinit();
+    }
+
+    // 2. With auto-attach enabled and a saved dataset, Thread resumes on startup and allows
+    //    ScheduleMigration(); once disabled via SetThreadEnabled(false), a subsequent Reset()
+    //    must not auto-attach and re-enable Thread.
+    {
+        otbr::Host::RcpHost            host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                            /* aDryRun */ false,
+                                            /* aEnableAutoAttach */ true);
+        otbr::Host::ThreadEnabledState enabledState = otbr::Host::ThreadEnabledState::kStateEnabled;
+
+        host.Init();
+        host.AddThreadEnabledStateChangedCallback(
+            [&enabledState](otbr::Host::ThreadEnabledState aState) { enabledState = aState; });
+
+        otInstance              *instance = ot::FakePlatform::CurrentInstance();
+        otOperationalDataset     dataset{};
+        otOperationalDatasetTlvs datasetTlvs{};
+        ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
+        otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+        ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs), OT_ERROR_NONE);
+
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                             [&]() { return host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+        EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+        // A subsequent ScheduleMigration() must succeed without calling SetThreadEnabled(true).
+        dataset.mActiveTimestamp.mSeconds++;
+        OT_UNUSED_VARIABLE(otNetworkNameFromString(&dataset.mNetworkName, "AutoAttachMig"));
+        otOperationalDatasetTlvs migDatasetTlvs{};
+        otDatasetConvertToTlvs(&dataset, &migDatasetTlvs);
+
+        otError migError    = OT_ERROR_FAILED;
+        bool    migReceived = false;
+        host.ScheduleMigration(migDatasetTlvs, [&migError, &migReceived](otError aError, const std::string &) {
+            migError    = aError;
+            migReceived = true;
+        });
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&migReceived]() { return migReceived; });
+        EXPECT_TRUE(migReceived);
+        EXPECT_EQ(migError, OT_ERROR_NONE);
+
+        // Disable Thread explicitly and reset: saved dataset must NOT auto-attach while disabled.
+        otError disableError    = OT_ERROR_FAILED;
+        bool    disableReceived = false;
+        host.SetThreadEnabled(false, [&disableError, &disableReceived](otError aError, const std::string &) {
+            disableError    = aError;
+            disableReceived = true;
+        });
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&disableReceived]() { return disableReceived; });
+        ASSERT_EQ(disableError, OT_ERROR_NONE);
+        ASSERT_EQ(enabledState, otbr::Host::ThreadEnabledState::kStateDisabled);
+        ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+        host.Reset();
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, []() { return false; });
+        EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+        migError          = OT_ERROR_NONE;
+        migReceived       = false;
+        std::string errMs = "";
+        host.ScheduleMigration(migDatasetTlvs,
+                               [&migError, &errMs, &migReceived](otError aError, const std::string &aErrorMsg) {
+                                   migError    = aError;
+                                   errMs       = aErrorMsg;
+                                   migReceived = true;
+                               });
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&migReceived]() { return migReceived; });
+        EXPECT_TRUE(migReceived);
+        EXPECT_EQ(migError, OT_ERROR_INVALID_STATE);
+        EXPECT_STREQ(errMs.c_str(), "Thread is disabled");
+
+        host.Deinit();
+    }
+
+    // 3. With auto-attach disabled and a saved dataset, Reset() must not auto-attach.
+    {
+        otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                 /* aDryRun */ false,
+                                 /* aEnableAutoAttach */ false);
+
+        host.Init();
+
+        otInstance              *instance = ot::FakePlatform::CurrentInstance();
+        otOperationalDataset     dataset{};
+        otOperationalDatasetTlvs datasetTlvs{};
+        ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
+        otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+        ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs), OT_ERROR_NONE);
+
+        host.Reset();
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, []() { return false; });
+        EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+        host.Deinit();
+    }
 }
