@@ -527,9 +527,13 @@ TEST_F(RestNetworkDiagTest, RetainedDiagnosticsFromPreviousTaskNotReturnedForNew
 // 5. No-response and no-match cases do not produce a successful completed action with an empty result ID.
 TEST_F(RestNetworkDiagTest, NoResponseAndNoMatchFailWithoutEmptyResultId)
 {
+    const std::string nonMatchingRloc = (otThreadGetRloc16(GetInstance()) == 0x2000) ? "0x2400" : "0x2000";
+    const std::string nonMatchingMleid =
+        (GetSelfMlEidIidString() == "deadbeefdeadbeef") ? "deadbeefdeadbee0" : "deadbeefdeadbeef";
+
     // Case A: No-response timeout on a single-target diagnostic request.
     {
-        cJSON *req = BuildNetworkDiagnosticActionRequest("0x2000", "rloc", /* aTimeoutSec */ 1);
+        cJSON *req = BuildNetworkDiagnosticActionRequest(nonMatchingRloc, "rloc", /* aTimeoutSec */ 1);
         ASSERT_NE(req, nullptr);
         cJSON *attributes = cJSON_GetObjectItemCaseSensitive(req, "attributes");
 
@@ -559,7 +563,7 @@ TEST_F(RestNetworkDiagTest, NoResponseAndNoMatchFailWithoutEmptyResultId)
 
     // Case B: Response received from a non-matching node (no-match case for both rloc and mleid).
     for (const auto &pair :
-         std::vector<std::pair<std::string, std::string>>{{"0x2000", "rloc"}, {"deadbeefdeadbeef", "mleid"}})
+         std::vector<std::pair<std::string, std::string>>{{nonMatchingRloc, "rloc"}, {nonMatchingMleid, "mleid"}})
     {
         cJSON *req = BuildNetworkDiagnosticActionRequest(pair.first, pair.second, /* aTimeoutSec */ 5);
         ASSERT_NE(req, nullptr);
