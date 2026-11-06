@@ -211,4 +211,13 @@
 #define KEY_WEIGHTING "weighting"
 #define NETWORK_DIAG_ACTION_TYPE_NAME "getNetworkDiagnosticTask"
 #define RESET_DIAG_COUNTERS_ACTION_TYPE_NAME "resetNetworkDiagCounterTask"
+#define TRAFFIC_STATS_ACTION_TYPE_NAME "getTrafficStatsTask"
+#define KEY_FLOWCAPACITYPERDIRECTION "flowCapacityPerDirection"
+#define KEY_THREADTOEXTERNAL "threadToExternal"
+#define KEY_EXTERNALTOTHREAD "externalToThread"
+#define KEY_FLOWS "flows"
+#define KEY_SRCIPV6 "srcIpv6"
+#define KEY_DSTIPV6 "dstIpv6"
+#define KEY_PACKETS "packets"
+#define KEY_BYTES "bytes"
 #endif // OTBR_REST_NAMES_HPP_
