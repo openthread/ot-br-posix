@@ -202,6 +202,27 @@ target_link_libraries(otbr-gtest-host-api
 )
 gtest_discover_tests(otbr-gtest-host-api)
 
+add_executable(otbr-gtest-ncp-host-api
+    test_ncp_host_api.cpp
+)
+target_include_directories(otbr-gtest-ncp-host-api
+    PRIVATE
+        ${OTBR_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src/core
+)
+target_link_libraries(otbr-gtest-ncp-host-api
+    mbedtls
+    otbr-common
+    otbr-utils
+    otbr-host
+    otbr-posix
+    $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
+    openthread-ftd
+    openthread-posix
+    GTest::gmock_main
+)
+gtest_discover_tests(otbr-gtest-ncp-host-api)
+
 if(OTBR_TREL_DNSSD)
     add_executable(otbr-gtest-trel-dnssd
         ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp

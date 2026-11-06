@@ -37,6 +37,7 @@
 #include "common/mainloop.hpp"
 #include "common/mainloop_manager.hpp"
 #include "host/rcp_host.hpp"
+#include "host/thread_helper.hpp"
 
 #include "fake_platform.hpp"
 
@@ -343,8 +344,9 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
                              /* aEnableAutoAttach */ false);
 
-    otOperationalDataset     dataset;
-    otOperationalDatasetTlvs datasetTlvs;
+    otOperationalDataset     dataset{};
+    otOperationalDatasetTlvs datasetTlvs{};
+    otOperationalDatasetTlvs activeDatasetTlvs{};
 
     // 1. Call ScheduleMigration when host hasn't been initialized.
     otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
@@ -357,6 +359,14 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
 
     host.Init();
 
+    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &dataset));
+    otDatasetConvertToTlvs(&dataset, &activeDatasetTlvs);
+    dataset.mPendingTimestamp.mSeconds             = 1;
+    dataset.mComponents.mIsPendingTimestampPresent = true;
+    dataset.mDelay                                 = 30000;
+    dataset.mComponents.mIsDelayPresent            = true;
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
     // 2. Call ScheduleMigration when the Thread is not enabled.
     error          = OT_ERROR_NONE;
     resultReceived = false;
@@ -365,20 +375,487 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
     EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
     EXPECT_STREQ(errorMsg.c_str(), "Thread is disabled");
 
-    // 3. Schedule migration to another network.
-    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &dataset));
-    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
-    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(ot::FakePlatform::CurrentInstance(), &datasetTlvs));
-    error          = OT_ERROR_NONE;
+    // 3. Call ScheduleMigration when Thread is enabled without an active dataset (device is not attached).
+    error          = OT_ERROR_FAILED;
     resultReceived = false;
     host.SetThreadEnabled(true, receiver);
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
-                         [&host]() { return host.GetDeviceRole() != OT_DEVICE_ROLE_DETACHED; });
-    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
 
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
     host.ScheduleMigration(datasetTlvs, receiver);
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_TRUE(resultReceived);
+    EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
+    EXPECT_STREQ(errorMsg.c_str(), "Device is detached");
+
+    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(ot::FakePlatform::CurrentInstance(), &activeDatasetTlvs));
+    OT_UNUSED_VARIABLE(otIp6SetEnabled(ot::FakePlatform::CurrentInstance(), true));
+    OT_UNUSED_VARIABLE(otThreadSetEnabled(ot::FakePlatform::CurrentInstance(), true));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&host]() { return host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    // 4. Reject malformed or incomplete Operational Dataset TLVs.
+    // 4a. Half-pending dataset: PendingTimestamp present without DelayTimer.
+    {
+        otOperationalDataset     halfPendingDataset = dataset;
+        otOperationalDatasetTlvs halfPendingTlvs{};
+
+        halfPendingDataset.mPendingTimestamp.mSeconds             = 1;
+        halfPendingDataset.mComponents.mIsPendingTimestampPresent = true;
+        halfPendingDataset.mComponents.mIsDelayPresent            = false;
+        otDatasetConvertToTlvs(&halfPendingDataset, &halfPendingTlvs);
+
+        error          = OT_ERROR_NONE;
+        resultReceived = false;
+        host.ScheduleMigration(halfPendingTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+        EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
+    }
+
+    // 4b. Half-pending dataset: DelayTimer present without PendingTimestamp.
+    {
+        otOperationalDataset     halfPendingDataset = dataset;
+        otOperationalDatasetTlvs halfPendingTlvs{};
+
+        halfPendingDataset.mComponents.mIsPendingTimestampPresent = false;
+        halfPendingDataset.mDelay                                 = 30000;
+        halfPendingDataset.mComponents.mIsDelayPresent            = true;
+        otDatasetConvertToTlvs(&halfPendingDataset, &halfPendingTlvs);
+
+        error          = OT_ERROR_NONE;
+        resultReceived = false;
+        host.ScheduleMigration(halfPendingTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+        EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
+    }
+
+    // 4c. Missing ActiveTimestamp TLV.
+    {
+        otOperationalDataset     noActiveTsDataset = dataset;
+        otOperationalDatasetTlvs noActiveTsTlvs{};
+
+        noActiveTsDataset.mComponents.mIsActiveTimestampPresent  = false;
+        noActiveTsDataset.mPendingTimestamp.mSeconds             = 1;
+        noActiveTsDataset.mComponents.mIsPendingTimestampPresent = true;
+        noActiveTsDataset.mDelay                                 = 30000;
+        noActiveTsDataset.mComponents.mIsDelayPresent            = true;
+        otDatasetConvertToTlvs(&noActiveTsDataset, &noActiveTsTlvs);
+
+        error          = OT_ERROR_NONE;
+        resultReceived = false;
+        host.ScheduleMigration(noActiveTsTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+        EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
+    }
+
+    // 4d. Truncated TLV buffer, oversized mLength (> sizeof(mTlvs)), and extended-length escape (0xff).
+    {
+        otOperationalDatasetTlvs malformedTlvs{};
+
+        malformedTlvs.mTlvs[0] = OT_MESHCOP_TLV_CHANNEL;
+        malformedTlvs.mTlvs[1] = 10;
+        malformedTlvs.mTlvs[2] = 0x00;
+        malformedTlvs.mLength  = 3;
+
+        error          = OT_ERROR_NONE;
+        resultReceived = false;
+        host.ScheduleMigration(malformedTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+        EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
+
+        otOperationalDatasetTlvs maxLenTlvs{};
+        memset(maxLenTlvs.mTlvs, 0xaa, sizeof(maxLenTlvs.mTlvs));
+        maxLenTlvs.mTlvs[0] = OT_MESHCOP_TLV_VENDOR_DATA_TLV;
+        maxLenTlvs.mTlvs[1] = 252;
+        maxLenTlvs.mLength  = 255;
+
+        error          = OT_ERROR_NONE;
+        resultReceived = false;
+        host.ScheduleMigration(maxLenTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+        EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
+
+        otOperationalDatasetTlvs extLenTlvs{};
+        memset(extLenTlvs.mTlvs, 0, sizeof(extLenTlvs.mTlvs));
+        extLenTlvs.mTlvs[sizeof(extLenTlvs.mTlvs) - 2] = OT_MESHCOP_TLV_VENDOR_DATA_TLV;
+        extLenTlvs.mTlvs[sizeof(extLenTlvs.mTlvs) - 1] = 0xff;
+        extLenTlvs.mLength                             = sizeof(extLenTlvs.mTlvs);
+
+        error          = OT_ERROR_NONE;
+        resultReceived = false;
+        host.ScheduleMigration(extLenTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+        EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
+
+        // Directly exercise StripTlvs() and ProcessDatasetForMigration() bounds checks on mLength = 255 and 0xff.
+        otOperationalDatasetTlvs strippedMax =
+            otbr::Host::RcpHost::StripTlvs(maxLenTlvs, {OT_MESHCOP_TLV_PENDINGTIMESTAMP, OT_MESHCOP_TLV_DELAYTIMER});
+        EXPECT_EQ(strippedMax.mLength, 0U);
+        EXPECT_EQ(otbr::Host::ThreadHelper::ProcessDatasetForMigration(maxLenTlvs, 30000), OT_ERROR_INVALID_ARGS);
+
+        otOperationalDatasetTlvs strippedExt =
+            otbr::Host::RcpHost::StripTlvs(extLenTlvs, {OT_MESHCOP_TLV_PENDINGTIMESTAMP, OT_MESHCOP_TLV_DELAYTIMER});
+        EXPECT_EQ(strippedExt.mLength, sizeof(extLenTlvs.mTlvs) - 2);
+        EXPECT_EQ(otbr::Host::ThreadHelper::ProcessDatasetForMigration(extLenTlvs, 30000), OT_ERROR_INVALID_ARGS);
+    }
+
+    // 4e. Oversized Active Dataset (no room for PendingTimestamp + DelayTimer when MGMT_PENDING_SET.req is needed).
+    {
+        otOperationalDataset     oversizedDataset = dataset;
+        otOperationalDatasetTlvs oversizedTlvs{};
+
+        oversizedDataset.mActiveTimestamp.mSeconds++;
+        oversizedDataset.mChannel                               = (dataset.mChannel == 11) ? 12 : 11;
+        oversizedDataset.mComponents.mIsPendingTimestampPresent = false;
+        oversizedDataset.mComponents.mIsDelayPresent            = false;
+        otDatasetConvertToTlvs(&oversizedDataset, &oversizedTlvs);
+
+        const size_t paddingValueLen                 = sizeof(oversizedTlvs.mTlvs) - oversizedTlvs.mLength - 2;
+        oversizedTlvs.mTlvs[oversizedTlvs.mLength++] = OT_MESHCOP_TLV_VENDOR_DATA_TLV;
+        oversizedTlvs.mTlvs[oversizedTlvs.mLength++] = static_cast<uint8_t>(paddingValueLen);
+        memset(oversizedTlvs.mTlvs + oversizedTlvs.mLength, 0xaa, paddingValueLen);
+        oversizedTlvs.mLength += static_cast<uint8_t>(paddingValueLen);
+
+        error          = OT_ERROR_NONE;
+        resultReceived = false;
+        host.ScheduleMigration(oversizedTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+        EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
+    }
+
+    // 5a. Schedule migration with a Pending Dataset that does not affect connectivity (uses MGMT_ACTIVE_SET.req
+    // and preserves unknown/vendor TLVs while stripping PendingTimestamp and DelayTimer).
+    const uint16_t initialChannel = dataset.mChannel;
+
+    dataset.mActiveTimestamp.mSeconds++;
+    dataset.mPendingTimestamp.mSeconds             = 1;
+    dataset.mComponents.mIsPendingTimestampPresent = true;
+    dataset.mDelay                                 = 30000;
+    dataset.mComponents.mIsDelayPresent            = true;
+    OT_UNUSED_VARIABLE(otNetworkNameFromString(&dataset.mNetworkName, "NewNetName"));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+    const uint8_t vendorTlv[] = {OT_MESHCOP_TLV_VENDOR_DATA_TLV, 2, 0xab, 0xcd};
+    ASSERT_LE(datasetTlvs.mLength + sizeof(vendorTlv), sizeof(datasetTlvs.mTlvs));
+    memcpy(datasetTlvs.mTlvs + datasetTlvs.mLength, vendorTlv, sizeof(vendorTlv));
+    datasetTlvs.mLength += sizeof(vendorTlv);
+
+    error          = OT_ERROR_FAILED;
+    resultReceived = false;
+    host.ScheduleMigration(datasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_TRUE(resultReceived);
     EXPECT_EQ(error, OT_ERROR_NONE);
+    {
+        otOperationalDataset     activeDataset{};
+        otOperationalDatasetTlvs activeDatasetTlvs{};
+        otOperationalDataset     pendingDataset{};
+
+        EXPECT_EQ(otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &activeDataset), OT_ERROR_NONE);
+        EXPECT_STREQ(activeDataset.mNetworkName.m8, "NewNetName");
+        EXPECT_FALSE(activeDataset.mComponents.mIsPendingTimestampPresent);
+        EXPECT_FALSE(activeDataset.mComponents.mIsDelayPresent);
+        EXPECT_EQ(otDatasetGetPending(ot::FakePlatform::CurrentInstance(), &pendingDataset), OT_ERROR_NOT_FOUND);
+
+        EXPECT_EQ(otDatasetGetActiveTlvs(ot::FakePlatform::CurrentInstance(), &activeDatasetTlvs), OT_ERROR_NONE);
+        bool foundVendorTlv = false;
+        for (size_t i = 0; i + sizeof(vendorTlv) <= activeDatasetTlvs.mLength; ++i)
+        {
+            if (memcmp(activeDatasetTlvs.mTlvs + i, vendorTlv, sizeof(vendorTlv)) == 0)
+            {
+                foundVendorTlv = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(foundVendorTlv);
+    }
+
+    // 5b. Schedule migration with an Active Dataset that does not affect connectivity
+    // (sends MGMT_ACTIVE_SET.req directly and preserves vendor TLVs).
+    {
+        otOperationalDataset     directActiveDataset = dataset;
+        otOperationalDatasetTlvs directActiveTlvs{};
+        const uint8_t            vendorTlv2[] = {OT_MESHCOP_TLV_VENDOR_DATA_TLV, 2, 0x12, 0x34};
+
+        dataset.mActiveTimestamp.mSeconds++;
+        directActiveDataset.mActiveTimestamp                       = dataset.mActiveTimestamp;
+        directActiveDataset.mComponents.mIsPendingTimestampPresent = false;
+        directActiveDataset.mComponents.mIsDelayPresent            = false;
+        OT_UNUSED_VARIABLE(otNetworkNameFromString(&directActiveDataset.mNetworkName, "ActiveNetName"));
+        dataset.mNetworkName = directActiveDataset.mNetworkName;
+        otDatasetConvertToTlvs(&directActiveDataset, &directActiveTlvs);
+
+        ASSERT_LE(directActiveTlvs.mLength + sizeof(vendorTlv2), sizeof(directActiveTlvs.mTlvs));
+        memcpy(directActiveTlvs.mTlvs + directActiveTlvs.mLength, vendorTlv2, sizeof(vendorTlv2));
+        directActiveTlvs.mLength += sizeof(vendorTlv2);
+
+        error          = OT_ERROR_FAILED;
+        resultReceived = false;
+        host.ScheduleMigration(directActiveTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_NONE);
+
+        otOperationalDataset     curActiveDataset{};
+        otOperationalDatasetTlvs curActiveTlvs{};
+        otOperationalDataset     curPendingDataset{};
+
+        EXPECT_EQ(otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &curActiveDataset), OT_ERROR_NONE);
+        EXPECT_STREQ(curActiveDataset.mNetworkName.m8, "ActiveNetName");
+        EXPECT_EQ(otDatasetGetPending(ot::FakePlatform::CurrentInstance(), &curPendingDataset), OT_ERROR_NOT_FOUND);
+
+        EXPECT_EQ(otDatasetGetActiveTlvs(ot::FakePlatform::CurrentInstance(), &curActiveTlvs), OT_ERROR_NONE);
+        bool foundVendorTlv = false;
+        for (size_t i = 0; i + sizeof(vendorTlv2) <= curActiveTlvs.mLength; ++i)
+        {
+            if (memcmp(curActiveTlvs.mTlvs + i, vendorTlv2, sizeof(vendorTlv2)) == 0)
+            {
+                foundVendorTlv = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(foundVendorTlv);
+    }
+
+    // 6. Non-incremented ActiveTimestamp on MGMT_ACTIVE_SET.req is rejected by the Leader.
+    dataset.mPendingTimestamp.mSeconds             = 2;
+    dataset.mComponents.mIsPendingTimestampPresent = true;
+    dataset.mDelay                                 = 30000;
+    dataset.mComponents.mIsDelayPresent            = true;
+    OT_UNUSED_VARIABLE(otNetworkNameFromString(&dataset.mNetworkName, "RejectedName"));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.ScheduleMigration(datasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_TRUE(resultReceived);
+    EXPECT_EQ(error, OT_ERROR_REJECTED);
+    {
+        otOperationalDataset activeDataset{};
+
+        EXPECT_EQ(otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &activeDataset), OT_ERROR_NONE);
+        EXPECT_STREQ(activeDataset.mNetworkName.m8, "ActiveNetName");
+    }
+
+    // 7. Schedule migration when dataset affects connectivity (uses MGMT_PENDING_SET.req),
+    // and reject an overlapping ScheduleMigration() across the MGMT_ACTIVE_SET.req path with OT_ERROR_BUSY.
+    dataset.mActiveTimestamp.mSeconds++;
+    dataset.mPendingTimestamp.mSeconds             = 3;
+    dataset.mComponents.mIsPendingTimestampPresent = true;
+    dataset.mDelay                                 = 30000;
+    dataset.mComponents.mIsDelayPresent            = true;
+    OT_UNUSED_VARIABLE(otNetworkNameFromString(&dataset.mNetworkName, "PendingNet"));
+    dataset.mChannel = (initialChannel == 11) ? 12 : 11;
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+    otOperationalDataset     overlappingDataset = dataset;
+    otOperationalDatasetTlvs overlappingTlvs{};
+    overlappingDataset.mChannel = initialChannel;
+    overlappingDataset.mActiveTimestamp.mSeconds++;
+    overlappingDataset.mPendingTimestamp.mSeconds = 4;
+    otDatasetConvertToTlvs(&overlappingDataset, &overlappingTlvs);
+
+    otError     secondError          = OT_ERROR_NONE;
+    std::string secondErrorMsg       = "";
+    bool        secondResultReceived = false;
+    auto        secondReceiver       = [&secondResultReceived, &secondError, &secondErrorMsg](otError            aError,
+                                                                                 const std::string &aErrorMsg) {
+        secondResultReceived = true;
+        secondError          = aError;
+        secondErrorMsg       = aErrorMsg;
+    };
+
+    error          = OT_ERROR_FAILED;
+    resultReceived = false;
+    host.ScheduleMigration(datasetTlvs, receiver);
+    host.ScheduleMigration(overlappingTlvs, secondReceiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&resultReceived, &secondResultReceived]() { return resultReceived && secondResultReceived; });
+    EXPECT_TRUE(secondResultReceived);
+    EXPECT_EQ(secondError, OT_ERROR_BUSY);
+    EXPECT_STREQ(secondErrorMsg.c_str(), "Another migration is in progress");
+    EXPECT_TRUE(resultReceived);
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    {
+        otOperationalDataset pendingDataset{};
+
+        EXPECT_EQ(otDatasetGetPending(ot::FakePlatform::CurrentInstance(), &pendingDataset), OT_ERROR_NONE);
+        EXPECT_EQ(pendingDataset.mChannel, dataset.mChannel);
+    }
+
+    // 8. While a Pending Dataset is already active, calling ScheduleMigration() with connectivity
+    // matching the current Active Dataset uses MGMT_PENDING_SET.req to supersede the Pending Dataset.
+    dataset.mChannel = initialChannel;
+    dataset.mActiveTimestamp.mSeconds++;
+    dataset.mPendingTimestamp.mSeconds             = 5;
+    dataset.mComponents.mIsPendingTimestampPresent = true;
+    dataset.mDelay                                 = 30000;
+    dataset.mComponents.mIsDelayPresent            = true;
+    OT_UNUSED_VARIABLE(otNetworkNameFromString(&dataset.mNetworkName, "SupersededNet"));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+    error          = OT_ERROR_FAILED;
+    resultReceived = false;
+    host.ScheduleMigration(datasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_TRUE(resultReceived);
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    {
+        otOperationalDataset pendingDataset{};
+
+        EXPECT_EQ(otDatasetGetPending(ot::FakePlatform::CurrentInstance(), &pendingDataset), OT_ERROR_NONE);
+        EXPECT_EQ(pendingDataset.mChannel, initialChannel);
+        EXPECT_STREQ(pendingDataset.mNetworkName.m8, "SupersededNet");
+        EXPECT_EQ(pendingDataset.mPendingTimestamp.mSeconds, uint64_t{5});
+    }
+
+    // 9. Active Dataset that affects connectivity synthesizes PendingTimestamp + default 300s DelayTimer
+    // and preserves vendor TLVs via MGMT_PENDING_SET.req.
+    otTimestamp prevPendingTimestamp{};
+    {
+        otOperationalDataset     activeMigDataset = dataset;
+        otOperationalDatasetTlvs activeMigTlvs{};
+
+        dataset.mActiveTimestamp.mSeconds++;
+        activeMigDataset.mActiveTimestamp                       = dataset.mActiveTimestamp;
+        activeMigDataset.mChannel                               = (initialChannel == 11) ? 12 : 11;
+        activeMigDataset.mComponents.mIsPendingTimestampPresent = false;
+        activeMigDataset.mComponents.mIsDelayPresent            = false;
+        OT_UNUSED_VARIABLE(otNetworkNameFromString(&activeMigDataset.mNetworkName, "ActPendingNet"));
+        otDatasetConvertToTlvs(&activeMigDataset, &activeMigTlvs);
+
+        ASSERT_LE(activeMigTlvs.mLength + sizeof(vendorTlv), sizeof(activeMigTlvs.mTlvs));
+        memcpy(activeMigTlvs.mTlvs + activeMigTlvs.mLength, vendorTlv, sizeof(vendorTlv));
+        activeMigTlvs.mLength += sizeof(vendorTlv);
+
+        error          = OT_ERROR_FAILED;
+        resultReceived = false;
+        host.ScheduleMigration(activeMigTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_NONE);
+
+        otOperationalDataset     pendingDataset{};
+        otOperationalDatasetTlvs pendingTlvs{};
+
+        EXPECT_EQ(otDatasetGetPending(ot::FakePlatform::CurrentInstance(), &pendingDataset), OT_ERROR_NONE);
+        EXPECT_EQ(pendingDataset.mChannel, activeMigDataset.mChannel);
+        EXPECT_STREQ(pendingDataset.mNetworkName.m8, "ActPendingNet");
+        EXPECT_TRUE(pendingDataset.mComponents.mIsPendingTimestampPresent);
+        EXPECT_GT(pendingDataset.mPendingTimestamp.mSeconds, uint64_t{5});
+        prevPendingTimestamp = pendingDataset.mPendingTimestamp;
+        EXPECT_TRUE(pendingDataset.mComponents.mIsDelayPresent);
+        EXPECT_GT(pendingDataset.mDelay, 250000U);
+        EXPECT_LE(pendingDataset.mDelay, 300000U);
+
+        EXPECT_EQ(otDatasetGetPendingTlvs(ot::FakePlatform::CurrentInstance(), &pendingTlvs), OT_ERROR_NONE);
+        bool foundVendorTlv = false;
+        for (size_t i = 0; i + sizeof(vendorTlv) <= pendingTlvs.mLength; ++i)
+        {
+            if (memcmp(pendingTlvs.mTlvs + i, vendorTlv, sizeof(vendorTlv)) == 0)
+            {
+                foundVendorTlv = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(foundVendorTlv);
+    }
+
+    // 10. Active Dataset that does not affect connectivity while a Pending Dataset is active
+    // synthesizes PendingTimestamp (monotonically advancing past the active Pending Dataset even within
+    // the same tick) + minimum 30s DelayTimer to supersede the Pending Dataset.
+    {
+        otOperationalDataset     activeSupersedeDataset = dataset;
+        otOperationalDatasetTlvs activeSupersedeTlvs{};
+
+        dataset.mActiveTimestamp.mSeconds++;
+        activeSupersedeDataset.mActiveTimestamp                       = dataset.mActiveTimestamp;
+        activeSupersedeDataset.mChannel                               = initialChannel;
+        activeSupersedeDataset.mComponents.mIsPendingTimestampPresent = false;
+        activeSupersedeDataset.mComponents.mIsDelayPresent            = false;
+        OT_UNUSED_VARIABLE(otNetworkNameFromString(&activeSupersedeDataset.mNetworkName, "ActSuperseded"));
+        otDatasetConvertToTlvs(&activeSupersedeDataset, &activeSupersedeTlvs);
+
+        error          = OT_ERROR_FAILED;
+        resultReceived = false;
+        host.ScheduleMigration(activeSupersedeTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_NONE);
+
+        otOperationalDataset pendingDataset{};
+
+        EXPECT_EQ(otDatasetGetPending(ot::FakePlatform::CurrentInstance(), &pendingDataset), OT_ERROR_NONE);
+        EXPECT_EQ(pendingDataset.mChannel, initialChannel);
+        EXPECT_STREQ(pendingDataset.mNetworkName.m8, "ActSuperseded");
+        EXPECT_TRUE(pendingDataset.mComponents.mIsPendingTimestampPresent);
+        EXPECT_TRUE((pendingDataset.mPendingTimestamp.mSeconds > prevPendingTimestamp.mSeconds) ||
+                    (pendingDataset.mPendingTimestamp.mSeconds == prevPendingTimestamp.mSeconds &&
+                     pendingDataset.mPendingTimestamp.mTicks > prevPendingTimestamp.mTicks));
+        EXPECT_TRUE(pendingDataset.mComponents.mIsDelayPresent);
+        EXPECT_GT(pendingDataset.mDelay, 0U);
+        EXPECT_LE(pendingDataset.mDelay, 30000U);
+
+        // Also verify superseding when the active Pending Dataset has a PendingTimestamp ahead of CLOCK_REALTIME.
+        otOperationalDataset     futurePendingDataset = dataset;
+        otOperationalDatasetTlvs futurePendingTlvs{};
+        const uint64_t           futureSeconds = pendingDataset.mPendingTimestamp.mSeconds + 100000ULL;
+
+        dataset.mActiveTimestamp.mSeconds++;
+        futurePendingDataset.mActiveTimestamp                       = dataset.mActiveTimestamp;
+        futurePendingDataset.mChannel                               = (initialChannel == 11) ? 12 : 11;
+        futurePendingDataset.mPendingTimestamp.mSeconds             = futureSeconds;
+        futurePendingDataset.mPendingTimestamp.mTicks               = 32767;
+        futurePendingDataset.mPendingTimestamp.mAuthoritative       = true;
+        futurePendingDataset.mComponents.mIsPendingTimestampPresent = true;
+        futurePendingDataset.mDelay                                 = 30000;
+        futurePendingDataset.mComponents.mIsDelayPresent            = true;
+        otDatasetConvertToTlvs(&futurePendingDataset, &futurePendingTlvs);
+
+        error          = OT_ERROR_FAILED;
+        resultReceived = false;
+        host.ScheduleMigration(futurePendingTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_NONE);
+
+        dataset.mActiveTimestamp.mSeconds++;
+        activeSupersedeDataset.mActiveTimestamp = dataset.mActiveTimestamp;
+        OT_UNUSED_VARIABLE(otNetworkNameFromString(&activeSupersedeDataset.mNetworkName, "FutureSuperseded"));
+        otDatasetConvertToTlvs(&activeSupersedeDataset, &activeSupersedeTlvs);
+
+        error          = OT_ERROR_FAILED;
+        resultReceived = false;
+        host.ScheduleMigration(activeSupersedeTlvs, receiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+        EXPECT_TRUE(resultReceived);
+        EXPECT_EQ(error, OT_ERROR_NONE);
+
+        EXPECT_EQ(otDatasetGetPending(ot::FakePlatform::CurrentInstance(), &pendingDataset), OT_ERROR_NONE);
+        EXPECT_STREQ(pendingDataset.mNetworkName.m8, "FutureSuperseded");
+        EXPECT_EQ(pendingDataset.mPendingTimestamp.mSeconds, futureSeconds + 1ULL);
+        EXPECT_EQ(pendingDataset.mPendingTimestamp.mTicks, 0U);
+        EXPECT_FALSE(pendingDataset.mPendingTimestamp.mAuthoritative);
+    }
 
     host.Deinit();
 }
