@@ -32,12 +32,14 @@
 
 #include <memory>
 
+#include <openthread/dataset.h>
 #include <openthread/error.h>
 #include <openthread/thread.h>
 
 #include <openthread/openthread-system.h>
 
 #include "host/async_task.hpp"
+#include "host/thread_helper.hpp"
 #include "lib/spinel/spinel_driver.hpp"
 
 namespace otbr {
@@ -197,23 +199,37 @@ void NcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
     task->Run();
 }
 
-void NcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
-                                const AsyncResultReceiver       aReceiver)
+void NcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aOpDatasetTlvs, const AsyncResultReceiver aReceiver)
 {
-    otDeviceRole role  = GetDeviceRole();
-    otError      error = OT_ERROR_NONE;
-    auto errorHandler  = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+    otDeviceRole             role  = GetDeviceRole();
+    otError                  error = OT_ERROR_NONE;
+    std::string              errorMsg;
+    otOperationalDatasetTlvs pendingDatasetTlvs = aOpDatasetTlvs;
+    bool                     isPendingDataset   = otDatasetIsValid(&aOpDatasetTlvs, /* aActive */ false);
+    bool isActiveDataset = !isPendingDataset && otDatasetIsValid(&aOpDatasetTlvs, /* aActive */ true);
+    auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
 
-    VerifyOrExit(role != OT_DEVICE_ROLE_DISABLED && role != OT_DEVICE_ROLE_DETACHED, error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(role != OT_DEVICE_ROLE_DISABLED && role != OT_DEVICE_ROLE_DETACHED, error = OT_ERROR_INVALID_STATE,
+                 errorMsg = "Cannot schedule migration when this device is detached");
 
-    mNcpSpinel.DatasetMgmtSetPending(std::make_shared<otOperationalDatasetTlvs>(aPendingOpDatasetTlvs),
+    VerifyOrExit(isPendingDataset || isActiveDataset, error = OT_ERROR_INVALID_ARGS,
+                 errorMsg = "Operational dataset is not valid");
+
+    if (isActiveDataset)
+    {
+        SuccessOrExit(error    = ThreadHelper::ProcessDatasetForMigration(pendingDatasetTlvs, kMinMigrationDelayMs),
+                      errorMsg = "Operational dataset is not valid");
+    }
+
+    // TODO: Use MGMT_ACTIVE_SET.req when no Pending Dataset is active and the new dataset does not affect
+    // connectivity once Spinel/NCP supports it.
+    mNcpSpinel.DatasetMgmtSetPending(std::make_shared<otOperationalDatasetTlvs>(pendingDatasetTlvs),
                                      std::make_shared<AsyncTask>(errorHandler));
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        mTaskRunner.Post(
-            [aReceiver, error](void) { aReceiver(error, "Cannot schedule migration when this device is detached"); });
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
     }
 }
 

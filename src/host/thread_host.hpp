@@ -51,6 +51,9 @@
 namespace otbr {
 namespace Host {
 
+static constexpr uint32_t kDefaultMigrationDelayMs = 300 * 1000; ///< Default Pending Dataset Delay Timer (5 minutes)
+static constexpr uint32_t kMinMigrationDelayMs     = 30 * 1000;  ///< Minimum Pending Dataset Delay Timer (30 seconds)
+
 /**
  * This interface provides access to some Thread network properties in a sync way.
  *
@@ -204,12 +207,17 @@ public:
     virtual void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) = 0;
 
     /**
-     * This method migrates this device to the new network specified by @p aPendingOpDatasetTlvs.
+     * This method migrates this device to the new network specified by @p aOpDatasetTlvs.
      *
-     * @param[in] aPendingOpDatasetTlvs  A reference to the pending operational dataset of the Thread network.
-     * @param[in] aReceiver              A receiver to get the async result of this operation.
+     * @p aOpDatasetTlvs may be either a Pending or Active Operational Dataset. The system will auto set the
+     * Pending Timestamp and Delay Timer if an Active Dataset that affects the connectivity, or discard the
+     * Pending Timestamp and Delay Timer if a Pending Timestamp does not affect the connectivity.
+     *
+     * @param[in] aOpDatasetTlvs  A reference to the pending or active operational dataset of the Thread network.
+     * @param[in] aReceiver       A receiver to get the async result of this schedule. The migration result should
+     *                            be received by monitoring the active or pending dataset of the network.
      */
-    virtual void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+    virtual void ScheduleMigration(const otOperationalDatasetTlvs &aOpDatasetTlvs,
                                    const AsyncResultReceiver       aReceiver) = 0;
 
     /**
