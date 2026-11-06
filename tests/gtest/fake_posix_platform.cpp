@@ -56,6 +56,11 @@ void otSysCountInfraNetifAddresses(otSysInfraNetIfAddressCounters *)
 {
 }
 
+const char *otSysGetThreadNetifName(void)
+{
+    return "";
+}
+
 const char *otSysGetInfraNetifName(void)
 {
     return nullptr;

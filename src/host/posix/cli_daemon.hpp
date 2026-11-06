@@ -34,7 +34,9 @@
 #ifndef OTBR_AGENT_POSIX_DAEMON_HPP_
 #define OTBR_AGENT_POSIX_DAEMON_HPP_
 
-#include <vector>
+#include <string>
+
+#include <openthread/platform/toolchain.h>
 
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
@@ -44,6 +46,16 @@ namespace otbr {
 class CliDaemon
 {
 public:
+    /**
+     * This enumeration defines the CLI Daemon modes.
+     */
+    enum : uint8_t
+    {
+        OTBR_DAEMON_MODE_UNIX_SOCKET = (1 << 0), ///< Enable CLI over Unix socket.
+        OTBR_DAEMON_MODE_CONSOLE     = (1 << 1), ///< Enable CLI over console (stdin/stdout).
+    };
+    static constexpr size_t kCliMaxLineLength = OTBR_CONFIG_CLI_MAX_LINE_LENGTH;
+
     class Dependencies
     {
     public:
@@ -52,30 +64,86 @@ public:
         virtual otbrError InputCommandLine(const char *aLine);
     };
 
-    explicit CliDaemon(Dependencies &aDependencies);
+    explicit CliDaemon(Dependencies &aDependencies, uint8_t aMode = OTBR_DAEMON_MODE_UNIX_SOCKET);
+    ~CliDaemon(void);
 
     otbrError Init(const std::string &aNetIfName);
     void      Deinit(void);
 
-    void HandleCommandOutput(const char *aOutput);
+    /**
+     * Keeps the socket file on the following Deinit() calls of all daemons in this process.
+     *
+     * Called before the process restarts itself, so that an interactive ot-ctl reconnects to the restarted daemon
+     * instead of giving up because the socket file is missing.
+     */
+    static void KeepSocketFileOnDeinit(void) { sKeepSocketFile = true; }
+
+    void Update(MainloopContext &aContext);
     void Process(const MainloopContext &aContext);
-    void UpdateFdSet(MainloopContext &aContext);
+
+    void ProcessLine(char *aLine, int aOutputFd);
+
+    int OutputFormatV(const char *aFormat, va_list aArguments) OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 0);
+    int OutputFormat(const char *aFormat, ...) OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 3);
 
 private:
-    static constexpr size_t kCliMaxLineLength = OTBR_CONFIG_CLI_MAX_LINE_LENGTH;
+#if defined(HAVE_LIBEDIT) || defined(HAVE_LIBREADLINE)
+    class Readline
+    {
+    public:
+        void Init(CliDaemon &aDaemon);
+        void Deinit(void);
+        void Update(MainloopContext &aContext);
+        void Process(const MainloopContext &aContext);
 
-    void Clear(void);
+    private:
+        static void       InputCallback(char *aLine);
+        static CliDaemon *sDaemon;
+    };
 
-    std::string GetSocketFilename(const std::string &aNetIfName, const char *aSuffix) const;
+    using Console = Readline;
+#else
+    class Stdio
+    {
+    public:
+        void Init(CliDaemon &aDaemon);
+        void Deinit(void);
+        void Update(MainloopContext &aContext);
+        void Process(const MainloopContext &aContext);
 
-    otbrError CreateListenSocket(const std::string &aNetIfName);
-    void      InitializeSessionSocket(void);
+    private:
+        CliDaemon *mDaemon = nullptr;
+    };
 
-    int mListenSocket;
-    int mDaemonLock;
-    int mSessionSocket;
+    using Console = Stdio;
+#endif
+
+    int       UnixSocketOutputV(const char *aFormat, va_list aArguments) OT_TOOL_PRINTF_STYLE_FORMAT_ARG_CHECK(2, 0);
+    int       UnixSocketOutput(const char *aOutput, size_t aLength);
+    otbrError UnixSocketCreate(const std::string &aNetIfName);
+    void      UnixSocketClose(void);
+    void      UnixSocketSessionInit(void);
+    void      UnixSocketSessionClear(void);
+    void      UnixSocketSessionRead(void);
+
+    void StopConsole(void);
+    void HandleConsoleClosed(void);
+
+    Console     mConsole;
+    bool        mConsoleActive;
+    int         mListenSocket;
+    int         mDaemonLock;
+    std::string mSocketFilename; // The socket file bound by this daemon.
+    int         mSessionSocket;
+    int         mOutputFd;
+    char        mSessionBuffer[kCliMaxLineLength]; // Partial command line received on the session socket.
+    size_t      mSessionBufferLength;
+    bool        mSessionDiscarding; // Dropping the rest of a command line which is too long.
+    uint8_t     mDaemonMode;
 
     Dependencies &mDeps;
+
+    static bool sKeepSocketFile;
 };
 
 } // namespace otbr

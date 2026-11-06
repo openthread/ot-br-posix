@@ -104,7 +104,7 @@ readonly OTBR_DBUS_CONF
 OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 readonly OTBR_WEB_PATH
 
-OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
+OT_CTL="${ABS_TOP_BUILDDIR}/src/agent/ot-ctl"
 readonly OT_CTL
 
 # The node ids
