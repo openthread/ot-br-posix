@@ -46,7 +46,7 @@ permissions:
 jobs:
 
   border-router:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -149,8 +149,9 @@ jobs:
     - name: Bootstrap OpenThread Test
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
-        sudo rm /etc/apt/sources.list.d/* && sudo apt-get update
-        sudo apt-get --no-install-recommends install -y python3-setuptools python3-wheel ninja-build nodejs npm
+        sudo apt-get update
+        sudo apt-get --no-install-recommends install -y python3-setuptools python3-wheel ninja-build
+        command -v npm || sudo apt-get --no-install-recommends install -y nodejs npm
         python3 -m pip install -r third_party/openthread/repo/tests/scripts/thread-cert/requirements.txt
         sudo bash third_party/openthread/repo/script/install_socat
     - name: Build OpenThread
