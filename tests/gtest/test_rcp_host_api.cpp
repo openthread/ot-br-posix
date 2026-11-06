@@ -64,6 +64,12 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
         // Process pending tasks before checking the deadline, so that an
         // `aTimeoutSec` of 0 still gets exactly one Update()/Process() pass
         // instead of exiting the loop without processing anything.
+        aMainloop.mMaxFd   = -1;
+        aMainloop.mTimeout = {1, 0};
+        FD_ZERO(&aMainloop.mReadFdSet);
+        FD_ZERO(&aMainloop.mWriteFdSet);
+        FD_ZERO(&aMainloop.mErrorFdSet);
+
         otbr::MainloopManager::GetInstance().Update(aMainloop);
         otbr::MainloopManager::GetInstance().Process(aMainloop);
 
@@ -89,7 +95,7 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
     otbr::Host::ThreadHost::ThreadEnabledStateCallback enabledStateCallback =
         [&threadEnabledState](otbr::Host::ThreadEnabledState aState) { threadEnabledState = aState; };
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                             /* aEnableAutoAttach */ false);
+                             /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     host.Init();
     host.AddThreadEnabledStateChangedCallback(enabledStateCallback);
@@ -166,7 +172,7 @@ TEST(RcpHostApi, SetCountryCodeWorkCorrectly)
         error          = aError;
     };
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                             /* aEnableAutoAttach */ false);
+                             /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     // 1. Call SetCountryCode when host hasn't been initialized.
     otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
@@ -220,7 +226,7 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterLeave)
     };
 
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                             /* aEnableAutoAttach */ false);
+                             /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     // 1. Call Leave when host hasn't been initialized.
     otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
@@ -353,7 +359,7 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
         errorMsg       = aErrorMsg;
     };
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                             /* aEnableAutoAttach */ false);
+                             /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     otOperationalDataset     dataset{};
     otOperationalDatasetTlvs datasetTlvs{};
@@ -886,7 +892,7 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
         errorMsg_       = aErrorMsg;
     };
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                             /* aEnableAutoAttach */ false);
+                             /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     otOperationalDataset dataset;
     (void)dataset;
@@ -1031,7 +1037,7 @@ TEST(RcpHostApi, BorderAgentCallbackEnablesOnAttach)
     otbr::MainloopContext mainloop;
     otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                /* aDryRun */ false,
-                               /* aEnableAutoAttach */ false);
+                               /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     host.Init();
 
@@ -1074,7 +1080,7 @@ TEST(RcpHostApi, ThreadRoleChangedCallbackInvoked)
     otbr::MainloopContext mainloop;
     otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                /* aDryRun */ false,
-                               /* aEnableAutoAttach */ false);
+                               /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     host.Init();
 
@@ -1120,7 +1126,7 @@ TEST(RcpHostApi, ThreadDetachGracefullyCallbackReentrancy)
     otbr::MainloopContext mainloop;
     otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                /* aDryRun */ false,
-                               /* aEnableAutoAttach */ false);
+                               /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     host.Init();
 
@@ -1189,7 +1195,7 @@ TEST(RcpHostApi, JoinDuringPendingDetachSupersedesEarlierJoins)
     otbr::MainloopContext    mainloop;
     otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                   /* aDryRun */ false,
-                                  /* aEnableAutoAttach */ false);
+                                  /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
     otInstance              *instance;
     bool                     resultReceived = false;
     otOperationalDataset     datasets[3];
@@ -1260,7 +1266,7 @@ TEST(RcpHostApi, JoinFromAbortedJoinReceiverIsAppliedAfterDetach)
     otbr::MainloopContext    mainloop;
     otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                   /* aDryRun */ false,
-                                  /* aEnableAutoAttach */ false);
+                                  /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
     otInstance              *instance;
     bool                     resultReceived = false;
     otOperationalDataset     datasets[3];
@@ -1323,7 +1329,7 @@ TEST(RcpHostApi, JoinSucceedsAfterResetDuringPendingDetach)
     otbr::MainloopContext    mainloop;
     otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                   /* aDryRun */ false,
-                                  /* aEnableAutoAttach */ false);
+                                  /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
     otInstance              *instance;
     bool                     resultReceived = false;
     otOperationalDataset     datasets[3];
@@ -1381,7 +1387,7 @@ TEST(RcpHostApi, ResetFromAbortedJoinReceiverAbortsLeave)
     otbr::MainloopContext    mainloop;
     otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                   /* aDryRun */ false,
-                                  /* aEnableAutoAttach */ false);
+                                  /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
     otInstance              *instance;
     bool                     resultReceived = false;
     otOperationalDataset     datasets[2];
@@ -1456,7 +1462,7 @@ TEST(RcpHostApi, ReceiversClearedAfterCompletion)
     otbr::MainloopContext mainloop;
     otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                /* aDryRun */ false,
-                               /* aEnableAutoAttach */ false);
+                               /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     host.Init();
 
@@ -1589,7 +1595,7 @@ TEST(RcpHostApi, ScanErrorClearsHandler)
     otbr::MainloopContext mainloop;
     otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                /* aDryRun */ false,
-                               /* aEnableAutoAttach */ false);
+                               /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     host.Init();
 
@@ -1708,7 +1714,7 @@ TEST(RcpHostApi, EnergyScanHandlerReleasedAfterCompletion)
     otbr::MainloopContext mainloop;
     otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
                                /* aDryRun */ false,
-                               /* aEnableAutoAttach */ false);
+                               /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
 
     host.Init();
 
@@ -1785,7 +1791,7 @@ static bool EndsWith(const std::vector<uint8_t> &aData, const std::vector<uint8_
 TEST(RcpHostApi, ResetPreservesVendorInfoAndMeshCoPServiceIdentity)
 {
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                             /* aEnableAutoAttach */ false);
+                             /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
     otInstance         *instance;
 
 #if OTBR_TEST_MESHCOP_SERVICE_IDENTITY
@@ -1840,7 +1846,7 @@ TEST(RcpHostApi, ResetPreservesVendorInfoAndMeshCoPServiceIdentity)
 TEST(RcpHostApi, ResetKeepsVendorInfoClearedWithNull)
 {
     otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                             /* aEnableAutoAttach */ false);
+                             /* aEnableAutoAttach */ false, /* aDataPath */ "", /* aDaemonMode */ 0);
     otInstance         *instance;
 
     host.Init();

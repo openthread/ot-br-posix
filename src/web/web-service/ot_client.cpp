@@ -47,10 +47,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
-// The daemon's socket is where OpenThread's posix platform puts it.
-#include "posix/platform/openthread-posix-daemon-config.h"
-
-#define OPENTHREAD_POSIX_DAEMON_SOCKET_NAME OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME ".sock"
+#define OPENTHREAD_POSIX_DAEMON_SOCKET_NAME OTBR_CONFIG_CLI_DAEMON_SOCKET_BASENAME ".sock"
 
 namespace otbr {
 namespace Web {

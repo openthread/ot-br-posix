@@ -69,6 +69,23 @@
 #endif
 
 /**
+ * @def OTBR_CONFIG_CLI_DAEMON_SOCKET_BASENAME
+ *
+ * Defines the basename of the CLI daemon's Unix socket and lock files, as a format string taking the Thread network
+ * interface name. It is shared by `otbr-agent`, `ot-ctl` and `otbr-web`, and honors
+ * `OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME` if it is defined.
+ */
+#ifndef OTBR_CONFIG_CLI_DAEMON_SOCKET_BASENAME
+#if defined(OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME)
+#define OTBR_CONFIG_CLI_DAEMON_SOCKET_BASENAME OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME
+#elif defined(__linux__)
+#define OTBR_CONFIG_CLI_DAEMON_SOCKET_BASENAME "/run/openthread-%s"
+#else
+#define OTBR_CONFIG_CLI_DAEMON_SOCKET_BASENAME "/var/run/openthread-%s"
+#endif
+#endif
+
+/**
  * @def OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT
  *
  * Specifies the border agent UDP port for meshcop-e service.
