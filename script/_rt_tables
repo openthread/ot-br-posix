@@ -35,6 +35,7 @@ BACKBONE_ROUTER="${BACKBONE_ROUTER:-1}"
 rt_tables_uninstall()
 {
     with BACKBONE_ROUTER || return 0
+    is_macos && return 0 # no routing-table file and no optmem_max on macOS; the backbone router needs neither
 
     if [ -f /etc/iproute2/rt_tables ]; then
         sudo sed -i.bak '/88\s\+openthread/d' /etc/iproute2/rt_tables
@@ -44,6 +45,7 @@ rt_tables_uninstall()
 rt_tables_install()
 {
     with BACKBONE_ROUTER || return 0
+    is_macos && return 0
 
     rt_tables_uninstall
 
