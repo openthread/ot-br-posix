@@ -33,6 +33,12 @@
 
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
+#include <openthread/link.h>
+#include <openthread/trel.h>
+
+#if OTBR_ENABLE_FEATURE_FLAGS
+#include "proto/feature_flag.pb.h"
+#endif
 
 #include "common/mainloop.hpp"
 #include "common/mainloop_manager.hpp"
@@ -61,6 +67,36 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
         }
     }
 }
+
+#if OTBR_ENABLE_TREL
+TEST(RcpHostApi, TrelAvailabilityFollowsRadioUrlConfiguration)
+{
+    auto verifyTrelState = [](const std::vector<const char *> &aRadioUrls, bool aExpectedEnabled) {
+        otbr::Host::RcpHost host("wpan0", aRadioUrls, /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                                 /* aEnableAutoAttach */ false);
+
+        host.Init();
+
+#if OTBR_ENABLE_FEATURE_FLAGS
+        otbr::FeatureFlagList featureFlags;
+
+        featureFlags.set_enable_trel(true);
+        EXPECT_EQ(host.ApplyFeatureFlagList(featureFlags), OT_ERROR_NONE);
+#endif
+
+        otInstance *instance = host.GetInstance();
+
+        ASSERT_EQ(otLinkSetEnabled(instance, true), OT_ERROR_NONE);
+        EXPECT_EQ(otTrelIsEnabled(instance), aExpectedEnabled);
+        ASSERT_EQ(otLinkSetEnabled(instance, false), OT_ERROR_NONE);
+
+        host.Deinit();
+    };
+
+    verifyTrelState({"spinel+hdlc+uart:///dev/null"}, false);
+    verifyTrelState({"spinel+hdlc+uart:///dev/null", "trel://eth0"}, true);
+}
+#endif
 
 TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
 {
