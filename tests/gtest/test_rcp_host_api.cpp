@@ -477,8 +477,8 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
     // its own Detach sequence, so it needs multiple mainloop iterations.
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
-    EXPECT_EQ(error_, OT_ERROR_BUSY);
-    EXPECT_STREQ(errorMsg_.c_str(), "Thread is disabling");
+    EXPECT_EQ(error_, OT_ERROR_ABORT);
+    EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
 
@@ -694,6 +694,260 @@ TEST(RcpHostApi, ThreadDetachGracefullyCallbackReentrancy)
     EXPECT_TRUE(done2);
     EXPECT_TRUE(done3);
     EXPECT_TRUE(done4);
+
+    host.Deinit();
+}
+
+static bool ExtendedPanIdsMatch(const otOperationalDataset &aLhs, const otOperationalDataset &aRhs)
+{
+    return memcmp(aLhs.mExtendedPanId.m8, aRhs.mExtendedPanId.m8, sizeof(aLhs.mExtendedPanId)) == 0;
+}
+
+TEST(RcpHostApi, JoinDuringPendingDetachSupersedesEarlierJoins)
+{
+    otbr::MainloopContext    mainloop;
+    otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                  /* aDryRun */ false,
+                                  /* aEnableAutoAttach */ false);
+    otInstance              *instance;
+    bool                     resultReceived = false;
+    otOperationalDataset     datasets[3];
+    otOperationalDatasetTlvs datasetTlvs[3];
+    otOperationalDataset     activeDataset;
+    otError                  errors[3]         = {OT_ERROR_FAILED, OT_ERROR_FAILED, OT_ERROR_FAILED};
+    bool                     received[3]       = {false, false, false};
+    otError                  migrationError    = OT_ERROR_FAILED;
+    bool                     migrationReceived = false;
+
+    host.Init();
+    instance = ot::FakePlatform::CurrentInstance();
+
+    for (size_t i = 0; i < 3; i++)
+    {
+        ASSERT_EQ(otDatasetCreateNewNetwork(instance, &datasets[i]), OT_ERROR_NONE);
+        otDatasetConvertToTlvs(&datasets[i], &datasetTlvs[i]);
+    }
+
+    // Attach as leader on the first network.
+    ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs[0]), OT_ERROR_NONE);
+    host.SetThreadEnabled(true, [&resultReceived](otError, const std::string &) { resultReceived = true; });
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                         [&]() { return resultReceived && host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+    ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    // Join the second, the third and then the current (first) network. Each join supersedes the
+    // previous one right away, and the last one must not take the already-joined shortcut while a
+    // graceful detach for an earlier join is pending.
+    for (size_t i : {1, 2, 0})
+    {
+        host.Join(datasetTlvs[i], [&errors, &received, i](otError aError, const std::string &) {
+            errors[i]   = aError;
+            received[i] = true;
+        });
+    }
+
+    EXPECT_TRUE(received[1]);
+    EXPECT_TRUE(received[2]);
+    EXPECT_FALSE(received[0]);
+    EXPECT_EQ(errors[1], OT_ERROR_ABORT);
+    EXPECT_EQ(errors[2], OT_ERROR_ABORT);
+
+    // The device is still attached to the first network, so a migration must not be sent there.
+    host.ScheduleMigration(datasetTlvs[1], [&migrationError, &migrationReceived](otError aError, const std::string &) {
+        migrationError    = aError;
+        migrationReceived = true;
+    });
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 10, [&]() {
+        return migrationReceived && received[0] && host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER;
+    });
+
+    EXPECT_TRUE(migrationReceived);
+    EXPECT_EQ(migrationError, OT_ERROR_BUSY);
+
+    EXPECT_TRUE(received[0]);
+    EXPECT_EQ(errors[0], OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    ASSERT_EQ(otDatasetGetActive(instance, &activeDataset), OT_ERROR_NONE);
+    EXPECT_TRUE(ExtendedPanIdsMatch(activeDataset, datasets[0]));
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, JoinFromAbortedJoinReceiverIsAppliedAfterDetach)
+{
+    otbr::MainloopContext    mainloop;
+    otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                  /* aDryRun */ false,
+                                  /* aEnableAutoAttach */ false);
+    otInstance              *instance;
+    bool                     resultReceived = false;
+    otOperationalDataset     datasets[3];
+    otOperationalDatasetTlvs datasetTlvs[3];
+    otOperationalDataset     activeDataset;
+    otError                  errors[3]   = {OT_ERROR_FAILED, OT_ERROR_FAILED, OT_ERROR_FAILED};
+    bool                     received[3] = {false, false, false};
+
+    host.Init();
+    instance = ot::FakePlatform::CurrentInstance();
+
+    for (size_t i = 0; i < 3; i++)
+    {
+        ASSERT_EQ(otDatasetCreateNewNetwork(instance, &datasets[i]), OT_ERROR_NONE);
+        otDatasetConvertToTlvs(&datasets[i], &datasetTlvs[i]);
+    }
+
+    host.SetThreadEnabled(true, [&resultReceived](otError, const std::string &) { resultReceived = true; });
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    ASSERT_TRUE(resultReceived);
+
+    // The first join starts attaching right away. When the graceful detach requested by the
+    // second join completes, the first join is aborted and its receiver joins the third network,
+    // which must supersede the second join.
+    host.Join(datasetTlvs[0], [&](otError aError, const std::string &) {
+        errors[0]   = aError;
+        received[0] = true;
+
+        if (aError == OT_ERROR_ABORT)
+        {
+            host.Join(datasetTlvs[2], [&errors, &received](otError aError, const std::string &) {
+                errors[2]   = aError;
+                received[2] = true;
+            });
+        }
+    });
+    ASSERT_NE(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    host.Join(datasetTlvs[1], [&errors, &received](otError aError, const std::string &) {
+        errors[1]   = aError;
+        received[1] = true;
+    });
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 10,
+                         [&]() { return received[2] && host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+
+    EXPECT_TRUE(received[0] && received[1] && received[2]);
+    EXPECT_EQ(errors[0], OT_ERROR_ABORT);
+    EXPECT_EQ(errors[1], OT_ERROR_ABORT);
+    EXPECT_EQ(errors[2], OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    ASSERT_EQ(otDatasetGetActive(instance, &activeDataset), OT_ERROR_NONE);
+    EXPECT_TRUE(ExtendedPanIdsMatch(activeDataset, datasets[2]));
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, JoinSucceedsAfterResetDuringPendingDetach)
+{
+    otbr::MainloopContext    mainloop;
+    otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                  /* aDryRun */ false,
+                                  /* aEnableAutoAttach */ false);
+    otInstance              *instance;
+    bool                     resultReceived = false;
+    otOperationalDataset     datasets[3];
+    otOperationalDatasetTlvs datasetTlvs[3];
+    otOperationalDataset     activeDataset;
+    otError                  errors[3]   = {OT_ERROR_FAILED, OT_ERROR_FAILED, OT_ERROR_FAILED};
+    bool                     received[3] = {false, false, false};
+
+    host.Init();
+    instance = ot::FakePlatform::CurrentInstance();
+
+    for (size_t i = 0; i < 3; i++)
+    {
+        ASSERT_EQ(otDatasetCreateNewNetwork(instance, &datasets[i]), OT_ERROR_NONE);
+        otDatasetConvertToTlvs(&datasets[i], &datasetTlvs[i]);
+    }
+
+    // Attach as leader on the first network.
+    ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs[0]), OT_ERROR_NONE);
+    host.SetThreadEnabled(true, [&resultReceived](otError, const std::string &) { resultReceived = true; });
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                         [&]() { return resultReceived && host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+    ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    // Reset while the graceful detach for this join is pending.
+    host.Join(datasetTlvs[1], [&errors, &received](otError aError, const std::string &) {
+        errors[1]   = aError;
+        received[1] = true;
+    });
+    host.Reset();
+
+    EXPECT_TRUE(received[1]);
+    EXPECT_EQ(errors[1], OT_ERROR_ABORT);
+
+    instance = ot::FakePlatform::CurrentInstance();
+    host.Join(datasetTlvs[2], [&errors, &received](otError aError, const std::string &) {
+        errors[2]   = aError;
+        received[2] = true;
+    });
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 10,
+                         [&]() { return received[2] && host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+
+    EXPECT_TRUE(received[2]);
+    EXPECT_EQ(errors[2], OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    ASSERT_EQ(otDatasetGetActive(instance, &activeDataset), OT_ERROR_NONE);
+    EXPECT_TRUE(ExtendedPanIdsMatch(activeDataset, datasets[2]));
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, ResetFromAbortedJoinReceiverAbortsLeave)
+{
+    otbr::MainloopContext    mainloop;
+    otbr::Host::RcpHost      host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                  /* aDryRun */ false,
+                                  /* aEnableAutoAttach */ false);
+    otInstance              *instance;
+    bool                     resultReceived = false;
+    otOperationalDataset     datasets[2];
+    otOperationalDatasetTlvs datasetTlvs[2];
+    otError                  joinError    = OT_ERROR_FAILED;
+    bool                     joinReceived = false;
+    otError                  leaveError   = OT_ERROR_FAILED;
+    std::string              leaveErrorMsg;
+    bool                     leaveReceived = false;
+
+    host.Init();
+    instance = ot::FakePlatform::CurrentInstance();
+
+    for (size_t i = 0; i < 2; i++)
+    {
+        ASSERT_EQ(otDatasetCreateNewNetwork(instance, &datasets[i]), OT_ERROR_NONE);
+        otDatasetConvertToTlvs(&datasets[i], &datasetTlvs[i]);
+    }
+
+    // Attach as leader on the first network.
+    ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs[0]), OT_ERROR_NONE);
+    host.SetThreadEnabled(true, [&resultReceived](otError, const std::string &) { resultReceived = true; });
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                         [&]() { return resultReceived && host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+    ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    // The leave aborts the pending join, whose receiver resets the host. The leave must not
+    // resume on the recreated instance.
+    host.Join(datasetTlvs[1], [&](otError aError, const std::string &) {
+        joinError    = aError;
+        joinReceived = true;
+        host.Reset();
+    });
+    host.Leave(/* aEraseDataset */ true, [&](otError aError, const std::string &aErrorMsg) {
+        leaveError    = aError;
+        leaveErrorMsg = aErrorMsg;
+        leaveReceived = true;
+    });
+
+    EXPECT_TRUE(joinReceived);
+    EXPECT_EQ(joinError, OT_ERROR_ABORT);
+    EXPECT_TRUE(leaveReceived);
+    EXPECT_EQ(leaveError, OT_ERROR_ABORT);
+    EXPECT_STREQ(leaveErrorMsg.c_str(), "Aborted by reset");
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [] { return false; });
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
 
     host.Deinit();
 }
