@@ -61,6 +61,13 @@ namespace Firewall {
  * enabled. The two ingress prefix tables are declared `persist`, so a reload
  * keeps their contents, and each is replaced atomically (`-T replace`) as
  * Thread network data changes.
+ *
+ * pf has no event for a change made behind the agent's back, so the
+ * application asks VerifyInstalled() periodically: it enables pf again after a
+ * `pfctl -d`, reports a main ruleset that dropped the anchor reference (a
+ * `pfctl -F all`, a reload of /etc/pf.conf without the anchor lines), and puts
+ * the anchor's contents back after a `pfctl -a otbr -F all` or a reload by a
+ * tool that flushes the anchors.
  */
 class PfFirewall : private NonCopyable
 {
@@ -114,6 +121,31 @@ public:
      */
     otbrError ReplaceIngressPrefixes(const std::vector<Ip6Prefix> &aDenySrc, const std::vector<Ip6Prefix> &aAllowDst);
 
+    /**
+     * Checks that the firewall is still in place and repairs what it can. pf
+     * disabled behind the agent's back (`pfctl -d`) is enabled again. The anchor
+     * emptied behind its back (`pfctl -a otbr -F all`, a reload of /etc/pf.conf
+     * by a tool that flushes the anchors) is reinstalled: the ruleset for the
+     * enabled features and the last contents of the two ingress tables. The
+     * nftables backend learns of its deleted table from the kernel; this is the
+     * polling equivalent. A listing that fails is logged and ignored.
+     *
+     * A main ruleset that no longer references the anchor (`pfctl -F all`
+     * flushes the main ruleset's rules; the anchor's own stay, unevaluated) is
+     * an error, as at Init(): the agent cannot put the reference back and must
+     * not run with a filter that is not applied. A failed reinstall or a
+     * failed `pfctl -E` is an error too.
+     *
+     * @param[out] aReinstalled  True when the anchor had to be reinstalled.
+     */
+    otbrError VerifyInstalled(bool &aReinstalled);
+
+    /**
+     * Reinstalls everything that was asked for: the ruleset for the enabled
+     * features and the last contents of the ingress tables.
+     */
+    otbrError Reinstall(void);
+
     bool IsInitialized(void) const { return mInitialized; }
     bool IsIngressFilterEnabled(void) const { return mIngressFilterEnabled; }
     bool IsNat44Enabled(void) const { return mNat44Enabled; }
@@ -130,13 +162,20 @@ public:
     static const char *const kThreadTag;
 
 private:
-    otbrError RunPfctl(const std::vector<std::string> &aArgs, const std::string &aInput, std::string &aOutput);
+    otbrError RunPfctl(const std::vector<std::string> &aArgs,
+                       const std::string              &aInput,
+                       std::string                    &aOutput,
+                       std::string                    *aStderr = nullptr);
     otbrError EnablePf(void);
     void      DisablePf(void);
+    otbrError VerifyPfEnabled(void);
     otbrError VerifyAnchorReferenced(const char *aListFlag, const char *aDirective);
     otbrError FlushAnchor(void);
     otbrError LoadRuleset(void);
-    otbrError ReplaceTable(const char *aTable, const std::vector<Ip6Prefix> &aPrefixes);
+    otbrError ReplaceTable(const char *aTable, const std::vector<Ip6Prefix> &aPrefixes, bool &aTableWasMissing);
+    otbrError ListAnchor(const char *aListFlag, std::string &aOutput);
+
+    static bool ListingHasLine(const std::string &aListing, const std::string &aLine);
 
     IPfctl     &mPfctl;
     std::string mThreadIfName;
@@ -145,6 +184,9 @@ private:
     bool        mInitialized;
     bool        mIngressFilterEnabled;
     bool        mNat44Enabled;
+    // What the tables were last asked to hold, for Reinstall().
+    std::vector<Ip6Prefix> mDenySrc;
+    std::vector<Ip6Prefix> mAllowDst;
 };
 
 } // namespace Firewall

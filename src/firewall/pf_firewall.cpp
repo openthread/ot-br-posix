@@ -55,10 +55,18 @@ PfFirewall::PfFirewall(IPfctl &aPfctl, std::string aThreadInterfaceName)
 {
 }
 
-otbrError PfFirewall::RunPfctl(const std::vector<std::string> &aArgs, const std::string &aInput, std::string &aOutput)
+otbrError PfFirewall::RunPfctl(const std::vector<std::string> &aArgs,
+                               const std::string              &aInput,
+                               std::string                    &aOutput,
+                               std::string                    *aStderr)
 {
     std::string stderrText;
     otbrError   error = mPfctl.Run(aArgs, aInput, aOutput, stderrText);
+
+    if (aStderr != nullptr)
+    {
+        *aStderr = stderrText;
+    }
 
     if (error != OTBR_ERROR_NONE)
     {
@@ -212,6 +220,8 @@ otbrError PfFirewall::Deinit(void)
     mIngressFilterEnabled = false;
     mNat44Enabled         = false;
     mUpstreamIfName.clear();
+    mDenySrc.clear();
+    mAllowDst.clear();
 
 exit:
     otbrLogResult(error, "PfFirewall: %s", __FUNCTION__);
@@ -335,11 +345,13 @@ exit:
     return error;
 }
 
-otbrError PfFirewall::ReplaceTable(const char *aTable, const std::vector<Ip6Prefix> &aPrefixes)
+otbrError PfFirewall::ReplaceTable(const char *aTable, const std::vector<Ip6Prefix> &aPrefixes, bool &aTableWasMissing)
 {
     std::vector<std::string> args = {"-a", kAnchorName, "-t", aTable, "-T"};
     std::vector<std::string> addresses;
     std::string              output;
+    std::string              stderrText;
+    otbrError                error;
 
     for (const Ip6Prefix &prefix : aPrefixes)
     {
@@ -360,18 +372,202 @@ otbrError PfFirewall::ReplaceTable(const char *aTable, const std::vector<Ip6Pref
         args.insert(args.end(), addresses.begin(), addresses.end());
     }
 
-    return RunPfctl(args, "", output);
+    error = RunPfctl(args, "", output, &stderrText);
+
+    // The ruleset declares both tables, so after a load they exist. A table
+    // pfctl has to create here was lost with the anchor's contents: `-T replace`
+    // creates it (`persist`), says "1 table created" and exits 0; only `-T flush`
+    // fails on a missing table, with "Table does not exist".
+    output += stderrText;
+    aTableWasMissing = output.find("table created") != std::string::npos ||
+                       (error != OTBR_ERROR_NONE && output.find("does not exist") != std::string::npos);
+
+    return error;
 }
 
 otbrError PfFirewall::ReplaceIngressPrefixes(const std::vector<Ip6Prefix> &aDenySrc,
                                              const std::vector<Ip6Prefix> &aAllowDst)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    otbrError              error        = OTBR_ERROR_NONE;
+    bool                   replaced     = false;
+    bool                   tableMissing = false;
+    std::vector<Ip6Prefix> wasDenySrc;
+    std::vector<Ip6Prefix> wasAllowDst;
 
     VerifyOrExit(mIngressFilterEnabled, error = OTBR_ERROR_INVALID_STATE);
 
-    SuccessOrExit(error = ReplaceTable(kIngressDenySrcTable, aDenySrc));
-    SuccessOrExit(error = ReplaceTable(kIngressAllowDstTable, aAllowDst));
+    // Validated before anything is remembered or sent: an invalid prefix kept
+    // for Reinstall() would fail every reinstall from then on.
+    for (const Ip6Prefix &prefix : aDenySrc)
+    {
+        VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
+    }
+    for (const Ip6Prefix &prefix : aAllowDst)
+    {
+        VerifyOrExit(prefix.IsValid(), error = OTBR_ERROR_INVALID_ARGS);
+    }
+
+    // Remembered for Reinstall(); the previous contents come back if this fails.
+    wasDenySrc.swap(mDenySrc);
+    wasAllowDst.swap(mAllowDst);
+    mDenySrc  = aDenySrc;
+    mAllowDst = aAllowDst;
+    replaced  = true;
+
+    error = ReplaceTable(kIngressDenySrcTable, aDenySrc, tableMissing);
+    if (error == OTBR_ERROR_NONE && !tableMissing)
+    {
+        error = ReplaceTable(kIngressAllowDstTable, aAllowDst, tableMissing);
+    }
+    if (tableMissing)
+    {
+        // A table the anchor no longer had means its contents were emptied
+        // behind the agent's back (the nftables backend sees ENOENT then): put
+        // everything back, the tables' new contents included.
+        otbrLogWarning("PfFirewall: a table was missing from the anchor; reinstalling");
+        error = Reinstall();
+    }
+
+exit:
+    if (error != OTBR_ERROR_NONE && replaced)
+    {
+        mDenySrc.swap(wasDenySrc);
+        mAllowDst.swap(wasAllowDst);
+    }
+    otbrLogResult(error, "PfFirewall: %s", __FUNCTION__);
+    return error;
+}
+
+otbrError PfFirewall::ListAnchor(const char *aListFlag, std::string &aOutput)
+{
+    return RunPfctl({"-a", kAnchorName, "-s", aListFlag}, "", aOutput);
+}
+
+bool PfFirewall::ListingHasLine(const std::string &aListing, const std::string &aLine)
+{
+    std::istringstream lines(aListing);
+    std::string        line;
+    bool               found = false;
+
+    while (!found && std::getline(lines, line))
+    {
+        size_t start = line.find_first_not_of(" \t");
+        size_t end   = line.find_last_not_of(" \t\r");
+
+        found = start != std::string::npos && line.compare(start, end - start + 1, aLine) == 0;
+    }
+
+    return found;
+}
+
+otbrError PfFirewall::VerifyPfEnabled(void)
+{
+    // `pfctl -d` disables pf whatever references `pfctl -E` holds, and the
+    // reference means nothing until pf is enabled again: release it and take
+    // a new one. The status that cannot be read says nothing; the next check
+    // asks again.
+    otbrError   error;
+    std::string output;
+
+    error = RunPfctl({"-s", "info"}, "", output);
+    VerifyOrExit(error == OTBR_ERROR_NONE, error = OTBR_ERROR_NONE);
+    VerifyOrExit(output.find("Status: Enabled") == std::string::npos);
+
+    otbrLogWarning("PfFirewall: pf was disabled behind the agent's back; enabling it again");
+    DisablePf();
+    error = EnablePf();
+
+exit:
+    return error;
+}
+
+otbrError PfFirewall::VerifyInstalled(bool &aReinstalled)
+{
+    otbrError   error        = OTBR_ERROR_NONE;
+    bool        intact       = true;
+    bool        enableFailed = false;
+    std::string rules;
+    std::string listing;
+
+    aReinstalled = false;
+    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mIngressFilterEnabled || mNat44Enabled);
+
+    // First what the agent cannot repair by reloading the anchor. pf disabled
+    // behind its back is enabled again. A main ruleset that no longer references
+    // the anchor (`pfctl -F all` flushes the main ruleset's rules and leaves the
+    // anchor's own in place, unevaluated) is an error, as at Init(): the agent
+    // must not run with a filter that is there but not applied. The filter
+    // anchor carries the NAT44 tag rule as well, so its reference is needed
+    // whenever anything is on.
+    error        = VerifyPfEnabled();
+    enableFailed = (error != OTBR_ERROR_NONE);
+    SuccessOrExit(error);
+    SuccessOrExit(error = VerifyAnchorReferenced("rules", "anchor"));
+    if (mNat44Enabled)
+    {
+        SuccessOrExit(error = VerifyAnchorReferenced("nat", "nat-anchor"));
+    }
+
+    // Then the anchor's contents, one listing each. pfctl prints the rules in
+    // its own words, so the needles are what survives the rewrite: the rules
+    // that use the two tables and the terminal block rule of the filter, the
+    // tag the NAT rule keys on and the NAT rule itself, both table names.
+    SuccessOrExit(error = ListAnchor("rules", rules));
+    if (mIngressFilterEnabled)
+    {
+        intact = rules.find(std::string("<") + kIngressDenySrcTable + ">") != std::string::npos &&
+                 rules.find(std::string("<") + kIngressAllowDstTable + ">") != std::string::npos &&
+                 rules.find("block drop out quick on " + mThreadIfName + " inet6 all") != std::string::npos;
+        VerifyOrExit(intact);
+        SuccessOrExit(error = ListAnchor("Tables", listing));
+        intact = ListingHasLine(listing, kIngressDenySrcTable) && ListingHasLine(listing, kIngressAllowDstTable);
+        VerifyOrExit(intact);
+    }
+    if (mNat44Enabled)
+    {
+        intact = rules.find(std::string("tag ") + kThreadTag) != std::string::npos;
+        VerifyOrExit(intact);
+        SuccessOrExit(error = ListAnchor("nat", listing));
+        intact = listing.find("nat pass on " + mUpstreamIfName + " inet") != std::string::npos;
+        VerifyOrExit(intact);
+    }
+
+exit:
+    if (error == OTBR_ERROR_NONE && !intact)
+    {
+        otbrLogWarning("PfFirewall: the anchor \"%s\" lost its rules behind the agent's back; reinstalling",
+                       kAnchorName);
+        error        = Reinstall();
+        aReinstalled = (error == OTBR_ERROR_NONE);
+    }
+    else if (error != OTBR_ERROR_NONE && error != OTBR_ERROR_INVALID_STATE && error != OTBR_ERROR_NOT_FOUND &&
+             !enableFailed)
+    {
+        // A listing that fails says nothing about the anchor; the next check asks again.
+        otbrLogWarning("PfFirewall: could not list the anchor: %s", otbrErrorString(error));
+        error = OTBR_ERROR_NONE;
+    }
+    return error;
+}
+
+otbrError PfFirewall::Reinstall(void)
+{
+    otbrError error      = OTBR_ERROR_NONE;
+    bool      wasMissing = false;
+
+    VerifyOrExit(mInitialized, error = OTBR_ERROR_INVALID_STATE);
+
+    // Loading the ruleset replaces the anchor's rulesets in one commit and keeps
+    // the states; a flush first would open an unfiltered window between two
+    // pfctl runs and drop the connections. The tables the load declares are
+    // filled again from what they last held.
+    SuccessOrExit(error = LoadRuleset());
+    if (mIngressFilterEnabled)
+    {
+        SuccessOrExit(error = ReplaceTable(kIngressDenySrcTable, mDenySrc, wasMissing));
+        SuccessOrExit(error = ReplaceTable(kIngressAllowDstTable, mAllowDst, wasMissing));
+    }
 
 exit:
     otbrLogResult(error, "PfFirewall: %s", __FUNCTION__);

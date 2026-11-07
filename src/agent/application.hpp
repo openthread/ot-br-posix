@@ -272,6 +272,10 @@ private:
 #if OTBR_ENABLE_NAT64
     void UpdateNat44Masquerade(void);
 #endif
+#if OTBR_ENABLE_PF
+    void SchedulePfVerify(void);
+    void CancelPfVerify(void);
+#endif
 #endif
 
     void CreateNcpMode(void);
@@ -314,6 +318,7 @@ private:
 #if OTBR_ENABLE_PF
     std::unique_ptr<Firewall::PfctlProcess> mPfctl;
     std::unique_ptr<Firewall::PfFirewall>   mFirewall;
+    TaskRunner::TaskId                      mPfVerifyTaskId = 0;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
