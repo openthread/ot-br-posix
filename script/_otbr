@@ -210,17 +210,15 @@ otbr_install()
         )
     fi
 
-    if without BACKBONE_ROUTER; then
-        otbr_options+=(
-            "-DOTBR_BACKBONE_ROUTER=OFF"
-        )
-    fi
-
-    if without NAT64; then
-        otbr_options+=(
-            "-DOTBR_NAT64=OFF"
-        )
-    fi
+    # On and off explicitly: script/cmake-build reuses build/otbr/CMakeCache.txt,
+    # where an OFF from an earlier run (or from the macOS platform default of
+    # before) would otherwise stay cached. NAT64 needs Border Routing (the
+    # translator's border routing part does not build without it), as the
+    # cmake default says.
+    otbr_options+=(
+        "-DOTBR_BACKBONE_ROUTER=$(with BACKBONE_ROUTER && echo ON || echo OFF)"
+        "-DOTBR_NAT64=$(with NAT64 && with BORDER_ROUTING && echo ON || echo OFF)"
+    )
 
     # OT Discovery Proxy depends on Border Routing. Disable it if Border Routing is disabled or if explicitly disabled.
     if without DISCOVERY_PROXY || without BORDER_ROUTING; then
