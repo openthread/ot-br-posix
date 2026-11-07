@@ -37,6 +37,7 @@
 #include "openthread-br/config.h"
 
 #include <chrono>
+#include <initializer_list>
 #include <memory>
 
 #include <assert.h>
@@ -203,7 +204,7 @@ public:
     // Thread Control virtual methods
     void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
     void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) override;
-    void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+    void ScheduleMigration(const otOperationalDatasetTlvs &aOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
     void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) override;
@@ -256,14 +257,16 @@ private:
     void HandleStateChanged(otChangedFlags aFlags);
 
     using DetachGracefullyCallback = std::function<void()>;
-    void        ThreadDetachGracefully(const DetachGracefullyCallback &aCallback);
-    static void ThreadDetachGracefullyCallback(void *aContext);
-    void        ThreadDetachGracefullyCallback(void);
-    otError     ConditionalErasePersistentInfo(bool aErase);
-    void        DisableThreadAfterDetach(void);
-    void        LeaveAfterDetach(bool aEraseDataset, const AsyncResultReceiver &aReceiver);
-    static void SendMgmtPendingSetCallback(otError aError, void *aContext);
-    void        SendMgmtPendingSetCallback(otError aError);
+    void                            ThreadDetachGracefully(const DetachGracefullyCallback &aCallback);
+    static void                     ThreadDetachGracefullyCallback(void *aContext);
+    void                            ThreadDetachGracefullyCallback(void);
+    otError                         ConditionalErasePersistentInfo(bool aErase);
+    void                            DisableThreadAfterDetach(void);
+    void                            LeaveAfterDetach(bool aEraseDataset, const AsyncResultReceiver &aReceiver);
+    static otOperationalDatasetTlvs StripTlvs(const otOperationalDatasetTlvs &aDatasetTlvs,
+                                              std::initializer_list<uint8_t>  aTypesToStrip);
+    static void                     SendMgmtSetCallback(otError aError, void *aContext);
+    void                            SendMgmtSetCallback(otError aError);
 
     static void HandleMeshCoPServiceChanged(void *aContext);
     void        HandleMeshCoPServiceChanged(void);
