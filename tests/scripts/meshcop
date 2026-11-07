@@ -207,7 +207,7 @@ random_networkkey()
 
 write_syslog()
 {
-    logger -s -p syslog.alert "OPENTHREAD_TEST: $*"
+    logger -s -p syslog.alert "OPENTHREAD_TEST: $*" 2>/dev/null || true
 }
 
 output_logs()
@@ -459,7 +459,7 @@ joiner_start()
 {
     write_syslog 'JOINER START'
     cd ${TEST_BASE}
-    sudo expect -f- <<EOF || die 'JOINER FAILED'
+    expect -f- <<EOF || die 'JOINER FAILED'
 spawn ${ot_cli} ${JOINER_NODE_ID}
 send "ifconfig up\r\n"
 expect "Done"
