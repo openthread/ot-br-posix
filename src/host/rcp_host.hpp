@@ -265,9 +265,12 @@ private:
     void        ThreadDetachGracefullyCallback(void);
     otError     ConditionalErasePersistentInfo(bool aErase);
     void        DisableThreadAfterDetach(void);
-    void        LeaveAfterDetach(bool aEraseDataset, const AsyncResultReceiver &aReceiver);
+    void        LeaveAfterDetach(bool aEraseDataset);
     static void SendMgmtSetCallback(otError aError, void *aContext);
     void        SendMgmtSetCallback(otError aError);
+
+    void SetPendingJoin(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver);
+    void AbortPendingJoin(const std::string &aErrorInfo);
 
     static void HandleMeshCoPServiceChanged(void *aContext);
     void        HandleMeshCoPServiceChanged(void);
@@ -300,6 +303,8 @@ private:
     bool                                          mEnableAutoAttach = false;
     ThreadEnabledState                            mThreadEnabledState;
     AsyncResultReceiver                           mJoinReceiver;
+    AsyncResultReceiver                           mPendingJoinReceiver;
+    AsyncResultReceiver                           mLeaveReceiver;
     AsyncResultReceiver                           mSetThreadEnabledReceiver;
     AsyncResultReceiver                           mScheduleMigrationReceiver;
     std::vector<DetachGracefullyCallback>         mDetachGracefullyCallbacks;
