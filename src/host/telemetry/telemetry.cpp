@@ -454,6 +454,8 @@ otError TelemetryRetriever::RetrieveTelemetryData(Mdns::Publisher              *
             topoEntry->set_is_child(true);
             topoEntry->mutable_timeout()->set_seconds(childInfo->mTimeout);
             topoEntry->set_network_data_version(childInfo->mNetworkDataVersion);
+            topoEntry->set_csl_period_us(static_cast<uint32_t>(childInfo->mCslPeriod) * OT_US_PER_TEN_SYMBOLS);
+            topoEntry->set_csl_synchronized(childInfo->mIsCslSynced);
         }
         // End of TopoEntry section.
     }
