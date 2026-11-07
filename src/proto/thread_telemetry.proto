@@ -143,6 +143,12 @@ message TelemetryData {
     optional float mac_frame_error_rate = 16;
     optional float ip_message_error_rate = 17;
     optional int32 version = 18;
+    // CSL period of the child in microseconds; 0 if CSL is disabled. The period
+    // is retained if the child loses CSL synchronization. Only set for child
+    // entries.
+    optional uint32 csl_period_us = 19;
+    // Whether the child is CSL synchronized. Only set for child entries.
+    optional bool csl_synchronized = 20;
   }
 
   enum NodeType {
