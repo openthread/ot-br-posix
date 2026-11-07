@@ -362,6 +362,7 @@ void RcpHost::Deinit(void)
     mResetHandlers.clear();
 
     mJoinReceiver              = nullptr;
+    mPendingJoinReceiver       = nullptr;
     mSetThreadEnabledReceiver  = nullptr;
     mScheduleMigrationReceiver = nullptr;
     mDetachGracefullyCallbacks.clear();
@@ -413,6 +414,7 @@ void RcpHost::Process(const MainloopContext &aMainloop)
 
     if (IsAutoAttachEnabled() && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
+        UpdateThreadEnabledState(ThreadEnabledState::kStateEnabled);
         DisableAutoAttach();
     }
 }
@@ -543,6 +545,8 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
                  errorMsg = "Thread is disabling");
     VerifyOrExit(mThreadEnabledState == ThreadEnabledState::kStateEnabled, error = OT_ERROR_INVALID_STATE,
                  errorMsg = "Thread is not enabled");
+    VerifyOrExit(otDatasetIsValid(&aActiveOpDatasetTlvs, /* aActive */ true), error = OT_ERROR_INVALID_ARGS,
+                 errorMsg = "Active Operational Dataset is not valid");
 
     otbrLogInfo("Start joining...");
 
@@ -560,7 +564,15 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
 
     if (GetDeviceRole() != OT_DEVICE_ROLE_DISABLED)
     {
-        ThreadDetachGracefully([aActiveOpDatasetTlvs, aReceiver, this] {
+        auto pendingJoinReceiver = std::move(mPendingJoinReceiver);
+
+        SafeInvoke(pendingJoinReceiver, OT_ERROR_ABORT, "Aborted by new join operation");
+        mPendingJoinReceiver = [aActiveOpDatasetTlvs, aReceiver, this](otError aError, const std::string &aErrorInfo) {
+            if (aError != OT_ERROR_NONE)
+            {
+                SafeInvoke(aReceiver, aError, aErrorInfo);
+                return;
+            }
             // A graceful detach ends in Mle::Stop(), so the device role is
             // already disabled here and the erase succeeds; the recursive
             // Join() below then takes the direct path. Best-effort, as before
@@ -568,6 +580,11 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
             // dataset right after, so a failed erase changes nothing.
             IgnoreError(ConditionalErasePersistentInfo(true));
             Join(aActiveOpDatasetTlvs, aReceiver);
+        };
+        ThreadDetachGracefully([this] {
+            auto receiver = std::move(mPendingJoinReceiver);
+
+            SafeInvoke(receiver, OT_ERROR_NONE, "");
         });
         receiveResultHere = false;
         ExitNow();
@@ -604,6 +621,12 @@ void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
     VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
                  errorMsg = "Thread is disabling");
+
+    {
+        auto pendingJoinReceiver = std::move(mPendingJoinReceiver);
+
+        SafeInvoke(pendingJoinReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
+    }
 
     // Branch on the actual device role, not mThreadEnabledState: when the
     // stack was started outside SetThreadEnabled() (ubus threadstart, ot-ctl)
@@ -787,6 +810,8 @@ exit:
 
 void RcpHost::ThreadDetachGracefully(const DetachGracefullyCallback &aCallback)
 {
+    otBorderAgentEphemeralKeyStop(mInstance);
+
     mDetachGracefullyCallbacks.push_back(aCallback);
 
     // Ignores the OT_ERROR_BUSY error if a detach has already been requested
