@@ -112,6 +112,7 @@ private:
     void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
     void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
 #endif
+    void TakeoverLeaderHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
 
@@ -126,6 +127,7 @@ private:
 #if OTBR_ENABLE_EPSKC
     otError SetEphemeralKeyEnabled(DBusMessageIter &aIter);
 #endif
+    otError SetLocalLeaderWeightHandler(DBusMessageIter &aIter);
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
