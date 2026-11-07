@@ -171,10 +171,13 @@ public:
     /**
      * This method makes all nodes in the current network attach to the network specified by the dataset TLVs.
      *
-     * @param[in] aDatasetTlvs  The dataset TLVs.
+     * @param[in] aDatasetTlvs  The dataset TLVs. Must be a full dataset. The Delay Timer and Pending Timestamp
+     *                          TLVs will be added automatically.
+     * @param[in] aDelayMs      The delay timer in milliseconds to embed in the pending dataset.
+     *                          Use 0 for the default of 300 seconds (300000 ms). Maximum is 72 hours.
      * @param[in] aHandler      The result handler.
      */
-    void AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, AttachHandler aHandler);
+    void AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, uint32_t aDelayMs, AttachHandler aHandler);
 
     /**
      * This method resets the OpenThread stack.
