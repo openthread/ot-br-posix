@@ -37,6 +37,7 @@
 #include "openthread-br/config.h"
 
 #include <chrono>
+#include <initializer_list>
 #include <memory>
 
 #include <assert.h>
@@ -203,7 +204,7 @@ public:
     // Thread Control virtual methods
     void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
     void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) override;
-    void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+    void ScheduleMigration(const otOperationalDatasetTlvs &aOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
     void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) override;
@@ -240,6 +241,9 @@ public:
 
     bool IsAttached(void);
 
+    static otOperationalDatasetTlvs StripTlvs(const otOperationalDatasetTlvs &aDatasetTlvs,
+                                              std::initializer_list<uint8_t>  aTypesToStrip);
+
 private:
     static void SafeInvoke(const AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
     {
@@ -262,8 +266,8 @@ private:
     otError     ConditionalErasePersistentInfo(bool aErase);
     void        DisableThreadAfterDetach(void);
     void        LeaveAfterDetach(bool aEraseDataset, const AsyncResultReceiver &aReceiver);
-    static void SendMgmtPendingSetCallback(otError aError, void *aContext);
-    void        SendMgmtPendingSetCallback(otError aError);
+    static void SendMgmtSetCallback(otError aError, void *aContext);
+    void        SendMgmtSetCallback(otError aError);
 
     static void HandleMeshCoPServiceChanged(void *aContext);
     void        HandleMeshCoPServiceChanged(void);

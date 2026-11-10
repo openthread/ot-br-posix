@@ -55,10 +55,13 @@ namespace Host {
 namespace {
 const Tlv *FindTlv(uint8_t aTlvType, const uint8_t *aTlvs, int aTlvsSize)
 {
-    const Tlv *result = nullptr;
+    const Tlv     *result  = nullptr;
+    const uint8_t *tlvsEnd = aTlvs + aTlvsSize;
 
     for (const Tlv *tlv = reinterpret_cast<const Tlv *>(aTlvs);
-         reinterpret_cast<const uint8_t *>(tlv) + sizeof(Tlv) < aTlvs + aTlvsSize; tlv = tlv->GetNext())
+         reinterpret_cast<const uint8_t *>(tlv) + sizeof(Tlv) <= tlvsEnd && !tlv->IsExtended() &&
+         reinterpret_cast<const uint8_t *>(tlv->GetNext()) <= tlvsEnd;
+         tlv = tlv->GetNext())
     {
         if (tlv->GetType() == aTlvType)
         {
@@ -796,13 +799,16 @@ void ThreadHelper::DetachGracefullyCallback(void)
     }
 }
 
-otError ThreadHelper::ProcessDatasetForMigration(otOperationalDatasetTlvs &aDatasetTlvs, uint32_t aDelayMilli)
+otError ThreadHelper::ProcessDatasetForMigration(otOperationalDatasetTlvs       &aDatasetTlvs,
+                                                 uint32_t                        aDelayMilli,
+                                                 const otOperationalDatasetTlvs *aCurPendingDatasetTlvs)
 {
     otError  error = OT_ERROR_NONE;
     Tlv     *tlv;
     timespec currentTime;
     uint64_t pendingTimestamp = 0;
 
+    VerifyOrExit(aDatasetTlvs.mLength <= sizeof(aDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, aDatasetTlvs.mTlvs, aDatasetTlvs.mLength) == nullptr,
                  error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(FindTlv(OT_MESHCOP_TLV_DELAYTIMER, aDatasetTlvs.mTlvs, aDatasetTlvs.mLength) == nullptr,
@@ -829,6 +835,23 @@ otError ThreadHelper::ProcessDatasetForMigration(otOperationalDatasetTlvs &aData
     pendingTimestamp |= (((static_cast<uint64_t>(currentTime.tv_nsec) * 32768 / 1000000000) & 0x7fff)
                          << 1); // Set the 15 bits of Timestamp ticks, the fractional Unix Time value in 32.768 kHz
                                 // resolution. Leave the U-bit unset.
+
+    if (aCurPendingDatasetTlvs != nullptr && aCurPendingDatasetTlvs->mLength <= sizeof(aCurPendingDatasetTlvs->mTlvs))
+    {
+        const Tlv *curPendingTimestampTlv =
+            FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, aCurPendingDatasetTlvs->mTlvs, aCurPendingDatasetTlvs->mLength);
+
+        if (curPendingTimestampTlv != nullptr && curPendingTimestampTlv->GetLength() == sizeof(uint64_t))
+        {
+            uint64_t curPendingTimestamp = curPendingTimestampTlv->GetValueUInt64();
+
+            if (pendingTimestamp <= curPendingTimestamp && (curPendingTimestamp >> 1) < 0x7ffffffffffffffeULL)
+            {
+                pendingTimestamp = (curPendingTimestamp & ~1ULL) + 2ULL;
+            }
+        }
+    }
+
     tlv->SetValue(pendingTimestamp);
 
     tlv = tlv->GetNext();

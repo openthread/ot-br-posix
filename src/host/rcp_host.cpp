@@ -30,6 +30,8 @@
 
 #include "host/rcp_host.hpp"
 
+#include <algorithm>
+
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -56,6 +58,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/tlv.hpp"
 #include "common/types.hpp"
 #if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
@@ -637,17 +640,36 @@ exit:
     }
 }
 
-void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
-                                const AsyncResultReceiver       aReceiver)
+void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aOpDatasetTlvs, const AsyncResultReceiver aReceiver)
 {
     otError     error = OT_ERROR_NONE;
     std::string errorMsg;
-    // Value-initialise: otDatasetSendMgmtPendingSet() serialises whichever
+    // Value-initialise: otDatasetSendMgmt*Set() serialises whichever
     // fields mComponents says are present, so leaving this indeterminate puts
     // garbage TLVs on the wire and the leader answers Reject.
-    otOperationalDataset emptyDataset{};
+    otOperationalDataset     emptyDataset{};
+    otOperationalDatasetTlvs activeDatasetTlvs;
+    otOperationalDatasetTlvs curPendingOpDatasetTlvs;
+    bool                     isPendingDataset;
+    bool                     isActiveDataset;
+    bool                     hasPendingDataset;
+    bool                     affectsConnectivity;
 
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+
+    isPendingDataset = otDatasetIsValid(&aOpDatasetTlvs, /* aActive */ false);
+    isActiveDataset  = !isPendingDataset && otDatasetIsValid(&aOpDatasetTlvs, /* aActive */ true);
+
+    if (isPendingDataset || isActiveDataset)
+    {
+        activeDatasetTlvs = StripTlvs(aOpDatasetTlvs, {OT_MESHCOP_TLV_PENDINGTIMESTAMP, OT_MESHCOP_TLV_DELAYTIMER});
+        isActiveDataset   = isActiveDataset && (activeDatasetTlvs.mLength == aOpDatasetTlvs.mLength);
+    }
+
+    // TODO: check supported channel mask
+
+    VerifyOrExit(isPendingDataset || isActiveDataset, error = OT_ERROR_INVALID_ARGS,
+                 errorMsg = "Operational dataset is not valid");
 
     VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
                  errorMsg = "Thread is disabling");
@@ -656,12 +678,36 @@ void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatase
 
     VerifyOrExit(IsAttached(), error = OT_ERROR_INVALID_STATE, errorMsg = "Device is detached");
 
-    // TODO: check supported channel mask
+    VerifyOrExit(mScheduleMigrationReceiver == nullptr, error = OT_ERROR_BUSY,
+                 errorMsg = "Another migration is in progress");
 
-    SuccessOrExit(error    = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, aPendingOpDatasetTlvs.mTlvs,
-                                                         static_cast<uint8_t>(aPendingOpDatasetTlvs.mLength),
-                                                         SendMgmtPendingSetCallback, this),
-                  errorMsg = "Failed to send MGMT_PENDING_SET.req");
+    hasPendingDataset   = (otDatasetGetPendingTlvs(mInstance, &curPendingOpDatasetTlvs) == OT_ERROR_NONE);
+    affectsConnectivity = otDatasetAffectsConnectivity(mInstance, &aOpDatasetTlvs);
+
+    if (hasPendingDataset || affectsConnectivity)
+    {
+        otOperationalDatasetTlvs pendingDatasetTlvs = aOpDatasetTlvs;
+
+        if (isActiveDataset)
+        {
+            uint32_t delayMs = affectsConnectivity ? kDefaultMigrationDelayMs : kMinMigrationDelayMs;
+
+            SuccessOrExit(error = ThreadHelper::ProcessDatasetForMigration(
+                              pendingDatasetTlvs, delayMs, hasPendingDataset ? &curPendingOpDatasetTlvs : nullptr),
+                          errorMsg = "Operational dataset is not valid");
+        }
+
+        SuccessOrExit(error    = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, pendingDatasetTlvs.mTlvs,
+                                                             static_cast<uint8_t>(pendingDatasetTlvs.mLength),
+                                                             SendMgmtSetCallback, this),
+                      errorMsg = "Failed to send MGMT_PENDING_SET.req");
+    }
+    else
+    {
+        SuccessOrExit(error    = otDatasetSendMgmtActiveSet(mInstance, &emptyDataset, activeDatasetTlvs.mTlvs,
+                                                            activeDatasetTlvs.mLength, SendMgmtSetCallback, this),
+                      errorMsg = "Failed to send MGMT_ACTIVE_SET.req");
+    }
 
 exit:
     if (error != OT_ERROR_NONE)
@@ -670,19 +716,49 @@ exit:
     }
     else
     {
-        // otDatasetSendMgmtPendingSet() returns OT_ERROR_BUSY if it has already been called before but the
-        // callback hasn't been invoked. So we can guarantee that mMigrationReceiver is always nullptr here
         assert(mScheduleMigrationReceiver == nullptr);
         mScheduleMigrationReceiver = aReceiver;
     }
 }
 
-void RcpHost::SendMgmtPendingSetCallback(otError aError, void *aContext)
+otOperationalDatasetTlvs RcpHost::StripTlvs(const otOperationalDatasetTlvs &aDatasetTlvs,
+                                            std::initializer_list<uint8_t>  aTypesToStrip)
 {
-    static_cast<RcpHost *>(aContext)->SendMgmtPendingSetCallback(aError);
+    otOperationalDatasetTlvs strippedTlvs{};
+    const uint8_t           *tlvsEnd;
+
+    VerifyOrExit(aDatasetTlvs.mLength <= sizeof(aDatasetTlvs.mTlvs));
+
+    tlvsEnd = aDatasetTlvs.mTlvs + aDatasetTlvs.mLength;
+
+    // Preserve all non-matching (including vendor-specific or future) TLVs verbatim.
+    for (const Tlv *tlv = reinterpret_cast<const Tlv *>(aDatasetTlvs.mTlvs);
+         reinterpret_cast<const uint8_t *>(tlv) + sizeof(Tlv) <= tlvsEnd && !tlv->IsExtended() &&
+         reinterpret_cast<const uint8_t *>(tlv->GetNext()) <= tlvsEnd;
+         tlv = tlv->GetNext())
+    {
+        if (std::find(aTypesToStrip.begin(), aTypesToStrip.end(), tlv->GetType()) != aTypesToStrip.end())
+        {
+            continue;
+        }
+
+        size_t tlvSize = static_cast<size_t>(reinterpret_cast<const uint8_t *>(tlv->GetNext()) -
+                                             reinterpret_cast<const uint8_t *>(tlv));
+
+        memcpy(strippedTlvs.mTlvs + strippedTlvs.mLength, tlv, tlvSize);
+        strippedTlvs.mLength += static_cast<uint8_t>(tlvSize);
+    }
+
+exit:
+    return strippedTlvs;
 }
 
-void RcpHost::SendMgmtPendingSetCallback(otError aError)
+void RcpHost::SendMgmtSetCallback(otError aError, void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->SendMgmtSetCallback(aError);
+}
+
+void RcpHost::SendMgmtSetCallback(otError aError)
 {
     auto migrationReceiver = std::move(mScheduleMigrationReceiver);
     SafeInvoke(migrationReceiver, aError, "");

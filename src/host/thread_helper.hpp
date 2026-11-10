@@ -245,13 +245,17 @@ public:
      * If it's valid, the method will append a meshcop Pending Timestamp TLV with value being the current unix
      * timestamp and a meshcop Delay Timer TLV with value being @p aDelayMilli.
      *
-     * @param[in/out] aDatasetTlvs  The dataset to validate and process in TLVs format.
-     * @param[in]     aDelayMilli   The delay time for migration in milliseconds.
+     * @param[in/out] aDatasetTlvs            The dataset to validate and process in TLVs format.
+     * @param[in]     aDelayMilli             The delay time for migration in milliseconds.
+     * @param[in]     aCurPendingDatasetTlvs  Optional pointer to the currently active Pending Operational Dataset TLVs
+     *                                        so the synthesized Pending Timestamp advances past it.
      *
      * @retval OT_ERROR_NONE          Dataset is valid to do Thread network migration.
      * @retval OT_ERROR_INVALID_ARGS  Dataset is invalid to do Thread network migration.
      */
-    static otError ProcessDatasetForMigration(otOperationalDatasetTlvs &aDatasetTlvs, uint32_t aDelayMilli);
+    static otError ProcessDatasetForMigration(otOperationalDatasetTlvs       &aDatasetTlvs,
+                                              uint32_t                        aDelayMilli,
+                                              const otOperationalDatasetTlvs *aCurPendingDatasetTlvs = nullptr);
 
 private:
     static void ActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);

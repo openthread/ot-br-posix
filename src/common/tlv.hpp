@@ -65,6 +65,13 @@ public:
     void SetType(uint8_t aType) { mType = aType; }
 
     /**
+     * This method returns whether the Tlv uses extended length encoding.
+     *
+     * @returns TRUE if the Tlv uses extended length encoding, FALSE otherwise.
+     */
+    bool IsExtended(void) const { return mLength == kLengthEscape; }
+
+    /**
      * This method returns the Tlv length.
      *
      * @returns The Tlv length.
@@ -100,6 +107,24 @@ public:
     {
         return reinterpret_cast<const uint8_t *>(this) + sizeof(mType) +
                (mLength != kLengthEscape ? sizeof(mLength) : (sizeof(uint16_t) + sizeof(mLength)));
+    }
+
+    /**
+     * This method returns the value as a uint64_t.
+     *
+     * @returns The uint64_t value.
+     */
+    uint64_t GetValueUInt64(void) const
+    {
+        uint64_t       value = 0;
+        const uint8_t *p     = static_cast<const uint8_t *>(GetValue());
+
+        for (size_t i = 0; i < sizeof(value); ++i)
+        {
+            value = (value << 8) | p[i];
+        }
+
+        return value;
     }
 
     /**
