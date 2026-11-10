@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
+#include <memory>
 
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
@@ -1171,6 +1172,200 @@ TEST(RcpHostApi, ThreadDetachGracefullyCallbackReentrancy)
     EXPECT_TRUE(done2);
     EXPECT_TRUE(done3);
     EXPECT_TRUE(done4);
+
+    host.Deinit();
+}
+
+// The receivers in the tests below capture only two references so that they are trivially copyable
+// and fit in the small buffer of `std::function`. Moving such a `std::function` in libc++ copies the
+// target and leaves the moved-from object non-empty.
+
+TEST(RcpHostApi, JoinReceiverIsInvokedOnlyOnce)
+{
+    otError                                     error          = OT_ERROR_FAILED;
+    bool                                        resultReceived = false;
+    otError                                     joinError      = OT_ERROR_FAILED;
+    int                                         joinCount      = 0;
+    int                                         leaderCount    = 0;
+    otbr::MainloopContext                       mainloop;
+    otInstance                                 *instance;
+    otOperationalDataset                        dataset;
+    otOperationalDatasetTlvs                    datasetTlvs;
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
+                                                                                     const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        resultReceived = true;
+        error          = aError;
+    };
+    otbr::Host::ThreadHost::AsyncResultReceiver joinReceiver = [&joinCount, &joinError](otError            aError,
+                                                                                        const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        joinCount++;
+        joinError = aError;
+    };
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
+
+    host.Init();
+    instance = ot::FakePlatform::CurrentInstance();
+    host.AddThreadRoleChangedCallback([&leaderCount](otDeviceRole aRole) {
+        if (aRole == OT_DEVICE_ROLE_LEADER)
+        {
+            leaderCount++;
+        }
+    });
+
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    ASSERT_EQ(error, OT_ERROR_NONE);
+
+    ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+    host.Join(datasetTlvs, joinReceiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&joinCount]() { return joinCount > 0; });
+    EXPECT_EQ(joinCount, 1);
+    EXPECT_EQ(joinError, OT_ERROR_NONE);
+    ASSERT_EQ(leaderCount, 1);
+
+    // 1. A later role change while attached must not report the join result again.
+    ASSERT_EQ(otThreadBecomeDetached(instance), OT_ERROR_NONE);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&leaderCount]() { return leaderCount > 1; });
+    ASSERT_EQ(leaderCount, 2);
+    EXPECT_EQ(joinCount, 1);
+
+    // 2. A graceful detach must not report the join result again.
+    resultReceived = false;
+    host.Leave(/* aEraseDataset */ false, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(joinCount, 1);
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, ScheduleMigrationAcceptsSequentialRequests)
+{
+    otError                                     error          = OT_ERROR_FAILED;
+    bool                                        resultReceived = false;
+    otError                                     migrationError = OT_ERROR_FAILED;
+    int                                         migrationCount = 0;
+    otbr::MainloopContext                       mainloop;
+    otInstance                                 *instance;
+    otOperationalDataset                        dataset;
+    otOperationalDatasetTlvs                    datasetTlvs;
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
+                                                                                     const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        resultReceived = true;
+        error          = aError;
+    };
+    otbr::Host::ThreadHost::AsyncResultReceiver migrationReceiver =
+        [&migrationCount, &migrationError](otError aError, const std::string &aErrorMsg) {
+            OT_UNUSED_VARIABLE(aErrorMsg);
+            migrationCount++;
+            migrationError = aError;
+        };
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
+
+    host.Init();
+    instance = ot::FakePlatform::CurrentInstance();
+
+    ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+    ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs), OT_ERROR_NONE);
+
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived, &host]() {
+        return resultReceived && host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER;
+    });
+    ASSERT_EQ(error, OT_ERROR_NONE);
+    ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    // Each migration must be accepted once the previous one has completed.
+    for (int i = 1; i <= 2; i++)
+    {
+        dataset.mActiveTimestamp.mSeconds++;
+        otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+        host.ScheduleMigration(datasetTlvs, migrationReceiver);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&migrationCount, i]() { return migrationCount >= i; });
+        EXPECT_EQ(migrationCount, i);
+        EXPECT_EQ(migrationError, OT_ERROR_NONE);
+    }
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, DetachGracefullyAcceptsSequentialRequests)
+{
+    otError                                 detachError = OT_ERROR_FAILED;
+    int                                     detachCount = 0;
+    otbr::MainloopContext                   mainloop;
+    otInstance                             *instance;
+    otOperationalDataset                    dataset;
+    otOperationalDatasetTlvs                datasetTlvs;
+    otbr::Host::ThreadHelper::ResultHandler detachHandler = [&detachCount, &detachError](otError aError) {
+        detachCount++;
+        detachError = aError;
+    };
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
+
+    host.Init();
+    instance = ot::FakePlatform::CurrentInstance();
+
+    ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+    ASSERT_EQ(otDatasetSetActiveTlvs(instance, &datasetTlvs), OT_ERROR_NONE);
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
+
+    // Each detach must be accepted once the previous one has completed.
+    for (int i = 1; i <= 2; i++)
+    {
+        ASSERT_EQ(otThreadSetEnabled(instance, true), OT_ERROR_NONE);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                             [&host]() { return host.GetDeviceRole() == OT_DEVICE_ROLE_LEADER; });
+        ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+        host.GetThreadHelper()->DetachGracefully(detachHandler);
+        MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&detachCount, i]() { return detachCount >= i; });
+        EXPECT_EQ(detachCount, i);
+        EXPECT_EQ(detachError, OT_ERROR_NONE);
+    }
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, EnergyScanHandlerIsReleasedAfterCompletion)
+{
+    int                       energyScanCount = 0;
+    otInstance               *instance;
+    std::shared_ptr<int>      token = std::make_shared<int>(0);
+    std::weak_ptr<int>        weakToken(token);
+    otbr::Host::RcpHost       host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                                   /* aDryRun */ false,
+                                   /* aEnableAutoAttach */ false);
+    otbr::Host::ThreadHelper *threadHelper;
+
+    host.Init();
+    instance     = ot::FakePlatform::CurrentInstance();
+    threadHelper = host.GetThreadHelper();
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
+
+    // A completed energy scan must not keep its handler (and the state it captures) alive.
+    threadHelper->EnergyScan(
+        /* aScanDuration */ 10,
+        [token, &energyScanCount](otError aError, const std::vector<otEnergyScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_NONE);
+            energyScanCount++;
+        });
+    token.reset();
+    ot::FakePlatform::CurrentPlatform().GoInMs(1000);
+    EXPECT_EQ(energyScanCount, 1);
+    EXPECT_TRUE(weakToken.expired());
 
     host.Deinit();
 }

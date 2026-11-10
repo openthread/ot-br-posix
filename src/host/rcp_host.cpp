@@ -392,7 +392,7 @@ void RcpHost::HandleStateChanged(otChangedFlags aFlags)
         if (IsAttached() && mJoinReceiver != nullptr)
         {
             otbrLogInfo("Join succeeded");
-            auto joinReceiver = std::move(mJoinReceiver);
+            auto joinReceiver = TakeReceiver(mJoinReceiver);
             SafeInvoke(joinReceiver, OT_ERROR_NONE, "Join succeeded");
         }
     }
@@ -760,7 +760,7 @@ void RcpHost::SendMgmtSetCallback(otError aError, void *aContext)
 
 void RcpHost::SendMgmtSetCallback(otError aError)
 {
-    auto migrationReceiver = std::move(mScheduleMigrationReceiver);
+    auto migrationReceiver = TakeReceiver(mScheduleMigrationReceiver);
     SafeInvoke(migrationReceiver, aError, "");
 }
 
@@ -879,8 +879,8 @@ void RcpHost::ThreadDetachGracefullyCallback(void)
     std::vector<DetachGracefullyCallback> callbacks;
 
     callbacks.swap(mDetachGracefullyCallbacks);
-    auto joinReceiver      = std::move(mJoinReceiver);
-    auto migrationReceiver = std::move(mScheduleMigrationReceiver);
+    auto joinReceiver      = TakeReceiver(mJoinReceiver);
+    auto migrationReceiver = TakeReceiver(mScheduleMigrationReceiver);
 
     SafeInvoke(joinReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
     SafeInvoke(migrationReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
@@ -946,7 +946,7 @@ void RcpHost::DisableThreadAfterDetach(void)
     UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
 
 exit:
-    auto receiver = std::move(mSetThreadEnabledReceiver);
+    auto receiver = TakeReceiver(mSetThreadEnabledReceiver);
     SafeInvoke(receiver, error, errorMsg);
 }
 

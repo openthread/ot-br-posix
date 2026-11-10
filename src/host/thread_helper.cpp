@@ -261,7 +261,10 @@ void ThreadHelper::ActiveScanHandler(otActiveScanResult *aResult)
     {
         if (mScanHandler != nullptr)
         {
-            mScanHandler(OT_ERROR_NONE, mScanResults);
+            ScanHandler handler;
+
+            handler.swap(mScanHandler);
+            handler(OT_ERROR_NONE, mScanResults);
         }
     }
     else
@@ -306,7 +309,10 @@ void ThreadHelper::EnergyScanCallback(otEnergyScanResult *aResult)
     {
         if (mEnergyScanHandler != nullptr)
         {
-            mEnergyScanHandler(OT_ERROR_NONE, mEnergyScanResults);
+            EnergyScanHandler handler;
+
+            handler.swap(mEnergyScanHandler);
+            handler(OT_ERROR_NONE, mEnergyScanResults);
         }
     }
     else
@@ -794,7 +800,9 @@ void ThreadHelper::DetachGracefullyCallback(void)
 {
     if (mDetachGracefullyHandler != nullptr)
     {
-        ResultHandler handler = std::move(mDetachGracefullyHandler);
+        ResultHandler handler;
+
+        handler.swap(mDetachGracefullyHandler);
         handler(OT_ERROR_NONE);
     }
 }

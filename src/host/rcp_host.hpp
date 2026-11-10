@@ -253,6 +253,16 @@ private:
         }
     }
 
+    // Unlike `std::move()`, which leaves a `std::function` in a valid but unspecified (possibly
+    // still callable) state, this guarantees that `aReceiver` is empty afterwards.
+    static AsyncResultReceiver TakeReceiver(AsyncResultReceiver &aReceiver)
+    {
+        AsyncResultReceiver receiver;
+
+        receiver.swap(aReceiver);
+        return receiver;
+    }
+
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
     {
         static_cast<RcpHost *>(aContext)->HandleStateChanged(aFlags);
