@@ -59,11 +59,9 @@ set_property(CACHE OTBR_MDNS PROPERTY STRINGS "mDNSResponder" "openthread")
 include("${PROJECT_SOURCE_DIR}/etc/cmake/options.cmake")
 
 # The TREL radio URL the installed service starts with, with the space that separates it from the
-# radio URL, so that the defaults file has no trailing space when there is none. TREL does not work on
-# macOS yet (TODO(openthread#13749): enable it there once the agent reaches its peers), so the service
-# there starts without it; the defaults file is where to add it. Not cached, so that it follows
-# OTBR_TREL and OTBR_INFRA_IF_NAME on every configure.
-if(OTBR_TREL AND NOT APPLE)
+# radio URL, so that the defaults file has no trailing space when there is none. Not cached, so that
+# it follows OTBR_TREL and OTBR_INFRA_IF_NAME on every configure.
+if(OTBR_TREL)
     set(OTBR_SERVICE_TREL_URL " trel://${OTBR_INFRA_IF_NAME}")
 else()
     set(OTBR_SERVICE_TREL_URL "")
