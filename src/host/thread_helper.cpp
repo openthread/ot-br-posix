@@ -35,6 +35,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <utility>
+
 #include <net/if.h>
 #include <openthread/border_agent.h>
 #include <openthread/border_router.h>
@@ -45,6 +47,7 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
+#include "common/callback.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
@@ -103,9 +106,8 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
                 }
                 if (mAttachDatasetTlvs.mLength == 0)
                 {
-                    AttachHandler handler = mAttachHandler;
+                    AttachHandler handler = TakeCallback(mAttachHandler);
 
-                    mAttachHandler = nullptr;
                     handler(OT_ERROR_NONE, mAttachDelayMs);
                 }
                 else
@@ -126,9 +128,8 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
 
                     if (error != OT_ERROR_NONE)
                     {
-                        AttachHandler handler = mAttachHandler;
+                        AttachHandler handler = TakeCallback(mAttachHandler);
 
-                        mAttachHandler          = nullptr;
                         mAttachDatasetTlvs      = {};
                         mWaitingMgmtSetResponse = false;
                         handler(error, 0);
@@ -141,8 +142,9 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
             }
             else if (mJoinerHandler != nullptr)
             {
-                mJoinerHandler(OT_ERROR_NONE);
-                mJoinerHandler = nullptr;
+                ResultHandler handler = TakeCallback(mJoinerHandler);
+
+                handler(OT_ERROR_NONE);
             }
         }
     }
@@ -196,20 +198,17 @@ void ThreadHelper::Scan(ScanHandler aHandler)
     otError error = OT_ERROR_NONE;
 
     VerifyOrExit(aHandler != nullptr);
-    mScanHandler = aHandler;
-    mScanResults.clear();
+    VerifyOrExit(mScanHandler == nullptr, error = OT_ERROR_BUSY);
 
-    error =
-        otLinkActiveScan(mInstance, /*scanChannels =*/0, /*scanDuration=*/0, &ThreadHelper::ActiveScanHandler, this);
+    SuccessOrExit(error = otLinkActiveScan(mInstance, /*scanChannels =*/0, /*scanDuration=*/0,
+                                           &ThreadHelper::ActiveScanHandler, this));
+    mScanHandler = std::move(aHandler);
+    mScanResults.clear();
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        if (aHandler)
-        {
-            mScanHandler(error, {});
-        }
-        mScanHandler = nullptr;
+        aHandler(error, {});
     }
 }
 
@@ -218,22 +217,19 @@ void ThreadHelper::EnergyScan(uint32_t aScanDuration, EnergyScanHandler aHandler
     otError  error             = OT_ERROR_NONE;
     uint32_t preferredChannels = otPlatRadioGetPreferredChannelMask(mInstance);
 
-    VerifyOrExit(aHandler != nullptr, error = OT_ERROR_BUSY);
+    VerifyOrExit(aHandler != nullptr);
     VerifyOrExit(aScanDuration < UINT16_MAX, error = OT_ERROR_INVALID_ARGS);
-    mEnergyScanHandler = aHandler;
-    mEnergyScanResults.clear();
+    VerifyOrExit(mEnergyScanHandler == nullptr, error = OT_ERROR_BUSY);
 
-    error = otLinkEnergyScan(mInstance, preferredChannels, static_cast<uint16_t>(aScanDuration),
-                             &ThreadHelper::EnergyScanCallback, this);
+    SuccessOrExit(error = otLinkEnergyScan(mInstance, preferredChannels, static_cast<uint16_t>(aScanDuration),
+                                           &ThreadHelper::EnergyScanCallback, this));
+    mEnergyScanHandler = std::move(aHandler);
+    mEnergyScanResults.clear();
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        if (aHandler)
-        {
-            mEnergyScanHandler(error, {});
-        }
-        mEnergyScanHandler = nullptr;
+        aHandler(error, {});
     }
 }
 
@@ -259,9 +255,14 @@ void ThreadHelper::ActiveScanHandler(otActiveScanResult *aResult)
 {
     if (aResult == nullptr)
     {
+        std::vector<otActiveScanResult> results;
+
+        results.swap(mScanResults);
         if (mScanHandler != nullptr)
         {
-            mScanHandler(OT_ERROR_NONE, mScanResults);
+            ScanHandler handler = TakeCallback(mScanHandler);
+
+            handler(OT_ERROR_NONE, results);
         }
     }
     else
@@ -304,9 +305,14 @@ void ThreadHelper::EnergyScanCallback(otEnergyScanResult *aResult)
 {
     if (aResult == nullptr)
     {
+        std::vector<otEnergyScanResult> results;
+
+        results.swap(mEnergyScanResults);
         if (mEnergyScanHandler != nullptr)
         {
-            mEnergyScanHandler(OT_ERROR_NONE, mEnergyScanResults);
+            EnergyScanHandler handler = TakeCallback(mEnergyScanHandler);
+
+            handler(OT_ERROR_NONE, results);
         }
     }
     else
@@ -500,9 +506,13 @@ void ThreadHelper::JoinerCallback(otError aError)
 {
     if (aError != OT_ERROR_NONE)
     {
+        ResultHandler handler = TakeCallback(mJoinerHandler);
+
         otbrLogWarning("Failed to join Thread network: %s", otThreadErrorToString(aError));
-        mJoinerHandler(aError);
-        mJoinerHandler = nullptr;
+        if (handler != nullptr)
+        {
+            handler(aError);
+        }
     }
     else
     {
@@ -700,9 +710,8 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
     }
 
     attachDelayMs      = mAttachDelayMs;
-    handler            = mAttachHandler;
+    handler            = TakeCallback(mAttachHandler);
     mAttachDelayMs     = 0;
-    mAttachHandler     = nullptr;
     mAttachDatasetTlvs = {};
     if (aResult == OT_ERROR_NONE)
     {
@@ -794,7 +803,8 @@ void ThreadHelper::DetachGracefullyCallback(void)
 {
     if (mDetachGracefullyHandler != nullptr)
     {
-        ResultHandler handler = std::move(mDetachGracefullyHandler);
+        ResultHandler handler = TakeCallback(mDetachGracefullyHandler);
+
         handler(OT_ERROR_NONE);
     }
 }

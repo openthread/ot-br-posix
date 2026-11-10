@@ -33,8 +33,31 @@
 
 #include <functional>
 #include <type_traits>
+#include <utility>
 
 namespace otbr {
+
+/**
+ * This function takes a `std::function` callback out of @p aCallback and leaves @p aCallback empty.
+ *
+ * Move-constructing from a `std::function` leaves the source in a valid-but-unspecified state
+ * (C++11 [func.wrap.func.con]), which remains non-empty for small trivial callables in libc++.
+ * This function explicitly assigns `nullptr` so that @p aCallback is guaranteed to be empty on return
+ * and any state captured by the callback is released once the returned `std::function` goes out of scope.
+ *
+ * @tparam Signature  The function signature of @p aCallback.
+ *
+ * @param[in,out] aCallback  The callback to take. It is set to `nullptr` on return.
+ *
+ * @returns The callback previously stored in @p aCallback.
+ */
+template <typename Signature> std::function<Signature> TakeCallback(std::function<Signature> &aCallback)
+{
+    std::function<Signature> callback = std::move(aCallback);
+
+    aCallback = nullptr;
+    return callback;
+}
 
 template <class T> class OnceCallback;
 

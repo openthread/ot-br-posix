@@ -61,3 +61,19 @@ TEST(VerifyInvocation, CallbackResultIsExpected)
 
     EXPECT_EQ(ret, 25);
 }
+
+TEST(TakeCallback, ClearsSourceAndInvokesReturnedCallback)
+{
+    int                     callCount = 0;
+    std::function<int(int)> callback  = [&callCount](int aValue) {
+        callCount++;
+        return aValue * 2;
+    };
+
+    std::function<int(int)> taken = otbr::TakeCallback(callback);
+
+    EXPECT_EQ(callback, nullptr);
+    ASSERT_NE(taken, nullptr);
+    EXPECT_EQ(taken(21), 42);
+    EXPECT_EQ(callCount, 1);
+}
