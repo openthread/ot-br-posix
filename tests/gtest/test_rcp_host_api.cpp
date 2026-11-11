@@ -30,9 +30,12 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
+#include <memory>
 
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
+#include <openthread/link.h>
+#include <openthread/platform/radio.h>
 
 #include "common/mainloop.hpp"
 #include "common/mainloop_manager.hpp"
@@ -1418,6 +1421,313 @@ TEST(RcpHostApi, ResetFromAbortedJoinReceiverAbortsLeave)
 
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [] { return false; });
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, ReceiversClearedAfterCompletion)
+{
+    // Small, trivially copyable/destructible lambdas (single pointer capture) stay non-empty after
+    // std::move() in libc++'s std::function implementation. Verify that completed receivers/handlers
+    // are explicitly reset to nullptr so they are not re-invoked on subsequent detach/leave and do
+    // not block follow-up operations with OT_ERROR_BUSY.
+    struct CallState
+    {
+        uint32_t mCount = 0;
+        otError  mError = OT_ERROR_FAILED;
+    };
+
+    auto makeSmallReceiver = [](CallState *aState) {
+        return [aState](otError aError, const std::string &aErrorMsg) {
+            OT_UNUSED_VARIABLE(aErrorMsg);
+            aState->mCount++;
+            aState->mError = aError;
+        };
+    };
+
+    otbr::MainloopContext mainloop;
+    otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                               /* aDryRun */ false,
+                               /* aEnableAutoAttach */ false);
+
+    host.Init();
+
+    otInstance              *instance = ot::FakePlatform::CurrentInstance();
+    otOperationalDataset     dataset{};
+    otOperationalDatasetTlvs datasetTlvs{};
+
+    ASSERT_EQ(otDatasetCreateNewNetwork(instance, &dataset), OT_ERROR_NONE);
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+    // 1. Enable -> Join -> back-to-back ScheduleMigration -> Leave.
+    CallState enableState;
+    host.SetThreadEnabled(true, makeSmallReceiver(&enableState));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&enableState]() { return enableState.mCount > 0; });
+    ASSERT_EQ(enableState.mCount, 1U);
+    EXPECT_EQ(enableState.mError, OT_ERROR_NONE);
+
+    CallState joinState;
+    host.Join(datasetTlvs, makeSmallReceiver(&joinState));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&joinState]() { return joinState.mCount > 0; });
+    ASSERT_EQ(joinState.mCount, 1U);
+    EXPECT_EQ(joinState.mError, OT_ERROR_NONE);
+    ASSERT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    dataset.mActiveTimestamp.mSeconds++;
+    OT_UNUSED_VARIABLE(otNetworkNameFromString(&dataset.mNetworkName, "MigOne"));
+    otOperationalDatasetTlvs mig1Tlvs{};
+    otDatasetConvertToTlvs(&dataset, &mig1Tlvs);
+
+    CallState mig1State;
+    host.ScheduleMigration(mig1Tlvs, makeSmallReceiver(&mig1State));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&mig1State]() { return mig1State.mCount > 0; });
+    ASSERT_EQ(mig1State.mCount, 1U);
+    EXPECT_EQ(mig1State.mError, OT_ERROR_NONE);
+
+    dataset.mActiveTimestamp.mSeconds++;
+    OT_UNUSED_VARIABLE(otNetworkNameFromString(&dataset.mNetworkName, "MigTwo"));
+    otOperationalDatasetTlvs mig2Tlvs{};
+    otDatasetConvertToTlvs(&dataset, &mig2Tlvs);
+
+    CallState mig2State;
+    host.ScheduleMigration(mig2Tlvs, makeSmallReceiver(&mig2State));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&mig2State]() { return mig2State.mCount > 0; });
+    ASSERT_EQ(mig2State.mCount, 1U);
+    EXPECT_EQ(mig2State.mError, OT_ERROR_NONE);
+    EXPECT_EQ(mig1State.mCount, 1U);
+
+    CallState leaveState;
+    host.Leave(/* aEraseDataset */ true, makeSmallReceiver(&leaveState));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&leaveState]() { return leaveState.mCount > 0; });
+    ASSERT_EQ(leaveState.mCount, 1U);
+    EXPECT_EQ(leaveState.mError, OT_ERROR_NONE);
+    // Completed Join and ScheduleMigration receivers must not be re-invoked with OT_ERROR_ABORT.
+    EXPECT_EQ(joinState.mCount, 1U);
+    EXPECT_EQ(mig1State.mCount, 1U);
+    EXPECT_EQ(mig2State.mCount, 1U);
+
+    // 2. Enable -> Join -> SetThreadEnabled(false) with a small trivial receiver.
+    CallState reEnableState;
+    host.SetThreadEnabled(true, makeSmallReceiver(&reEnableState));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&reEnableState]() { return reEnableState.mCount > 0; });
+    ASSERT_EQ(reEnableState.mCount, 1U);
+
+    CallState reJoinState;
+    host.Join(datasetTlvs, makeSmallReceiver(&reJoinState));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&reJoinState]() { return reJoinState.mCount > 0; });
+    ASSERT_EQ(reJoinState.mCount, 1U);
+    EXPECT_EQ(reJoinState.mError, OT_ERROR_NONE);
+
+    CallState disableState;
+    host.SetThreadEnabled(false, makeSmallReceiver(&disableState));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&disableState]() { return disableState.mCount > 0; });
+    ASSERT_EQ(disableState.mCount, 1U);
+    EXPECT_EQ(disableState.mError, OT_ERROR_NONE);
+
+    // Completed SetThreadEnabled(false) must also release captured state held by mSetThreadEnabledReceiver.
+    CallState            reEnableForReleaseState;
+    CallState            disableReleaseState;
+    std::shared_ptr<int> disableToken = std::make_shared<int>(0);
+    std::weak_ptr<int>   weakDisableToken(disableToken);
+    host.SetThreadEnabled(true, makeSmallReceiver(&reEnableForReleaseState));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&reEnableForReleaseState]() { return reEnableForReleaseState.mCount > 0; });
+    ASSERT_EQ(reEnableForReleaseState.mCount, 1U);
+
+    host.SetThreadEnabled(false, [disableToken, &disableReleaseState](otError aError, const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        disableReleaseState.mCount++;
+        disableReleaseState.mError = aError;
+    });
+    disableToken.reset();
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                         [&disableReleaseState]() { return disableReleaseState.mCount > 0; });
+    ASSERT_EQ(disableReleaseState.mCount, 1U);
+    EXPECT_EQ(disableReleaseState.mError, OT_ERROR_NONE);
+    EXPECT_TRUE(weakDisableToken.expired());
+
+    // 3. ThreadHelper::DetachGracefully() clears mDetachGracefullyHandler so back-to-back calls succeed.
+    CallState detach1State;
+    CallState detach2State;
+    auto      makeDetachHandler = [](CallState *aState) {
+        return [aState](otError aError) {
+            aState->mCount++;
+            aState->mError = aError;
+        };
+    };
+
+    host.GetThreadHelper()->DetachGracefully(makeDetachHandler(&detach1State));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&detach1State]() { return detach1State.mCount > 0; });
+    ASSERT_EQ(detach1State.mCount, 1U);
+    EXPECT_EQ(detach1State.mError, OT_ERROR_NONE);
+
+    host.GetThreadHelper()->DetachGracefully(makeDetachHandler(&detach2State));
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&detach2State]() { return detach2State.mCount > 0; });
+    ASSERT_EQ(detach2State.mCount, 1U);
+    EXPECT_EQ(detach2State.mError, OT_ERROR_NONE);
+    EXPECT_EQ(detach1State.mCount, 1U);
+
+    host.Deinit();
+}
+
+TEST(RcpHostApi, ScanErrorClearsHandler)
+{
+    int                   energyCount        = 0;
+    int                   busyEnergyCount    = 0;
+    int                   invalidEnergyCount = 0;
+    int                   scanBusyCount      = 0;
+    int                   activeScanCount    = 0;
+    int                   sameScanBusyCount  = 0;
+    otbr::MainloopContext mainloop;
+    otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                               /* aDryRun */ false,
+                               /* aEnableAutoAttach */ false);
+
+    host.Init();
+
+    otInstance *instance = ot::FakePlatform::CurrentInstance();
+
+    ASSERT_EQ(otIp6SetEnabled(instance, true), OT_ERROR_NONE);
+
+    // 1. Start an energy scan, then exercise same-type and cross-type concurrent calls.
+    host.GetThreadHelper()->EnergyScan(
+        /* aScanDuration */ 10, [&energyCount](otError aError, const std::vector<otEnergyScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_NONE);
+            energyCount++;
+        });
+
+    // Same-type EnergyScan with valid duration fails with OT_ERROR_BUSY without clearing the ongoing handler.
+    std::shared_ptr<int> busyEnergyToken = std::make_shared<int>(0);
+    std::weak_ptr<int>   weakBusyEnergyToken(busyEnergyToken);
+    host.GetThreadHelper()->EnergyScan(
+        /* aScanDuration */ 10,
+        [busyEnergyToken, &busyEnergyCount](otError aError, const std::vector<otEnergyScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_BUSY);
+            busyEnergyCount++;
+        });
+    busyEnergyToken.reset();
+    EXPECT_EQ(busyEnergyCount, 1);
+    EXPECT_TRUE(weakBusyEnergyToken.expired());
+
+    // Same-type EnergyScan with invalid duration (UINT16_MAX) fails with OT_ERROR_INVALID_ARGS without clearing
+    // the ongoing handler.
+    std::shared_ptr<int> invalidEnergyToken = std::make_shared<int>(0);
+    std::weak_ptr<int>   weakInvalidEnergyToken(invalidEnergyToken);
+    host.GetThreadHelper()->EnergyScan(
+        UINT16_MAX,
+        [invalidEnergyToken, &invalidEnergyCount](otError aError, const std::vector<otEnergyScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_INVALID_ARGS);
+            invalidEnergyCount++;
+        });
+    invalidEnergyToken.reset();
+    EXPECT_EQ(invalidEnergyCount, 1);
+    EXPECT_TRUE(weakInvalidEnergyToken.expired());
+
+    // Same-type EnergyScan with nullptr handler is a no-op and preserves the ongoing handler.
+    host.GetThreadHelper()->EnergyScan(/* aScanDuration */ 10, nullptr);
+
+    // Cross-type Scan while EnergyScan is in progress fails in otLinkActiveScan with OT_ERROR_BUSY and does not
+    // retain its handler in mScanHandler.
+    std::shared_ptr<int> scanBusyToken = std::make_shared<int>(0);
+    std::weak_ptr<int>   weakScanBusyToken(scanBusyToken);
+    host.GetThreadHelper()->Scan(
+        [scanBusyToken, &scanBusyCount](otError aError, const std::vector<otActiveScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_BUSY);
+            scanBusyCount++;
+        });
+    scanBusyToken.reset();
+    EXPECT_EQ(scanBusyCount, 1);
+    EXPECT_TRUE(weakScanBusyToken.expired());
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&energyCount]() { return energyCount > 0; });
+    EXPECT_EQ(energyCount, 1);
+
+    // 2. Start an active Scan, then exercise same-type concurrent Scan calls and verify the ongoing Scan handler
+    //    is preserved, fires on completion, and releases its captured state.
+    otLinkSetPcapCallback(
+        instance,
+        [](const otRadioFrame *aFrame, bool aIsTx, void *aContext) {
+            if (aIsTx)
+            {
+                otPlatRadioTxDone(static_cast<otInstance *>(aContext), const_cast<otRadioFrame *>(aFrame), nullptr,
+                                  OT_ERROR_NONE);
+            }
+        },
+        instance);
+
+    std::shared_ptr<int> activeScanToken = std::make_shared<int>(0);
+    std::weak_ptr<int>   weakActiveScanToken(activeScanToken);
+    host.GetThreadHelper()->Scan(
+        [activeScanToken, &activeScanCount](otError aError, const std::vector<otActiveScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_NONE);
+            activeScanCount++;
+        });
+    activeScanToken.reset();
+    EXPECT_FALSE(weakActiveScanToken.expired());
+
+    std::shared_ptr<int> sameScanBusyToken = std::make_shared<int>(0);
+    std::weak_ptr<int>   weakSameScanBusyToken(sameScanBusyToken);
+    host.GetThreadHelper()->Scan(
+        [sameScanBusyToken, &sameScanBusyCount](otError aError, const std::vector<otActiveScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_BUSY);
+            sameScanBusyCount++;
+        });
+    sameScanBusyToken.reset();
+    EXPECT_EQ(sameScanBusyCount, 1);
+    EXPECT_TRUE(weakSameScanBusyToken.expired());
+
+    host.GetThreadHelper()->Scan(nullptr);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&activeScanCount]() { return activeScanCount > 0; });
+    EXPECT_EQ(activeScanCount, 1);
+    EXPECT_TRUE(weakActiveScanToken.expired());
+
+    otLinkSetPcapCallback(instance, nullptr, nullptr);
+    host.Deinit();
+}
+
+TEST(RcpHostApi, EnergyScanHandlerReleasedAfterCompletion)
+{
+    int                   count = 0;
+    std::shared_ptr<int>  token = std::make_shared<int>(0);
+    std::weak_ptr<int>    weakToken(token);
+    otbr::MainloopContext mainloop;
+    otbr::Host::RcpHost   host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
+                               /* aDryRun */ false,
+                               /* aEnableAutoAttach */ false);
+
+    host.Init();
+
+    ASSERT_EQ(otIp6SetEnabled(ot::FakePlatform::CurrentInstance(), true), OT_ERROR_NONE);
+
+    // Invalid duration must invoke the caller's handler with OT_ERROR_INVALID_ARGS rather than
+    // invoking an uninitialized mEnergyScanHandler.
+    int invalidCount = 0;
+    host.GetThreadHelper()->EnergyScan(
+        UINT16_MAX, [&invalidCount](otError aError, const std::vector<otEnergyScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_INVALID_ARGS);
+            invalidCount++;
+        });
+    EXPECT_EQ(invalidCount, 1);
+
+    // A completed energy scan must not keep its handler (and the state it captures) alive.
+    host.GetThreadHelper()->EnergyScan(
+        /* aScanDuration */ 10, [token, &count](otError aError, const std::vector<otEnergyScanResult> &aResults) {
+            OT_UNUSED_VARIABLE(aResults);
+            EXPECT_EQ(aError, OT_ERROR_NONE);
+            count++;
+        });
+    token.reset();
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5, [&count]() { return count > 0; });
+    EXPECT_EQ(count, 1);
+    EXPECT_TRUE(weakToken.expired());
 
     host.Deinit();
 }

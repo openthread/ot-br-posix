@@ -54,6 +54,7 @@
 #include <openthread/platform/radio.h>
 #include <openthread/platform/settings.h>
 
+#include "common/callback.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
@@ -391,7 +392,7 @@ void RcpHost::HandleStateChanged(otChangedFlags aFlags)
         if (IsAttached() && mJoinReceiver != nullptr)
         {
             otbrLogInfo("Join succeeded");
-            auto joinReceiver = std::move(mJoinReceiver);
+            auto joinReceiver = TakeCallback(mJoinReceiver);
             SafeInvoke(joinReceiver, OT_ERROR_NONE, "Join succeeded");
         }
     }
@@ -478,11 +479,11 @@ void RcpHost::Reset(void)
 {
     // A graceful detach requested on the old instance never completes on the new one, so drop
     // its continuations and abort the operations still waiting on the old instance.
-    auto pendingJoinReceiver      = std::move(mPendingJoinReceiver);
-    auto joinReceiver             = std::move(mJoinReceiver);
-    auto leaveReceiver            = std::move(mLeaveReceiver);
-    auto setThreadEnabledReceiver = std::move(mSetThreadEnabledReceiver);
-    auto migrationReceiver        = std::move(mScheduleMigrationReceiver);
+    auto pendingJoinReceiver      = TakeCallback(mPendingJoinReceiver);
+    auto joinReceiver             = TakeCallback(mJoinReceiver);
+    auto leaveReceiver            = TakeCallback(mLeaveReceiver);
+    auto setThreadEnabledReceiver = TakeCallback(mSetThreadEnabledReceiver);
+    auto migrationReceiver        = TakeCallback(mScheduleMigrationReceiver);
 
     mDetachGracefullyCallbacks.clear();
 
@@ -594,7 +595,7 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     {
         SetPendingJoin(aActiveOpDatasetTlvs, aReceiver);
         ThreadDetachGracefully([this] {
-            auto pendingJoinReceiver = std::move(mPendingJoinReceiver);
+            auto pendingJoinReceiver = TakeCallback(mPendingJoinReceiver);
 
             SafeInvoke(pendingJoinReceiver, OT_ERROR_NONE);
         });
@@ -611,7 +612,7 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
 
     // Abort an ongoing join()
     {
-        auto joinReceiver = std::move(mJoinReceiver);
+        auto joinReceiver = TakeCallback(mJoinReceiver);
         mJoinReceiver     = aReceiver;
         SafeInvoke(joinReceiver, OT_ERROR_ABORT, "Join() is aborted");
     }
@@ -626,7 +627,7 @@ exit:
 
 void RcpHost::SetPendingJoin(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
 {
-    auto supersededReceiver = std::move(mPendingJoinReceiver);
+    auto supersededReceiver = TakeCallback(mPendingJoinReceiver);
 
     mPendingJoinReceiver = [aActiveOpDatasetTlvs, aReceiver, this](otError aError, const std::string &aErrorInfo) {
         if (aError != OT_ERROR_NONE)
@@ -649,7 +650,7 @@ void RcpHost::SetPendingJoin(const otOperationalDatasetTlvs &aActiveOpDatasetTlv
 
 void RcpHost::AbortPendingJoin(const std::string &aErrorInfo)
 {
-    auto pendingJoinReceiver = std::move(mPendingJoinReceiver);
+    auto pendingJoinReceiver = TakeCallback(mPendingJoinReceiver);
 
     SafeInvoke(pendingJoinReceiver, OT_ERROR_ABORT, aErrorInfo);
 }
@@ -793,7 +794,7 @@ void RcpHost::SendMgmtSetCallback(otError aError, void *aContext)
 
 void RcpHost::SendMgmtSetCallback(otError aError)
 {
-    auto migrationReceiver = std::move(mScheduleMigrationReceiver);
+    auto migrationReceiver = TakeCallback(mScheduleMigrationReceiver);
     SafeInvoke(migrationReceiver, aError, "");
 }
 
@@ -915,8 +916,8 @@ void RcpHost::ThreadDetachGracefullyCallback(void)
     std::vector<DetachGracefullyCallback> callbacks;
 
     callbacks.swap(mDetachGracefullyCallbacks);
-    auto joinReceiver      = std::move(mJoinReceiver);
-    auto migrationReceiver = std::move(mScheduleMigrationReceiver);
+    auto joinReceiver      = TakeCallback(mJoinReceiver);
+    auto migrationReceiver = TakeCallback(mScheduleMigrationReceiver);
 
     SafeInvoke(joinReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
     SafeInvoke(migrationReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
@@ -951,7 +952,7 @@ exit:
         UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
     }
 
-    auto receiver = std::move(mLeaveReceiver);
+    auto receiver = TakeCallback(mLeaveReceiver);
     SafeInvoke(receiver, error, errorMsg);
 }
 
@@ -983,7 +984,7 @@ void RcpHost::DisableThreadAfterDetach(void)
     UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
 
 exit:
-    auto receiver = std::move(mSetThreadEnabledReceiver);
+    auto receiver = TakeCallback(mSetThreadEnabledReceiver);
     SafeInvoke(receiver, error, errorMsg);
 }
 
