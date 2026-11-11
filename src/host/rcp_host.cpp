@@ -30,8 +30,6 @@
 
 #include "host/rcp_host.hpp"
 
-#include <algorithm>
-
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -58,7 +56,6 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "common/tlv.hpp"
 #include "common/types.hpp"
 #if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
@@ -726,8 +723,10 @@ void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aOpDatasetTlvs, 
 
     if (isPendingDataset || isActiveDataset)
     {
-        activeDatasetTlvs = StripTlvs(aOpDatasetTlvs, {OT_MESHCOP_TLV_PENDINGTIMESTAMP, OT_MESHCOP_TLV_DELAYTIMER});
-        isActiveDataset   = isActiveDataset && (activeDatasetTlvs.mLength == aOpDatasetTlvs.mLength);
+        activeDatasetTlvs = aOpDatasetTlvs;
+        IgnoreError(otDatasetRemoveTlv(&activeDatasetTlvs, OT_MESHCOP_TLV_PENDINGTIMESTAMP));
+        IgnoreError(otDatasetRemoveTlv(&activeDatasetTlvs, OT_MESHCOP_TLV_DELAYTIMER));
+        isActiveDataset = isActiveDataset && (activeDatasetTlvs.mLength == aOpDatasetTlvs.mLength);
     }
 
     // TODO: check supported channel mask
@@ -785,38 +784,6 @@ exit:
         assert(mScheduleMigrationReceiver == nullptr);
         mScheduleMigrationReceiver = aReceiver;
     }
-}
-
-otOperationalDatasetTlvs RcpHost::StripTlvs(const otOperationalDatasetTlvs &aDatasetTlvs,
-                                            std::initializer_list<uint8_t>  aTypesToStrip)
-{
-    otOperationalDatasetTlvs strippedTlvs{};
-    const uint8_t           *tlvsEnd;
-
-    VerifyOrExit(aDatasetTlvs.mLength <= sizeof(aDatasetTlvs.mTlvs));
-
-    tlvsEnd = aDatasetTlvs.mTlvs + aDatasetTlvs.mLength;
-
-    // Preserve all non-matching (including vendor-specific or future) TLVs verbatim.
-    for (const Tlv *tlv = reinterpret_cast<const Tlv *>(aDatasetTlvs.mTlvs);
-         reinterpret_cast<const uint8_t *>(tlv) + sizeof(Tlv) <= tlvsEnd && !tlv->IsExtended() &&
-         reinterpret_cast<const uint8_t *>(tlv->GetNext()) <= tlvsEnd;
-         tlv = tlv->GetNext())
-    {
-        if (std::find(aTypesToStrip.begin(), aTypesToStrip.end(), tlv->GetType()) != aTypesToStrip.end())
-        {
-            continue;
-        }
-
-        size_t tlvSize = static_cast<size_t>(reinterpret_cast<const uint8_t *>(tlv->GetNext()) -
-                                             reinterpret_cast<const uint8_t *>(tlv));
-
-        memcpy(strippedTlvs.mTlvs + strippedTlvs.mLength, tlv, tlvSize);
-        strippedTlvs.mLength += static_cast<uint8_t>(tlvSize);
-    }
-
-exit:
-    return strippedTlvs;
 }
 
 void RcpHost::SendMgmtSetCallback(otError aError, void *aContext)

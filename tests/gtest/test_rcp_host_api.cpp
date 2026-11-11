@@ -503,15 +503,8 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
         EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
         EXPECT_STREQ(errorMsg.c_str(), "Operational dataset is not valid");
 
-        // Directly exercise StripTlvs() and ProcessDatasetForMigration() bounds checks on mLength = 255 and 0xff.
-        otOperationalDatasetTlvs strippedMax =
-            otbr::Host::RcpHost::StripTlvs(maxLenTlvs, {OT_MESHCOP_TLV_PENDINGTIMESTAMP, OT_MESHCOP_TLV_DELAYTIMER});
-        EXPECT_EQ(strippedMax.mLength, 0U);
+        // Directly exercise ProcessDatasetForMigration() bounds checks on mLength = 255 and 0xff.
         EXPECT_EQ(otbr::Host::ThreadHelper::ProcessDatasetForMigration(maxLenTlvs, 30000), OT_ERROR_INVALID_ARGS);
-
-        otOperationalDatasetTlvs strippedExt =
-            otbr::Host::RcpHost::StripTlvs(extLenTlvs, {OT_MESHCOP_TLV_PENDINGTIMESTAMP, OT_MESHCOP_TLV_DELAYTIMER});
-        EXPECT_EQ(strippedExt.mLength, sizeof(extLenTlvs.mTlvs) - 2);
         EXPECT_EQ(otbr::Host::ThreadHelper::ProcessDatasetForMigration(extLenTlvs, 30000), OT_ERROR_INVALID_ARGS);
     }
 

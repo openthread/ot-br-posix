@@ -37,7 +37,6 @@
 #include "openthread-br/config.h"
 
 #include <chrono>
-#include <initializer_list>
 #include <memory>
 
 #include <assert.h>
@@ -240,9 +239,6 @@ public:
     const char *GetCoprocessorVersion(void) override { return otPlatRadioGetVersionString(mInstance); }
 
     bool IsAttached(void);
-
-    static otOperationalDatasetTlvs StripTlvs(const otOperationalDatasetTlvs &aDatasetTlvs,
-                                              std::initializer_list<uint8_t>  aTypesToStrip);
 
 private:
     static void SafeInvoke(const AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
