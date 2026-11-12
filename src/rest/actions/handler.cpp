@@ -35,6 +35,7 @@
 #include "energy_scan.hpp"
 #include "network_diagnostic.hpp"
 #include "reset_diagnostic_counters.hpp"
+#include "traffic_stats.hpp"
 
 namespace otbr {
 namespace rest {
@@ -46,6 +47,7 @@ static std::unordered_map<std::string, Handler> sHandlers = {
     {NETWORK_DIAG_ACTION_TYPE_NAME, Handler::MakeHandler<NetworkDiagnostic>()},
     {RESET_DIAG_COUNTERS_ACTION_TYPE_NAME, Handler::MakeHandler<ResetDiagnosticCounters>()},
     {DISCOVER_NETWORK_ACTION_TYPE_NAME, Handler::MakeHandler<DiscoverNetwork>()},
+    {TRAFFIC_STATS_ACTION_TYPE_NAME, Handler::MakeHandler<TrafficStats>()},
 };
 
 const Handler *FindHandler(const char *aName)

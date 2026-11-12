@@ -41,6 +41,7 @@
 #include <openthread/border_agent_ephemeral_key.h>
 #include <openthread/dataset.h>
 #include <openthread/link.h>
+#include <openthread/openthread-system.h>
 #include <openthread/thread_ftd.h>
 
 #include "common/types.hpp"
@@ -444,6 +445,18 @@ bool JsonEpskcActivateParams(const std::string &aJson, uint32_t &aLifetime, uint
  * The caller is responsible for delete the cJSON object.
  */
 std::string Json2String(const cJSON *aJson);
+
+/**
+ * Serializes copied global and per-flow traffic counters.
+ *
+ * @param[in] aTrafficStats  The global counter snapshot.
+ * @param[in] aPerDestStats  The per-flow counter snapshot.
+ * @param[in] aFieldset     The top-level attributes to include; empty selects all.
+ * @returns The serialized attributes, without the common timestamp or envelope.
+ */
+std::string TrafficStats2JsonString(const otSysTrafficStats &aTrafficStats,
+                                    const otSysPerDestStats &aPerDestStats,
+                                    std::set<std::string>    aFieldset);
 
 cJSON *CreateMetaCollection(uint32_t aOffset, uint32_t aLimit, uint32_t aTotal);
 cJSON *CreateMetaCollection(uint32_t aOffset, uint32_t aLimit, uint32_t aTotal, uint32_t aPending);

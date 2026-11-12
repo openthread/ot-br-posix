@@ -825,6 +825,62 @@ static cJSON *Diag2cJSON(const std::vector<otNetworkDiagTlv> &aDiagSet, std::set
     return diagInfoOfOneNode;
 }
 
+static cJSON *TrafficDirection2Json(uint64_t aPackets, uint64_t aBytes, const otSysDestEntry *aEntries, uint16_t aCount)
+{
+    cJSON *direction = cJSON_CreateObject();
+    cJSON *total     = cJSON_AddObjectToObject(direction, KEY_TOTAL);
+    cJSON *flows     = cJSON_AddArrayToObject(direction, KEY_FLOWS);
+
+    // Match the numeric representation used by existing REST counters. cJSON
+    // uses double, so exact integer representation is limited to 2^53.
+    cJSON_AddNumberToObject(total, KEY_PACKETS, static_cast<double>(aPackets));
+    cJSON_AddNumberToObject(total, KEY_BYTES, static_cast<double>(aBytes));
+
+    for (uint16_t i = 0; i < aCount && i < OT_SYS_DEST_STATS_MAX; ++i)
+    {
+        const otSysDestEntry &entry = aEntries[i];
+        cJSON                *flow  = cJSON_CreateObject();
+
+        cJSON_AddStringToObject(flow, KEY_SRCIPV6, entry.mSrcAddr);
+        cJSON_AddStringToObject(flow, KEY_DSTIPV6, entry.mDstAddr);
+        cJSON_AddNumberToObject(flow, KEY_PACKETS, static_cast<double>(entry.mPackets));
+        cJSON_AddNumberToObject(flow, KEY_BYTES, static_cast<double>(entry.mBytes));
+        cJSON_AddItemToArray(flows, flow);
+    }
+
+    return direction;
+}
+
+std::string TrafficStats2JsonString(const otSysTrafficStats &aTrafficStats,
+                                    const otSysPerDestStats &aPerDestStats,
+                                    std::set<std::string>    aFieldset)
+{
+    cJSON *root = cJSON_CreateObject();
+
+    if (hasKey(aFieldset, KEY_FLOWCAPACITYPERDIRECTION))
+    {
+        cJSON_AddNumberToObject(root, KEY_FLOWCAPACITYPERDIRECTION, OT_SYS_DEST_STATS_MAX);
+    }
+    if (hasKey(aFieldset, KEY_THREADTOEXTERNAL))
+    {
+        cJSON_AddItemToObject(
+            root, KEY_THREADTOEXTERNAL,
+            TrafficDirection2Json(aTrafficStats.mThreadToExternalPackets, aTrafficStats.mThreadToExternalBytes,
+                                  aPerDestStats.mThreadToExternal, aPerDestStats.mThreadToExternalCount));
+    }
+    if (hasKey(aFieldset, KEY_EXTERNALTOTHREAD))
+    {
+        cJSON_AddItemToObject(
+            root, KEY_EXTERNALTOTHREAD,
+            TrafficDirection2Json(aTrafficStats.mExternalToThreadPackets, aTrafficStats.mExternalToThreadBytes,
+                                  aPerDestStats.mExternalToThread, aPerDestStats.mExternalToThreadCount));
+    }
+
+    std::string result = Json2String(root);
+    cJSON_Delete(root);
+    return result;
+}
+
 // TODO: simlify this interface
 std::string DiagSet2JsonString(const std::vector<otNetworkDiagTlv>         &aDiagSet,
                                std::vector<otMeshDiagChildEntry>            aChildTable,
