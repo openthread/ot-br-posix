@@ -1097,7 +1097,7 @@ void RcpHost::AddEphemeralKeyStateChangedCallback(EphemeralKeyStateChangedCallba
 void RcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxtData)
 {
     VerifyOrExit(mInstance != nullptr);
-    otBorderAgentSetVendorTxtData(mInstance, aVendorTxtData.data(), aVendorTxtData.size());
+    otBorderAgentSetVendorTxtData(mInstance, aVendorTxtData.data(), static_cast<uint16_t>(aVendorTxtData.size()));
     mBorderAgentVendorTxtData      = aVendorTxtData;
     mIsBorderAgentVendorTxtDataSet = true;
 exit:
@@ -1123,7 +1123,8 @@ otError RcpHost::SetVendorName(const char *aVendorName)
     otError error = OT_ERROR_NONE;
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
     SuccessOrExit(error = otThreadSetVendorName(mInstance, aVendorName));
-    mVendorName      = aVendorName;
+    // The core applies a null name as an empty one: cache what it applied.
+    mVendorName      = (aVendorName != nullptr) ? aVendorName : "";
     mIsVendorNameSet = true;
 exit:
     return error;
@@ -1136,7 +1137,8 @@ otError RcpHost::SetVendorModel(const char *aVendorModel)
     otError error = OT_ERROR_NONE;
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
     SuccessOrExit(error = otThreadSetVendorModel(mInstance, aVendorModel));
-    mVendorModel      = aVendorModel;
+    // The core applies a null model as an empty one: cache what it applied.
+    mVendorModel      = (aVendorModel != nullptr) ? aVendorModel : "";
     mIsVendorModelSet = true;
 exit:
     return error;

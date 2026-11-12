@@ -1835,3 +1835,37 @@ TEST(RcpHostApi, ResetPreservesVendorInfoAndMeshCoPServiceIdentity)
     host.Deinit();
 }
 #endif
+
+#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
+TEST(RcpHostApi, ResetKeepsVendorInfoClearedWithNull)
+{
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
+    otInstance         *instance;
+
+    host.Init();
+
+    // The OpenThread core applies a null vendor name or model as an empty string. The setter must accept it, and a
+    // reset must not bring back the value that was set before it.
+#ifndef OTBR_VENDOR_NAME
+    ASSERT_EQ(host.SetVendorName("TestVendor"), OT_ERROR_NONE);
+    ASSERT_EQ(host.SetVendorName(nullptr), OT_ERROR_NONE);
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    ASSERT_EQ(host.SetVendorModel("TestModel"), OT_ERROR_NONE);
+    ASSERT_EQ(host.SetVendorModel(nullptr), OT_ERROR_NONE);
+#endif
+
+    host.Reset();
+    instance = ot::FakePlatform::CurrentInstance();
+
+#ifndef OTBR_VENDOR_NAME
+    EXPECT_STREQ(otThreadGetVendorName(instance), "");
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    EXPECT_STREQ(otThreadGetVendorModel(instance), "");
+#endif
+
+    host.Deinit();
+}
+#endif
