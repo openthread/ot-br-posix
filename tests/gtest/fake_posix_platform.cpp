@@ -93,7 +93,9 @@ otError otPlatMdnsSetListeningEnabled(otInstance *aInstance, bool aEnable, uint3
     OT_UNUSED_VARIABLE(aEnable);
     OT_UNUSED_VARIABLE(aInfraIfIndex);
 
-    return OT_ERROR_NOT_IMPLEMENTED;
+    // Accept the request so that a test can enable the OpenThread mDNS module (`otMdnsSetEnabled()`) and inspect
+    // the entries it registers. Messages it sends are dropped by `otPlatMdnsSendMulticast/Unicast()` below.
+    return OT_ERROR_NONE;
 }
 
 void otPlatMdnsSendMulticast(otInstance *aInstance, otMessage *aMessage, uint32_t aInfraIfIndex)

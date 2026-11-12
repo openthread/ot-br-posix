@@ -301,6 +301,8 @@ void RcpHost::Init(void)
 #endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
+    ReapplyInstanceSettings();
+
     otBorderAgentSetMeshCoPServiceChangedCallback(mInstance, RcpHost::HandleMeshCoPServiceChanged, this);
     otBorderAgentEphemeralKeySetCallback(mInstance, RcpHost::HandleEpskcStateChanged, this);
 
@@ -1096,6 +1098,8 @@ void RcpHost::SetBorderAgentVendorTxtData(const std::vector<uint8_t> &aVendorTxt
 {
     VerifyOrExit(mInstance != nullptr);
     otBorderAgentSetVendorTxtData(mInstance, aVendorTxtData.data(), aVendorTxtData.size());
+    mBorderAgentVendorTxtData      = aVendorTxtData;
+    mIsBorderAgentVendorTxtDataSet = true;
 exit:
     return;
 }
@@ -1105,7 +1109,9 @@ otError RcpHost::SetBorderAgentMeshCoPServiceBaseName(const char *aBaseName)
     otError error = OT_ERROR_NONE;
 
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
-    error = otBorderAgentSetMeshCoPServiceBaseName(mInstance, aBaseName);
+    SuccessOrExit(error = otBorderAgentSetMeshCoPServiceBaseName(mInstance, aBaseName));
+    mBorderAgentMeshCoPServiceBaseName      = aBaseName;
+    mIsBorderAgentMeshCoPServiceBaseNameSet = true;
 exit:
     return error;
 }
@@ -1117,6 +1123,8 @@ otError RcpHost::SetVendorName(const char *aVendorName)
     otError error = OT_ERROR_NONE;
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
     SuccessOrExit(error = otThreadSetVendorName(mInstance, aVendorName));
+    mVendorName      = aVendorName;
+    mIsVendorNameSet = true;
 exit:
     return error;
 }
@@ -1128,10 +1136,46 @@ otError RcpHost::SetVendorModel(const char *aVendorModel)
     otError error = OT_ERROR_NONE;
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
     SuccessOrExit(error = otThreadSetVendorModel(mInstance, aVendorModel));
+    mVendorModel      = aVendorModel;
+    mIsVendorModelSet = true;
 exit:
     return error;
 }
 #endif
+
+void RcpHost::ReapplyInstanceSettings(void)
+{
+    // `Reset()` replaces the OpenThread instance. Apply the settings made on the previous instance through the
+    // setters above to the new one, so that the vendor name and model and the MeshCoP service identity survive a
+    // reset (e.g. a factory reset requested through REST or D-Bus) instead of reverting to the defaults.
+#ifndef OTBR_VENDOR_NAME
+    if (mIsVendorNameSet)
+    {
+        ThreadHelper::LogOpenThreadResult("Re-apply vendor name",
+                                          otThreadSetVendorName(mInstance, mVendorName.c_str()));
+    }
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    if (mIsVendorModelSet)
+    {
+        ThreadHelper::LogOpenThreadResult("Re-apply vendor model",
+                                          otThreadSetVendorModel(mInstance, mVendorModel.c_str()));
+    }
+#endif
+#if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+    if (mIsBorderAgentMeshCoPServiceBaseNameSet)
+    {
+        ThreadHelper::LogOpenThreadResult(
+            "Re-apply Border Agent MeshCoP service base name",
+            otBorderAgentSetMeshCoPServiceBaseName(mInstance, mBorderAgentMeshCoPServiceBaseName.c_str()));
+    }
+    if (mIsBorderAgentVendorTxtDataSet)
+    {
+        otBorderAgentSetVendorTxtData(mInstance, mBorderAgentVendorTxtData.data(),
+                                      static_cast<uint16_t>(mBorderAgentVendorTxtData.size()));
+    }
+#endif
+}
 
 void RcpHost::SetUdpForwardToHostCallback(UdpForwardToHostCallback aCallback)
 {

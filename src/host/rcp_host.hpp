@@ -286,6 +286,8 @@ private:
 
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 
+    void ReapplyInstanceSettings(void);
+
     otInstance *mInstance;
 
     otPlatformConfig                       mConfig;
@@ -310,6 +312,23 @@ private:
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
     std::string mAppliedFeatureFlagListBytes;
+#endif
+
+    // Settings applied to the OpenThread instance through the setters below. `Reset()` replaces the instance, and
+    // `Init()` applies them again to the new one (see `ReapplyInstanceSettings()`).
+#if OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
+    bool                 mIsBorderAgentVendorTxtDataSet = false;
+    std::vector<uint8_t> mBorderAgentVendorTxtData;
+    bool                 mIsBorderAgentMeshCoPServiceBaseNameSet = false;
+    std::string          mBorderAgentMeshCoPServiceBaseName;
+#endif
+#ifndef OTBR_VENDOR_NAME
+    bool        mIsVendorNameSet = false;
+    std::string mVendorName;
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    bool        mIsVendorModelSet = false;
+    std::string mVendorModel;
 #endif
 };
 
