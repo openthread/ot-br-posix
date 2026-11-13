@@ -52,3 +52,9 @@ target_link_libraries(otbr-host
         otbr-common
         otbr-posix
 )
+
+if(OTBR_DAEMON)
+    target_link_libraries(otbr-host PRIVATE
+        openthread-cli-ftd
+    )
+endif()

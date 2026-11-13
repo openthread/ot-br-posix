@@ -314,3 +314,59 @@ if(OTBR_MULTI_AIL)
 else()
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_MULTI_AIL=0)
 endif()
+
+option(OTBR_DAEMON "Enable CLI daemon support" ON)
+if(OTBR_DAEMON)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DAEMON=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DAEMON=0)
+endif()
+
+set(OTBR_READLINE_VALUES
+    "readline"
+    "edit"
+    "OFF"
+)
+
+set(OTBR_READLINE "" CACHE STRING "set readline library name, or OFF to disable it")
+set_property(CACHE OTBR_READLINE PROPERTY STRINGS ${OTBR_READLINE_VALUES})
+
+unset(OTBR_READLINE_NAME)
+unset(OTBR_READLINE_LIBS)
+unset(READLINE_LIB CACHE)
+
+if(NOT OTBR_DAEMON)
+    # The CLI daemon and ot-ctl are the only users of readline.
+elseif(OTBR_READLINE STREQUAL "")
+    foreach(X IN ITEMS "readline" "edit")
+        find_library(READLINE_LIB ${X})
+        if(READLINE_LIB)
+            set(OTBR_READLINE_NAME ${X})
+            break()
+        endif()
+    endforeach()
+elseif(OTBR_READLINE)
+    find_library(READLINE_LIB ${OTBR_READLINE})
+
+    if(NOT READLINE_LIB)
+        message(FATAL_ERROR "Failed to find ${OTBR_READLINE}")
+    endif()
+
+    set(OTBR_READLINE_NAME ${OTBR_READLINE})
+endif()
+
+if(OTBR_READLINE_NAME)
+    message(STATUS "Readline: ${OTBR_READLINE_NAME}")
+
+    set(OTBR_READLINE_LIBS "${READLINE_LIB}")
+
+    # Shared readline/libedit link their terminal library themselves, link one explicitly only if available
+    # (needed when linking a static readline).
+    find_library(OTBR_TERMCAP_LIB NAMES ncurses tinfo curses)
+    if(OTBR_TERMCAP_LIB)
+        list(APPEND OTBR_READLINE_LIBS "${OTBR_TERMCAP_LIB}")
+    endif()
+
+    string(TOUPPER "${OTBR_READLINE_NAME}" OTBR_READLINE_UPPER)
+    target_compile_definitions(otbr-config INTERFACE "HAVE_LIB${OTBR_READLINE_UPPER}=1")
+endif()

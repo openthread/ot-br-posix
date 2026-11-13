@@ -236,7 +236,7 @@ class NcpHostApi : public ::testing::Test
 protected:
     NcpHostApi(void)
         : mSpinelDriver(static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
-        , mNcpHost("wpan0", /* aBackboneInterfaceName */ "", /* aDryRun */ true)
+        , mNcpHost("wpan0", /* aBackboneInterfaceName */ "", /* aDryRun */ true, /* aDaemonMode */ 0)
     {
     }
 

@@ -125,17 +125,24 @@ void OtNetworkProperties::SetInstance(otInstance *aInstance)
 }
 
 // =============================== RcpHost ===============================
-
 RcpHost::RcpHost(const char                      *aInterfaceName,
                  const std::vector<const char *> &aRadioUrls,
                  const char                      *aBackboneInterfaceName,
                  bool                             aDryRun,
                  bool                             aEnableAutoAttach,
-                 const char                      *aDataPath)
+                 const char                      *aDataPath,
+                 uint8_t                          aDaemonMode)
     : mInstance(nullptr)
+    , mThreadHelper(nullptr)
     , mEnableAutoAttach(aEnableAutoAttach)
     , mThreadEnabledState(ThreadEnabledState::kStateDisabled)
+#if OTBR_ENABLE_DAEMON
+    , mCliDaemon(*this, aDaemonMode)
+#endif
 {
+#if !OTBR_ENABLE_DAEMON
+    OTBR_UNUSED_VARIABLE(aDaemonMode);
+#endif
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
     memset(&mConfig, 0, sizeof(mConfig));
@@ -308,6 +315,22 @@ void RcpHost::Init(void)
 
     mThreadHelper = MakeUnique<ThreadHelper>(mInstance, this);
 
+#if OTBR_ENABLE_DAEMON
+    if (!mConfig.mDryRun)
+    {
+        const char *netIfName = otSysGetThreadNetifName();
+
+        // Name the socket after the interface the platform actually got (e.g. a kernel-assigned utun on macOS).
+        if (netIfName == nullptr || netIfName[0] == '\0')
+        {
+            netIfName = mConfig.mInterfaceName;
+        }
+
+        SuccessOrDie(mCliDaemon.Init(netIfName != nullptr ? netIfName : ""), "Failed to init CLI daemon");
+        otCliInit(mInstance, OutputCallback, this);
+    }
+#endif
+
     OtNetworkProperties::SetInstance(mInstance);
 
 exit:
@@ -355,6 +378,9 @@ void RcpHost::Deinit(void)
 {
     assert(mInstance != nullptr);
 
+#if OTBR_ENABLE_DAEMON
+    mCliDaemon.Deinit();
+#endif
     otSysDeinit();
     mInstance = nullptr;
 
@@ -408,6 +434,9 @@ void RcpHost::Update(MainloopContext &aMainloop)
     }
 
     otSysMainloopUpdate(mInstance, &aMainloop);
+#if OTBR_ENABLE_DAEMON
+    mCliDaemon.Update(aMainloop);
+#endif
 }
 
 void RcpHost::Process(const MainloopContext &aMainloop)
@@ -415,6 +444,10 @@ void RcpHost::Process(const MainloopContext &aMainloop)
     otTaskletsProcess(mInstance);
 
     otSysMainloopProcess(mInstance, &aMainloop);
+
+#if OTBR_ENABLE_DAEMON
+    mCliDaemon.Process(aMainloop);
+#endif
 
     if (IsAutoAttachEnabled() && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
@@ -1211,6 +1244,27 @@ extern "C" void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
 {
     otbrLogSetLevel(RcpHost::ConvertToOtbrLogLevel(aLogLevel));
 }
+
+#if OTBR_ENABLE_DAEMON
+otbrError RcpHost::InputCommandLine(const char *aLine)
+{
+    otbrError error = OTBR_ERROR_NONE;
+    char      line[CliDaemon::kCliMaxLineLength];
+    size_t    len = strlen(aLine);
+
+    if (len > sizeof(line) - 1)
+    {
+        errno = ENOMEM;
+        ExitNow(error = OTBR_ERROR_ERRNO);
+    }
+
+    strncpy(line, aLine, sizeof(line));
+    otCliInputLine(line);
+
+exit:
+    return error;
+}
+#endif // OTBR_ENABLE_DAEMON
 
 } // namespace Host
 } // namespace otbr
