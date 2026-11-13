@@ -466,6 +466,14 @@ void Application::InitRcpMode(const std::string &aRestListenAddress, int aRestLi
 #if OTBR_ENABLE_NAT64
     UpdateNat44Masquerade();
 #endif
+#if OTBR_ENABLE_PF
+    // pf has no event for a change made behind the agent's back (`pfctl -a otbr
+    // -F all`, a reload of /etc/pf.conf, `pfctl -d`), so the agent asks every
+    // kPfVerifyInterval and repairs what it can, as the nftables monitor does on
+    // the kernel's notice. What it cannot repair (the main ruleset dropped the
+    // anchor) and a reinstall that fails are fatal, as at startup.
+    SchedulePfVerify();
+#endif
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent->Init();
@@ -545,6 +553,42 @@ exit:
     return;
 }
 
+#if OTBR_ENABLE_PF
+// How often the agent checks that the pf firewall is still in place.
+static const Milliseconds kPfVerifyInterval(30000);
+
+void Application::SchedulePfVerify(void)
+{
+    // One chain of checks at a time: a task still pending from before a
+    // Deinit()/Init() pair would otherwise start a second one.
+    CancelPfVerify();
+    mPfVerifyTaskId = static_cast<otbr::Host::RcpHost &>(mHost).GetTaskRunner().Post(kPfVerifyInterval, [this](void) {
+        bool      reinstalled = false;
+        otbrError error;
+
+        mPfVerifyTaskId = 0;
+        // DeinitRcpMode() cancels the task, so the firewall is there when it
+        // fires; the check stays against a backend torn down another way.
+        VerifyOrExit(mFirewall != nullptr && mFirewall->IsInitialized());
+        error = mFirewall->VerifyInstalled(reinstalled);
+        SuccessOrDie(error, "The pf firewall is not in place and could not be put back!");
+        SchedulePfVerify();
+
+    exit:
+        return;
+    });
+}
+
+void Application::CancelPfVerify(void)
+{
+    if (mPfVerifyTaskId != 0)
+    {
+        static_cast<otbr::Host::RcpHost &>(mHost).GetTaskRunner().Cancel(mPfVerifyTaskId);
+        mPfVerifyTaskId = 0;
+    }
+}
+#endif
+
 #if OTBR_ENABLE_NAT64
 void Application::UpdateNat44Masquerade(void)
 {
@@ -583,6 +627,11 @@ void Application::DeinitRcpMode(void)
     {
         mNftablesMonitor->Deinit();
     }
+#endif
+#if OTBR_ENABLE_PF
+    // No check may fire once the firewall is gone, or after a later Init()
+    // started its own chain.
+    CancelPfVerify();
 #endif
     // Tear down the OTBR firewall while its backend is still usable (the
     // backend outlives mFirewall by member declaration order).

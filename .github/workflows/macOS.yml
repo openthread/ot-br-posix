@@ -194,6 +194,26 @@ jobs:
         trel_port=$(sudo /usr/local/sbin/ot-ctl -I "${netif}" trel port | head -n 1 | tr -d '\r')
         echo "TREL port: ${trel_port}"
         [[ ${trel_port} =~ ^[0-9]+$ && ${trel_port} != 0 ]]
+        # An anchor emptied behind the agent's back (`pfctl -a otbr -F all`, a
+        # reload of pf.conf by a tool that flushes the anchors) is put back by
+        # the agent within its verification interval, tables included.
+        sudo pfctl -a otbr -F all
+        test -z "$(sudo pfctl -a otbr -s rules)"
+        for _ in $(seq 1 45); do
+          sudo pfctl -a otbr -s rules | grep -q "on ${netif}" && break
+          sleep 1
+        done
+        sudo pfctl -a otbr -s rules | grep -q "on ${netif}"
+        sudo pfctl -a otbr -s Tables | grep -q ingress_deny_src
+        # pf disabled behind its back (`pfctl -d` ignores the references
+        # `pfctl -E` holds) is enabled again the same way.
+        sudo pfctl -d
+        sudo pfctl -s info | grep -q 'Status: Disabled'
+        for _ in $(seq 1 45); do
+          sudo pfctl -s info | grep -q 'Status: Enabled' && break
+          sleep 1
+        done
+        sudo pfctl -s info | grep -q 'Status: Enabled'
     - name: Check the web GUI
       run: |
         sudo launchctl print system/io.openthread.otbr-web | grep -E 'state|pid|exit|runs|path'
