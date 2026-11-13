@@ -29,14 +29,22 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
+#include <string>
+#include <vector>
+
+#include <string.h>
 
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
 #include <openthread/link.h>
+#include <openthread/mdns.h>
+#include <openthread/netdiag.h>
 #include <openthread/platform/radio.h>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/mainloop_manager.hpp"
 #include "host/rcp_host.hpp"
@@ -1731,3 +1739,133 @@ TEST(RcpHostApi, EnergyScanHandlerReleasedAfterCompletion)
 
     host.Deinit();
 }
+
+// The MeshCoP service base name and vendor TXT data are set through `RcpHost` when OpenThread core registers the
+// MeshCoP service, and can be read back from the OpenThread mDNS module.
+#define OTBR_TEST_MESHCOP_SERVICE_IDENTITY \
+    (OTBR_ENABLE_BORDER_AGENT && !OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE && OTBR_ENABLE_MDNS_OPENTHREAD)
+
+#if OTBR_TEST_MESHCOP_SERVICE_IDENTITY
+// Finds the `_meshcop._udp` service registered by the OpenThread mDNS module of @p aInstance.
+static bool FindMeshCoPService(otInstance *aInstance, std::string &aInstanceName, std::vector<uint8_t> &aTxtData)
+{
+    bool             found    = false;
+    otMdnsIterator  *iterator = otMdnsAllocateIterator(aInstance);
+    otMdnsService    service;
+    otMdnsEntryState state;
+
+    VerifyOrExit(iterator != nullptr);
+
+    while (otMdnsGetNextService(aInstance, iterator, &service, &state) == OT_ERROR_NONE)
+    {
+        if (strcmp(service.mServiceType, "_meshcop._udp") == 0)
+        {
+            aInstanceName = service.mServiceInstance;
+            aTxtData.assign(service.mTxtData, service.mTxtData + service.mTxtDataLength);
+            found = true;
+            break;
+        }
+    }
+
+    otMdnsFreeIterator(aInstance, iterator);
+
+exit:
+    return found;
+}
+
+static bool EndsWith(const std::vector<uint8_t> &aData, const std::vector<uint8_t> &aSuffix)
+{
+    return aData.size() >= aSuffix.size() && std::equal(aSuffix.begin(), aSuffix.end(), aData.end() - aSuffix.size());
+}
+#endif
+
+// Built only where there is something to check: the vendor name and model setters exist when they are not fixed at
+// build time, the MeshCoP service identity is checked under `OTBR_TEST_MESHCOP_SERVICE_IDENTITY`.
+#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME) || OTBR_TEST_MESHCOP_SERVICE_IDENTITY
+TEST(RcpHostApi, ResetPreservesVendorInfoAndMeshCoPServiceIdentity)
+{
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
+    otInstance         *instance;
+
+#if OTBR_TEST_MESHCOP_SERVICE_IDENTITY
+    otbr::MainloopContext     mainloop;
+    static constexpr uint32_t kInfraIfIndex = 1;
+    static const char         kBaseName[]   = "Test Vendor Router";
+    // One TXT entry, "vx=1", encoded as <length><bytes>.
+    const std::vector<uint8_t> vendorTxtData = {4, 'v', 'x', '=', '1'};
+    std::string                instanceName;
+    std::vector<uint8_t>       txtData;
+#endif
+
+    host.Init();
+
+#ifndef OTBR_VENDOR_NAME
+    ASSERT_EQ(host.SetVendorName("TestVendor"), OT_ERROR_NONE);
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    ASSERT_EQ(host.SetVendorModel("TestModel"), OT_ERROR_NONE);
+#endif
+#if OTBR_TEST_MESHCOP_SERVICE_IDENTITY
+    ASSERT_EQ(host.SetBorderAgentMeshCoPServiceBaseName(kBaseName), OT_ERROR_NONE);
+    host.SetBorderAgentVendorTxtData(vendorTxtData);
+#endif
+
+    // `Reset()` replaces the OpenThread instance (e.g. on a factory reset through REST or D-Bus).
+    host.Reset();
+    instance = ot::FakePlatform::CurrentInstance();
+
+#ifndef OTBR_VENDOR_NAME
+    EXPECT_STREQ(otThreadGetVendorName(instance), "TestVendor");
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    EXPECT_STREQ(otThreadGetVendorModel(instance), "TestModel");
+#endif
+#if OTBR_TEST_MESHCOP_SERVICE_IDENTITY
+    // The Border Agent registers its MeshCoP service once the mDNS module is enabled.
+    ASSERT_EQ(otMdnsSetEnabled(instance, true, kInfraIfIndex), OT_ERROR_NONE);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 5,
+                         [&]() { return FindMeshCoPService(instance, instanceName, txtData); });
+    ASSERT_TRUE(FindMeshCoPService(instance, instanceName, txtData));
+    EXPECT_EQ(instanceName.rfind(std::string(kBaseName) + " #", 0), 0u) << instanceName;
+    EXPECT_TRUE(EndsWith(txtData, vendorTxtData));
+    EXPECT_EQ(otMdnsSetEnabled(instance, false, kInfraIfIndex), OT_ERROR_NONE);
+#endif
+
+    host.Deinit();
+}
+#endif
+
+#if !defined(OTBR_VENDOR_NAME) || !defined(OTBR_PRODUCT_NAME)
+TEST(RcpHostApi, ResetKeepsVendorInfoClearedWithNull)
+{
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
+    otInstance         *instance;
+
+    host.Init();
+
+    // The OpenThread core applies a null vendor name or model as an empty string. The setter must accept it, and a
+    // reset must not bring back the value that was set before it.
+#ifndef OTBR_VENDOR_NAME
+    ASSERT_EQ(host.SetVendorName("TestVendor"), OT_ERROR_NONE);
+    ASSERT_EQ(host.SetVendorName(nullptr), OT_ERROR_NONE);
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    ASSERT_EQ(host.SetVendorModel("TestModel"), OT_ERROR_NONE);
+    ASSERT_EQ(host.SetVendorModel(nullptr), OT_ERROR_NONE);
+#endif
+
+    host.Reset();
+    instance = ot::FakePlatform::CurrentInstance();
+
+#ifndef OTBR_VENDOR_NAME
+    EXPECT_STREQ(otThreadGetVendorName(instance), "");
+#endif
+#ifndef OTBR_PRODUCT_NAME
+    EXPECT_STREQ(otThreadGetVendorModel(instance), "");
+#endif
+
+    host.Deinit();
+}
+#endif

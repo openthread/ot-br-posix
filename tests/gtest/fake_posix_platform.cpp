@@ -30,6 +30,7 @@
 
 #include <assert.h>
 
+#include "openthread/message.h"
 #include "openthread/openthread-system.h"
 #include "openthread/platform/dns.h"
 #include "openthread/platform/infra_if.h"
@@ -93,21 +94,27 @@ otError otPlatMdnsSetListeningEnabled(otInstance *aInstance, bool aEnable, uint3
     OT_UNUSED_VARIABLE(aEnable);
     OT_UNUSED_VARIABLE(aInfraIfIndex);
 
-    return OT_ERROR_NOT_IMPLEMENTED;
+    // Accept the request so that a test can enable the OpenThread mDNS module (`otMdnsSetEnabled()`) and inspect
+    // the entries it registers. Messages it sends are freed unsent by `otPlatMdnsSendMulticast/Unicast()` below.
+    return OT_ERROR_NONE;
 }
 
 void otPlatMdnsSendMulticast(otInstance *aInstance, otMessage *aMessage, uint32_t aInfraIfIndex)
 {
     OT_UNUSED_VARIABLE(aInstance);
-    OT_UNUSED_VARIABLE(aMessage);
     OT_UNUSED_VARIABLE(aInfraIfIndex);
+
+    // The platform owns the message.
+    otMessageFree(aMessage);
 }
 
 void otPlatMdnsSendUnicast(otInstance *aInstance, otMessage *aMessage, const otPlatMdnsAddressInfo *aAddress)
 {
     OT_UNUSED_VARIABLE(aInstance);
-    OT_UNUSED_VARIABLE(aMessage);
     OT_UNUSED_VARIABLE(aAddress);
+
+    // The platform owns the message.
+    otMessageFree(aMessage);
 }
 
 void otPlatInfraIfDhcp6PdClientSetListeningEnabled(otInstance *aInstance, bool aEnable, uint32_t aInfraIfIndex)
