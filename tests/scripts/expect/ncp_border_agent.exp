@@ -41,8 +41,8 @@ set joiner_pwd "J01NU5"
 proc clean_up {container} {
     puts "Performing cleanup..."
 
-    exec sudo docker stop $container
-    exec sudo docker rm $container
+    exec docker stop $container
+    exec docker rm $container
     dispose_all
 }
 
