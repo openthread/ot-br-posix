@@ -115,7 +115,9 @@ jobs:
       BUILD_TARGET: check
       OTBR_BUILD_TYPE: ${{ matrix.build_type }}
       OTBR_MDNS: openthread
-      OTBR_OPTIONS: "-DOTBR_NFTABLES=ON -DOT_FIREWALL=OFF -DBUILD_TESTING=ON"
+      # `script/test build` defines OTBR_VENDOR_NAME and OTBR_PRODUCT_NAME:
+      # undefine them so that the RcpHostApi vendor name / model tests are built.
+      OTBR_OPTIONS: "-DOTBR_NFTABLES=ON -DOT_FIREWALL=OFF -DBUILD_TESTING=ON -UOTBR_VENDOR_NAME -UOTBR_PRODUCT_NAME"
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -126,11 +128,12 @@ jobs:
     # Build only: this compiles nftables_impl.cpp, which no other job does.
     - name: Build
       run: script/test build
-    # The firewall unit tests mock the backend, so they need no privileges. The
-    # rest of the suite launches otbr-agent, which cannot install nftables rules
-    # without CAP_NET_ADMIN and a usable nf_tables, so it is not run here.
-    - name: Firewall unit tests
-      run: CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir build/otbr -R 'Firewall|Nftables|MnlNetlink'
+    # The firewall unit tests mock the backend and the RcpHostApi tests run on a
+    # fake platform, so they need no privileges. The rest of the suite launches
+    # otbr-agent, which cannot install nftables rules without CAP_NET_ADMIN and a
+    # usable nf_tables, so it is not run here.
+    - name: Unit tests
+      run: CTEST_OUTPUT_ON_FAILURE=1 ctest --test-dir build/otbr -R 'Firewall|Nftables|MnlNetlink|RcpHostApi'
 
   script-check:
     runs-on: ubuntu-24.04
