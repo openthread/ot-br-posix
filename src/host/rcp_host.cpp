@@ -134,7 +134,12 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
                  const char                      *aDataPath)
     : mInstance(nullptr)
     , mEnableAutoAttach(aEnableAutoAttach)
-    , mThreadEnabledState(ThreadEnabledState::kStateDisabled)
+    // otbr-agent defaults --auto-attach to enabled and does not call SetThreadEnabled(true)
+    // on startup, whereas Android passes --auto-attach=0 and manages Thread enabled state
+    // explicitly via SetThreadEnabled(). Match the initial mThreadEnabledState to auto-attach
+    // so auto-attach respects explicit disables (including across Reset()) and Host APIs see
+    // consistent state.
+    , mThreadEnabledState(aEnableAutoAttach ? ThreadEnabledState::kStateEnabled : ThreadEnabledState::kStateDisabled)
 {
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -414,9 +419,13 @@ void RcpHost::Process(const MainloopContext &aMainloop)
 
     otSysMainloopProcess(mInstance, &aMainloop);
 
-    if (IsAutoAttachEnabled() && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
+    if (IsAutoAttachEnabled())
     {
-        DisableAutoAttach();
+        if (mThreadEnabledState != ThreadEnabledState::kStateEnabled ||
+            mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
+        {
+            DisableAutoAttach();
+        }
     }
 }
 
@@ -567,6 +576,8 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
                  errorMsg = "Thread is disabling");
     VerifyOrExit(mThreadEnabledState == ThreadEnabledState::kStateEnabled, error = OT_ERROR_INVALID_STATE,
                  errorMsg = "Thread is not enabled");
+    VerifyOrExit(otDatasetIsValid(&aActiveOpDatasetTlvs, /* aActive */ true), error = OT_ERROR_INVALID_ARGS,
+                 errorMsg = "Active Operational Dataset is not valid");
 
     otbrLogInfo("Start joining...");
 
@@ -900,6 +911,8 @@ exit:
 
 void RcpHost::ThreadDetachGracefully(const DetachGracefullyCallback &aCallback)
 {
+    otBorderAgentEphemeralKeyStop(mInstance);
+
     mDetachGracefullyCallbacks.push_back(aCallback);
 
     // Ignores the OT_ERROR_BUSY error if a detach has already been requested

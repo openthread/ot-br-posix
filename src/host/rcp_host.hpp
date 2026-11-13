@@ -201,8 +201,8 @@ public:
     ~RcpHost(void) override;
 
     // Thread Control virtual methods
-    void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
-    void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) override;
+    void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver) override;
+    void Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver) override;
     void ScheduleMigration(const otOperationalDatasetTlvs &aOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
