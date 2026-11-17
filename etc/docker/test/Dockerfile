@@ -77,6 +77,14 @@ ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-c
 # Required for OpenThread Backbone CI
 ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential python3-dbus python3-zeroconf socat
 
+RUN printf 'Acquire::Retries "3";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' \
+    >/etc/apt/apt.conf.d/80-retries \
+    && if [ -f /etc/apt/sources.list ] && grep -q 'archive\.ubuntu\.com/ubuntu' /etc/apt/sources.list; then \
+        printf 'http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\nhttp://mirrors.edge.kernel.org/ubuntu/\tpriority:2\nhttp://archive.ubuntu.com/ubuntu/\tpriority:3\nhttp://security.ubuntu.com/ubuntu/\tpriority:4\n' \
+            >/etc/apt/apt-mirrors.txt \
+        && sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu/?([[:space:]]|$)#mirror+file:/etc/apt/apt-mirrors.txt\2#g' /etc/apt/sources.list; \
+    fi
+
 # Resolves issue with installing libc-bin
 RUN rm /var/lib/dpkg/info/libc-bin.* \
   && apt-get clean -y \
