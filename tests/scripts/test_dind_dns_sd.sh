@@ -145,9 +145,13 @@ test_setup()
 
     # 3. Build the test client image with mdns-scan and ping/ndisc6 tools
     echo "Building test client image with mdns-scan and ping/ndisc6 tools..."
-    docker build -t "${TEST_CLIENT_IMAGE}" - <<EOF
+    docker build -t "${TEST_CLIENT_IMAGE}" - <<'EOF'
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server dnsmasq python3-scapy radvd tcpdump procps --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN printf 'Acquire::Retries "3";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' \
+        >/etc/apt/apt.conf.d/80-retries \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends mdns-scan iputils-ping ndisc6 python3-zeroconf iproute2 kea-dhcp6-server dnsmasq python3-scapy radvd tcpdump procps \
+    && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["mdns-scan"]
 EOF
 
