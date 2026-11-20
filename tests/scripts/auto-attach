@@ -37,7 +37,7 @@ readonly ABS_TOP_BUILDDIR
 OTBR_AGENT="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent"
 readonly OTBR_AGENT
 
-OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
+OT_CTL="${ABS_TOP_BUILDDIR}/src/agent/ot-ctl"
 readonly OT_CTL
 
 OT_RCP=$(command -v ot-rcp)

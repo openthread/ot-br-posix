@@ -42,8 +42,6 @@ target_compile_definitions(otbr-web PRIVATE
 target_include_directories(otbr-web PRIVATE
     ${JSONCPP_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/third_party/cpp-httplib/repo
-    # for posix/platform/openthread-posix-daemon-config.h, the daemon's socket path
-    ${OPENTHREAD_PROJECT_DIRECTORY}/src
 )
 target_link_libraries(otbr-web PRIVATE
     $<$<BOOL:${JSONCPP_LIBRARY_DIRS}>:-L$<JOIN:${JSONCPP_LIBRARY_DIRS}," -L">>
