@@ -51,4 +51,33 @@
     "@PROJECT_SOURCE_DIR@/third_party/openthread/repo/src/posix/platform/openthread.conf.example"
 #endif
 
+#ifdef __linux__
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+/**
+ * @def OPENTHREAD_POSIX_CONFIG_NETIF_PREFIX_ROUTE_METRIC
+ *
+ * Specifies the non-link-local prefix route metric on the Thread network interface so
+ * Thread routes take precedence over RA Route Information Option (RIO) routes learned
+ * on the infrastructure link.
+ */
+#if !defined(OPENTHREAD_POSIX_CONFIG_NETIF_PREFIX_ROUTE_METRIC) &&  \
+    (!defined(OPENTHREAD_POSIX_CONFIG_INSTALL_OMR_ROUTES_ENABLE) || \
+     !OPENTHREAD_POSIX_CONFIG_INSTALL_OMR_ROUTES_ENABLE)
+#define OPENTHREAD_POSIX_CONFIG_NETIF_PREFIX_ROUTE_METRIC 1
+#endif
+#else
+/**
+ * @def OPENTHREAD_POSIX_CONFIG_INSTALL_OMR_ROUTES_ENABLE
+ *
+ * Fall back to installing explicit high-priority OMR routes on Linux kernels older
+ * than 4.18 where `IFA_RT_PRIORITY` is unavailable.
+ */
+#ifndef OPENTHREAD_POSIX_CONFIG_INSTALL_OMR_ROUTES_ENABLE
+#define OPENTHREAD_POSIX_CONFIG_INSTALL_OMR_ROUTES_ENABLE OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE
+#endif
+#endif // LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+#endif // __linux__
+
 #endif // OPENTHREAD_OTBR_POSIX_CONFIG_H_

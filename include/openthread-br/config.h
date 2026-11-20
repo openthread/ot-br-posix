@@ -78,4 +78,25 @@
 #define OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT 0
 #endif
 
+/**
+ * @def OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC
+ *
+ * Specifies the non-link-local prefix route metric on the Thread network interface.
+ * Define as 0 to use the kernel default prefix route metric.
+ *
+ * Note: This feature works on Linux kernel v4.18+.
+ */
+#ifndef OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC
+#ifdef __linux__
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+#define OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC 1
+#else
+#define OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC 0
+#endif
+#else
+#define OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC 0
+#endif
+#endif
+
 #endif // OTBR_CONFIG_H_

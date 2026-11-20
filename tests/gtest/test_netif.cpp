@@ -50,12 +50,16 @@
 #include <vector>
 
 #ifdef __linux__
+#include <linux/if_addr.h>
 #include <linux/if_link.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <linux/version.h>
 #endif
 
 #include <openthread/ip6.h>
+
+#include "openthread-br/config.h"
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
@@ -666,6 +670,161 @@ TEST(Netif, ReconcileUnicastAddresses_AsyncAckTimeoutRollbacksCache)
     close(dummySv[0]);
     close(dummySv[1]);
 }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+static bool FindRtPriorityAttr(const uint8_t *aBuf, ssize_t aLen, uint32_t &aPriority)
+{
+    bool            found = false;
+    const nlmsghdr *nh;
+    int             attrLen;
+    const rtattr   *rta;
+
+    VerifyOrExit(aLen >= static_cast<ssize_t>(NLMSG_LENGTH(sizeof(ifaddrmsg))));
+
+    nh = reinterpret_cast<const nlmsghdr *>(aBuf);
+    VerifyOrExit(nh->nlmsg_len <= static_cast<uint32_t>(aLen));
+    VerifyOrExit(nh->nlmsg_len >= NLMSG_LENGTH(sizeof(ifaddrmsg)));
+
+    attrLen = static_cast<int>(nh->nlmsg_len - NLMSG_LENGTH(sizeof(ifaddrmsg)));
+    for (rta = IFA_RTA(reinterpret_cast<const ifaddrmsg *>(NLMSG_DATA(nh))); RTA_OK(rta, attrLen);
+         rta = RTA_NEXT(rta, attrLen))
+    {
+        if (rta->rta_type == IFA_RT_PRIORITY && RTA_PAYLOAD(rta) == sizeof(uint32_t))
+        {
+            memcpy(&aPriority, RTA_DATA(rta), sizeof(aPriority));
+            found = true;
+            break;
+        }
+    }
+
+exit:
+    return found;
+}
+
+TEST(Netif, ReconcileUnicastAddresses_PrefixRouteMetric)
+{
+    int                       sv[2]      = {-1, -1};
+    int                       dummySv[2] = {-1, -1};
+    otbr::Netif::Dependencies deps;
+    otbr::Netif               netif("wpan0", deps);
+
+    struct Cleanup
+    {
+        otbr::Netif &mNetif;
+        int (&mSv)[2];
+        int (&mDummySv)[2];
+
+        ~Cleanup(void)
+        {
+            otbr::NetifTestPeer::SetFds(mNetif, -1, -1, -1, -1);
+            for (int fd : mSv)
+            {
+                if (fd >= 0)
+                {
+                    close(fd);
+                }
+            }
+            for (int fd : mDummySv)
+            {
+                if (fd >= 0)
+                {
+                    close(fd);
+                }
+            }
+        }
+    } cleanup{netif, sv, dummySv};
+
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, sv), 0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, dummySv), 0);
+
+    otbr::NetifTestPeer::SetFds(netif, dummySv[0], dummySv[0], sv[0], dummySv[0]);
+
+    const otIp6Address kOmrAddr = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const otIp6Address kLinkLocalAddr = {
+        {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x14, 0x03, 0x32, 0x4c, 0xc2, 0xf8, 0xd0}};
+
+    const otbr::Ip6AddressInfo kOmrDesired(kOmrAddr, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kOmrReplaced(kOmrAddr, 64, 0, false, false);
+    const otbr::Ip6AddressInfo kLinkLocalDesired(kLinkLocalAddr, 64, 0, true, false);
+    const otbr::Ip6AddressInfo kLinkLocalReplaced(kLinkLocalAddr, 64, 0, false, false);
+
+    auto ackAndProcess = [&](uint32_t aSeq) {
+        otbr::MainloopContext context{};
+
+        SendNetlinkAck(sv[1], aSeq, 0);
+        FD_ZERO(&context.mReadFdSet);
+        FD_SET(sv[0], &context.mReadFdSet);
+        FD_ZERO(&context.mWriteFdSet);
+        FD_ZERO(&context.mErrorFdSet);
+        otbr::NetifTestPeer::Process(netif, context);
+    };
+
+    alignas(nlmsghdr) uint8_t buf[512];
+    ssize_t                   len;
+    const nlmsghdr           *nh;
+    uint32_t                  priority = 0;
+
+    // Adding a non-link-local address attaches IFA_RT_PRIORITY when configured.
+    netif.UpdateIp6UnicastAddresses({kOmrDesired});
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(NLMSG_LENGTH(sizeof(ifaddrmsg))));
+    nh = reinterpret_cast<const nlmsghdr *>(buf);
+    EXPECT_EQ(nh->nlmsg_type, RTM_NEWADDR);
+    EXPECT_EQ(nh->nlmsg_flags & (NLM_F_CREATE | NLM_F_EXCL), NLM_F_CREATE | NLM_F_EXCL);
+#if OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC > 0
+    EXPECT_TRUE(FindRtPriorityAttr(buf, len, priority));
+    EXPECT_EQ(priority, static_cast<uint32_t>(OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC));
+#else
+    EXPECT_FALSE(FindRtPriorityAttr(buf, len, priority));
+#endif
+    ackAndProcess(nh->nlmsg_seq);
+
+    // Replacing a non-link-local address attaches IFA_RT_PRIORITY when configured.
+    priority = 0;
+    netif.UpdateIp6UnicastAddresses({kOmrReplaced});
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(NLMSG_LENGTH(sizeof(ifaddrmsg))));
+    nh = reinterpret_cast<const nlmsghdr *>(buf);
+    EXPECT_EQ(nh->nlmsg_type, RTM_NEWADDR);
+    EXPECT_EQ(nh->nlmsg_flags & NLM_F_REPLACE, NLM_F_REPLACE);
+#if OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC > 0
+    EXPECT_TRUE(FindRtPriorityAttr(buf, len, priority));
+    EXPECT_EQ(priority, static_cast<uint32_t>(OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC));
+#else
+    EXPECT_FALSE(FindRtPriorityAttr(buf, len, priority));
+#endif
+    ackAndProcess(nh->nlmsg_seq);
+
+    // Adding and replacing a link-local address omit IFA_RT_PRIORITY.
+    netif.UpdateIp6UnicastAddresses({kOmrReplaced, kLinkLocalDesired});
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(NLMSG_LENGTH(sizeof(ifaddrmsg))));
+    nh = reinterpret_cast<const nlmsghdr *>(buf);
+    EXPECT_EQ(nh->nlmsg_type, RTM_NEWADDR);
+    EXPECT_EQ(nh->nlmsg_flags & (NLM_F_CREATE | NLM_F_EXCL), NLM_F_CREATE | NLM_F_EXCL);
+    EXPECT_FALSE(FindRtPriorityAttr(buf, len, priority));
+    ackAndProcess(nh->nlmsg_seq);
+
+    netif.UpdateIp6UnicastAddresses({kOmrReplaced, kLinkLocalReplaced});
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(NLMSG_LENGTH(sizeof(ifaddrmsg))));
+    nh = reinterpret_cast<const nlmsghdr *>(buf);
+    EXPECT_EQ(nh->nlmsg_type, RTM_NEWADDR);
+    EXPECT_EQ(nh->nlmsg_flags & NLM_F_REPLACE, NLM_F_REPLACE);
+    EXPECT_FALSE(FindRtPriorityAttr(buf, len, priority));
+    ackAndProcess(nh->nlmsg_seq);
+
+    // Removing a non-link-local address omits IFA_RT_PRIORITY.
+    netif.UpdateIp6UnicastAddresses({kLinkLocalReplaced});
+    len = recv(sv[1], buf, sizeof(buf), 0);
+    ASSERT_GE(len, static_cast<ssize_t>(NLMSG_LENGTH(sizeof(ifaddrmsg))));
+    nh = reinterpret_cast<const nlmsghdr *>(buf);
+    EXPECT_EQ(nh->nlmsg_type, RTM_DELADDR);
+    EXPECT_FALSE(FindRtPriorityAttr(buf, len, priority));
+    ackAndProcess(nh->nlmsg_seq);
+}
+#endif // LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
 
 static constexpr size_t kMaxIp6Size = 1280;
 
