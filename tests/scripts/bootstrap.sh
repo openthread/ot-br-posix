@@ -89,6 +89,7 @@ configure_network()
 
 case "$(uname)" in
     "Linux")
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 2>/dev/null || true
         disable_install_recommends
         sudo apt-get update
         install_common_dependencies

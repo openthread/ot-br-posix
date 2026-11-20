@@ -63,7 +63,9 @@ jobs:
         submodules: recursive
         persist-credentials: false
     - name: Bootstrap
-      run: tests/scripts/bootstrap.sh
+      run: |
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+        tests/scripts/bootstrap.sh
     - name: Build
       run: |
         OTBR_BUILD_DIR="./build/temp" script/cmake-build ${OTBR_OPTIONS}
