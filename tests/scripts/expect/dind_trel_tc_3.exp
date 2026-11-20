@@ -260,7 +260,8 @@ if {![string match "*Enabled*" $filter_status]} {
 # We also make Router ping DUT to trigger TREL disconnect detection on Router.
 send_user -- "--- Step 4: Trigger TREL disconnect detection (ED pings Router, Router pings DUT) ---\n"
 switch_node 4
-for {set i 0} {$i < 25} {incr i} {
+# Send at least 10 pings (up to 150) until DUT reports TREL(0) for Router.
+for {set i 0} {$i < 150} {incr i} {
     send "ping $r_mleid 8 1\n"
     expect {
         -re "bytes from" {
@@ -275,6 +276,9 @@ for {set i 0} {$i < 25} {incr i} {
         }
     }
     sleep 0.2
+    if {$i >= 9 && ($i + 1) % 5 == 0 && [is_trel_preference_zero $container1 $r_extaddr]} {
+        break
+    }
 }
 
 # Get DUT's ML-EID
@@ -282,39 +286,25 @@ set br_mleid [exec docker exec -i $container1 ot-ctl ipaddr mleid]
 set br_mleid [string trim [lindex [split $br_mleid "\n"] 0]]
 send_user "BR Leader ML-EID: $br_mleid\n"
 
-# Router pings DUT 25 times (expecting timeout/success mix)
-for {set i 0} {$i < 25} {incr i} {
+# Router pings DUT until Router reports TREL(0) for DUT (at least 10 pings, up to 150)
+for {set i 0} {$i < 150} {incr i} {
     catch { exec docker exec -i $container2 ot-ctl ping $br_mleid 8 1 } ping_res
-    send_user "Router ping response: $ping_res\n"
+    send_user "Router ping response ($i): $ping_res\n"
+    after 100
+    if {$i >= 9 && ($i + 1) % 5 == 0 && [is_trel_preference_zero $container2 $br_extaddr]} {
+        break
+    }
 }
 
 # --- Step 5: Verify TREL preference is set to zero on both DUT and Router ---
 send_user -- "--- Step 5: Verifying TREL preference is set to zero on both DUT and Router ---\n"
 # Verify on DUT (Router's TREL preference is 0)
-set preference_zero_dut false
-for {set i 0} {$i < 5} {incr i} {
-    set multiradio_list_dut [exec docker exec -i $container1 ot-ctl multiradio neighbor list]
-    if {[regexp -nocase "ExtAddr:\\s*$r_extaddr.*TREL\\(0\\)" $multiradio_list_dut]} {
-        set preference_zero_dut true
-        break
-    }
-    sleep 2
-}
-if {!$preference_zero_dut} {
+if {![wait_for_trel_preference_zero $container1 $r_extaddr 5 2 multiradio_list_dut]} {
     fail "DUT did not report Router TREL preference as 0. Neighbor list: $multiradio_list_dut"
 }
 
 # Verify on Router (DUT's TREL preference is 0)
-set preference_zero_router false
-for {set i 0} {$i < 5} {incr i} {
-    set multiradio_list_router [exec docker exec -i $container2 ot-ctl multiradio neighbor list]
-    if {[regexp -nocase "ExtAddr:\\s*$br_extaddr.*TREL\\(0\\)" $multiradio_list_router]} {
-        set preference_zero_router true
-        break
-    }
-    sleep 2
-}
-if {!$preference_zero_router} {
+if {![wait_for_trel_preference_zero $container2 $br_extaddr 5 2 multiradio_list_router]} {
     fail "Router did not report DUT TREL preference as 0. Neighbor list: $multiradio_list_router"
 }
 send_user "TREL preferences successfully set to 0 on both nodes!\n"
