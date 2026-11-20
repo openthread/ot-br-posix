@@ -44,7 +44,9 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /usr/src
 
-RUN set -x \
+RUN printf 'Acquire::Retries "3";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' \
+        >/etc/apt/apt.conf.d/80-retries \
+    && set -x \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
            build-essential \
@@ -63,7 +65,7 @@ RUN set -x \
 
 RUN set -x \
     && if [ "${OTBR_MDNS}" = "mDNSResponder" ]; then \
-           curl -L -f -s -o ${MDNS_RESPONDER_SOURCE_NAME}.tar.gz https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/${MDNS_RESPONDER_SOURCE_NAME}.tar.gz \
+           curl -fsSL --retry 3 --connect-timeout 10 --max-time 60 -o ${MDNS_RESPONDER_SOURCE_NAME}.tar.gz https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/${MDNS_RESPONDER_SOURCE_NAME}.tar.gz \
            && mkdir -p ${MDNS_RESPONDER_SOURCE_NAME} \
            && tar xvf ${MDNS_RESPONDER_SOURCE_NAME}.tar.gz -C ${MDNS_RESPONDER_SOURCE_NAME} --strip-components=1 \
            && cd ${MDNS_RESPONDER_SOURCE_NAME}/mDNSPosix \
@@ -129,7 +131,9 @@ ENV S6_OVERLAY_VERSION=3.2.1.0
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN set -x \
+RUN printf 'Acquire::Retries "3";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' \
+        >/etc/apt/apt.conf.d/80-retries \
+    && set -x \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
            ca-certificates \
@@ -148,9 +152,9 @@ RUN set -x \
          "arm64") S6_ARCH="aarch64" ;; \
          *) echo "Unsupported architecture: ${PLATFORM_SPEC}"; exit 1 ;; \
        esac \
-    && curl -L -f -s "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" \
+    && curl -fsSL --retry 3 --connect-timeout 10 --max-time 60 "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" \
         | tar Jxvf - -C / \
-    && curl -L -f -s "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz" \
+    && curl -fsSL --retry 3 --connect-timeout 10 --max-time 60 "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz" \
         | tar Jxvf - -C / \
     && apt-get purge -y --auto-remove \
            ca-certificates \
