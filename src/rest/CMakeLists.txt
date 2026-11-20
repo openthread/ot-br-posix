@@ -34,6 +34,7 @@ add_library(otbr-rest
     actions/handler.cpp
     actions/network_diagnostic.cpp
     actions/reset_diagnostic_counters.cpp
+    actions/traffic_stats.cpp
     actions_list.cpp
     commissioner_manager.cpp
     diagnostic_types.cpp
@@ -41,6 +42,7 @@ add_library(otbr-rest
     network_diag_handler.cpp
     rest_devices_coll.cpp
     rest_diagnostics_coll.cpp
+    rest_traffic_stats_coll.cpp
     rest_generic_collection.cpp
     rest_server_common.cpp
     rest_web_server.cpp

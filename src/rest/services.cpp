@@ -34,6 +34,7 @@
 #include "rest_devices_coll.hpp"
 #include "rest_diagnostics_coll.hpp"
 #include "rest_server_common.hpp"
+#include "rest_traffic_stats_coll.hpp"
 #include "common/code_utils.hpp"
 #include "utils/string_utils.hpp"
 
@@ -47,6 +48,7 @@ struct ServiceList
         , mCommissionerManager(aInstance)
         , mDevicesCollection()
         , mDiagnosticsCollection()
+        , mTrafficStatsCollection()
         , mNetworkDiagHandler(aServices, aInstance)
     {
     }
@@ -57,11 +59,12 @@ struct ServiceList
         mActionsList.DeleteAllActions();
     }
 
-    ActionsList           mActionsList;
-    CommissionerManager   mCommissionerManager;
-    DevicesCollection     mDevicesCollection;
-    DiagnosticsCollection mDiagnosticsCollection;
-    NetworkDiagHandler    mNetworkDiagHandler;
+    ActionsList            mActionsList;
+    CommissionerManager    mCommissionerManager;
+    DevicesCollection      mDevicesCollection;
+    DiagnosticsCollection  mDiagnosticsCollection;
+    TrafficStatsCollection mTrafficStatsCollection;
+    NetworkDiagHandler     mNetworkDiagHandler;
 };
 
 Services::Services(void)
@@ -173,6 +176,11 @@ DiagnosticsCollection &Services::GetDiagnosticsCollection(void)
 NetworkDiagHandler &Services::GetNetworkDiagHandler(void)
 {
     return mServices->mNetworkDiagHandler;
+}
+
+TrafficStatsCollection &Services::GetTrafficStatsCollection(void)
+{
+    return mServices->mTrafficStatsCollection;
 }
 
 const char *AddressTypeToString(AddressType aType)

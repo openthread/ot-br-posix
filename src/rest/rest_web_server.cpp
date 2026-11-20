@@ -29,6 +29,7 @@
 #include "common/time.hpp"
 #define OTBR_LOG_TAG "REST"
 
+#include "rest/rest_traffic_stats_coll.hpp"
 #include "rest/rest_web_server.hpp"
 
 #include <algorithm>
@@ -126,6 +127,9 @@
 #define OT_REST_ROUTE_DIAGNOSTICS "/api/diagnostics"
 #define OT_REST_ROUTE_DIAGNOSTICS_ID "/api/diagnostics/:id"
 
+#define OT_REST_ROUTE_TRAFFIC_STATS "/api/traffic-stats"
+#define OT_REST_ROUTE_TRAFFIC_STATS_ID "/api/traffic-stats/:id"
+
 #define OT_REST_ROUTE_WELLKNOWN_THREAD "/.well-known/thread/br-rest"
 
 using std::chrono::duration_cast;
@@ -208,6 +212,12 @@ RestWebServer::RestWebServer(Host::RcpHost &aHost)
     RegisterDelete(OT_REST_ROUTE_DIAGNOSTICS, MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsHandler));
     RegisterDelete(OT_REST_ROUTE_DIAGNOSTICS_ID,
                    MakeHandlerInMainLoop(&RestWebServer::ApiDiagnosticsItemDeleteHandler));
+
+    RegisterGet(OT_REST_ROUTE_TRAFFIC_STATS, MakeHandlerInMainLoop(&RestWebServer::ApiTrafficStatsHandler));
+    RegisterGet(OT_REST_ROUTE_TRAFFIC_STATS_ID, MakeHandlerInMainLoop(&RestWebServer::ApiTrafficStatsItemGetHandler));
+    RegisterDelete(OT_REST_ROUTE_TRAFFIC_STATS, MakeHandlerInMainLoop(&RestWebServer::ApiTrafficStatsHandler));
+    RegisterDelete(OT_REST_ROUTE_TRAFFIC_STATS_ID,
+                   MakeHandlerInMainLoop(&RestWebServer::ApiTrafficStatsItemDeleteHandler));
 
     RegisterGet(OT_REST_ROUTE_WELLKNOWN_THREAD, MakeHandler(&RestWebServer::WellKnownThreadHandler));
 }
@@ -2003,6 +2013,120 @@ exit:
     }
 }
 
+void RestWebServer::ApiTrafficStatsHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string errorDetails;
+
+    if (HasValidChars(aRequest, errorDetails) != OT_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, StatusCode::BadRequest_400, errorDetails);
+        return;
+    }
+
+    switch (GetMethod(aRequest))
+    {
+    case HttpMethod::kGet:
+        ApiTrafficStatsGetHandler(aRequest, aResponse);
+        break;
+    case HttpMethod::kDelete:
+        ApiTrafficStatsDeleteHandler(aRequest, aResponse);
+        break;
+    default:
+        ErrorHandler(aResponse, StatusCode::MethodNotAllowed_405);
+        break;
+    }
+}
+
+void RestWebServer::ApiTrafficStatsGetHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+
+    if (acceptHeader.empty() || acceptHeader == "*/*")
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+    if (acceptHeader != OT_REST_CONTENT_TYPE_JSONAPI && acceptHeader != OT_REST_CONTENT_TYPE_JSON)
+    {
+        ErrorHandler(aResponse, StatusCode::NotAcceptable_406);
+        return;
+    }
+
+    TrafficStatsCollection &collection = mServices.GetTrafficStatsCollection();
+    auto                    queries    = ExtractFieldsQueries(aRequest, collection.GetContainedTypes());
+    std::string             body =
+        acceptHeader == OT_REST_CONTENT_TYPE_JSONAPI ? collection.ToJsonApiColl(queries) : collection.ToJsonString();
+
+    aResponse.status = StatusCode::OK_200;
+    aResponse.set_content(body, acceptHeader);
+}
+
+void RestWebServer::ApiTrafficStatsItemGetHandler(const Request &aRequest, Response &aResponse)
+{
+    std::string errorDetails;
+
+    if (HasValidChars(aRequest, errorDetails) != OT_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, StatusCode::BadRequest_400, errorDetails);
+        return;
+    }
+
+    const std::string itemId = aRequest.path_params.at("id");
+    Uuid              uuid;
+
+    if (!uuid.Parse(itemId))
+    {
+        ErrorHandler(aResponse, StatusCode::NotFound_404);
+        return;
+    }
+
+    std::string acceptHeader = aRequest.get_header_value(OT_REST_ACCEPT_HEADER);
+
+    if (acceptHeader.empty() || acceptHeader == "*/*")
+    {
+        acceptHeader = OT_REST_CONTENT_TYPE_JSONAPI;
+    }
+    if (acceptHeader != OT_REST_CONTENT_TYPE_JSONAPI && acceptHeader != OT_REST_CONTENT_TYPE_JSON)
+    {
+        ErrorHandler(aResponse, StatusCode::NotAcceptable_406);
+        return;
+    }
+
+    TrafficStatsCollection &collection = mServices.GetTrafficStatsCollection();
+    auto                    queries    = ExtractFieldsQueries(aRequest, collection.GetContainedTypes());
+    std::string body = acceptHeader == OT_REST_CONTENT_TYPE_JSONAPI ? collection.ToJsonApiItemId(itemId, queries)
+                                                                    : collection.ToJsonStringItemId(itemId, queries);
+
+    if (body.empty())
+    {
+        ErrorHandler(aResponse, StatusCode::NotFound_404);
+        return;
+    }
+
+    aResponse.status = StatusCode::OK_200;
+    aResponse.set_content(body, acceptHeader);
+}
+
+void RestWebServer::ApiTrafficStatsDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    OT_UNUSED_VARIABLE(aRequest);
+    mServices.GetTrafficStatsCollection().DeleteAll();
+    aResponse.status = StatusCode::NoContent_204;
+}
+
+void RestWebServer::ApiTrafficStatsItemDeleteHandler(const Request &aRequest, Response &aResponse)
+{
+    const std::string itemId = aRequest.path_params.at("id");
+    Uuid              uuid;
+
+    if (!uuid.Parse(itemId) || mServices.GetTrafficStatsCollection().Delete(itemId) != OT_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, StatusCode::NotFound_404);
+        return;
+    }
+
+    aResponse.status = StatusCode::NoContent_204;
+}
+
 void RestWebServer::ApiDevicesHandler(const Request &aRequest, Response &aResponse)
 {
     StatusCode  statusCode = StatusCode::OK_200;
@@ -2339,6 +2463,11 @@ void RestWebServer::WellKnownThreadGetHandler(const Request &aRequest, Response 
     {
       "href": ")" OT_REST_ROUTE_DIAGNOSTICS R"(",
       "rel": "diagnostic",
+      "type": [")" OT_REST_CONTENT_TYPE_JSONAPI R"("]
+    },
+    {
+      "href": ")" OT_REST_ROUTE_TRAFFIC_STATS R"(",
+      "rel": "traffic-stats",
       "type": [")" OT_REST_CONTENT_TYPE_JSONAPI R"("]
     }
   ]
