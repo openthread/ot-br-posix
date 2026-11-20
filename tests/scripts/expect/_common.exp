@@ -522,3 +522,46 @@ proc verify_no_trel_traffic {c} {
         fail "TREL traffic occurred on $c (Inbound: $inbound_bytes bytes, Outbound: $outbound_bytes bytes) exceeding probe threshold!"
     }
 }
+
+# Check per-line whether `multiradio_list` reports `TREL(0)` for `extaddr`,
+# avoiding cross-line matches across multiple neighbor entries.
+proc multiradio_neighbor_has_trel_zero {multiradio_list extaddr} {
+    set expected [string tolower [string trim $extaddr]]
+    if {$expected eq ""} {
+        return 0
+    }
+    foreach line [split $multiradio_list "\n"] {
+        if {[regexp -nocase {ExtAddr:\s*([0-9a-fA-F]+)(?:,|\s|$)} $line -> found_extaddr]} {
+            if {[string tolower $found_extaddr] eq $expected} {
+                return [regexp {TREL\(0\)} $line]
+            }
+        }
+    }
+    return 0
+}
+
+proc is_trel_preference_zero {container extaddr {list_var ""}} {
+    if {$list_var ne ""} {
+        upvar 1 $list_var multiradio_list
+    }
+    if {[catch {exec docker exec -i $container ot-ctl multiradio neighbor list} multiradio_list]} {
+        return 0
+    }
+    return [multiradio_neighbor_has_trel_zero $multiradio_list $extaddr]
+}
+
+proc wait_for_trel_preference_zero {container extaddr {retries 5} {delay 2} {list_var ""}} {
+    if {$list_var ne ""} {
+        upvar 1 $list_var multiradio_list
+    }
+    set multiradio_list ""
+    for {set i 0} {$i < $retries} {incr i} {
+        if {[is_trel_preference_zero $container $extaddr multiradio_list]} {
+            return 1
+        }
+        if {$i + 1 < $retries} {
+            sleep $delay
+        }
+    }
+    return 0
+}
