@@ -49,6 +49,7 @@ enum AddressType
     kAddressTypeExt = 0,
     kAddressTypeMleid,
     kAddressTypeRloc,
+    kAddressTypeIpv6,
 };
 
 const char *AddressTypeToString(AddressType aType);
@@ -65,18 +66,24 @@ public:
     void Process(const MainloopContext &aMainloop) override;
 
     /**
-     * Attempts to convert a address string to an IPv6 address.
+     * Attempts to convert an address string to a TMF-reachable unicast IPv6 address.
      *
      * @note If the address type is kAddressTypeExt a lookup using the devices
      *       collection is required.
+     * @note If the address type is kAddressTypeIpv6 only TMF-reachable unicast
+     *       addresses are accepted: Link-Local unicast (`fe80::/64`) and
+     *       Mesh-Local unicast (ML-EID or RLOC, excluding ALOCs).
      *
      * @param[in]  aAddressString  The address to convert.
      * @param[in]  aType           The type of address of aAddressString.
      * @param[out] aAddress        The converted address.
      *
-     * @retval OT_ERROR_NONE       The address conversion was performed successfully.
-     * @retval OT_ERROR_PARSE      The address string was not a valid address of type aType.
-     * @retval OT_ERROR_NOT_FOUND  The address lookup failed.
+     * @retval OT_ERROR_NONE           The address conversion was performed successfully.
+     * @retval OT_ERROR_PARSE          The address string was not a valid address of type aType.
+     * @retval OT_ERROR_NOT_FOUND      The address lookup failed.
+     * @retval OT_ERROR_INVALID_ARGS   The address type is unsupported or the IPv6 address is outside
+     *                                 TMF-reachable unicast scope (for example, ALOC or OMR/GUA).
+     * @retval OT_ERROR_INVALID_STATE  The OpenThread instance or Mesh-Local prefix is unavailable.
      */
     otError LookupAddress(const char *aAddressString, AddressType aType, otIp6Address &aAddress);
 

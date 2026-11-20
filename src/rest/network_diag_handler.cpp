@@ -939,9 +939,8 @@ void NetworkDiagHandler::DiagnosticResponseHandler(otError              aError,
     if (!mIsDiscoveryRequest)
     {
         VerifyOrExit(aMessageInfo != nullptr, aError = OT_ERROR_INVALID_ARGS);
-        // we only expect a single unicast response
-        VerifyOrExit(mIp6address.mFields.m32[2] == aMessageInfo->mPeerAddr.mFields.m32[2] &&
-                         mIp6address.mFields.m32[3] == aMessageInfo->mPeerAddr.mFields.m32[3],
+        // Require a full 128-bit match so link-local and Mesh-Local addresses sharing an IID cannot cross-match.
+        VerifyOrExit(otIp6IsAddressEqual(&mIp6address, &aMessageInfo->mPeerAddr),
                      aError = OT_ERROR_NONE); // ignore if not matching
     }
     otbrLogDebug("%s:%d - %s - received DiagSet from 0x%04x with %zu TLVs.", __FILE__, __LINE__, __func__, keyRloc,
@@ -1586,10 +1585,11 @@ void NetworkDiagHandler::FillDeviceCollection(void)
 
 otError NetworkDiagHandler::FillDiagnosticCollection(const char *aAddressString, AddressType aType)
 {
-    otError                  error    = OT_ERROR_NONE;
-    otExtAddress             extAddr  = {{0}};
-    otIp6InterfaceIdentifier mlEidIid = {{{0}}};
-    uint16_t                 rloc16   = 0xfffe;
+    otError                  error         = OT_ERROR_NONE;
+    otExtAddress             extAddr       = {{0}};
+    otIp6InterfaceIdentifier mlEidIid      = {{{0}}};
+    otIp6Address             targetIp6Addr = {{{0}}};
+    uint16_t                 rloc16        = 0xfffe;
     const otExtAddress      *thisExtAddr;
 
     mResultUuid.clear();
@@ -1609,6 +1609,10 @@ otError NetworkDiagHandler::FillDiagnosticCollection(const char *aAddressString,
 
     case kAddressTypeRloc:
         VerifyOrExit(str_to_rloc16(rloc16, aAddressString) == OT_ERROR_NONE, error = OT_ERROR_PARSE);
+        break;
+
+    case kAddressTypeIpv6:
+        VerifyOrExit(ParseUnicastIp6Address(aAddressString, targetIp6Addr) == OT_ERROR_NONE, error = OT_ERROR_PARSE);
         break;
 
     default:
@@ -1706,6 +1710,55 @@ otError NetworkDiagHandler::FillDiagnosticCollection(const char *aAddressString,
                         if (match)
                         {
                             break;
+                        }
+                    }
+                }
+            }
+            break;
+
+        case kAddressTypeIpv6:
+            if (!isOtIp6AddrEmpty(diag.second.mPeerAddr) && otIp6IsAddressEqual(&diag.second.mPeerAddr, &targetIp6Addr))
+            {
+                match = true;
+            }
+            else
+            {
+                for (const auto &diagTlv : diag.second.mDiagContent)
+                {
+                    if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST)
+                    {
+                        for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
+                        {
+                            if (otIp6IsAddressEqual(&diagTlv.mData.mIp6AddrList.mList[i], &targetIp6Addr))
+                            {
+                                match = true;
+                                break;
+                            }
+                        }
+                        if (match)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (!match)
+                {
+                    const otMeshLocalPrefix *mlPrefix =
+                        (mInstance != nullptr) ? otThreadGetMeshLocalPrefix(mInstance) : nullptr;
+                    uint16_t targetRloc16;
+
+                    if (mlPrefix != nullptr && IsMeshLocalRloc(targetIp6Addr, *mlPrefix, targetRloc16) &&
+                        diag.first == targetRloc16)
+                    {
+                        for (const auto &diagTlv : diag.second.mDiagContent)
+                        {
+                            if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS &&
+                                diagTlv.mData.mAddr16 == targetRloc16)
+                            {
+                                match = true;
+                                break;
+                            }
                         }
                     }
                 }

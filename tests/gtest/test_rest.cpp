@@ -42,13 +42,16 @@
 #include <openthread/dataset_ftd.h>
 #include <openthread/ip6.h>
 #include <openthread/link.h>
+#include <openthread/message.h>
 #include <openthread/netdiag.h>
 #include <openthread/thread.h>
 
 #include "common/mainloop.hpp"
 #include "common/mainloop_manager.hpp"
 #include "host/rcp_host.hpp"
+#include "rest/actions/energy_scan.hpp"
 #include "rest/actions/network_diagnostic.hpp"
+#include "rest/actions/reset_diagnostic_counters.hpp"
 #include "rest/actions_list.hpp"
 #include "rest/network_diag_handler.hpp"
 #include "rest/rest_devices_coll.hpp"
@@ -153,6 +156,40 @@ protected:
         GetDiagHandler().mDiagQueryRequestState = NetworkDiagHandler::RequestState::kDone;
     }
 
+    void SetRequestIp6Address(const otIp6Address &aAddress) { GetDiagHandler().mIp6address = aAddress; }
+
+    void InvokeDiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo)
+    {
+        GetDiagHandler().DiagnosticResponseHandler(aError, aMessage, aMessageInfo);
+    }
+
+    static std::string Ip6AddressToString(const otIp6Address &aAddress)
+    {
+        char buf[OT_IP6_ADDRESS_STRING_SIZE];
+        otIp6AddressToString(&aAddress, buf, sizeof(buf));
+        return std::string(buf);
+    }
+
+    std::string GetSelfMlEidString() const { return Ip6AddressToString(*otThreadGetMeshLocalEid(GetInstance())); }
+
+    std::string GetSelfRlocIp6String() const { return Ip6AddressToString(*otThreadGetRloc(GetInstance())); }
+
+    std::string GetSelfLinkLocalString() const
+    {
+        return Ip6AddressToString(*otThreadGetLinkLocalIp6Address(GetInstance()));
+    }
+
+    std::string MakeMeshLocalIp6String(const char *aIidHex) const
+    {
+        const otMeshLocalPrefix *mlPrefix = otThreadGetMeshLocalPrefix(GetInstance());
+        otIp6Address             addr     = {};
+
+        EXPECT_NE(mlPrefix, nullptr);
+        memcpy(addr.mFields.m8, mlPrefix->m8, sizeof(mlPrefix->m8));
+        EXPECT_EQ(str_to_m8(&addr.mFields.m8[8], aIidHex, OT_IP6_IID_SIZE), OT_ERROR_NONE);
+        return Ip6AddressToString(addr);
+    }
+
     void SeedRetainedSubTables(uint16_t aRloc16)
     {
         GetChildTables()[aRloc16]     = NetworkDiagHandler::RouterChildTable{};
@@ -249,10 +286,63 @@ protected:
 
         cJSON_AddItemToObject(root, "type", cJSON_CreateString("getNetworkDiagnosticTask"));
         cJSON_AddItemToObject(attributes, "destination", cJSON_CreateString(aDestination.c_str()));
-        cJSON_AddItemToObject(attributes, "destinationType", cJSON_CreateString(aDestinationType.c_str()));
+        if (!aDestinationType.empty())
+        {
+            cJSON_AddItemToObject(attributes, "destinationType", cJSON_CreateString(aDestinationType.c_str()));
+        }
         cJSON_AddItemToArray(types, cJSON_CreateString("extAddress"));
         cJSON_AddItemToArray(types, cJSON_CreateString("rloc16"));
         cJSON_AddItemToObject(attributes, "types", types);
+        cJSON_AddItemToObject(attributes, "timeout", cJSON_CreateNumber(aTimeoutSec));
+        cJSON_AddItemToObject(root, "attributes", attributes);
+
+        return root;
+    }
+
+    static cJSON *BuildResetDiagCountersActionRequest(const std::string &aDestination,
+                                                      const std::string &aDestinationType,
+                                                      uint32_t           aTimeoutSec = 5)
+    {
+        cJSON *root       = cJSON_CreateObject();
+        cJSON *attributes = cJSON_CreateObject();
+        cJSON *types      = cJSON_CreateArray();
+
+        cJSON_AddItemToObject(root, "type", cJSON_CreateString("resetNetworkDiagCounterTask"));
+        if (!aDestination.empty())
+        {
+            cJSON_AddItemToObject(attributes, "destination", cJSON_CreateString(aDestination.c_str()));
+        }
+        if (!aDestinationType.empty())
+        {
+            cJSON_AddItemToObject(attributes, "destinationType", cJSON_CreateString(aDestinationType.c_str()));
+        }
+        cJSON_AddItemToArray(types, cJSON_CreateString("macCounters"));
+        cJSON_AddItemToObject(attributes, "types", types);
+        cJSON_AddItemToObject(attributes, "timeout", cJSON_CreateNumber(aTimeoutSec));
+        cJSON_AddItemToObject(root, "attributes", attributes);
+
+        return root;
+    }
+
+    static cJSON *BuildEnergyScanActionRequest(const std::string &aDestination,
+                                               const std::string &aDestinationType,
+                                               uint32_t           aTimeoutSec = 5)
+    {
+        cJSON *root        = cJSON_CreateObject();
+        cJSON *attributes  = cJSON_CreateObject();
+        cJSON *channelMask = cJSON_CreateArray();
+
+        cJSON_AddItemToObject(root, "type", cJSON_CreateString("getEnergyScanTask"));
+        cJSON_AddItemToObject(attributes, "destination", cJSON_CreateString(aDestination.c_str()));
+        if (!aDestinationType.empty())
+        {
+            cJSON_AddItemToObject(attributes, "destinationType", cJSON_CreateString(aDestinationType.c_str()));
+        }
+        cJSON_AddItemToArray(channelMask, cJSON_CreateNumber(11));
+        cJSON_AddItemToObject(attributes, "channelMask", channelMask);
+        cJSON_AddItemToObject(attributes, "count", cJSON_CreateNumber(1));
+        cJSON_AddItemToObject(attributes, "period", cJSON_CreateNumber(32));
+        cJSON_AddItemToObject(attributes, "scanDuration", cJSON_CreateNumber(10));
         cJSON_AddItemToObject(attributes, "timeout", cJSON_CreateNumber(aTimeoutSec));
         cJSON_AddItemToObject(root, "attributes", attributes);
 
@@ -596,6 +686,470 @@ TEST_F(RestNetworkDiagTest, NoResponseAndNoMatchFailWithoutEmptyResultId)
         EXPECT_EQ(cJSON_GetObjectItemCaseSensitive(actionJson, "relationships"), nullptr);
         cJSON_Delete(actionJson);
         cJSON_Delete(req);
+    }
+}
+
+// 6. Unicast ipv6 tasks (ML-EID, RLOC, Link-Local) complete with explicit or omitted destinationType
+//    and do not require the target device to be present in /api/devices.
+TEST_F(RestNetworkDiagTest, CompletedUnicastIpv6TasksReturnValidDiagnosticItem)
+{
+    struct TestCase
+    {
+        std::string mDestination;
+        std::string mDestinationType;
+    };
+
+    const std::string expectedExtAddr = GetSelfExtAddrString();
+    const std::string selfMlEid       = GetSelfMlEidString();
+    const std::string selfRloc        = GetSelfRlocIp6String();
+    const std::string selfLinkLocal   = GetSelfLinkLocalString();
+
+    std::string selfMlEidUpper = selfMlEid;
+    for (char &ch : selfMlEidUpper)
+    {
+        if (ch >= 'a' && ch <= 'f')
+        {
+            ch = static_cast<char>(ch - 'a' + 'A');
+        }
+    }
+
+    // Clear devices collection to prove ipv6 destinations do not depend on /api/devices.
+    mServices->GetDevicesCollection().DeleteAll();
+
+    std::vector<TestCase> cases = {
+        {selfMlEid, "ipv6"}, {selfMlEid, ""},         {selfMlEidUpper, "ipv6"}, {selfRloc, "ipv6"},
+        {selfRloc, ""},      {selfLinkLocal, "ipv6"}, {selfLinkLocal, ""},
+    };
+
+    for (const auto &tc : cases)
+    {
+        cJSON *req = BuildNetworkDiagnosticActionRequest(tc.mDestination, tc.mDestinationType);
+        ASSERT_NE(req, nullptr);
+        EXPECT_TRUE(mServices->GetActionsList().ValidateRequest(req))
+            << "Failed ValidateRequest for type=" << tc.mDestinationType << " dest=" << tc.mDestination;
+
+        std::string actionUuid;
+        EXPECT_EQ(mServices->GetActionsList().CreateAction(req, actionUuid), OT_ERROR_NONE);
+        cJSON_Delete(req);
+        ASSERT_FALSE(actionUuid.empty());
+
+        actions::BasicActions *action = mServices->GetActionsList().GetItem(actionUuid);
+        ASSERT_NE(action, nullptr);
+
+        MainloopProcessUntil(mMainloop, 3, [action]() { return !action->IsPendingOrActive(); });
+        EXPECT_EQ(action->GetStatus(), actions::kActionStatusCompleted)
+            << "Task did not complete for type=" << tc.mDestinationType << " dest=" << tc.mDestination;
+
+        cJSON *actionJson = cJSON_Parse(action->ToJsonApiItem({}).c_str());
+        ASSERT_NE(actionJson, nullptr);
+
+        cJSON *attributes = cJSON_GetObjectItemCaseSensitive(actionJson, "attributes");
+        ASSERT_NE(attributes, nullptr);
+        cJSON *status = cJSON_GetObjectItemCaseSensitive(attributes, "status");
+        ASSERT_TRUE(cJSON_IsString(status));
+        EXPECT_STREQ(status->valuestring, "completed");
+
+        cJSON *destType = cJSON_GetObjectItemCaseSensitive(attributes, "destinationType");
+        ASSERT_TRUE(cJSON_IsString(destType));
+        EXPECT_STREQ(destType->valuestring, "ipv6");
+
+        cJSON *relationships = cJSON_GetObjectItemCaseSensitive(actionJson, "relationships");
+        ASSERT_NE(relationships, nullptr);
+        cJSON *result   = cJSON_GetObjectItemCaseSensitive(relationships, "result");
+        cJSON *data     = (result != nullptr) ? cJSON_GetObjectItemCaseSensitive(result, "data") : nullptr;
+        cJSON *resultId = (data != nullptr) ? cJSON_GetObjectItemCaseSensitive(data, "id") : nullptr;
+        ASSERT_TRUE(cJSON_IsString(resultId));
+        std::string diagUuid = resultId->valuestring;
+        EXPECT_FALSE(diagUuid.empty());
+        cJSON_Delete(actionJson);
+
+        BasicDiagnostics *diagItem = mServices->GetDiagnosticsCollection().GetItem(diagUuid);
+        ASSERT_NE(diagItem, nullptr);
+
+        cJSON *diagJson = cJSON_Parse(diagItem->ToJsonApiItem({}).c_str());
+        ASSERT_NE(diagJson, nullptr);
+        cJSON *diagAttrs = cJSON_GetObjectItemCaseSensitive(diagJson, "attributes");
+        cJSON *diagExtAddr =
+            (diagAttrs != nullptr) ? cJSON_GetObjectItemCaseSensitive(diagAttrs, "extAddress") : nullptr;
+        ASSERT_TRUE(cJSON_IsString(diagExtAddr));
+        EXPECT_EQ(StringUtils::ToLowercase(diagExtAddr->valuestring), expectedExtAddr);
+        cJSON_Delete(diagJson);
+    }
+}
+
+// 7. ReadDestination and ValidateRequest accept auto-detected unicast IPv6 literals (including 6- and 16-char)
+//    and reject malformed, multicast, unspecified, loopback, IPv4-mapped, anycast, and mismatched types.
+TEST_F(RestNetworkDiagTest, UnicastIpv6ValidationAndAutoDetection)
+{
+    // Length 6 and length 16 IPv6 literals containing ':' must auto-detect as ipv6, not rloc or extended.
+    for (const std::string &autoIpv6 : std::vector<std::string>{"fd::12", "fd00:0::1234:567", "fe80::1"})
+    {
+        cJSON *req = BuildNetworkDiagnosticActionRequest(autoIpv6, "");
+        ASSERT_NE(req, nullptr);
+        EXPECT_TRUE(mServices->GetActionsList().ValidateRequest(req)) << "Expected valid ipv6: " << autoIpv6;
+
+        cJSON                     *attributes = cJSON_GetObjectItemCaseSensitive(req, "attributes");
+        actions::NetworkDiagnostic action(*attributes, *mServices);
+        cJSON                     *actionJson = cJSON_Parse(action.ToJsonApiItem({}).c_str());
+        ASSERT_NE(actionJson, nullptr);
+        cJSON *attrs    = cJSON_GetObjectItemCaseSensitive(actionJson, "attributes");
+        cJSON *destType = cJSON_GetObjectItemCaseSensitive(attrs, "destinationType");
+        ASSERT_TRUE(cJSON_IsString(destType));
+        EXPECT_STREQ(destType->valuestring, "ipv6") << "Failed auto-detect for " << autoIpv6;
+        cJSON_Delete(actionJson);
+        cJSON_Delete(req);
+    }
+
+    struct InvalidCase
+    {
+        std::string mDestination;
+        std::string mDestinationType;
+        bool        mCheckParseStatus;
+    };
+
+    std::vector<InvalidCase> invalidCases = {
+        {"", "ipv6", true},
+        {":", "ipv6", true},
+        {"not-an-ip", "ipv6", true},
+        {"fe80::1:", "ipv6", true},
+        {"1:2:3:4:5:6:7:8::", "ipv6", true},
+        {"::1:2:3:4:5:6:7:8", "ipv6", true},
+        {"1:2:3:4::5:6:7:8", "ipv6", true},
+        {"fd00:0:0:0:0:0::192.0.2.1", "ipv6", true},
+        {"fe80::00001", "ipv6", true},
+        {"2001:db8::a::b", "ipv6", true},
+        {"fe80::1/64", "ipv6", true},
+        {"fe80::1%wpan0", "ipv6", true},
+        {"fe80::g", "ipv6", true},
+        {"0123456789abcdef", "ipv6", true},
+        {"0x0400", "ipv6", true},
+        {"192.0.2.1", "ipv6", true},
+        {"ff02::1", "ipv6", true},
+        {"ff03::1", "ipv6", true},
+        {"ff03::2", "ipv6", true},
+        {"ff03::1", "", true},
+        {"::", "ipv6", true},
+        {"::", "", true},
+        {"::1", "ipv6", true},
+        {"::1", "", true},
+        {"::ffff:192.0.2.1", "ipv6", true},
+        {"::ffff:192.0.2.1", "", true},
+        {"fe80::", "ipv6", true},
+        {"fdde:ad00:beef::", "ipv6", true},
+        // Explicit non-ipv6 types must continue to reject IPv6 strings (even 6-char and 16-char).
+        {"fd00:0::1234:567", "extended", false},
+        {"fd00:0::1234:567", "mleid", false},
+        {"fd::12", "rloc", false},
+        {"fe80::1", "extended", false},
+    };
+
+    const auto          now     = std::chrono::steady_clock::now();
+    const otExtAddress *extAddr = otLinkGetExtendedAddress(GetInstance());
+    const otIp6Address *mlEid   = otThreadGetMeshLocalEid(GetInstance());
+    uint16_t            rloc16  = otThreadGetRloc16(GetInstance());
+
+    SetWaitingSingleRequestState(Seconds(5), now);
+    GetDiagSet()[rloc16] = MakeDiagInfo(rloc16, *extAddr, mlEid, {*mlEid}, now);
+    SetFinishedState();
+
+    const size_t initialDiagCount = mServices->GetDiagnosticsCollection().Size();
+
+    for (const auto &ic : invalidCases)
+    {
+        cJSON *req = BuildNetworkDiagnosticActionRequest(ic.mDestination, ic.mDestinationType);
+        ASSERT_NE(req, nullptr);
+        EXPECT_FALSE(mServices->GetActionsList().ValidateRequest(req))
+            << "Expected ValidateRequest to reject dest=" << ic.mDestination << " type=" << ic.mDestinationType;
+        cJSON_Delete(req);
+
+        if (ic.mCheckParseStatus)
+        {
+            std::string resultUuid;
+            EXPECT_EQ(GetDiagHandler().GetDiagnosticsStatus(ic.mDestination.c_str(), kAddressTypeIpv6, resultUuid),
+                      OT_ERROR_PARSE)
+                << "Expected OT_ERROR_PARSE for dest=" << ic.mDestination;
+            EXPECT_TRUE(resultUuid.empty());
+            EXPECT_EQ(mServices->GetDiagnosticsCollection().Size(), initialDiagCount);
+        }
+    }
+}
+
+// 8. Services::LookupAddress enforces TMF-reachable unicast IPv6 scope (Link-Local fe80::/64 and
+//    Mesh-Local non-ALOC), rejects OMR/GUA and ALOCs, and returns OT_ERROR_INVALID_STATE when prefix is null.
+TEST_F(RestNetworkDiagTest, LookupAddressEnforcesTmfReachableUnicastIpv6Scope)
+{
+    otIp6Address addr;
+    otIp6Address expected;
+
+    // Mesh-Local ML-EID accepted.
+    const std::string mlEidStr = GetSelfMlEidString();
+    EXPECT_EQ(mServices->LookupAddress(mlEidStr.c_str(), kAddressTypeIpv6, addr), OT_ERROR_NONE);
+    EXPECT_TRUE(otIp6IsAddressEqual(&addr, otThreadGetMeshLocalEid(GetInstance())));
+
+    // Mesh-Local RLOC accepted.
+    const std::string rlocStr = GetSelfRlocIp6String();
+    EXPECT_EQ(mServices->LookupAddress(rlocStr.c_str(), kAddressTypeIpv6, addr), OT_ERROR_NONE);
+    EXPECT_TRUE(otIp6IsAddressEqual(&addr, otThreadGetRloc(GetInstance())));
+
+    // Link-Local unicast fe80::/64 accepted.
+    const std::string linkLocalStr = GetSelfLinkLocalString();
+    EXPECT_EQ(mServices->LookupAddress(linkLocalStr.c_str(), kAddressTypeIpv6, addr), OT_ERROR_NONE);
+    EXPECT_TRUE(otIp6IsAddressEqual(&addr, otThreadGetLinkLocalIp6Address(GetInstance())));
+
+    // Link-Local outside fe80::/64 rejected.
+    EXPECT_EQ(mServices->LookupAddress("fe80:1::1", kAddressTypeIpv6, addr), OT_ERROR_INVALID_ARGS);
+    EXPECT_EQ(mServices->LookupAddress("febf::1", kAddressTypeIpv6, addr), OT_ERROR_INVALID_ARGS);
+
+    // Mesh-Local ALOCs (0xfc00 - 0xfcff) rejected.
+    for (const char *alocIid : {"000000fffe00fc00", "000000fffe00fc10", "000000fffe00fc38", "000000fffe00fcff"})
+    {
+        const std::string alocStr = MakeMeshLocalIp6String(alocIid);
+        EXPECT_EQ(mServices->LookupAddress(alocStr.c_str(), kAddressTypeIpv6, addr), OT_ERROR_INVALID_ARGS)
+            << "Expected ALOC rejection for " << alocStr;
+    }
+
+    // OMR / GUA / non-Mesh-Local ULA rejected.
+    const otMeshLocalPrefix *mlPrefix = otThreadGetMeshLocalPrefix(GetInstance());
+    ASSERT_NE(mlPrefix, nullptr);
+    otIp6Address otherUla = {};
+    memcpy(otherUla.mFields.m8, mlPrefix->m8, sizeof(mlPrefix->m8));
+    otherUla.mFields.m8[1] ^= 0xff;
+    otherUla.mFields.m8[15] = 0x01;
+    EXPECT_EQ(mServices->LookupAddress(Ip6AddressToString(otherUla).c_str(), kAddressTypeIpv6, addr),
+              OT_ERROR_INVALID_ARGS);
+    EXPECT_EQ(mServices->LookupAddress("2001:db8::1", kAddressTypeIpv6, addr), OT_ERROR_INVALID_ARGS);
+
+    // Parse-invalid, multicast, unspecified, loopback, IPv4-mapped return OT_ERROR_PARSE and preserve out-param.
+    EXPECT_EQ(otIp6AddressFromString("fe80::1234", &expected), OT_ERROR_NONE);
+    addr = expected;
+    for (const char *bad : {"ff03::1", "::", "::1", "::ffff:192.0.2.1", "fe80::", "not-an-ip"})
+    {
+        EXPECT_EQ(mServices->LookupAddress(bad, kAddressTypeIpv6, addr), OT_ERROR_PARSE) << "Input: " << bad;
+        EXPECT_TRUE(otIp6IsAddressEqual(&addr, &expected));
+    }
+
+    // When otInstance / Mesh-Local prefix is null, Link-Local still succeeds while non-Link-Local returns
+    // INVALID_STATE.
+    Services nullServices;
+    nullServices.Init(nullptr);
+    EXPECT_EQ(nullServices.LookupAddress("fe80::1", kAddressTypeIpv6, addr), OT_ERROR_NONE);
+    EXPECT_EQ(nullServices.LookupAddress(mlEidStr.c_str(), kAddressTypeIpv6, addr), OT_ERROR_INVALID_STATE);
+    EXPECT_EQ(nullServices.LookupAddress("2001:db8::1", kAddressTypeIpv6, addr), OT_ERROR_INVALID_STATE);
+}
+
+// 9. NetworkDiagHandler enforces full 128-bit peer correlation, IP6_ADDR_LIST / RLOC fallbacks,
+//    multi-candidate selection, and stale/no-match failures for kAddressTypeIpv6.
+TEST_F(RestNetworkDiagTest, NetworkDiagHandlerIpv6CorrelationAndFallback)
+{
+    const auto now = std::chrono::steady_clock::now();
+
+    const otMeshLocalPrefix *mlPrefix = otThreadGetMeshLocalPrefix(GetInstance());
+    ASSERT_NE(mlPrefix, nullptr);
+
+    auto makeAddr = [](const uint8_t aPrefix[8], const char *aIidHex) {
+        otIp6Address addr = {};
+        memcpy(addr.mFields.m8, aPrefix, 8);
+        EXPECT_EQ(str_to_m8(&addr.mFields.m8[8], aIidHex, OT_IP6_IID_SIZE), OT_ERROR_NONE);
+        return addr;
+    };
+
+    const uint8_t linkLocalPrefix[8] = {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+    // Part A: DiagnosticResponseHandler must require a full 128-bit match (not just lower 64-bit IID).
+    {
+        const otIp6Address mlTarget = makeAddr(mlPrefix->m8, "a1a1a1a1a1a10001");
+        const otIp6Address llSameId = makeAddr(linkLocalPrefix, "a1a1a1a1a1a10001");
+
+        // Build a minimal diagnostic payload with EXT_ADDRESS (TLV 0) and SHORT_ADDRESS (TLV 1).
+        const uint8_t payload[] = {
+            OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS,   8, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x01,
+            OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS, 2, 0x04, 0x00,
+        };
+        otMessage *msg = otIp6NewMessage(GetInstance(), nullptr);
+        ASSERT_NE(msg, nullptr);
+        ASSERT_EQ(otMessageAppend(msg, payload, sizeof(payload)), OT_ERROR_NONE);
+
+        GetDiagSet().clear();
+        SetWaitingSingleRequestState(Seconds(5), now);
+        SetRequestIp6Address(mlTarget);
+
+        otMessageInfo msgInfo = {};
+        msgInfo.mPeerAddr     = llSameId;
+        InvokeDiagnosticResponseHandler(OT_ERROR_NONE, msg, &msgInfo);
+        EXPECT_TRUE(GetDiagSet().empty());
+
+        msgInfo.mPeerAddr = mlTarget;
+        InvokeDiagnosticResponseHandler(OT_ERROR_NONE, msg, &msgInfo);
+        ASSERT_EQ(GetDiagSet().size(), 1U);
+        EXPECT_TRUE(otIp6IsAddressEqual(&GetDiagSet()[0x0400].mPeerAddr, &mlTarget));
+
+        otMessageFree(msg);
+        GetDiagHandler().StopDiagnosticsRequest();
+    }
+
+    // Part B: FillDiagnosticCollection multi-candidate selection, IP6_ADDR_LIST fallback, RLOC fallback,
+    // and Link-Local vs Mesh-Local IID isolation.
+    {
+        otExtAddress ext1 = {{0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x01}};
+        otExtAddress ext2 = {{0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x02}};
+        otExtAddress ext3 = {{0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x03}};
+
+        otIp6Address peer1Ml   = makeAddr(mlPrefix->m8, "a1a1a1a1a1a10001");
+        otIp6Address peer1Ll   = makeAddr(linkLocalPrefix, "a1a1a1a1a1a10001");
+        otIp6Address peer2Ll   = makeAddr(linkLocalPrefix, "b2b2b2b2b2b20002");
+        otIp6Address peer2Rloc = makeAddr(mlPrefix->m8, "000000fffe000800");
+        otIp6Address peer3Ml   = makeAddr(mlPrefix->m8, "c3c3c3c3c3c30003");
+        otIp6Address peer3Rloc = makeAddr(mlPrefix->m8, "000000fffe000c00");
+
+        auto populate = [&]() {
+            GetDiagSet().clear();
+            SetWaitingSingleRequestState(Seconds(5), now);
+            // Candidate 1: exact mPeerAddr match on peer1Ml (does NOT own peer1Ll).
+            GetDiagSet()[0x0400] = MakeDiagInfo(0x0400, ext1, &peer1Ml, {peer1Ml}, now);
+            // Candidate 2: empty mPeerAddr and NO IP6_ADDR_LIST -> tests Mesh-Local RLOC TLV fallback.
+            GetDiagSet()[0x0800] = MakeDiagInfo(0x0800, ext2, nullptr, {}, now);
+            // Candidate 3: mPeerAddr is RLOC, IP6_ADDR_LIST contains peer3Ml and peer2Ll -> tests IP6_ADDR_LIST
+            // fallback.
+            GetDiagSet()[0x0c00] = MakeDiagInfo(0x0c00, ext3, &peer3Rloc, {peer3Rloc, peer3Ml, peer2Ll}, now);
+            SetFinishedState();
+        };
+
+        auto verifySelected = [&](const otIp6Address &aTarget, const std::string &aExpectedExtAddr) {
+            populate();
+            const size_t beforeSize = mServices->GetDiagnosticsCollection().Size();
+            std::string  resultUuid;
+            EXPECT_EQ(GetDiagHandler().GetDiagnosticsStatus(Ip6AddressToString(aTarget).c_str(), kAddressTypeIpv6,
+                                                            resultUuid),
+                      OT_ERROR_NONE);
+            ASSERT_FALSE(resultUuid.empty());
+            EXPECT_EQ(mServices->GetDiagnosticsCollection().Size(), beforeSize + 1);
+
+            BasicDiagnostics *item = mServices->GetDiagnosticsCollection().GetItem(resultUuid);
+            ASSERT_NE(item, nullptr);
+            cJSON *json = cJSON_Parse(item->ToJsonApiItem({}).c_str());
+            ASSERT_NE(json, nullptr);
+            cJSON *attrs   = cJSON_GetObjectItemCaseSensitive(json, "attributes");
+            cJSON *extItem = cJSON_GetObjectItemCaseSensitive(attrs, "extAddress");
+            ASSERT_TRUE(cJSON_IsString(extItem));
+            EXPECT_EQ(StringUtils::ToLowercase(extItem->valuestring), aExpectedExtAddr);
+            cJSON_Delete(json);
+        };
+
+        // Direct 128-bit mPeerAddr matches.
+        verifySelected(peer1Ml, "1111111111111101");
+        verifySelected(peer3Rloc, "3333333333333303");
+
+        // IP6_ADDR_LIST fallback matches (ML-EID and Link-Local).
+        verifySelected(peer3Ml, "3333333333333303");
+        verifySelected(peer2Ll, "3333333333333303");
+
+        // Mesh-Local RLOC fallback match when mPeerAddr is empty and IP6_ADDR_LIST is omitted.
+        verifySelected(peer2Rloc, "2222222222222202");
+
+        // Link-Local address sharing IID with Candidate 1's ML-EID must NOT match Candidate 1.
+        populate();
+        std::string resultUuid;
+        EXPECT_EQ(
+            GetDiagHandler().GetDiagnosticsStatus(Ip6AddressToString(peer1Ll).c_str(), kAddressTypeIpv6, resultUuid),
+            OT_ERROR_NOT_FOUND);
+        EXPECT_TRUE(resultUuid.empty());
+
+        // Stale entry (mStartTime < mRequestStartTime) must be ignored for kAddressTypeIpv6.
+        const auto staleTime = now - std::chrono::seconds(10);
+        GetDiagSet().clear();
+        SetWaitingSingleRequestState(Seconds(5), now);
+        GetDiagSet()[0x0400] = MakeDiagInfo(0x0400, ext1, &peer1Ml, {peer1Ml}, staleTime);
+        SetFinishedState();
+        EXPECT_EQ(
+            GetDiagHandler().GetDiagnosticsStatus(Ip6AddressToString(peer1Ml).c_str(), kAddressTypeIpv6, resultUuid),
+            OT_ERROR_NOT_FOUND);
+        EXPECT_TRUE(resultUuid.empty());
+    }
+}
+
+// 10. Non-TMF unicast IPv6 destinations (OMR/GUA, ALOC) fail cleanly across NetworkDiagnostic,
+//     ResetDiagnosticCounters, and EnergyScan actions rather than remaining pending.
+TEST_F(RestNetworkDiagTest, AllDestinationActionsHandleIpv6AndFailOnInvalidScope)
+{
+    const std::string selfMlEid  = GetSelfMlEidString();
+    const std::string leaderAloc = MakeMeshLocalIp6String("000000fffe00fc00");
+    const std::string omrAddr    = "2001:db8::1";
+
+    // ResetDiagnosticCounters succeeds with explicit and implicit unicast ipv6 and serializes destinationType.
+    for (const std::string &destType : std::vector<std::string>{"ipv6", ""})
+    {
+        cJSON *req = BuildResetDiagCountersActionRequest(selfMlEid, destType);
+        ASSERT_NE(req, nullptr);
+        EXPECT_TRUE(mServices->GetActionsList().ValidateRequest(req));
+
+        cJSON                           *attributes = cJSON_GetObjectItemCaseSensitive(req, "attributes");
+        actions::ResetDiagnosticCounters action(*attributes, *mServices);
+        action.Update();
+        EXPECT_EQ(action.GetStatus(), actions::kActionStatusCompleted);
+
+        cJSON *actionJson = cJSON_Parse(action.ToJsonApiItem({}).c_str());
+        ASSERT_NE(actionJson, nullptr);
+        cJSON *attrs = cJSON_GetObjectItemCaseSensitive(actionJson, "attributes");
+        cJSON *dt    = cJSON_GetObjectItemCaseSensitive(attrs, "destinationType");
+        ASSERT_TRUE(cJSON_IsString(dt));
+        EXPECT_STREQ(dt->valuestring, "ipv6");
+        cJSON_Delete(actionJson);
+        cJSON_Delete(req);
+    }
+
+    // EnergyScan validates and serializes destinationType: "ipv6" for explicit and omitted destinationType.
+    for (const std::string &destType : std::vector<std::string>{"ipv6", ""})
+    {
+        cJSON *req = BuildEnergyScanActionRequest(selfMlEid, destType);
+        ASSERT_NE(req, nullptr);
+        EXPECT_TRUE(mServices->GetActionsList().ValidateRequest(req));
+
+        cJSON              *attributes = cJSON_GetObjectItemCaseSensitive(req, "attributes");
+        actions::EnergyScan action(*attributes, *mServices);
+        cJSON              *actionJson = cJSON_Parse(action.ToJsonApiItem({}).c_str());
+        ASSERT_NE(actionJson, nullptr);
+        cJSON *attrs = cJSON_GetObjectItemCaseSensitive(actionJson, "attributes");
+        cJSON *dt    = cJSON_GetObjectItemCaseSensitive(attrs, "destinationType");
+        ASSERT_TRUE(cJSON_IsString(dt));
+        EXPECT_STREQ(dt->valuestring, "ipv6");
+        cJSON_Delete(actionJson);
+        cJSON_Delete(req);
+    }
+
+    // All three action types must immediately transition to failed (not stay pending) on non-TMF IPv6 or ALOC.
+    for (const std::string &badScopeAddr : std::vector<std::string>{omrAddr, leaderAloc})
+    {
+        {
+            cJSON *req = BuildNetworkDiagnosticActionRequest(badScopeAddr, "ipv6");
+            ASSERT_NE(req, nullptr);
+            EXPECT_TRUE(mServices->GetActionsList().ValidateRequest(req));
+            cJSON                     *attributes = cJSON_GetObjectItemCaseSensitive(req, "attributes");
+            actions::NetworkDiagnostic action(*attributes, *mServices);
+            action.Update();
+            EXPECT_EQ(action.GetStatus(), actions::kActionStatusFailed) << "NetworkDiagnostic addr=" << badScopeAddr;
+            cJSON_Delete(req);
+        }
+        {
+            cJSON *req = BuildResetDiagCountersActionRequest(badScopeAddr, "ipv6");
+            ASSERT_NE(req, nullptr);
+            EXPECT_TRUE(mServices->GetActionsList().ValidateRequest(req));
+            cJSON                           *attributes = cJSON_GetObjectItemCaseSensitive(req, "attributes");
+            actions::ResetDiagnosticCounters action(*attributes, *mServices);
+            action.Update();
+            EXPECT_EQ(action.GetStatus(), actions::kActionStatusFailed)
+                << "ResetDiagnosticCounters addr=" << badScopeAddr;
+            cJSON_Delete(req);
+        }
+        {
+            cJSON *req = BuildEnergyScanActionRequest(badScopeAddr, "ipv6");
+            ASSERT_NE(req, nullptr);
+            EXPECT_TRUE(mServices->GetActionsList().ValidateRequest(req));
+            cJSON              *attributes = cJSON_GetObjectItemCaseSensitive(req, "attributes");
+            actions::EnergyScan action(*attributes, *mServices);
+            action.Update();
+            EXPECT_EQ(action.GetStatus(), actions::kActionStatusFailed) << "EnergyScan addr=" << badScopeAddr;
+            cJSON_Delete(req);
+        }
     }
 }
 

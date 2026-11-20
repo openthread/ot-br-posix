@@ -71,6 +71,52 @@ otError str_to_m8(uint8_t *m8, const char *str, uint8_t size);
  */
 otError str_to_rloc16(uint16_t &aRloc16, const char *aStr);
 
+/**
+ * Parses an IPv6 address literal and verifies it is a valid unicast IPv6 address.
+ *
+ * Rejects malformed literals, multicast (`ff00::/8`), unspecified (`::`), loopback (`::1`),
+ * IPv4-mapped (`::ffff:0:0/96`), and Subnet-Router Anycast (all-zero IID) addresses.
+ *
+ * @param[in]  aStr      Null-terminated IPv6 address string.
+ * @param[out] aAddress  Reference to store the parsed IPv6 address on success.
+ *
+ * @retval OT_ERROR_NONE   Successfully parsed a valid unicast IPv6 address.
+ * @retval OT_ERROR_PARSE  Input string is null, malformed, or not a valid unicast IPv6 address.
+ */
+otError ParseUnicastIp6Address(const char *aStr, otIp6Address &aAddress);
+
+/**
+ * Checks whether an IPv6 address is a Link-Local unicast address (`fe80::/64`).
+ *
+ * @param[in] aAddress  The IPv6 address to check.
+ *
+ * @retval true   If @p aAddress is within `fe80::/64`.
+ * @retval false  Otherwise.
+ */
+bool IsLinkLocalUnicast(const otIp6Address &aAddress);
+
+/**
+ * Checks whether an IPv6 address has a Thread Anycast Locator (ALOC) IID (`0000:00ff:fe00:fc00` to `fcff`).
+ *
+ * @param[in] aAddress  The IPv6 address to check.
+ *
+ * @retval true   If the IID of @p aAddress matches the Thread ALOC range.
+ * @retval false  Otherwise.
+ */
+bool IsAnycastLocatorIid(const otIp6Address &aAddress);
+
+/**
+ * Checks whether an IPv6 address is a Thread Mesh-Local Routing Locator (RLOC) under @p aMeshLocalPrefix.
+ *
+ * @param[in]  aAddress          The IPv6 address to check.
+ * @param[in]  aMeshLocalPrefix  The Thread Mesh-Local prefix.
+ * @param[out] aRloc16           Reference to store the extracted RLOC16 on success.
+ *
+ * @retval true   If @p aAddress is a valid Mesh-Local RLOC; @p aRloc16 is populated.
+ * @retval false  Otherwise.
+ */
+bool IsMeshLocalRloc(const otIp6Address &aAddress, const otMeshLocalPrefix &aMeshLocalPrefix, uint16_t &aRloc16);
+
 } // namespace rest
 } // namespace otbr
 

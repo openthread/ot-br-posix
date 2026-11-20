@@ -978,30 +978,47 @@ def api_network_diagnostic_task_test():
         node_data = json.loads(resp.read())["data"]
     ext_addr = node_data["id"].lower()
     ml_eid_iid = node_data["attributes"]["mlEidIid"].lower()
+    rloc_addr = node_data["attributes"]["rlocAddress"]
 
     with urllib.request.urlopen(urllib.request.Request(rest_api_addr + "/node/rloc16",
                                                        headers={'Accept': 'application/json'})) as resp:
         rloc16 = json.loads(resp.read())
 
-    # 1. Valid extended, rloc (0xXXXX and 00XXXX), and mleid tasks complete with non-empty result IDs.
+    ml_prefix_int = int(ipaddress.IPv6Address(rloc_addr)) & ~((1 << 64) - 1)
+    ml_eid_addr = str(ipaddress.IPv6Address(ml_prefix_int | int(ml_eid_iid, 16)))
+    link_local_addr = str(ipaddress.IPv6Address((0xfe80 << 112) | (int(ext_addr, 16) ^ (1 << 57))))
+    leader_aloc_addr = str(ipaddress.IPv6Address(ml_prefix_int | 0x000000fffe00fc00))
+
+    # 1. Valid extended, rloc (0xXXXX and 00XXXX), mleid, and unicast ipv6 (explicit and implicit) tasks complete
+    # with non-empty result IDs.
     for dest_type, dest in (
         ("extended", ext_addr),
         ("rloc", "0x{:04x}".format(rloc16)),
         ("rloc", "00{:04x}".format(rloc16)),
         ("mleid", ml_eid_iid),
+        ("ipv6", ml_eid_addr),
+        (None, ml_eid_addr),
+        ("ipv6", rloc_addr),
+        (None, rloc_addr),
+        ("ipv6", link_local_addr),
+        (None, link_local_addr),
     ):
+        attrs = {
+            "destination": dest,
+            "types": ["extAddress", "rloc16"],
+            "timeout": 5,
+        }
+        if dest_type is not None:
+            attrs["destinationType"] = dest_type
         action_id = post_action({
             "type": "getNetworkDiagnosticTask",
-            "attributes": {
-                "destination": dest,
-                "destinationType": dest_type,
-                "types": ["extAddress", "rloc16"],
-                "timeout": 5,
-            },
+            "attributes": attrs,
         })
         item = wait_for_action(action_id, timeout_sec=10)
         assert item["attributes"]["status"] == "completed", "expected completed for {}={}, got {}".format(
             dest_type, dest, item)
+        if dest_type in ("ipv6", None):
+            assert item["attributes"]["destinationType"] == "ipv6"
         result_id = item.get("relationships", {}).get("result", {}).get("data", {}).get("id", "")
         assert result_id != "", "empty result id for {}={}".format(dest_type, dest)
 
@@ -1012,26 +1029,55 @@ def api_network_diagnostic_task_test():
             diag_data = json.loads(resp.read())["data"]
             assert diag_data["attributes"]["extAddress"].lower() == ext_addr
 
-    # 2. Invalid destination strings are rejected with HTTP 422.
+    # 2. Invalid destination strings (including multicast, unspecified, loopback, IPv4-mapped) are rejected with HTTP 422.
     for dest_type, invalid_dest in (
         ("extended", "0123456789abcdeg"),
+        ("extended", "fd00:0::1234:567"),
         ("rloc", "011234"),
         ("rloc", "0x123g"),
+        ("rloc", "fd::12"),
         ("mleid", "0123456789abcdeg"),
+        ("ipv6", "not-an-ip"),
+        ("ipv6", "ff03::1"),
+        (None, "ff03::1"),
+        ("ipv6", "::"),
+        ("ipv6", "::1"),
+        ("ipv6", "::ffff:192.0.2.1"),
+        ("ipv6", "fe80::"),
     ):
-        expect_http_error(
-            422,
-            lambda dt=dest_type, d=invalid_dest: post_action({
-                "type": "getNetworkDiagnosticTask",
-                "attributes": {
-                    "destination": d,
-                    "destinationType": dt,
-                    "types": ["extAddress", "rloc16"],
-                    "timeout": 2,
-                },
-            }))
 
-    # 3. Unreachable target must not complete with an empty result ID.
+        def _post_invalid(dt=dest_type, d=invalid_dest):
+            attrs = {
+                "destination": d,
+                "types": ["extAddress", "rloc16"],
+                "timeout": 2,
+            }
+            if dt is not None:
+                attrs["destinationType"] = dt
+            return post_action({
+                "type": "getNetworkDiagnosticTask",
+                "attributes": attrs,
+            })
+
+        expect_http_error(422, _post_invalid)
+
+    # 3. Non-TMF unicast IPv6 (OMR/GUA) and Mesh-Local ALOC destinations fail cleanly with no relationships.
+    for bad_scope_addr in ("2001:db8::1", leader_aloc_addr):
+        action_id = post_action({
+            "type": "getNetworkDiagnosticTask",
+            "attributes": {
+                "destination": bad_scope_addr,
+                "destinationType": "ipv6",
+                "types": ["extAddress", "rloc16"],
+                "timeout": 5,
+            },
+        })
+        item = wait_for_action(action_id, timeout_sec=10)
+        assert item["attributes"]["status"] == "failed", "expected failed for {}, got {}".format(
+            bad_scope_addr, item)
+        assert "relationships" not in item
+
+    # 4. Unreachable target must not complete with an empty result ID.
     unreachable_rloc = "0x{:04x}".format(rloc16 ^ 0x0400)
     action_id = post_action({
         "type": "getNetworkDiagnosticTask",
