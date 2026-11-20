@@ -45,6 +45,7 @@ namespace actions {
 ResetDiagnosticCounters::ResetDiagnosticCounters(const cJSON &aJson, Services &aServices)
     : BasicActions(aJson, aServices)
     , mDestination{nullptr}
+    , mDestinationType{kAddressTypeExt}
 {
     cJSON            *item;
     uint8_t           id;
@@ -88,7 +89,14 @@ void ResetDiagnosticCounters::Update(void)
 
         if (mDestination != nullptr)
         {
-            SuccessOrExit(mServices.LookupAddress(mDestination, mDestinationType, destination));
+            otError error = mServices.LookupAddress(mDestination, mDestinationType, destination);
+
+            if (error != OT_ERROR_NONE && error != OT_ERROR_NOT_FOUND)
+            {
+                mStatus = kActionStatusFailed;
+                ExitNow();
+            }
+            SuccessOrExit(error);
         }
         else
         {

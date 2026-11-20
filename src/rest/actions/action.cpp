@@ -119,12 +119,11 @@ Seconds BasicActions::ReadTimeoutOrDefault(const cJSON &aJson, Seconds aDefault)
 
 const char *BasicActions::ReadDestination(const cJSON &aJson, AddressType &aType)
 {
-    const char *str = nullptr;
+    const char *str      = nullptr;
+    AddressType destType = kAddressTypeExt;
     size_t      addressLength;
     cJSON      *address;
     cJSON      *type;
-
-    aType = kAddressTypeExt;
 
     VerifyOrExit(cJSON_IsObject(&aJson));
 
@@ -143,17 +142,21 @@ const char *BasicActions::ReadDestination(const cJSON &aJson, AddressType &aType
         if (strcmp(typestr, "extended") == 0)
         {
             VerifyOrExit(addressLength == 16);
-            aType = kAddressTypeExt;
+            destType = kAddressTypeExt;
         }
         else if (strcmp(typestr, "mleid") == 0)
         {
             VerifyOrExit(addressLength == 16);
-            aType = kAddressTypeMleid;
+            destType = kAddressTypeMleid;
         }
         else if (strcmp(typestr, "rloc") == 0)
         {
             VerifyOrExit(addressLength == 6);
-            aType = kAddressTypeRloc;
+            destType = kAddressTypeRloc;
+        }
+        else if (strcmp(typestr, "ipv6") == 0)
+        {
+            destType = kAddressTypeIpv6;
         }
         else
         {
@@ -162,13 +165,17 @@ const char *BasicActions::ReadDestination(const cJSON &aJson, AddressType &aType
     }
     else
     {
-        if (addressLength == 16)
+        if (strchr(address->valuestring, ':') != nullptr)
         {
-            aType = kAddressTypeExt;
+            destType = kAddressTypeIpv6;
+        }
+        else if (addressLength == 16)
+        {
+            destType = kAddressTypeExt;
         }
         else if (addressLength == 6)
         {
-            aType = kAddressTypeRloc;
+            destType = kAddressTypeRloc;
         }
         else
         {
@@ -176,26 +183,33 @@ const char *BasicActions::ReadDestination(const cJSON &aJson, AddressType &aType
         }
     }
 
-    if (aType == kAddressTypeExt)
+    if (destType == kAddressTypeExt)
     {
         uint8_t bytes[OT_EXT_ADDRESS_SIZE];
 
         VerifyOrExit(str_to_m8(bytes, address->valuestring, sizeof(bytes)) == OT_ERROR_NONE);
     }
-    else if (aType == kAddressTypeMleid)
+    else if (destType == kAddressTypeMleid)
     {
         uint8_t bytes[OT_IP6_IID_SIZE];
 
         VerifyOrExit(str_to_m8(bytes, address->valuestring, sizeof(bytes)) == OT_ERROR_NONE);
     }
-    else if (aType == kAddressTypeRloc)
+    else if (destType == kAddressTypeRloc)
     {
         uint16_t rloc16;
 
         VerifyOrExit(str_to_rloc16(rloc16, address->valuestring) == OT_ERROR_NONE);
     }
+    else if (destType == kAddressTypeIpv6)
+    {
+        otIp6Address ip6Addr;
 
-    str = address->valuestring;
+        VerifyOrExit(ParseUnicastIp6Address(address->valuestring, ip6Addr) == OT_ERROR_NONE);
+    }
+
+    aType = destType;
+    str   = address->valuestring;
 
 exit:
     return str;

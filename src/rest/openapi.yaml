@@ -346,7 +346,8 @@ paths:
               getNetworkDiagnosticTask:
                 summary: Get Thread Network Diagnostic
                 description: |
-                  The `destination` should be the Device item ID (deviceId), but may also be the ML-EID IID when additional attribute destinationType is given.
+                  The `destination` may be a Device item ID (`deviceId`), an RLOC16 (`0xXXXX` or `00XXXX`), an ML-EID IID (with `destinationType: "mleid"`),
+                  or a unicast TMF-reachable IPv6 address (Mesh-Local ML-EID/RLOC excluding ALOCs, or Link-Local `fe80::/64`; multicast is not yet supported).
                   *TODO*: It defaults to the TBR as destination.
 
                   *TODO*: If `types` is omitted or empty, the following default values are included:
@@ -418,7 +419,8 @@ paths:
               resetNetworkDiagCounterTask:
                 summary: Reset Thread Diagnostic Counters
                 description: |
-                  The `destination` should be the Device item ID (deviceId), but may also be the ML-EID IID when additional attribute destinationType is given.
+                  The `destination` may be a Device item ID (`deviceId`), an RLOC16 (`0xXXXX` or `00XXXX`), an ML-EID IID (with `destinationType: "mleid"`),
+                  or a unicast TMF-reachable IPv6 address (Mesh-Local ML-EID/RLOC excluding ALOCs, or Link-Local `fe80::/64`; multicast is not yet supported).
                   *TODO*: It defaults to the TBR as destination.
 
                   *TODO*: If `types` is omitted or empty, the following default values are included:
@@ -448,7 +450,8 @@ paths:
               getEnergyScanTask:
                 summary: Get Thread Energy Scan
                 description: |
-                  The `destination` should be the Device item ID (deviceId), but may also be the ML-EID IID when additional attribute destinationType is given.
+                  The `destination` may be a Device item ID (`deviceId`), an RLOC16 (`0xXXXX` or `00XXXX`), an ML-EID IID (with `destinationType: "mleid"`),
+                  or a unicast TMF-reachable IPv6 address (Mesh-Local ML-EID/RLOC excluding ALOCs, or Link-Local `fe80::/64`; multicast is not yet supported).
                   *TODO*: It defaults to the TBR as destination.
 
                   *TODO*: If `channelMask` is omitted, it defaults to all channels.
@@ -1872,14 +1875,32 @@ components:
 
     Actions_destination:
       description: |
-        Accepts the value of a `deviceId` (equal to 'extAddress'), `rloc16` or `mlEidIid`. The TBR expands the given destination to
-        the Mesh-Local IPv6 address or Rloc16 address. `deviceId` must be a member of *Devices* collection where it is looked-up
-        to find the ML-EID IID, which is then expanded to the Mesh-Local IPv6 address.
-        A ML-EID IID needs additional attribute `destinationType`:'mleid'.
+        Accepts a `deviceId` (equal to `extAddress`), `rloc16`, `mlEidIid`, or unicast TMF-reachable IPv6 address
+        (Mesh-Local ML-EID/RLOC excluding ALOCs, or Link-Local `fe80::/64`; multicast is not yet supported).
+        The TBR expands `deviceId`, `mlEidIid`, and `rloc16` destinations to a Mesh-Local IPv6 address.
+        `deviceId` must be a member of the *Devices* collection where it is looked up to find the ML-EID IID.
+        An ML-EID IID requires `destinationType: "mleid"`; IPv6 addresses may specify `destinationType: "ipv6"`
+        or omit `destinationType` (auto-detected by `:`).
       anyOf:
         - $ref: "#/components/schemas/LongAddr"
         - $ref: "#/components/schemas/ShortAddr"
         - $ref: "#/components/schemas/MlEidIid"
+        - $ref: "#/components/schemas/Ipv6Addr"
+
+    Actions_destinationType:
+      type: string
+      description: |
+        Explicitly specifies how `destination` is parsed:
+        - `extended`: 16-hex-character MAC Extended Address (`deviceId`), looked up in the *Devices* collection.
+        - `mleid`: 16-hex-character ML-EID Interface Identifier (must be explicitly specified because it shares length with `extended`).
+        - `rloc`: 6-character RLOC16 hex string (`0xXXXX` or `00XXXX`).
+        - `ipv6`: Unicast TMF-reachable IPv6 address (Mesh-Local ML-EID/RLOC excluding ALOCs, or Link-Local `fe80::/64`; multicast is not yet supported).
+        When omitted, destinations containing `:` are interpreted as `ipv6`, 16-character strings as `extended`, and 6-character strings as `rloc`.
+      enum:
+        - extended
+        - mleid
+        - rloc
+        - ipv6
 
     Actions_getNetworkDiagnosticTask:
       type: object
@@ -1894,6 +1915,8 @@ components:
           properties:
             destination:
               $ref: "#/components/schemas/Actions_destination"
+            destinationType:
+              $ref: "#/components/schemas/Actions_destinationType"
             types:
               type: array
               items:
@@ -1949,6 +1972,8 @@ components:
           properties:
             destination:
               $ref: "#/components/schemas/Actions_destination"
+            destinationType:
+              $ref: "#/components/schemas/Actions_destinationType"
             types:
               type: array
               items:
@@ -1986,6 +2011,8 @@ components:
           properties:
             destination:
               $ref: "#/components/schemas/Actions_destination"
+            destinationType:
+              $ref: "#/components/schemas/Actions_destinationType"
             channelMask:
               type: array
               uniqueItems: true
@@ -2246,6 +2273,12 @@ components:
       description: The ML-EID Interface Identifier.
       type: string
       pattern: ^(0x)?[0-9a-fA-F]{16}$
+
+    Ipv6Addr:
+      description: Unicast TMF-reachable IPv6 address (Mesh-Local ML-EID/RLOC excluding ALOCs, or Link-Local `fe80::/64`; multicast is not yet supported).
+      type: string
+      format: ipv6
+      example: "fdde:ad00:beef:0:1122:3344:5566:7788"
 
     pskd:
       description: Joining device's pre-shared key

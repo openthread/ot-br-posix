@@ -32,7 +32,7 @@ The Thread Border Router learns the list of network devices on-demand from the a
 
 #### Device identification
 
-The device collection provides attributes for identifying and selecting a device. Diagnostics are accessible only via mesh local addresses (ML-EID or RLOC16) for on-mesh clients. However, none of them is known to a non-Thread client. Therefore, non-Thread clients may use the `deviceId` in further diagnostic actions for querying diagnostic attributes from a specific device.
+The device collection provides attributes for identifying and selecting a device. Diagnostics are accessible via Mesh-Local addresses (ML-EID or RLOC) or Link-Local (`fe80::/64`) addresses for on-mesh clients. However, none of them is known to a non-Thread client. Therefore, non-Thread clients may use the `deviceId` in further diagnostic actions for querying diagnostic attributes from a specific device.
 
 The MAC extended address serves as a stable identifier within the Thread network. In addition, the ML-EID IID (interface identifier) acts as a stable on-mesh identifier, while RLOC16 may change due to mesh network reorganization. Both ML-EID IID and the MAC extended address can be used as the stable identifier for collection items of type `threadDevice`. Since ML-EID IID is challenging to extract, we use the MAC extended address as the value for the device item `deviceId` and provide the ML-EID IID as an attribute of `threadDevice` items. OTBR REST JSON:API uses the ML-EID IID and the on-mesh prefix from the Thread network dataset to construct a mesh-local IPv6 unicast address for gathering on-mesh diagnostics TLVs from the corresponding device.
 
@@ -119,7 +119,12 @@ Supported action requests to `/api/actions` are:
   - `updateDeviceCollectionTask` - discovers the Thread network and adds or updates any responding attached devices in the `/api/devices` collection.
 - GET | DELETE the full `actions` collection.
 
-Currently, `getNetworkDiagnosticTask` and `getEnergyScanTask` must contain a `destination` attribute which should equal a `deviceId` contained in the `api/devices` collection. If the `deviceId` does not exists, we currently check whether the destination might be a valid `mlEidIid` or `rloc16`.
+`getNetworkDiagnosticTask` and `getEnergyScanTask` require a `destination` attribute, and `resetNetworkDiagCounterTask` accepts an optional `destination` attribute. An optional `destinationType` attribute (`extended`, `mleid`, `rloc`, or `ipv6`) selects how `destination` is interpreted:
+
+- `extended`: 16-hex-character `deviceId` looked up in `/api/devices` (default when `destinationType` is omitted and `destination` is 16 hex characters).
+- `mleid`: 16-hex-character ML-EID IID (requires explicit `destinationType: "mleid"`).
+- `rloc`: 6-character RLOC16 string (`0xXXXX` or `00XXXX`, default when `destinationType` is omitted and `destination` is 6 characters).
+- `ipv6`: Unicast TMF-reachable IPv6 address literal (Mesh-Local ML-EID or RLOC excluding ALOCs, or Link-Local `fe80::/64`; auto-detected when `destinationType` is omitted and `destination` contains `:`). Multicast IPv6 destinations are not yet supported.
 
 A `DELETE` request on `api/actions` cancels an ongoing action and deletes all collection items.
 
