@@ -1,17 +1,27 @@
-# Config brew protobuf version for Mac, see .github/workflows/macOS.yml
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(Protobuf_PREFIX_PATH
-        "/opt/homebrew/opt/protobuf@21/include"
-        "/opt/homebrew/opt/protobuf@21/lib"
-        "/opt/homebrew/opt/protobuf@21/bin")
-    list(APPEND CMAKE_PREFIX_PATH "${Protobuf_PREFIX_PATH}")
-endif()
-find_package(Protobuf REQUIRED)
+find_package(Protobuf CONFIG QUIET)
+if(NOT Protobuf_FOUND)
+    find_package(Protobuf MODULE REQUIRED)
 
-# Protobuf library which >= 4.22 requires to link the absl
-if ("${Protobuf_VERSION}" VERSION_GREATER_EQUAL 4.22)
-    find_package(absl REQUIRED)
-    set(ABSL_LIBS absl::log_internal_check_op)
+    # Protobuf >= 4.22 requires linking absl explicitly in module mode.
+    if(Protobuf_VERSION AND Protobuf_VERSION VERSION_GREATER_EQUAL 4.22)
+        find_package(absl REQUIRED)
+        set(ABSL_LIBS absl::log_internal_check_op)
+    endif()
+endif()
+
+if(Protobuf_PROTOC_EXECUTABLE)
+    set(PROTOC_EXECUTABLE "${Protobuf_PROTOC_EXECUTABLE}")
+elseif(NOT CMAKE_CROSSCOMPILING AND TARGET protobuf::protoc)
+    set(PROTOC_EXECUTABLE protobuf::protoc)
+else()
+    find_program(PROTOC_EXECUTABLE NAMES protoc)
+    if(NOT PROTOC_EXECUTABLE)
+        if(TARGET protobuf::protoc)
+            set(PROTOC_EXECUTABLE protobuf::protoc)
+        else()
+            message(FATAL_ERROR "Protobuf compiler (protoc) not found")
+        endif()
+    endif()
 endif()
 
 # Set up the output path.
@@ -35,7 +45,7 @@ foreach(msg ${MSG_PROTOS})
     add_custom_command(
         OUTPUT "${PROTO_GEN_DIR}/${FIL_WE}.pb.cc"
                 "${PROTO_GEN_DIR}/${FIL_WE}.pb.h"
-        COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+        COMMAND ${PROTOC_EXECUTABLE}
         ARGS --proto_path ${CMAKE_CURRENT_SOURCE_DIR}
             --cpp_out  ${PROTO_GEN_DIR}
             ${msg}
@@ -63,7 +73,13 @@ add_library(otbr-proto STATIC
     ${PROTO_HDRS}
 )
 
-find_package(Protobuf REQUIRED)
+if(Protobuf_VERSION AND (Protobuf_VERSION VERSION_GREATER_EQUAL 30.0 OR
+                         (Protobuf_VERSION VERSION_GREATER_EQUAL 6.30 AND
+                          Protobuf_VERSION VERSION_LESS 22.0)))
+    target_compile_features(otbr-proto PUBLIC cxx_std_17)
+elseif(Protobuf_VERSION AND Protobuf_VERSION VERSION_GREATER_EQUAL 4.22)
+    target_compile_features(otbr-proto PUBLIC cxx_std_14)
+endif()
 
 target_link_libraries(otbr-proto PUBLIC
     protobuf::libprotobuf-lite
