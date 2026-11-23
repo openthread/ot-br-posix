@@ -51,8 +51,12 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
+    - name: Checkout openthread submodule
+      run: git submodule update --init --depth 1 third_party/openthread/repo
     - name: Bootstrap
-      run: BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
+      timeout-minutes: 25
+      shell: bash ./third_party/openthread/repo/script/retry {0}
+      run: ./third_party/openthread/repo/script/install-pretty-tools.sh --no-python
     - name: Check
       run: script/make-pretty check
 
