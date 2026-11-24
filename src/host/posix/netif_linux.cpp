@@ -36,9 +36,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/if.h>
+#include <linux/if_addr.h>
 #include <linux/if_tun.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <linux/version.h>
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <sys/ioctl.h>
@@ -46,10 +48,18 @@
 
 #include <algorithm>
 
+#include "openthread-br/config.h"
+
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
 #include "utils/socket_utils.hpp"
+
+#if OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC > 0
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+#error "OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC requires Linux kernel >= 4.18"
+#endif
+#endif
 
 #ifndef OTBR_POSIX_TUN_DEVICE
 #define OTBR_POSIX_TUN_DEVICE "/dev/net/tun"
@@ -540,6 +550,15 @@ std::vector<otbrError> Netif::ProcessUnicastAddressChanges(const std::vector<Uni
             cacheinfo.ifa_prefered = (addrInfo.mPreferred && !addrInfo.mMeshLocal) ? UINT32_MAX : 0;
 
             AddRtAttr(&req.nh, sizeof(req), IFA_CACHEINFO, &cacheinfo, sizeof(cacheinfo));
+
+#if OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC > 0
+            if (Ip6Address(addrInfo.mAddress).GetScope() > Ip6Address::kLinkLocalScope)
+            {
+                uint32_t routeMetric = OTBR_CONFIG_NETIF_PREFIX_ROUTE_METRIC;
+
+                AddRtAttr(&req.nh, sizeof(req), IFA_RT_PRIORITY, &routeMetric, sizeof(routeMetric));
+            }
+#endif
         }
 
         otbrError sendError = SendNetlinkMessage(&req, req.nh.nlmsg_len);
