@@ -37,6 +37,7 @@
 
 #include <netinet/in.h>
 #include <signal.h>
+#include <sys/select.h>
 
 #include <functional>
 #include <vector>
@@ -50,17 +51,29 @@
 using namespace otbr;
 using namespace otbr::Mdns;
 
-static Publisher *sPublisher = nullptr;
+static Publisher            *sPublisher      = nullptr;
+static volatile sig_atomic_t sReceivedSignal = 0;
+static volatile sig_atomic_t sTerminated     = 0;
 
 typedef std::function<void(void)> TestRunner;
 
 int RunMainloop(void)
 {
-    int rval = 0;
+    int      rval = 0;
+    sigset_t blockSet;
+    sigset_t origSet;
 
-    while (true)
+    sigemptyset(&blockSet);
+    sigaddset(&blockSet, SIGTERM);
+    sigaddset(&blockSet, SIGUSR1);
+    sigaddset(&blockSet, SIGUSR2);
+    sigprocmask(SIG_BLOCK, &blockSet, &origSet);
+
+    while (!sTerminated && (sReceivedSignal == 0))
     {
-        MainloopContext mainloop;
+        MainloopContext  mainloop;
+        struct timespec  timeout;
+        struct timespec *timeoutPtr = nullptr;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = {INT_MAX, INT_MAX};
@@ -69,17 +82,30 @@ int RunMainloop(void)
         FD_ZERO(&mainloop.mErrorFdSet);
 
         MainloopManager::GetInstance().Update(mainloop);
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      (mainloop.mTimeout.tv_sec == INT_MAX ? nullptr : &mainloop.mTimeout));
+        if (mainloop.mTimeout.tv_sec != INT_MAX)
+        {
+            timeout.tv_sec  = mainloop.mTimeout.tv_sec;
+            timeout.tv_nsec = static_cast<long>(mainloop.mTimeout.tv_usec) * 1000;
+            timeoutPtr      = &timeout;
+        }
+
+        rval = pselect(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                       timeoutPtr, &origSet);
 
         if (rval < 0)
         {
-            perror("select");
+            if (errno == EINTR)
+            {
+                continue;
+            }
+            perror("pselect");
             break;
         }
 
         MainloopManager::GetInstance().Process(mainloop);
     }
+
+    sigprocmask(SIG_SETMASK, &origSet, nullptr);
 
     return rval;
 }
@@ -382,13 +408,26 @@ exit:
 
 void RecoverSignal(int aSignal)
 {
-    if (aSignal == SIGUSR1)
+    if (aSignal == SIGTERM)
     {
-        signal(SIGUSR1, SIG_DFL);
+        sTerminated = 1;
     }
-    else if (aSignal == SIGUSR2)
+    else if (aSignal == SIGUSR1 || aSignal == SIGUSR2)
     {
-        signal(SIGUSR2, SIG_DFL);
+        sReceivedSignal = aSignal;
+    }
+}
+
+void InstallSignalHandler(int aSignal)
+{
+    struct sigaction sa{};
+
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags   = SA_RESETHAND;
+    sa.sa_handler = RecoverSignal;
+    if (sigaction(aSignal, &sa, nullptr) < 0)
+    {
+        otbrLogWarning("Failed to install signal %d handler: %s", aSignal, strerror(errno));
     }
 }
 
@@ -398,6 +437,9 @@ otbrError TestStopService(void)
 
     otbrLogInfo("TestStopService");
 
+    InstallSignalHandler(SIGUSR1);
+    InstallSignalHandler(SIGUSR2);
+
     sPublisher = Publisher::Create([](Publisher::State aState) {
         if (aState == Publisher::State::kReady)
         {
@@ -405,11 +447,16 @@ otbrError TestStopService(void)
         }
     });
     SuccessOrExit(ret = sPublisher->Start());
-    signal(SIGUSR1, RecoverSignal);
-    signal(SIGUSR2, RecoverSignal);
+
     RunMainloop();
+    VerifyOrExit(!sTerminated && (sReceivedSignal == SIGUSR1), ret = OTBR_ERROR_ABORTED);
+    sReceivedSignal = 0;
+
     sPublisher->Stop();
     RunMainloop();
+    VerifyOrExit(!sTerminated && (sReceivedSignal == SIGUSR2), ret = OTBR_ERROR_ABORTED);
+    sReceivedSignal = 0;
+
     SuccessOrExit(ret = sPublisher->Start());
     RunMainloop();
 
@@ -484,7 +531,7 @@ int main(int argc, char *argv[])
 
     otbrLogInit("otbr-mdns", OTBR_LOG_DEBUG, true, false);
     // allow quitting elegantly
-    signal(SIGTERM, RecoverSignal);
+    InstallSignalHandler(SIGTERM);
     switch (argv[1][0])
     {
     case 's':

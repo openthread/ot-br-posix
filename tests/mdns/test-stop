@@ -40,6 +40,7 @@ main()
 
     if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 xa=ABCDEFGH'
+        dns_sd_check_type SingleService _meshcop._udp
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"'
     fi
@@ -47,8 +48,17 @@ main()
     # stop service
     /bin/kill -USR1 $PID
     if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
-        sleep 200
-        (! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 xa=ABCDEFGH') || exit 1
+        # Poll browse (PTR) rather than lookup (SRV/TXT): mDNSResponder tears down PTR with goodbye
+        # packets, whereas unique SRV/TXT records do not send goodbyes and a looped-back announcement
+        # can keep them cached for 4500s on Linux.
+        local removed=0
+        for _ in {1..15}; do
+            if ! dns_sd_check_type SingleService _meshcop._udp; then
+                removed=1
+                break
+            fi
+        done
+        [[ ${removed} == 1 ]] || exit 1
     else
         sleep 1
         (! avahi_check 'SingleService;_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"') || exit 1
@@ -56,9 +66,10 @@ main()
 
     # start service
     /bin/kill -USR2 $PID
-    sleep 1
+    sleep 2
     if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 xa=ABCDEFGH'
+        dns_sd_check_type SingleService _meshcop._udp
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"'
     fi
