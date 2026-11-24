@@ -251,35 +251,28 @@ if {![string match "*Enabled*" $filter_status]} {
 
 # --- Step 4: Router pings ED (10 pings, verify TREL disconnect) ---
 send_user -- "--- Step 4: Trigger TREL disconnect detection (Router pings ED) ---\n"
-# To guarantee detection of disconnect, we will ping and check preference.
-# Router tries to send over TREL to DUT, but it fails.
-for {set i 0} {$i < 50} {incr i} {
+# Ping until both Router and DUT report TREL(0) for each other (at least 10
+# pings, capped at 150 pings) so DUT also enters Step 5/7 from TREL(0).
+for {set i 0} {$i < 150} {incr i} {
     catch { exec docker exec -i $container2 ot-ctl ping $ed_mleid 8 1 } ping_res
     send_user "Router ping response ($i): $ping_res\n"
     after 100
-}
-
-# Verify TREL preference is set to zero on Router for DUT
-set preference_zero_router false
-for {set i 0} {$i < 5} {incr i} {
-    set multiradio_list [exec docker exec -i $container2 ot-ctl multiradio neighbor list]
-    set leader_line ""
-    foreach line [split $multiradio_list "\n"] {
-        if {[string match -nocase "*$br_extaddr*" $line]} {
-            set leader_line $line
-            break
-        }
-    }
-    if {$leader_line ne "" && [regexp {TREL\(0\)} $leader_line]} {
-        set preference_zero_router true
+    if {$i >= 9 && ($i + 1) % 5 == 0 &&
+        [is_trel_preference_zero $container2 $br_extaddr] &&
+        [is_trel_preference_zero $container1 $r_extaddr]} {
         break
     }
-    sleep 2
 }
-if {!$preference_zero_router} {
+
+# Verify TREL preference is set to zero on both Router and DUT (polls briefly
+# if an in-flight TREL deferred ACK timeout is still pending after the loop).
+if {![wait_for_trel_preference_zero $container2 $br_extaddr 5 2 multiradio_list]} {
     fail "Router did not report DUT TREL preference as 0. Neighbor list: $multiradio_list"
 }
-send_user "TREL preference successfully set to 0 on Router!\n"
+if {![wait_for_trel_preference_zero $container1 $r_extaddr 5 2 multiradio_list_dut]} {
+    fail "DUT did not report Router TREL preference as 0. Neighbor list: $multiradio_list_dut"
+}
+send_user "TREL preferences successfully set to 0 on both nodes!\n"
 
 
 # --- Step 5: Router pings ED (5 times, expecting all to pass via 15.4 fallback) ---
