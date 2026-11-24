@@ -96,7 +96,7 @@ jobs:
     - name: Bootstrap
       run: |
         brew update
-        brew reinstall jsoncpp ninja protobuf@21 googletest
+        brew reinstall jsoncpp ninja protobuf googletest
     - name: Build
       run: |
         OTBR_OPTIONS="-DOTBR_MDNS=${{ matrix.mdns }} \
