@@ -64,6 +64,9 @@ echo "127.0.0.1 \$(hostname)" >> /etc/hosts
 chown -R pi:pi /home/pi/repo
 cd /home/pi/repo
 echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+if [ -d /etc/apt/apt.conf.d ]; then
+    echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries
+fi
 apt-get update --allow-releaseinfo-change
 apt-get install -y --no-install-recommends git python3-pip
 RELEASE=1 script/bootstrap
@@ -72,11 +75,19 @@ RELEASE=1 script/bootstrap
 # For more background, see https://gitlab.kitware.com/cmake/cmake/-/issues/20568.
 apt-get purge -y cmake
 apt-get install -y python3-venv
-TEMP_VENV_DIR=$(mktemp -d)
+pip_install()
+{
+    if ! pip3 install --retries 5 --timeout 30 "\$@"; then
+        sleep 5
+        pip3 install --retries 5 --timeout 30 "\$@" ||
+            PIP_CONFIG_FILE=/dev/null pip3 install --retries 5 --timeout 30 "\$@"
+    fi
+}
+TEMP_VENV_DIR=\$(mktemp -d)
 python3 -m venv "\${TEMP_VENV_DIR}"
 source "\${TEMP_VENV_DIR}/bin/activate"
-pip3 install scikit-build
-pip3 install cmake==3.10.3
+pip_install scikit-build
+pip_install --only-binary :all: cmake==3.10.3
 cmake --version
 
 RELEASE=1 script/setup
