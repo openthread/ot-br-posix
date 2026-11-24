@@ -426,27 +426,69 @@ ot_commissioner_start()
     readonly OT_COMMISSIONER_LOG
 
     local commissioner_config_file="${TEST_BASE}"/ot-commissioner.json
-    local commissioner_config_file="${TEST_BASE}"/ot-commissioner.json
+    local commissioner_ready_file="${TEST_BASE}"/commissioner.ready
+    local commissioner_failed_file="${TEST_BASE}"/commissioner.failed
+    local commissioner_pid
+    local i
 
     sed "s/3aa55f91ca47d1e4e71a08cb35e91591/${OT_PSKC}/g" "${OT_COMMISSIONER_CONFIG}" >"${commissioner_config_file}"
+    rm -f "${commissioner_ready_file}" "${commissioner_failed_file}"
 
-    expect -f- <<EOF &
-spawn ${OT_COMMISSIONER_PATH} ${commissioner_config_file}
-set timeout 1
+    (
+        COMMISSIONER_PATH="${OT_COMMISSIONER_PATH}" \
+            COMMISSIONER_CONFIG_FILE="${commissioner_config_file}" \
+            COMMISSIONER_PORT="${OT_BORDER_AGENT_PORT}" \
+            COMMISSIONER_JOINER_EUI64="${OT_JOINER_EUI64}" \
+            COMMISSIONER_JOINER_PASSPHRASE="${OT_JOINER_PASSPHRASE}" \
+            COMMISSIONER_READY_FILE="${commissioner_ready_file}" \
+            expect -f- <<'EOF' || touch "${commissioner_failed_file}"
+spawn $env(COMMISSIONER_PATH) $env(COMMISSIONER_CONFIG_FILE)
+set timeout 20
 expect_after {
     timeout { exit 1 }
+    eof { exit 1 }
 }
-send "start :: $OT_BORDER_AGENT_PORT\n"
-expect "done"
-sleep 5
+expect -ex {> }
+send "start :: $env(COMMISSIONER_PORT)\n"
+expect {
+    -ex {[done]} {}
+    -ex {[failed]} { exit 1 }
+}
+expect -ex {> }
 send "active\n"
-expect "true"
-send "joiner enable meshcop 0x${OT_JOINER_EUI64} ${OT_JOINER_PASSPHRASE}\n"
-expect "done"
-wait
+expect {
+    -ex {true} {}
+    -ex {false} { exit 1 }
+    -ex {[failed]} { exit 1 }
+}
+expect -ex {[done]}
+expect -ex {> }
+send "joiner enable meshcop 0x$env(COMMISSIONER_JOINER_EUI64) $env(COMMISSIONER_JOINER_PASSPHRASE)\n"
+expect {
+    -ex {[done]} {}
+    -ex {[failed]} { exit 1 }
+}
+close [open $env(COMMISSIONER_READY_FILE) w]
+set timeout -1
+expect eof { exit 0 }
 EOF
+    ) &
+    commissioner_pid=$!
 
-    sleep 10
+    for ((i = 0; i < 120; i++)); do
+        if [[ -f ${commissioner_failed_file} ]] || ! kill -0 "${commissioner_pid}" 2>/dev/null; then
+            die "COMMISSIONER FAILED"
+        fi
+        if [[ -f ${commissioner_ready_file} ]]; then
+            break
+        fi
+        sleep 0.5
+    done
+
+    if [[ ! -f ${commissioner_ready_file} || -f ${commissioner_failed_file} ]] \
+        || ! kill -0 "${commissioner_pid}" 2>/dev/null; then
+        die "COMMISSIONER FAILED"
+    fi
 }
 
 web_commissioner_start()
