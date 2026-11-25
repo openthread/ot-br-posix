@@ -257,6 +257,46 @@ target_link_libraries(otbr-gtest-ncp-host-api
 )
 gtest_discover_tests(otbr-gtest-ncp-host-api)
 
+add_executable(otbr-gtest-border-agent
+    ${OTBR_PROJECT_DIRECTORY}/src/border_agent/border_agent.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/logging.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/mainloop.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/mainloop_manager.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/task_runner.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/common/types.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/host/posix/entropy.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/mdns/mdns.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/utils/csprng.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/utils/dns_utils.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/utils/string_utils.cpp
+    test_border_agent.cpp
+)
+target_compile_options(otbr-gtest-border-agent
+    PRIVATE
+        -DOTBR_ENABLE_BORDER_AGENT=1
+        -DOTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE=1
+        -DOTBR_ENABLE_MDNS_MDNSSD=1
+)
+target_include_directories(otbr-gtest-border-agent
+    PRIVATE
+        ${OTBR_PROJECT_DIRECTORY}/include
+        ${OTBR_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/include
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src/posix/platform/include
+        ${OPENTHREAD_PROJECT_DIRECTORY}/third_party/mbedtls/repo/include
+)
+target_link_libraries(otbr-gtest-border-agent
+    mbedtls
+    openthread-ftd
+    GTest::gmock_main
+)
+if(OTBR_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(otbr-gtest-border-agent PRIVATE -g -O0 --coverage)
+    target_link_libraries(otbr-gtest-border-agent --coverage)
+endif()
+gtest_discover_tests(otbr-gtest-border-agent)
+
 if(OTBR_TREL_DNSSD)
     add_executable(otbr-gtest-trel-dnssd
         ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
