@@ -30,15 +30,24 @@
 #include <gtest/gtest.h>
 
 #include <arpa/inet.h>
+#include <sys/select.h>
+#include <sys/time.h>
+
+#include <algorithm>
 #include <array>
+#include <cerrno>
 #include <chrono>
 #include <cstdio>
+#include <cstring>
+#include <functional>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
-#include <sys/time.h>
+#include <utility>
 #include <vector>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/mainloop_manager.hpp"
 #include "common/types.hpp"
@@ -51,6 +60,31 @@
 // Only Test on linux platform for now.
 #ifdef __linux__
 #if OTBR_ENABLE_BACKBONE_ROUTER
+
+namespace {
+
+constexpr std::chrono::milliseconds kWaitTimeout(5000);
+constexpr std::chrono::milliseconds kMaxPollInterval(20);
+
+class ScopeGuard : private NonCopyable
+{
+public:
+    explicit ScopeGuard(std::function<void(void)> aCleanup)
+        : mCleanup(std::move(aCleanup))
+    {
+    }
+
+    ~ScopeGuard(void)
+    {
+        if (mCleanup)
+        {
+            mCleanup();
+        }
+    }
+
+private:
+    std::function<void(void)> mCleanup;
+};
 
 std::string Exec(const char *aCmd)
 {
@@ -83,38 +117,55 @@ std::vector<std::string> GetMulticastRoutingTable(void)
     return lines;
 }
 
-static void MainloopProcess(uint32_t aTimeoutMs)
+template <typename Condition> bool MainloopProcessUntil(std::chrono::milliseconds aTimeout, Condition aCondition)
 {
-    otbr::MainloopContext mainloop;
+    auto deadline  = std::chrono::steady_clock::now() + aTimeout;
+    bool satisfied = false;
 
-    auto start = std::chrono::high_resolution_clock::now();
-
-    while (true)
+    do
     {
+        auto now = std::chrono::steady_clock::now();
+        if (now >= deadline)
+        {
+            break;
+        }
+
+        auto waitDuration = std::min(std::chrono::duration_cast<std::chrono::microseconds>(deadline - now),
+                                     std::chrono::duration_cast<std::chrono::microseconds>(kMaxPollInterval));
+        auto waitUs       = waitDuration.count();
+        if (waitUs <= 0)
+        {
+            waitUs = 1;
+        }
+
+        otbr::MainloopContext mainloop;
+
+        mainloop.mMaxFd           = -1;
+        mainloop.mTimeout.tv_sec  = static_cast<time_t>(waitUs / 1000000);
+        mainloop.mTimeout.tv_usec = static_cast<suseconds_t>(waitUs % 1000000);
+
         FD_ZERO(&mainloop.mReadFdSet);
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
         otbr::MainloopManager::GetInstance().Update(mainloop);
 
-        int rval =
-            select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet, nullptr);
+        int rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                          &mainloop.mTimeout);
 
         if (rval >= 0)
         {
             otbr::MainloopManager::GetInstance().Process(mainloop);
         }
-        else
+        else if (errno != EINTR)
         {
-            perror("select()");
-            exit(EXIT_FAILURE);
-        }
-
-        auto elapsedTime = std::chrono::high_resolution_clock::now() - start;
-        if (elapsedTime > std::chrono::milliseconds(aTimeoutMs))
-        {
+            ADD_FAILURE() << "select() failed: " << strerror(errno);
             break;
         }
-    }
+
+        satisfied = aCondition();
+    } while (!satisfied && std::chrono::steady_clock::now() < deadline);
+
+    return satisfied;
 }
 
 class DummyNetworkProperties : public otbr::Host::NetworkProperties
@@ -136,13 +187,27 @@ public:
     otMeshLocalPrefix mMeshLocalPrefix = {0};
 };
 
+} // namespace
+
 TEST(BbrMcastRouting, MulticastRoutingTableSetCorrectlyAfterHandlingMlrEvents)
 {
-    otbr::Netif::Dependencies defaultNetifDep;
-    otbr::Netif               netif("wpan0", defaultNetifDep);
-    otbr::Netif               fakeInfraIf("wlx123", defaultNetifDep);
-    EXPECT_EQ(netif.Init(), OTBR_ERROR_NONE);
-    EXPECT_EQ(fakeInfraIf.Init(), OTBR_ERROR_NONE);
+    otbr::Netif::Dependencies     defaultNetifDep;
+    otbr::Netif                   netif("wpan0", defaultNetifDep);
+    otbr::Netif                   fakeInfraIf("wlx123", defaultNetifDep);
+    otbr::InfraIf::Dependencies   defaultInfraIfDep;
+    otbr::InfraIf                 infraIf(defaultInfraIfDep);
+    DummyNetworkProperties        dummyNetworkProperties;
+    otbr::MulticastRoutingManager mcastRtMgr(netif, infraIf, dummyNetworkProperties);
+
+    ScopeGuard cleanup{[&]() {
+        mcastRtMgr.HandleStateChange(OT_BACKBONE_ROUTER_STATE_DISABLED);
+        infraIf.Deinit();
+        fakeInfraIf.Deinit();
+        netif.Deinit();
+    }};
+
+    ASSERT_EQ(netif.Init(), OTBR_ERROR_NONE);
+    ASSERT_EQ(fakeInfraIf.Init(), OTBR_ERROR_NONE);
 
     const otIp6Address kInfraIfAddr = {
         {0x91, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}};
@@ -152,13 +217,10 @@ TEST(BbrMcastRouting, MulticastRoutingTableSetCorrectlyAfterHandlingMlrEvents)
     fakeInfraIf.UpdateIp6UnicastAddresses(addrs);
     fakeInfraIf.SetNetifState(true);
 
-    otbr::InfraIf::Dependencies defaultInfraIfDep;
-    otbr::InfraIf               infraIf(defaultInfraIfDep);
-    EXPECT_EQ(infraIf.SetInfraIf("wlx123"), OTBR_ERROR_NONE);
+    ASSERT_EQ(infraIf.SetInfraIf("wlx123"), OTBR_ERROR_NONE);
 
-    DummyNetworkProperties        dummyNetworkProperties;
-    otbr::MulticastRoutingManager mcastRtMgr(netif, infraIf, dummyNetworkProperties);
     mcastRtMgr.HandleStateChange(OT_BACKBONE_ROUTER_STATE_PRIMARY);
+    ASSERT_TRUE(MainloopProcessUntil(kWaitTimeout, [&]() { return mcastRtMgr.IsEnabled(); }));
 
     /*
      * IP6 9101::1 > ff05::abcd: ICMP6, echo request, id 8, seq 1, length 64
@@ -180,15 +242,20 @@ TEST(BbrMcastRouting, MulticastRoutingTableSetCorrectlyAfterHandlingMlrEvents)
     };
     fakeInfraIf.Ip6Receive(icmp6Packet, sizeof(icmp6Packet));
 
-    MainloopProcess(10);
-
     const std::string kAddressPair   = "(9101::1,ff05::abcd)";
     const std::string kIif           = "Iif: wlx123";
     const std::string kOifs          = "Oifs: wpan0";
     const std::string kStateResolved = "State: resolved";
 
-    auto lines = GetMulticastRoutingTable();
-    EXPECT_EQ(lines.size(), 1);
+    std::vector<std::string> lines;
+
+    MainloopProcessUntil(kWaitTimeout, [&]() {
+        lines = GetMulticastRoutingTable();
+        return lines.size() == 1 && lines.front().find(kAddressPair) != std::string::npos &&
+               lines.front().find(kIif) != std::string::npos && lines.front().find(kOifs) == std::string::npos &&
+               lines.front().find(kStateResolved) != std::string::npos;
+    });
+    ASSERT_EQ(lines.size(), 1u);
     EXPECT_THAT(lines.front(), ::testing::HasSubstr(kAddressPair));
     EXPECT_THAT(lines.front(), ::testing::HasSubstr(kIif));
     EXPECT_THAT(lines.front(), ::testing::Not(::testing::HasSubstr(kOifs)));
@@ -198,8 +265,13 @@ TEST(BbrMcastRouting, MulticastRoutingTableSetCorrectlyAfterHandlingMlrEvents)
         {0xff, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xab, 0xcd}};
     mcastRtMgr.HandleBackboneMulticastListenerEvent(OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED, kMulAddr1);
 
-    MainloopProcess(10);
-    lines = GetMulticastRoutingTable();
+    MainloopProcessUntil(kWaitTimeout, [&]() {
+        lines = GetMulticastRoutingTable();
+        return lines.size() == 1 && lines.front().find(kAddressPair) != std::string::npos &&
+               lines.front().find(kIif) != std::string::npos && lines.front().find(kOifs) != std::string::npos &&
+               lines.front().find(kStateResolved) != std::string::npos;
+    });
+    ASSERT_EQ(lines.size(), 1u);
     EXPECT_THAT(lines.front(), ::testing::HasSubstr(kAddressPair));
     EXPECT_THAT(lines.front(), ::testing::HasSubstr(kIif));
     EXPECT_THAT(lines.front(), ::testing::HasSubstr(kOifs));
