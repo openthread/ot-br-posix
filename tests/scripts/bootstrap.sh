@@ -36,6 +36,12 @@ disable_install_recommends()
 {
     OTBR_APT_CONF_FILE=/etc/apt/apt.conf
 
+    sudo tee /etc/apt/apt.conf.d/80-retries >/dev/null <<'EOF'
+Acquire::Retries "3";
+Acquire::http::Timeout "15";
+Acquire::https::Timeout "15";
+EOF
+
     if [[ -f ${OTBR_APT_CONF_FILE} ]] && grep Install-Recommends "${OTBR_APT_CONF_FILE}"; then
         return 0
     fi
@@ -126,7 +132,8 @@ case "$(uname)" in
         if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
             SOURCE_NAME=mDNSResponder-2881.40.18
             (cd /tmp \
-                && wget -c --tries=3 --no-check-certificate -O "$SOURCE_NAME.tar.gz" \
+                && rm -f "$SOURCE_NAME.tar.gz" \
+                && wget --timeout=30 --tries=3 --retry-on-http-error=429,500,502,503,504 -O "$SOURCE_NAME.tar.gz" \
                     "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$SOURCE_NAME.tar.gz" \
                 && rm -rf "/tmp/$SOURCE_NAME" \
                 && mkdir -p "$SOURCE_NAME" \
