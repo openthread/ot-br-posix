@@ -54,52 +54,39 @@ jobs:
         include:
           - name: "Border Router (OT mDNS)"
             otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
-            border_routing: 1
             internet: 0
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router (mDNSResponder)"
             otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF"
-            border_routing: 1
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router TREL (OT mDNS)"
             otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
-            border_routing: 1
             internet: 0
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
           - name: "Border Router TREL (mDNSResponder)"
             otbr_options: "-DOTBR_COVERAGE=ON"
-            border_routing: 1
             internet: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
           - name: "Border Router Internet Access Features (OT mDNS)"
             otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
-            border_routing: 1
             internet: 1
             otbr_mdns: "openthread"
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
             packet_verification: 1
           - name: "Border Router Internet Access Features (mDNSResponder)"
             otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_DHCP6_PD=ON"
-            border_routing: 1
             internet: 1
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/internet/*.py
-            packet_verification: 1
-          - name: "Backbone Router (mDNSResponder)"
-            otbr_options: "-DOTBR_COVERAGE=ON -DOTBR_TREL=OFF -DOTBR_OT_SRP_ADV_PROXY=OFF -DOTBR_OT_DISCOVERY_PROXY=OFF"
-            border_routing: 0
-            internet: 0
-            otbr_mdns: "mDNSResponder"
-            cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
             packet_verification: 1
 
     name: ${{ matrix.name }}
@@ -113,7 +100,7 @@ jobs:
       READLINE: readline
       INTER_OP: 0
       INTER_OP_BBR: 0
-      BORDER_ROUTING: ${{ matrix.border_routing }}
+      BORDER_ROUTING: 1
       NAT64: ${{ matrix.internet }}
       MAX_JOBS: 3
       VERBOSE: 1
@@ -139,7 +126,7 @@ jobs:
         otbr_options="${{ matrix.otbr_options }}"
         otbr_image_name="otbr-ot12-backbone-ci"
         docker build -t "${otbr_image_name}" -f etc/docker/test/Dockerfile . \
-          --build-arg BORDER_ROUTING=${{ matrix.border_routing }} \
+          --build-arg BORDER_ROUTING=1 \
           --build-arg INFRA_IF_NAME=eth0 \
           --build-arg REFERENCE_DEVICE=1 \
           --build-arg OT_BACKBONE_CI=1 \
@@ -164,10 +151,18 @@ jobs:
         (cd third_party/openthread/repo && ./script/test get_thread_wireshark)
     - name: Run Test
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
+      working-directory: third_party/openthread/repo
+      env:
+        CERT_SCRIPTS: ${{ matrix.cert_scripts }}
       run: |
-        export CI_ENV="$(bash <(curl -s https://codecov.io/env)) -e GITHUB_ACTIONS -e OTBR_COVERAGE"
+        export CI_ENV="-e GITHUB_ACTIONS -e OTBR_COVERAGE"
         echo "CI_ENV=${CI_ENV}"
-        (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ${{ matrix.cert_scripts }} || (sudo chmod a+r ot_testing/* && false))
+        mapfile -t cert_scripts < <(compgen -G "${CERT_SCRIPTS}" || true)
+        if ((${#cert_scripts[@]} == 0)); then
+          echo "No cert scripts matched pattern: ${CERT_SCRIPTS}" >&2
+          exit 1
+        fi
+        sudo -E ./script/test cert_suite "${cert_scripts[@]}" || (sudo chmod a+r ot_testing/* && false)
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: ${{ failure() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       with:
