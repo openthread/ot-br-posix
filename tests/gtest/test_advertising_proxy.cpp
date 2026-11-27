@@ -337,7 +337,8 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
                  const char                      *aBackboneInterfaceName,
                  bool                             aDryRun,
                  bool                             aEnableAutoAttach,
-                 const char                      *aDataPath)
+                 const char                      *aDataPath,
+                 uint8_t                          aDaemonMode)
     : mInstance(nullptr)
     , mEnableAutoAttach(aEnableAutoAttach)
     , mThreadEnabledState(ThreadEnabledState::kStateDisabled)
@@ -347,6 +348,7 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
     OTBR_UNUSED_VARIABLE(aBackboneInterfaceName);
     OTBR_UNUSED_VARIABLE(aDryRun);
     OTBR_UNUSED_VARIABLE(aDataPath);
+    OTBR_UNUSED_VARIABLE(aDaemonMode);
     memset(&mConfig, 0, sizeof(mConfig));
 }
 
@@ -532,6 +534,12 @@ otbrError UdpProxy::Dependencies::UdpForward(const uint8_t      *aUdpPayload,
     OTBR_UNUSED_VARIABLE(aRemoteAddr);
     OTBR_UNUSED_VARIABLE(aRemotePort);
     OTBR_UNUSED_VARIABLE(aUdpProxy);
+    return OTBR_ERROR_NONE;
+}
+
+otbrError CliDaemon::Dependencies::InputCommandLine(const char *aLine)
+{
+    OTBR_UNUSED_VARIABLE(aLine);
     return OTBR_ERROR_NONE;
 }
 

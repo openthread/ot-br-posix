@@ -87,7 +87,8 @@ protected:
     void SetUp() override
     {
         mHost.reset(new otbr::Host::RcpHost("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "",
-                                            /* aDryRun */ false, /* aEnableAutoAttach */ false));
+                                            /* aDryRun */ false, /* aEnableAutoAttach */ false, /* aDataPath */ "",
+                                            /* aDaemonMode */ 0));
         mHost->Init();
 
         otInstance *instance = ot::FakePlatform::CurrentInstance();
