@@ -72,6 +72,6 @@ expect backbone1
 send "\003"
 expect eof
 
-exec sudo docker stop $container
-exec sudo docker rm $container
+exec docker stop $container
+exec docker rm $container
 dispose_all
