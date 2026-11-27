@@ -196,11 +196,15 @@ void BorderAgent::ClearState(void)
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mServiceInstanceName.clear();
+    mEpskcServiceInstanceName.clear();
     mIsInitialized  = false;
     mMeshCoPUdpPort = 0;
     mBaIsActive     = false;
     mExtAddress     = {};
     mOtTxtData.clear();
+    mEpskcState       = OT_BORDER_AGENT_STATE_DISABLED;
+    mEpskcUdpPort     = 0;
+    mIsEpskcPublished = false;
 #endif
 }
 
@@ -210,7 +214,9 @@ void BorderAgent::Start(void)
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     mServiceInstanceName = GetServiceInstanceName();
+    mEpskcServiceInstanceName.clear();
     UpdateMeshCoPService();
+    UpdateEpskcService();
 #endif
 }
 
@@ -219,69 +225,128 @@ void BorderAgent::Stop(void)
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
     otbrLogInfo("Stop Thread Border Agent");
     UnpublishMeshCoPService();
+    UnpublishEpskcService();
 #endif
 }
 
 #if OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE
-void BorderAgent::HandleEpskcStateChanged(otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort)
+bool BorderAgent::IsEpskcActive(void) const
 {
-    switch (aEpskcState)
+    bool isActive = false;
+
+    switch (mEpskcState)
     {
     case OT_BORDER_AGENT_STATE_STARTED:
     case OT_BORDER_AGENT_STATE_CONNECTED:
     case OT_BORDER_AGENT_STATE_ACCEPTED:
-        PublishEpskcService(aPort);
+        isActive = true;
         break;
     case OT_BORDER_AGENT_STATE_DISABLED:
     case OT_BORDER_AGENT_STATE_STOPPED:
-        UnpublishEpskcService();
+        isActive = false;
         break;
     }
+
+    return isActive;
 }
 
-void BorderAgent::PublishEpskcService(uint16_t aPort)
+void BorderAgent::HandleEpskcStateChanged(otBorderAgentEphemeralKeyState aEpskcState, uint16_t aPort)
 {
-    otbrLogInfo("Publish meshcop-e service %s.%s.local. port %d", mServiceInstanceName.c_str(),
-                kBorderAgentEpskcServiceType, aPort);
+    bool wasActive = IsEpskcActive();
 
-    mPublisher.PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentEpskcServiceType,
-                              Mdns::Publisher::SubTypeList{}, aPort, /* aTxtData */ {},
-                              [this, aPort](otbrError aError) {
-                                  if (aError == OTBR_ERROR_ABORTED)
-                                  {
-                                      // OTBR_ERROR_ABORTED is thrown when an ongoing service registration is
-                                      // cancelled. This can happen when the meshcop-e service is being updated
-                                      // frequently. To avoid false alarms, it should not be logged like a real error.
-                                      otbrLogInfo("Cancelled previous publishing meshcop-e service %s.%s.local",
-                                                  mServiceInstanceName.c_str(), kBorderAgentEpskcServiceType);
-                                  }
-                                  else
-                                  {
-                                      otbrLogResult(aError, "Result of publish meshcop-e service %s.%s.local",
-                                                    mServiceInstanceName.c_str(), kBorderAgentEpskcServiceType);
-                                  }
+    mEpskcState   = aEpskcState;
+    mEpskcUdpPort = aPort;
 
-                                  if (aError == OTBR_ERROR_DUPLICATED)
-                                  {
-                                      // Try to unpublish current service in case we are trying to register
-                                      // multiple new services simultaneously when the original service name
-                                      // is conflicted.
-                                      // Potential risk that instance name is not the same with meshcop service.
-                                      UnpublishEpskcService();
-                                      mServiceInstanceName = GetAlternativeServiceInstanceName();
-                                      PublishEpskcService(aPort);
-                                  }
-                              });
+    if (!wasActive && IsEpskcActive())
+    {
+        mEpskcServiceInstanceName.clear();
+    }
+
+    UpdateEpskcService();
 }
 
-void BorderAgent::UnpublishEpskcService()
+void BorderAgent::PublishEpskcService(void)
 {
-    otbrLogInfo("Unpublish meshcop-e service %s.%s.local", mServiceInstanceName.c_str(), kBorderAgentEpskcServiceType);
+    std::string serviceInstanceName;
 
-    mPublisher.UnpublishService(mServiceInstanceName, kBorderAgentEpskcServiceType, [this](otbrError aError) {
-        otbrLogResult(aError, "Result of unpublish meshcop-e service %s.%s.local", mServiceInstanceName.c_str(),
-                      kBorderAgentEpskcServiceType);
-    });
+    if (mEpskcServiceInstanceName.empty())
+    {
+        mEpskcServiceInstanceName = mServiceInstanceName;
+    }
+
+    serviceInstanceName = mEpskcServiceInstanceName;
+
+    otbrLogInfo("Publish meshcop-e service %s.%s.local. port %d", serviceInstanceName.c_str(),
+                kBorderAgentEpskcServiceType, mEpskcUdpPort);
+
+    mIsEpskcPublished = true;
+
+    mPublisher.PublishService(
+        /* aHostName */ "", serviceInstanceName, kBorderAgentEpskcServiceType, Mdns::Publisher::SubTypeList{},
+        mEpskcUdpPort, /* aTxtData */ {}, [this, serviceInstanceName](otbrError aError) {
+            if (aError == OTBR_ERROR_ABORTED)
+            {
+                // OTBR_ERROR_ABORTED is thrown when an ongoing service registration is
+                // cancelled. This can happen when the meshcop-e service is being updated
+                // frequently. To avoid false alarms, it should not be logged like a real error.
+                otbrLogInfo("Cancelled previous publishing meshcop-e service %s.%s.local", serviceInstanceName.c_str(),
+                            kBorderAgentEpskcServiceType);
+            }
+            else
+            {
+                otbrLogResult(aError, "Result of publish meshcop-e service %s.%s.local", serviceInstanceName.c_str(),
+                              kBorderAgentEpskcServiceType);
+            }
+
+            if (aError == OTBR_ERROR_DUPLICATED && mIsEpskcPublished && IsEnabled() && IsEpskcActive() &&
+                serviceInstanceName == mEpskcServiceInstanceName)
+            {
+                // Try to unpublish current service in case we are trying to register
+                // multiple new services simultaneously when the original service name
+                // is conflicted.
+                UnpublishEpskcService();
+                mEpskcServiceInstanceName = GetAlternativeServiceInstanceName();
+                UpdateEpskcService();
+            }
+        });
+}
+
+void BorderAgent::UpdateEpskcService(void)
+{
+    if (IsEpskcActive())
+    {
+        VerifyOrExit(mIsInitialized);
+        VerifyOrExit(IsEnabled());
+        VerifyOrExit(mPublisher.IsStarted());
+        PublishEpskcService();
+    }
+    else
+    {
+        UnpublishEpskcService();
+    }
+
+exit:
+    return;
+}
+
+void BorderAgent::UnpublishEpskcService(void)
+{
+    std::string serviceInstanceName;
+
+    VerifyOrExit(mIsEpskcPublished);
+    mIsEpskcPublished   = false;
+    serviceInstanceName = mEpskcServiceInstanceName;
+
+    otbrLogInfo("Unpublish meshcop-e service %s.%s.local", serviceInstanceName.c_str(), kBorderAgentEpskcServiceType);
+
+    mPublisher.UnpublishService(serviceInstanceName, kBorderAgentEpskcServiceType,
+                                [serviceInstanceName](otbrError aError) {
+                                    otbrLogResult(aError, "Result of unpublish meshcop-e service %s.%s.local",
+                                                  serviceInstanceName.c_str(), kBorderAgentEpskcServiceType);
+                                });
+
+exit:
+    return;
 }
 
 void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
@@ -292,6 +357,7 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     {
     case Mdns::Publisher::State::kReady:
         UpdateMeshCoPService();
+        UpdateEpskcService();
         break;
     default:
         otbrLogWarning("mDNS publisher not available!");
@@ -303,6 +369,8 @@ exit:
 
 void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool aIsActive, uint16_t aPort, const TxtData &aOtTxtData)
 {
+    bool wasInitialized = mIsInitialized;
+
     if (aIsActive != mBaIsActive || aPort != mMeshCoPUdpPort)
     {
         mBaIsActive     = aIsActive;
@@ -335,6 +403,11 @@ void BorderAgent::HandleBorderAgentMeshCoPServiceChanged(bool aIsActive, uint16_
 
 exit:
     UpdateMeshCoPService();
+
+    if (!wasInitialized && mIsInitialized)
+    {
+        UpdateEpskcService();
+    }
 }
 
 #endif // OTBR_ENABLE_BORDER_AGENT_MESHCOP_SERVICE

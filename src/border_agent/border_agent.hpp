@@ -207,7 +207,9 @@ private:
     std::string GetServiceInstanceName(void) const;
     std::string GetAlternativeServiceInstanceName(void) const;
 
-    void PublishEpskcService(uint16_t aPort);
+    bool IsEpskcActive(void) const;
+    void PublishEpskcService(void);
+    void UpdateEpskcService(void);
     void UnpublishEpskcService(void);
 #endif
 
@@ -239,11 +241,15 @@ private:
     // conflicts. For example, this value can be "OpenThread Border Router #7AC3" or
     // "OpenThread Border Router #7AC3 (14379)".
     std::string mServiceInstanceName;
+    std::string mEpskcServiceInstanceName;
 
-    bool         mIsInitialized;
-    otExtAddress mExtAddress;
-    uint16_t     mMeshCoPUdpPort;
-    bool         mBaIsActive;
+    bool                           mIsInitialized;
+    otExtAddress                   mExtAddress;
+    uint16_t                       mMeshCoPUdpPort;
+    bool                           mBaIsActive;
+    otBorderAgentEphemeralKeyState mEpskcState;
+    uint16_t                       mEpskcUdpPort;
+    bool                           mIsEpskcPublished;
 #endif
 };
 
