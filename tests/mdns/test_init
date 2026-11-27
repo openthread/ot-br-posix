@@ -39,7 +39,7 @@ readonly DNS_SD_RESULT
 case "${OTBR_MDNS}" in
     mDNSResponder)
         sudo service avahi-daemon stop || true
-        sudo killall mdnsd || true
+        sudo killall -9 -w mdnsd || true
         sudo mdnsd
         sleep 1
         ;;
@@ -55,7 +55,8 @@ on_exit()
     EXIT_CODE=$?
     readonly EXIT_CODE
 
-    kill "$PID"
+    kill "$PID" 2>/dev/null || true
+    wait "$PID" 2>/dev/null || true
     [[ ! -e ${DNS_SD_RESULT} ]] || rm "${DNS_SD_RESULT}" || true
 
     exit $EXIT_CODE
