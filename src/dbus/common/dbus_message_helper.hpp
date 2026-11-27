@@ -36,6 +36,7 @@
 
 #include "openthread-br/config.h"
 
+#include <algorithm>
 #include <array>
 #include <string>
 #include <tuple>
@@ -119,6 +120,10 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo &aTrelInfo);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo &aTrelInfo);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo::TrelPacketCounters &aCounters);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo::TrelPacketCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const MeshDiagRouterInfo &aMeshDiagRouterInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, MeshDiagRouterInfo &aMeshDiagRouterInfo);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const MeshDiagChildInfo &aMeshDiagChildInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, MeshDiagChildInfo &aMeshDiagChildInfo);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -407,6 +412,16 @@ template <> struct DBusTypeTrait<InfraLinkInfo>
     static constexpr const char *TYPE_AS_STRING = "(sbbbuuu)";
 };
 
+template <> struct DBusTypeTrait<MeshDiagChildInfo>
+{
+    static constexpr const char *TYPE_AS_STRING = "(qybb)";
+};
+
+template <> struct DBusTypeTrait<MeshDiagRouterInfo>
+{
+    static constexpr const char *TYPE_AS_STRING = "(tqyqbbbbaya(qybb)aay)";
+};
+
 template <> struct DBusTypeTrait<int8_t>
 {
     static constexpr int         TYPE           = DBUS_TYPE_BYTE;
@@ -480,6 +495,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<uint64_t> 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int16_t> &aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int32_t> &aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int64_t> &aValue);
+template <typename T, size_t SIZE>
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::array<T, SIZE> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::string &aValue);
@@ -490,6 +507,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<uint64_t> &aVal
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int16_t> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int32_t> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int64_t> &aValue);
+template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter *aIter, std::array<T, SIZE> &aValue);
 
 template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, T &aValue)
 {
@@ -575,6 +593,10 @@ template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter 
         {
             std::copy(val, val + n, aValue.begin());
         }
+    }
+    else
+    {
+        VerifyOrExit(SIZE == 0, error = OTBR_ERROR_DBUS);
     }
     dbus_message_iter_next(aIter);
 
