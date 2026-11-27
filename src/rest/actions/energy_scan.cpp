@@ -46,6 +46,8 @@ namespace actions {
 // EnergyScanAction class implementation
 EnergyScan::EnergyScan(const cJSON &aJson, Services &aServices)
     : BasicActions(aJson, aServices)
+    , mDestination(nullptr)
+    , mDestinationType(kAddressTypeExt)
 {
     cJSON *item;
 
@@ -86,7 +88,14 @@ void EnergyScan::Update(void)
     if (mStatus == kActionStatusPending)
     {
         otIp6Address address;
-        SuccessOrExit(mServices.LookupAddress(mDestination, mDestinationType, address));
+
+        error = mServices.LookupAddress(mDestination, mDestinationType, address);
+        if (error != OT_ERROR_NONE && error != OT_ERROR_NOT_FOUND)
+        {
+            mStatus = kActionStatusFailed;
+            ExitNow();
+        }
+        SuccessOrExit(error);
 
         error = mServices.GetCommissionerManager().StartEnergyScan(mMask, mCount, mPeriod, mScanDuration, &address);
 
@@ -160,7 +169,7 @@ cJSON *EnergyScan::Jsonify(std::set<std::string> aFieldset)
     cJSON *attributes  = cJSON_CreateObject();
     cJSON *channelMask = cJSON_CreateArray();
 
-    if (hasKey(aFieldset, KEY_DESTINATION))
+    if (hasKey(aFieldset, KEY_DESTINATION) && mDestination != nullptr)
     {
         cJSON_AddItemToObject(attributes, KEY_DESTINATION, cJSON_CreateString(mDestination));
     }

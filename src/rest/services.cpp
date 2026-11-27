@@ -103,6 +103,7 @@ otError Services::LookupAddress(const char *aAddressString, AddressType aType, o
     otError                  error = OT_ERROR_NONE;
     otIp6InterfaceIdentifier mlEidIid;
     otExtAddress             extAddr;
+    otIp6Address             ip6Addr;
     const otMeshLocalPrefix *prefix = (mInstance != nullptr) ? otThreadGetMeshLocalPrefix(mInstance) : nullptr;
     const ThreadDevice      *device;
     uint16_t                 rloc = 0xfffe;
@@ -140,6 +141,22 @@ otError Services::LookupAddress(const char *aAddressString, AddressType aType, o
         VerifyOrExit(mInstance != nullptr && otThreadGetRloc(mInstance) != nullptr, error = OT_ERROR_INVALID_STATE);
         memcpy(&aAddress, otThreadGetRloc(mInstance), OT_IP6_ADDRESS_SIZE);
         aAddress.mFields.m16[7] = htons(rloc);
+        break;
+
+    case kAddressTypeIpv6:
+        SuccessOrExit(ParseUnicastIp6Address(aAddressString, ip6Addr), error = OT_ERROR_PARSE);
+
+        if (!IsLinkLocalUnicast(ip6Addr))
+        {
+            VerifyOrExit(prefix != nullptr, error = OT_ERROR_INVALID_STATE);
+            VerifyOrExit(memcmp(ip6Addr.mFields.mComponents.mNetworkPrefix.m8, prefix->m8, sizeof(otMeshLocalPrefix)) ==
+                             0,
+                         error = OT_ERROR_INVALID_ARGS);
+            // ALOC responders reply from their unicast RLOC rather than the ALOC, breaking unicast peer correlation.
+            VerifyOrExit(!IsAnycastLocatorIid(ip6Addr), error = OT_ERROR_INVALID_ARGS);
+        }
+
+        aAddress = ip6Addr;
         break;
 
     default:
@@ -181,11 +198,13 @@ const char *AddressTypeToString(AddressType aType)
         "extended", // (0) kAddressTypeExt
         "mleid",    // (1) kAddressTypeMleid
         "rloc",     // (2) kAddressTypeRloc
+        "ipv6",     // (3) kAddressTypeIpv6
     };
 
     static_assert(kAddressTypeExt == 0, "kAddressTypeExt value is incorrect");
     static_assert(kAddressTypeMleid == 1, "kAddressTypeMleid value is incorrect");
     static_assert(kAddressTypeRloc == 2, "kAddressTypeRloc value is incorrect");
+    static_assert(kAddressTypeIpv6 == 3, "kAddressTypeIpv6 value is incorrect");
 
     return kTypeStrings[aType];
 }
