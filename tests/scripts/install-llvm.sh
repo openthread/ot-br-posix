@@ -30,42 +30,13 @@
 
 set -euo pipefail
 
-LLVM_VERSION="19.1.7"
-ARCH=$(uname -m)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+OPENTHREAD_INSTALL_LLVM="${REPO_ROOT}/third_party/openthread/repo/script/install-llvm.sh"
 
-# This script is currently only used for linux with x86_64 architecture.
-if [ "${ARCH}" != "x86_64" ]; then
-    echo "Unsupported architecture: ${ARCH}"
+if [[ ! -f ${OPENTHREAD_INSTALL_LLVM} ]]; then
+    echo "ERROR: '${OPENTHREAD_INSTALL_LLVM}' not found; run 'git submodule update --init third_party/openthread/repo' first." >&2
     exit 1
 fi
 
-LLVM_PACKAGE="LLVM-${LLVM_VERSION}-Linux-X64"
-LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_PACKAGE}.tar.xz"
-INSTALL_DIR="/opt/llvm-${LLVM_VERSION}"
-TEMP_DIR=$(mktemp -d)
-
-cleanup()
-{
-    rm -rf "${TEMP_DIR}"
-}
-
-trap cleanup EXIT
-
-cd "${TEMP_DIR}"
-
-echo "Downloading LLVM from ${LLVM_URL}..."
-wget -O llvm.tar.xz "${LLVM_URL}"
-
-echo "Uncompressing to ${TEMP_DIR}..."
-tar xf llvm.tar.xz
-
-echo "Installing to ${INSTALL_DIR}..."
-sudo mkdir -p /opt
-sudo mv "${LLVM_PACKAGE}" "${INSTALL_DIR}"
-
-echo "Creating symlinks in /usr/local/bin..."
-sudo ln -sf "${INSTALL_DIR}/bin/clang-format" "/usr/local/bin/clang-format-19"
-sudo ln -sf "${INSTALL_DIR}/bin/clang-tidy" "/usr/local/bin/clang-tidy-19"
-sudo ln -sf "${INSTALL_DIR}/bin/clang-apply-replacements" "/usr/local/bin/clang-apply-replacements-19"
-
-echo "Done."
+exec bash "${OPENTHREAD_INSTALL_LLVM}" "$@"
