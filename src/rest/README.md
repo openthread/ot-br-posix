@@ -105,6 +105,79 @@ The value of the `id` field of the collection items is a UUID.
 
 The TLVs are collected and the items appended to the collection based on requests to the `/api/actions` resource.
 
+### `/api/traffic-stats`
+
+This resource stores immutable snapshots of the local OpenThread POSIX traffic counters. Create a snapshot by posting `getTrafficStatsTask` to `/api/actions` with empty `attributes`. The task copies the counters once, stores the result, and becomes `completed`. Its `relationships.result.data.id` identifies the result; the relationship type is `traffic-stats`, while result items have type `trafficStats`. A failure to obtain or store the counters sets the task status to `failed`.
+
+| Method | Resource                        | Purpose                     |
+| ------ | ------------------------------- | --------------------------- |
+| GET    | `/api/traffic-stats`            | List saved snapshots.       |
+| GET    | `/api/traffic-stats/{resultId}` | Read a snapshot.            |
+| DELETE | `/api/traffic-stats`            | Delete all saved snapshots. |
+| DELETE | `/api/traffic-stats/{resultId}` | Delete one snapshot.        |
+
+The `threadToExternal` direction counts packets passed from the OpenThread stack to the host. The `externalToThread` direction counts packets read from the host virtual interface for the OpenThread stack. These are observations at the virtual interface, rather than confirmed deliveries over the Thread radio or an external interface. They can include the border router's own control traffic and multicast packets looped back to the host. A border router without other Thread devices can therefore have nonzero counters. The IPv6-only implementation excludes IPv4 packets, including the IPv4 side of NAT64 traffic. Byte counts include the IPv6 header and payload, excluding tunnel and link-layer headers.
+
+Each direction contains cumulative `total.packets` and `total.bytes`, plus `flows` grouped by the source/destination IPv6 address pair. There is no transport-protocol or port distinction. `flowCapacityPerDirection` is currently 64. When a table is full, existing pairs continue to be updated but new pairs are not recorded, so the sum of `flows` can differ from `total`. Array order is not significant. Unused flow tables are returned as empty arrays.
+
+The counters accumulate for the lifetime of the process. Capturing or deleting a result does not reset them. GET reads only the saved copy; capture a new task to obtain newer counters. Differences between snapshots from the same process run can be used to compute interval traffic. JSON numbers currently pass through a double representation, so integer counters above 2^53 may lose precision.
+
+Up to ten results are retained in memory. Creating an eleventh evicts the oldest. Deleted or evicted result IDs return 404, even if the task referencing them still exists. Deleting a task does not delete its result. Process restart clears both saved results and cumulative counters.
+
+JSON:API results include a `created` capture timestamp. Plain `application/json` results contain only the counter attributes, without IDs or timestamps. JSON:API also supports sparse fields such as `?fields[trafficStats]=threadToExternal` (the common `created` timestamp is still included).
+
+#### Capture and read a traffic snapshot
+
+```sh
+base=http://127.0.0.1:8081
+
+action_id=$(curl -fsS -X POST "$base/api/actions" \
+  -H 'Content-Type: application/vnd.api+json' \
+  -H 'Accept: application/vnd.api+json' \
+  -d '{"data":[{"type":"getTrafficStatsTask","attributes":{}}]}' | jq -r '.data[0].id')
+
+# Poll until the task completes or reports a terminal error.
+while :; do
+  action=$(curl -fsS -H 'Accept: application/vnd.api+json' "$base/api/actions/$action_id")
+  status=$(printf '%s' "$action" | jq -r '.data.attributes.status')
+  case "$status" in
+    completed) break ;;
+    failed|stopped) printf 'Traffic task ended with status %s\n' "$status" >&2; exit 1 ;;
+  esac
+  sleep 0.1
+done
+
+result_id=$(printf '%s' "$action" | jq -r '.data.relationships.result.data.id')
+curl -fsS -H 'Accept: application/vnd.api+json' "$base/api/traffic-stats/$result_id" | jq
+```
+
+A result has the following shape (the addresses and counters are illustrative):
+
+```json
+{
+  "data": {
+    "id": "59127322-41da-42e2-ab0a-206dfaeebff4",
+    "type": "trafficStats",
+    "attributes": {
+      "created": "2026-10-28T11:25:24+09:00",
+      "flowCapacityPerDirection": 64,
+      "threadToExternal": {
+        "total": { "packets": 1, "bytes": 104 },
+        "flows": [
+          {
+            "srcIpv6": "fd00::1",
+            "dstIpv6": "2001:db8::1",
+            "packets": 1,
+            "bytes": 104
+          }
+        ]
+      },
+      "externalToThread": { "total": { "packets": 0, "bytes": 0 }, "flows": [] }
+    }
+  }
+}
+```
+
 ### `/api/actions`
 
 An HTTP client may send requests to the actions resource that trigger diagnostic requests into the Thread network or requests to an on-mesh commissioner for onboarding new devices onto the Thread network. Such requests typically have a longer response time and results may be obtained indirectly after some processing time.
@@ -116,6 +189,7 @@ Supported action requests to `/api/actions` are:
   - `getEnergyScanTask` - starts the commissioner and sends energy scan requests to the destination.
   - `getNetworkDiagnosticTask` - sends diagnostic requests and diagnostic queries to the destination.
   - `resetNetworkDiagCounterTask` - resets the network diagnostic MLE and/or MAC counters.
+  - `getTrafficStatsTask` - captures the local cumulative traffic counters in `/api/traffic-stats`.
   - `updateDeviceCollectionTask` - discovers the Thread network and adds or updates any responding attached devices in the `/api/devices` collection.
 - GET | DELETE the full `actions` collection.
 

@@ -34,6 +34,7 @@ import json
 import os
 import re
 import time
+import uuid
 from threading import Thread
 
 rest_api_addr = "http://127.0.0.1:8081"
@@ -702,6 +703,7 @@ def well_known_thread_check(data, expected_version):
         "task": ("/api/actions", "application/vnd.api+json"),
         "device": ("/api/devices", "application/vnd.api+json"),
         "diagnostic": ("/api/diagnostics", "application/vnd.api+json"),
+        "traffic-stats": ("/api/traffic-stats", "application/vnd.api+json"),
     }
     # Compare against the raw list length (not len(links), which the dict comprehension
     # above would have already deduplicated) to catch duplicate rel entries as well as
@@ -763,6 +765,202 @@ def well_known_thread_test(thread_num=1):
     well_known_thread_method_not_allowed_test()
 
     print(" /.well-known/thread/br-rest : all {}, valid {} (version {})".format(thread_num, valid, expected_version))
+
+
+def traffic_stats_test():
+    """Exercise task validation, immutable results, retention, and deletion."""
+    media_type = 'application/vnd.api+json'
+    collection = '/api/traffic-stats'
+    action_ids = []
+
+    def request(path, method='GET', body=None, accept=media_type):
+        headers = {'Accept': accept}
+        data = None
+        if body is not None:
+            headers['Content-Type'] = media_type
+            data = json.dumps(body).encode()
+        req = urllib.request.Request(rest_api_addr + path,
+                                     data=data,
+                                     headers=headers,
+                                     method=method)
+        return urllib.request.urlopen(req, timeout=5)
+
+    def get(path, accept=media_type):
+        with request(path, accept=accept) as response:
+            assert response.status == 200
+            assert response.headers.get_content_type() == accept
+            return json.loads(response.read())
+
+    def delete(path):
+        with request(path, method='DELETE') as response:
+            assert response.status == 204
+            assert response.read() == b''
+
+    def capture():
+        body = {'data': [{'type': 'getTrafficStatsTask', 'attributes': {}}]}
+        with request('/api/actions', method='POST', body=body) as response:
+            assert response.status == 200
+            assert response.headers.get_content_type() == media_type
+            queued = json.loads(response.read())['data']
+        assert len(queued) == 1
+        action_id = queued[0]['id']
+        assert str(uuid.UUID(action_id)) == action_id
+        action_ids.append(action_id)
+        deadline = time.monotonic() + 5
+        while True:
+            action = get('/api/actions/' + action_id)['data']
+            assert action['type'] == 'getTrafficStatsTask'
+            status = action['attributes']['status']
+            if status == 'completed':
+                break
+            assert status in ('pending', 'active'), action
+            assert time.monotonic() < deadline, 'traffic task did not complete'
+            time.sleep(0.01)
+        assert 'created' in action['attributes']
+        result = action['relationships']['result']['data']
+        assert result['type'] == 'traffic-stats'
+        assert str(uuid.UUID(result['id'])) == result['id']
+        return action_id, result['id']
+
+    def check_snapshot(item):
+        assert item['type'] == 'trafficStats'
+        assert str(uuid.UUID(item['id'])) == item['id']
+        attributes = item['attributes']
+        assert re.fullmatch(
+            r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}',
+            attributes['created'])
+        capacity = attributes['flowCapacityPerDirection']
+        assert capacity == 64
+        for name in ('threadToExternal', 'externalToThread'):
+            direction = attributes[name]
+            assert len(direction['flows']) <= capacity
+            pairs = set()
+            for flow in direction['flows']:
+                assert_is_ipv6_address(flow['srcIpv6'])
+                assert_is_ipv6_address(flow['dstIpv6'])
+                pair = (flow['srcIpv6'], flow['dstIpv6'])
+                assert pair not in pairs
+                pairs.add(pair)
+                for counter in ('packets', 'bytes'):
+                    assert type(flow[counter]) is int and flow[counter] >= 0
+            for counter in ('packets', 'bytes'):
+                total = direction['total'][counter]
+                assert type(total) is int and total >= 0
+                assert sum(
+                    flow[counter] for flow in direction['flows']) <= total
+
+    try:
+        delete(collection)
+        empty = get(collection)
+        assert empty['data'] == []
+        assert empty['meta']['collection'] == {
+            'offset': 0,
+            'limit': 10,
+            'total': 0
+        }
+        assert get(collection, accept='application/json') == []
+
+        for task in ({
+                'type': 'getTrafficStatsTask'
+        }, {
+                'type': 'getTrafficStatsTask',
+                'attributes': None
+        }, {
+                'type': 'getTrafficStatsTask',
+                'attributes': {
+                    'timeout': 1
+                }
+        }, {
+                'type': 'getTrafficStatsTask',
+                'attributes': {
+                    'destination': '::1'
+                }
+        }):
+            expect_http_error(
+                422,
+                lambda task=task: request(
+                    '/api/actions', method='POST', body={'data': [task]}))
+
+        action_id, result_id = capture()
+        result_path = collection + '/' + result_id
+        first = get(result_path)
+        check_snapshot(first['data'])
+        assert first['data']['id'] == result_id
+        attrs = first['data']['attributes']
+        counters = {
+            key: value for key, value in attrs.items() if key != 'created'
+        }
+        assert get(result_path, accept='application/json') == counters
+        assert counters in get(collection, accept='application/json')
+        assert get(collection)['data'] == [first['data']]
+
+        sparse_path = result_path + '?fields%5BtrafficStats%5D=threadToExternal'
+        sparse = get(sparse_path)['data']['attributes']
+        assert sparse == {
+            'created': attrs['created'],
+            'threadToExternal': attrs['threadToExternal']
+        }
+        assert get(sparse_path, accept='application/json') == {
+            'threadToExternal': attrs['threadToExternal']
+        }
+        sparse_collection = get(collection +
+                                '?fields%5BtrafficStats%5D=externalToThread')
+        assert sparse_collection['data'][0]['attributes'] == {
+            'created': attrs['created'],
+            'externalToThread': attrs['externalToThread']
+        }
+
+        capture()
+        assert get(result_path) == first
+        for path in (collection, result_path):
+            expect_http_error(
+                406, lambda path=path: request(path, accept='text/plain'))
+            expect_http_error(
+                405, lambda path=path: request(path, method='POST', body={}))
+            with request(path, method='OPTIONS') as response:
+                assert response.status == 204
+                assert response.headers.get('Allow') == 'GET, DELETE, OPTIONS'
+
+        for missing_id in ('not-a-uuid', str(uuid.uuid4())):
+            missing_path = collection + '/' + missing_id
+            expect_http_error(404, lambda path=missing_path: request(path))
+            expect_http_error(
+                404, lambda path=missing_path: request(path, method='DELETE'))
+
+        delete(result_path)
+        expect_http_error(404, lambda: request(result_path))
+        assert get('/api/actions/' +
+                   action_id)['data']['attributes']['status'] == 'completed'
+        delete(collection)
+        result_ids = [capture()[1] for _ in range(11)]
+        retained = get(collection)
+        assert retained['meta']['collection'] == {
+            'offset': 0,
+            'limit': 10,
+            'total': 10
+        }
+        assert {item['id'] for item in retained['data']} == set(result_ids[1:])
+        for item in retained['data']:
+            check_snapshot(item)
+        expect_http_error(404,
+                          lambda: request(collection + '/' + result_ids[0]))
+        latest = get(collection + '/' + result_ids[-1])['data']['attributes']
+        delete(collection)
+        assert get(collection)['data'] == []
+        after_delete = get(collection + '/' +
+                           capture()[1])['data']['attributes']
+        for name in ('threadToExternal', 'externalToThread'):
+            for counter in ('packets', 'bytes'):
+                assert after_delete[name]['total'][counter] >= latest[name][
+                    'total'][counter]
+    finally:
+        delete(collection)
+        for action_id in action_ids:
+            delete('/api/actions/' + action_id)
+
+    print(
+        ' /api/traffic-stats : tasks, snapshots, sparse fields, retention, deletion, and errors OK'
+    )
 
 
 def epskc_test():
@@ -1156,6 +1354,7 @@ def main():
     # diagnostics_test(20)  # partly replaced with restjsonapi tests
     error_test(10)
     well_known_thread_test(20)
+    traffic_stats_test()
     # Pending dataset writes require an attached node. epskc_test disables
     # Thread and the node only comes back through auto-attach, so these run
     # before it, while the attached state is deterministic.
