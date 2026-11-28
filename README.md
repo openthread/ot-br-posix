@@ -35,6 +35,17 @@ INFRA_IF_NAME=en0 RADIO_URL='spinel+hdlc+uart:///dev/cu.usbserial-XXXX?uart-baud
 
 builds the border router, installs it under `/usr/local`, adds its `pf` anchors and IP forwarding, and loads it as the launchd job `io.openthread.otbr-agent`, which starts at boot. The agent's options live in `/usr/local/etc/default/otbr-agent`. Its log is in the unified log (`log show --predicate 'process == "otbr-agent"' --last 10m`); `/var/log/otbr-agent.log` receives what it writes to stderr. The Thread interface defaults to `utun100` (with its daemon socket at `/var/run/openthread-utun100.sock`), and `sudo /usr/local/sbin/ot-ctl -I utun100 state` talks to it. The web GUI (`WEB_GUI=1`, the default here as on Raspbian) is the launchd job `io.openthread.otbr-web` at <http://127.0.0.1/>; its options live in `/usr/local/etc/default/otbr-web`, and `/var/log/otbr-web.log` receives its output.
 
+What differs on macOS:
+
+- SPI radios are not supported, because OpenThread's SPI interface needs the Linux kernel's spidev driver. The radio is attached over a serial device.
+- Since the D-Bus API is Linux-only, the agent is driven through its REST API and `ot-ctl`.
+- NCP mode is only supported on Linux.
+- Custom interface names like `wpan0` are not supported, so the Thread interface is a `utun`: the one `-I utunN` names, or the lowest free one when `-I` is omitted.
+- The agent, built with `OTBR_PF` as `script/setup` does, enables `pf` itself. It needs `/etc/pf.conf` to reference `anchor "otbr"`, plus `nat-anchor "otbr"` when NAT64 is on. `script/setup` adds them.
+- Kernel routes for OMR prefixes (`OT_POSIX_INSTALL_OMR_ROUTES`) and external routes (`OT_POSIX_INSTALL_EXTERNAL_ROUTES`), both off by default, go through the routing socket, which has no route metrics. A default route (`::/0`) is tracked without a kernel route.
+
+Border routing, SRP, mDNS service discovery, TREL and the web GUI work as on Linux.
+
 For `otbr-agent` command-line options, Radio URLs, and service configuration examples, see [`src/agent/README.md`](src/agent/README.md).
 
 # Contributing
